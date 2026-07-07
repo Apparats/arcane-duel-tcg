@@ -1,15 +1,11 @@
-# Arcane Duel — simple TCG engine (online 1v1 + vs-NPC practice)
-
-Simplified Hearthstone-style game engine: growing mana, minions,
-spells, attacks, Taunt, Charge, Divine Shield.
+# Arcane Duel
 
 It has **two modes**, using the same rules engine:
 
 1. **Vs NPC (local, 100% offline)** — runs entirely in the browser, no
    server, nothing to install. Great for testing card balance before
    the event.
-2. **Online 1v1** — authoritative Node server (WebSocket) + room code,
-   for the actual event.
+2. **Online 1v1** — authoritative Node server (WebSocket) + room code
 
 `public/cards.js` already comes compiled with the 20 base cards, so
 both modes work out of the box without touching anything. You only
@@ -36,29 +32,14 @@ enemy Taunt (in which case it attacks the Taunt with the most health).
 It's good for testing rules and cards, not for a competitive
 challenge — that's what online 1v1 between people is for.
 
-## Online mode: deploying for the event
+## Online mode:
 
 ⚠️ This only applies if you want people to play **against each other**
 over the internet/network. If you're only going to use vs-NPC mode,
 skip this section.
 
 The server is **not a static site**: it needs a Node process running
-at all times (for the WebSocket). That's why **Netlify/Vercel in their
-usual static mode won't work** (Vercel does support Node, but not
-persistent WebSockets in serverless functions — they get cut off). For
-the event, deploy it on one of these (all have a free/cheap tier and
-get you running in minutes):
-
-- **Railway** (railway.app) — the simplest: connect the repo, it
-  detects Node on its own, done.
-- **Render** (render.com) — "Web Service", build `npm install`, start
-  `node server/index.js`.
-- **Fly.io** — if you want more control over region/latency (useful if
-  the event is in person and everyone's on the same local network).
-
-You can also run it on your own laptop on the event's network (see
-"Local use" below) and have people connect via the local IP — zero
-hosting setup if everyone's on the same WiFi.
+at all times (for the WebSocket).
 
 ## Local use of online mode (server + two tabs)
 
@@ -546,14 +527,3 @@ the table cover), you add a new one in two places:
 Without that, the compiler will reject any card that uses an effect
 that isn't on the list — on purpose, so a typo in the effect's name
 gets caught at build time instead of mid-match.
-
-## Intentional limitations (to keep it simple)
-
-- No persistence: if the server restarts, matches in progress are
-  lost. For an event lasting a few hours this shouldn't be a problem.
-- No automatic reconnection if someone closes the tab mid-match (the
-  opponent gets notified, but there's no "resume").
-- No user accounts or ranking — it's just room + code.
-
-All of this is extendable if the event calls for it — let me know
-what to prioritize.
