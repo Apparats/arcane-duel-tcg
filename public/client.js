@@ -12,6 +12,7 @@ const KEYWORD_ICON = {
 const KEYWORD_FULL_LABEL = { taunt: "Taunt", charge: "Charge", divineShield: "Divine Shield" };
 const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", mythic: "Mythic" };
 const DISCORD_CLIENT_ID = "1523179359106502716";
+const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const TYPE_ICON = { minion: "⚔", spell: "✦" };
 
 let ws = null;
@@ -1105,7 +1106,7 @@ function escapeHtml(str) {
 // silently does nothing and the widget stays hidden. The rest of the
 // game never depends on being logged in.
 
-async function initAccountWidget() {
+async function initAccountWidget({ skipActivityAutoLogin = false } = {}) {
   let data;
   accountState = { authEnabled: false, loggedIn: false, user: null };
   switchScreen("auth");
@@ -1148,9 +1149,9 @@ async function initAccountWidget() {
       switchScreen("enter");
     }
   } else {
-    if (isDiscordActivityEnvironment()) {
-      setAuthGate("Login with Discord to enter Arcana TCG.", true);
-      $("btnLoginDiscord").classList.remove("hidden");
+    if (hasDiscordActivityParams() && !skipActivityAutoLogin) {
+      $("btnLoginDiscord").classList.add("hidden");
+      loginWithDiscordActivity({ automatic: true, showFailure: true });
       return;
     }
     setAuthGate("Login with Discord to enter Arcana TCG.", true);
@@ -1250,6 +1251,66 @@ function withTimeout(promise, ms, message) {
   ]);
 }
 
+function readActivityAuthCache() {
+  try {
+    const cached = JSON.parse(sessionStorage.getItem(ACTIVITY_AUTH_CACHE_KEY) || "null");
+    return cached && typeof cached.accessToken === "string" ? cached : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeActivityAuthCache(data) {
+  if (!data?.access_token) return;
+  sessionStorage.setItem(
+    ACTIVITY_AUTH_CACHE_KEY,
+    JSON.stringify({
+      accessToken: data.access_token,
+      user: data.user || null,
+    })
+  );
+}
+
+function clearActivityAuthCache() {
+  sessionStorage.removeItem(ACTIVITY_AUTH_CACHE_KEY);
+}
+
+async function createDiscordActivitySession(accessToken) {
+  const response = await fetch("/auth/discord/activity", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accessToken }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err = new Error(data.error || "Discord Activity session failed.");
+    err.stage = "token";
+    throw err;
+  }
+  return data;
+}
+
+function completeActivityLoginFromUser(user) {
+  if (!user) return;
+  accountState = { ...(accountState || {}), loggedIn: true, user };
+  $("btnLoginDiscord").classList.add("hidden");
+  $("accountProfile").classList.remove("hidden");
+  updateAccountDisplay(user);
+  if (user.avatarUrl) {
+    $("accountAvatar").src = user.avatarUrl;
+    $("accountAvatar").classList.remove("hidden");
+  }
+  if (hasSeenEnterGate()) switchScreen("menu");
+  else switchScreen("enter");
+}
+
+async function refreshAfterActivityLogin(fallbackUser) {
+  await initAccountWidget({ skipActivityAutoLogin: true });
+  if (!accountState?.loggedIn && fallbackUser) {
+    completeActivityLoginFromUser(fallbackUser);
+  }
+}
+
 async function loginWithDiscordActivity({ automatic = false, showFailure = true } = {}) {
   if (discordActivityLoginRunning) return false;
   if (!accountState?.discordClientId) {
@@ -1258,9 +1319,22 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
   }
 
   discordActivityLoginRunning = true;
-  setAuthGate(automatic ? "Waiting for Discord..." : "Opening Discord authorization...", false);
+  setAuthGate(automatic ? "Connecting to Discord..." : "Opening Discord authorization...", false);
 
   try {
+    const cachedAuth = readActivityAuthCache();
+    if (cachedAuth?.accessToken) {
+      setAuthGate("Restoring Discord session...", false);
+      try {
+        const session = await createDiscordActivitySession(cachedAuth.accessToken);
+        discordActivityLoginRunning = false;
+        await refreshAfterActivityLogin(session.user || cachedAuth.user);
+        return true;
+      } catch {
+        clearActivityAuthCache();
+      }
+    }
+
     const discordSdk = await getDiscordActivitySdk();
     await withTimeout(discordActivityReadyPromise || discordSdk.ready(), DISCORD_ACTIVITY_READY_TIMEOUT_MS, "Discord Activity SDK was not ready.")
       .catch((err) => {
@@ -1281,10 +1355,22 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
         prompt: "none",
         scope: ["identify"],
       })
-      .catch((err) => {
+      .catch(async (err) => {
+        if (String(err.message || err).includes("Already authenticated")) {
+          const auth = await discordSdk.commands.authenticate({ access_token: null }).catch(() => null);
+          if (auth?.access_token) {
+            const session = await createDiscordActivitySession(auth.access_token);
+            writeActivityAuthCache({ access_token: auth.access_token, user: session.user || auth.user });
+            discordActivityLoginRunning = false;
+            await refreshAfterActivityLogin(session.user || auth.user);
+            return { code: null };
+          }
+        }
         err.stage = "authorize";
         throw err;
       });
+
+    if (!code) return true;
 
     const response = await fetch("/auth/discord/activity", {
       method: "POST",
@@ -1297,6 +1383,7 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
       err.stage = "token";
       throw err;
     }
+    writeActivityAuthCache(data);
 
     const auth = await discordSdk.commands.authenticate({ access_token: data.access_token }).catch((err) => {
       err.stage = "authenticate";
@@ -1309,7 +1396,7 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
     }
 
     discordActivityLoginRunning = false;
-    await initAccountWidget();
+    await refreshAfterActivityLogin(data.user || auth.user);
     return true;
   } catch (err) {
     console.error("Discord Activity login failed:", err);
