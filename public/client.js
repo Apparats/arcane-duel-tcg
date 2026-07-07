@@ -30,7 +30,6 @@ let quickplaySearching = false;
 let enabledExpansionIds = null;
 let activeMatchMode = null;
 let discordActivityLoginRunning = false;
-let discordActivitySdkPromise = null;
 
 let lastAnimatedActionSeq = 0; // avoids replaying the same attack's animation
 let lastRoundBannerKey = null;
@@ -1148,7 +1147,8 @@ async function initAccountWidget() {
     }
   } else {
     if (isDiscordActivityEnvironment()) {
-      loginWithDiscordActivity({ automatic: true, showFailure: false });
+      setAuthGate("Login with Discord to enter Arcana TCG.", true);
+      $("btnLoginDiscord").classList.remove("hidden");
       return;
     }
     setAuthGate("Login with Discord to enter Arcana TCG.", true);
@@ -1173,34 +1173,6 @@ function isDiscordActivityEnvironment() {
     document.referrer.includes("discord.com") ||
     document.referrer.includes("discordsays.com")
   );
-}
-
-function hasDiscordActivityParams() {
-  const params = new URLSearchParams(window.location.search);
-  return params.has("frame_id") && params.has("instance_id") && params.has("platform");
-}
-
-function getDiscordActivitySdk() {
-  if (discordActivitySdkPromise) return discordActivitySdkPromise;
-
-  const clientId = accountState?.discordClientId || DISCORD_CLIENT_ID;
-  discordActivitySdkPromise = import("./vendor/discord-embedded-app-sdk/index.mjs")
-    .then(({ DiscordSDK }) => new DiscordSDK(clientId, { disableConsoleLogOverride: true }))
-    .catch((err) => {
-      discordActivitySdkPromise = null;
-      throw err;
-    });
-  return discordActivitySdkPromise;
-}
-
-function prewarmDiscordActivitySdk() {
-  if (!hasDiscordActivityParams()) return;
-  getDiscordActivitySdk().catch((err) => {
-    reportClientLog("discord-activity-sdk-prewarm-failed", {
-      stage: "construct",
-      message: err.message || String(err),
-    });
-  });
 }
 
 function getDiscordActivityContext() {
@@ -1248,6 +1220,21 @@ function withTimeout(promise, ms, message) {
   ]);
 }
 
+async function createDiscordActivitySession(accessToken) {
+  const response = await fetch("/auth/discord/activity", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accessToken }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err = new Error(data.error || "Discord Activity session failed.");
+    err.stage = "token";
+    throw err;
+  }
+  return data;
+}
+
 async function loginWithDiscordActivity({ automatic = false, showFailure = true } = {}) {
   if (discordActivityLoginRunning) return false;
   if (!accountState?.discordClientId) {
@@ -1259,28 +1246,50 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
   setAuthGate(automatic ? "Waiting for Discord..." : "Opening Discord authorization...", false);
 
   try {
-    const discordSdk = await getDiscordActivitySdk();
+    const { DiscordSDK } = await import("./vendor/discord-embedded-app-sdk/index.mjs");
+    const discordSdk = new DiscordSDK(accountState.discordClientId || DISCORD_CLIENT_ID, {
+      disableConsoleLogOverride: true,
+    });
     await withTimeout(discordSdk.ready(), DISCORD_ACTIVITY_READY_TIMEOUT_MS, "Discord Activity SDK was not ready.")
       .catch((err) => {
         err.stage = "ready";
         throw err;
       });
 
+    const existingAuth = await discordSdk.commands.authenticate({}).catch(() => null);
+    if (existingAuth?.access_token) {
+      await createDiscordActivitySession(existingAuth.access_token);
+      discordActivityLoginRunning = false;
+      await initAccountWidget();
+      return true;
+    }
+
     const state =
       window.crypto?.randomUUID?.() ||
       `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
-    const { code } = await discordSdk.commands
-      .authorize({
+    let code;
+    try {
+      const authorization = await discordSdk.commands.authorize({
         client_id: accountState.discordClientId,
         response_type: "code",
         state,
         prompt: "none",
         scope: ["identify", "applications.commands"],
-      })
-      .catch((err) => {
-        err.stage = "authorize";
-        throw err;
       });
+      code = authorization.code;
+    } catch (err) {
+      if (String(err.message || err).includes("Already authenticated")) {
+        const auth = await discordSdk.commands.authenticate({}).catch(() => null);
+        if (auth?.access_token) {
+          await createDiscordActivitySession(auth.access_token);
+          discordActivityLoginRunning = false;
+          await initAccountWidget();
+          return true;
+        }
+      }
+      err.stage = "authorize";
+      throw err;
+    }
 
     const response = await fetch("/auth/discord/activity", {
       method: "POST",
