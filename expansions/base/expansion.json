@@ -1,0 +1,7 @@
+{
+  "id": "base",
+  "name": "Base",
+  "description": "The core set of cards for Arcane Duel TCG.",
+  "enabled": true,
+  "shop": true
+}

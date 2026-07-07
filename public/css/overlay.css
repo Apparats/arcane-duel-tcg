@@ -1,0 +1,278 @@
+/* ============================================================
+   OVERLAYS — floating elements above the board: the "choose a
+   target" hint, the end-of-match screen, and the error toast.
+   All use position: fixed.
+   ============================================================ */
+
+.target-hint {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel-2);
+  border: 1px solid var(--gold);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  color: var(--gold);
+}
+
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(10, 8, 14, 0.82);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10;
+}
+.overlay-card {
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  padding: 40px 50px;
+  border-radius: 6px;
+  text-align: center;
+}
+.overlay-card h2 { font-family: "Cinzel", serif; color: var(--gold); margin-top: 0; }
+.end-reward {
+  color: var(--cream);
+  margin: -8px 0 22px;
+  font-size: 14px;
+}
+
+.surrender-card {
+  width: min(90vw, 440px);
+  padding: 34px 38px;
+  box-shadow:
+    0 22px 70px rgba(0, 0, 0, 0.62),
+    inset 0 0 0 1px rgba(232, 179, 79, 0.08);
+}
+
+.surrender-warning {
+  color: var(--cream);
+  font-size: 15px;
+  line-height: 1.45;
+  margin: 4px 0 24px;
+}
+
+.surrender-warning::before {
+  content: "!";
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+  border: 1px solid var(--hp);
+  border-radius: 50%;
+  color: var(--hp);
+  font-weight: 800;
+}
+
+.surrender-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-surrender-confirm {
+  background: linear-gradient(180deg, #d64545, #8e2424);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: white;
+}
+
+.toast {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--hp);
+  color: white;
+  padding: 10px 18px;
+  border-radius: 4px;
+  font-size: 13px;
+  z-index: 20;
+  box-shadow: var(--shadow);
+}
+
+.card-tooltip {
+  position: fixed;
+  z-index: 30;
+  width: 220px;
+  background: linear-gradient(160deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+}
+
+.tooltip-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.tooltip-name {
+  font-family: "Cinzel", serif;
+  font-size: 14px;
+  color: var(--cream);
+  line-height: 1.2;
+}
+.tooltip-rarity {
+  flex-shrink: 0;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+}
+.tooltip-rarity.rarity-common { color: var(--cream-dim); }
+.tooltip-rarity.rarity-rare { color: var(--mana); }
+.tooltip-rarity.rarity-legendary { color: var(--gold); }
+.tooltip-rarity.rarity-mythic { color: var(--mythic); text-shadow: 0 0 8px var(--mythic-glow); }
+
+.tooltip-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--cream-dim);
+  margin-bottom: 8px;
+}
+.tooltip-race { font-style: italic; }
+
+.tooltip-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.tooltip-kw {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.tooltip-kw.kw-taunt { background: rgba(127, 176, 105, 0.16); color: var(--taunt); border: 1px solid var(--taunt); }
+.tooltip-kw.kw-charge { background: rgba(232, 179, 79, 0.16); color: var(--gold); border: 1px solid var(--gold); }
+.tooltip-kw.kw-divineShield { background: rgba(79, 195, 232, 0.16); color: var(--mana); border: 1px solid var(--mana); }
+
+.tooltip-lore {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--cream);
+  line-height: 1.4;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+
+/* ---- Mystical Loading Screen ---- */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at center, rgba(82, 54, 24, 0.2), transparent 34%),
+    radial-gradient(circle at center, #17100a 0%, #070503 72%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: opacity 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0.4s ease;
+  opacity: 1;
+  visibility: visible;
+}
+
+.loading-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
+  display: flex !important; /* override the display: none !important from .hidden */
+  pointer-events: none;
+}
+
+.loading-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.mystic-spinner {
+  width: 112px;
+  height: 112px;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.48));
+}
+
+.seal-stone {
+  fill: rgba(24, 18, 12, 0.94);
+  stroke: rgba(128, 94, 45, 0.5);
+  stroke-width: 2;
+}
+.seal-ring {
+  fill: none;
+  stroke: var(--gold);
+  stroke-linecap: round;
+}
+.seal-ring-outer {
+  stroke-width: 1.5;
+  stroke-dasharray: 8 7 2 7;
+  opacity: 0.82;
+  transform-origin: center;
+  animation: seal-turn 9s linear infinite;
+}
+.seal-ring-inner {
+  stroke-width: 1;
+  stroke-dasharray: 2 6;
+  opacity: 0.52;
+  transform-origin: center;
+  animation: seal-turn-reverse 14s linear infinite;
+}
+.seal-runes {
+  fill: none;
+  stroke: #b98b45;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.72;
+}
+.seal-spark {
+  fill: rgba(232, 179, 79, 0.1);
+  stroke: var(--gold);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  transform-origin: center;
+  animation: seal-wake 2.8s ease-in-out infinite;
+}
+
+.loading-text {
+  font-family: "Cinzel", serif;
+  color: var(--gold);
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+  animation: pulse-text 2.8s ease-in-out infinite;
+}
+
+@keyframes seal-turn {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes seal-turn-reverse {
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes seal-wake {
+  0%, 100% { opacity: 0.42; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+@keyframes pulse-text {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}

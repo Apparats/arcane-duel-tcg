@@ -1,0 +1,160 @@
+const { Game } = require("../public/engine");
+const { buildFallbackDeck, validateDeck } = require("../public/deckRules");
+
+function assert(condition, message) {
+  if (!condition) throw new Error(message);
+}
+
+function testMinion(instanceId, cardId = "base:aleex", keywords = []) {
+  return {
+    instanceId,
+    cardId,
+    name: cardId,
+    attack: 1,
+    health: 1,
+    maxHealth: 1,
+    keywords,
+    canAttack: false,
+    divineShield: false,
+  };
+}
+
+function firstPlayableMinion(state) {
+  return state.me.hand.findIndex((card) => card.type === "minion" && card.cost <= state.me.manaCurrent);
+}
+
+function main() {
+  const game = new Game("TEST", "Bot1", "Bot2");
+  let state0 = game.getStateFor(0);
+
+  assert(state0.turn === 0, "Player 0 should start.");
+  assert(state0.me.hand.length === 4, "Player 0 should start with 4 cards after the first draw.");
+  assert(state0.opponent.handCount === 4, "Player 1 should start with 4 cards.");
+  assert(state0.me.deckCount === 16, "Deck should have 20 cards before opening draws.");
+
+  const fallbackDeck = buildFallbackDeck();
+  const fullCollection = fallbackDeck.reduce((collection, cardId) => {
+    collection[cardId] = (collection[cardId] || 0) + 2;
+    return collection;
+  }, {});
+  assert(validateDeck(fallbackDeck, { cardCollection: fullCollection }).ok, "Fallback 20-card deck should be valid.");
+
+  const p0CardIdx = firstPlayableMinion(state0);
+  if (p0CardIdx !== -1) {
+    game.playCard(0, p0CardIdx, null);
+    state0 = game.getStateFor(0);
+    assert(state0.me.board.length === 1, "Player 0 should have played a minion.");
+  }
+
+  game.endTurn(0);
+  let state1 = game.getStateFor(1);
+  assert(state1.turn === 1, "Player 1 should have the turn after Player 0 ends.");
+
+  const p1CardIdx = firstPlayableMinion(state1);
+  if (p1CardIdx !== -1) {
+    game.playCard(1, p1CardIdx, null);
+    state1 = game.getStateFor(1);
+    assert(state1.me.board.length === 1, "Player 1 should have played a minion.");
+  }
+
+  game.surrender(1);
+  state0 = game.getStateFor(0);
+  assert(state0.winner === 0, "Player 0 should win when Player 1 surrenders.");
+
+  const boardTest = new Game("BOARD", "Board1", "Board2", {
+    decks: [
+      Array(20).fill("core:recluta-novato"),
+      Array(20).fill("core:recluta-novato"),
+    ],
+  });
+  boardTest.players[0].board = Array.from({ length: 4 }, (_, idx) => testMinion(`b${idx}`, "core:recluta-novato"));
+  boardTest.players[0].hand = ["core:recluta-novato"];
+  boardTest.players[0].manaCurrent = 10;
+  assertThrows(() => boardTest.playCard(0, 0, null), "A full board should reject the fifth minion.");
+
+  const tauntTest = new Game("TAUNT", "Taunt1", "Taunt2", {
+    decks: [
+      Array(20).fill("base:barto"),
+      Array(20).fill("base:aleex"),
+    ],
+  });
+  tauntTest.players[0].board = [
+    testMinion("t1", "base:barto", ["taunt"]),
+    testMinion("t2", "base:babu", ["taunt"]),
+  ];
+  tauntTest.players[0].hand = ["base:alfred-longstocking"];
+  tauntTest.players[0].manaCurrent = 10;
+  assertThrows(() => tauntTest.playCard(0, 0, null), "A board with two Taunt cards should reject a third Taunt.");
+
+  const chargeTest = new Game("CHARGE", "Charge1", "Charge2", {
+    decks: [
+      Array(20).fill("base:beitsas"),
+      Array(20).fill("base:aleex"),
+    ],
+  });
+  chargeTest.players[0].board = [
+    testMinion("c1", "base:beitsas", ["charge"]),
+    testMinion("c2", "base:dog", ["charge"]),
+    testMinion("c3", "base:hazzard", ["charge"]),
+  ];
+  chargeTest.players[0].hand = ["base:kurzemnieks"];
+  chargeTest.players[0].manaCurrent = 10;
+  assertThrows(() => chargeTest.playCard(0, 0, null), "A board with three Charge cards should reject a fourth Charge.");
+
+  const summonLimitTest = new Game("SUMMON", "Summon1", "Summon2", {
+    decks: [
+      Array(20).fill("base:aleex"),
+      Array(20).fill("base:aleex"),
+    ],
+  });
+  summonLimitTest.players[0].board = Array.from({ length: 4 }, (_, idx) => testMinion(`s${idx}`));
+  summonLimitTest._triggerAbilities(
+    { abilities: [{ trigger: "test", effect: "summonMinion", cardId: "base:aleex", count: 2 }] },
+    "test",
+    { casterIdx: 0, sourceName: "Summon Test" }
+  );
+  assert(summonLimitTest.players[0].board.length === 5, "Summons may exceed the played-card board limit by exactly one.");
+
+  const mostorTest = new Game("MOSTOR", "Mostor1", "Mostor2", {
+    decks: [
+      Array(20).fill("base:aleex"),
+      Array(20).fill("base:aleex"),
+    ],
+  });
+  mostorTest.players[0].hand = ["base:mostor"];
+  mostorTest.players[0].deck = [];
+  mostorTest.players[0].board = [];
+  mostorTest.players[0].manaCurrent = 10;
+  mostorTest.playCard(0, 0, null);
+  assert(mostorTest.players[0].board.length === 1, "Mostor should stay on board when played the first time.");
+  mostorTest._damageMinion(0, mostorTest.players[0].board[0], 99);
+  assert(mostorTest.players[0].board.length === 0, "Mostor should leave the board after its first death.");
+  assert(mostorTest.players[0].deck.length === 1, "Mostor should return to the deck after its first death.");
+  mostorTest._draw(0, 1);
+  assert(mostorTest.getStateFor(0).me.hand[0].id === "base:mostor", "Returned Mostor should be drawable and playable.");
+  mostorTest.players[0].manaCurrent = 10;
+  mostorTest.playCard(0, 0, null);
+  assert(mostorTest.players[0].board.length === 1, "Returned Mostor should not destroy itself when played again.");
+  mostorTest._damageMinion(0, mostorTest.players[0].board[0], 99);
+  assert(mostorTest.players[0].board.length === 0, "Mostor should leave the board after its second death.");
+  assert(mostorTest.players[0].deck.length === 0, "Mostor should disappear after its second death.");
+
+  console.log("--- TEST OK ---");
+}
+
+function assertThrows(fn, message) {
+  let threw = false;
+  try {
+    fn();
+  } catch {
+    threw = true;
+  }
+  assert(threw, message);
+}
+
+try {
+  main();
+} catch (err) {
+  console.error("TEST FAILED:", err);
+  process.exit(1);
+}

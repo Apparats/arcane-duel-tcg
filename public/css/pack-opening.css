@@ -1,0 +1,206 @@
+/* ============================================================
+   Pack opening animation shared by starter rewards and shop packs.
+   ============================================================ */
+
+.card-opening-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(5, 4, 10, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.card-opening-overlay.hidden {
+  display: none;
+}
+
+.card-opening-panel {
+  width: min(96vw, 980px);
+  max-height: 92vh;
+  overflow-y: auto;
+  text-align: center;
+  background: rgba(20, 16, 30, 0.96);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.72), 0 0 40px rgba(232, 179, 79, 0.18);
+  padding: 28px;
+}
+
+.card-opening-pack {
+  display: grid;
+  place-items: center;
+  margin: 0 auto 14px;
+  width: 128px;
+  height: 172px;
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.18)),
+    url("../art/reverse.webp") center / cover no-repeat;
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 28px rgba(232, 179, 79, 0.38), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  transform: rotate(-4deg);
+}
+
+.card-opening-pack span {
+  display: none;
+}
+
+.card-opening-overlay.revealing .card-opening-pack {
+  animation: packPulse 760ms ease both;
+}
+
+.card-opening-panel h2 {
+  font-family: "Cinzel", serif;
+  color: var(--gold);
+  margin: 0 0 6px;
+}
+
+.card-opening-panel p {
+  color: var(--cream-dim);
+  margin: 0 0 22px;
+}
+
+.card-opening-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.card-opening-card {
+  position: relative;
+  width: auto;
+  min-width: 0;
+  opacity: 0;
+  transform: translateY(18px) scale(0.92) rotateY(72deg);
+}
+
+.card-opening-overlay.revealing .card-opening-card {
+  animation: revealCard 560ms cubic-bezier(0.2, 0.8, 0.2, 1) var(--reveal-delay) forwards;
+}
+
+.card-opening-new {
+  box-shadow: 0 0 0 1px var(--gold), 0 0 20px rgba(232, 179, 79, 0.45);
+}
+
+.card-opening-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-height: 20px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(8, 6, 15, 0.84);
+  border: 1px solid var(--line);
+  color: var(--cream);
+  font-size: 10px;
+  pointer-events: none;
+}
+
+@keyframes packPulse {
+  0% { transform: rotate(-4deg) scale(1); filter: brightness(1); }
+  48% { transform: rotate(2deg) scale(1.08); filter: brightness(1.35); }
+  100% { transform: rotate(0deg) scale(0.96); filter: brightness(0.9); }
+}
+
+@keyframes revealCard {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotateY(0deg);
+  }
+}
+
+@media (max-width: 560px) {
+  .card-opening-overlay {
+    place-items: center;
+    padding: 14px;
+  }
+
+  .card-opening-panel {
+    width: min(94vw, 420px);
+    max-height: min(88dvh, 720px);
+    display: flex;
+    flex-direction: column;
+    padding: 14px;
+    border-radius: 7px;
+  }
+
+  .card-opening-pack {
+    width: 82px;
+    height: 112px;
+    margin-bottom: 8px;
+    border-radius: 7px;
+  }
+
+  .card-opening-panel h2 {
+    font-size: 18px;
+    line-height: 1.1;
+  }
+
+  .card-opening-panel p {
+    margin-bottom: 12px;
+    font-size: 12px;
+  }
+
+  .card-opening-grid {
+    grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
+    gap: 8px;
+    overflow-y: auto;
+    max-height: min(46dvh, 360px);
+    padding: 2px 2px 10px;
+    margin-bottom: 12px;
+  }
+
+  .card-opening-card {
+    border-width: 1px;
+    border-radius: 7px;
+  }
+
+  .card-opening-card .card-footer {
+    padding: 2px 3px 3px;
+    gap: 2px;
+  }
+
+  .card-opening-card .card-name {
+    font-size: clamp(7px, 2.45vw, 9px);
+  }
+
+  .card-opening-card .card-stat {
+    font-size: clamp(8px, 2.65vw, 10px);
+  }
+
+  .card-opening-card .keyword-badge {
+    width: 14px;
+    height: 14px;
+  }
+
+  .card-opening-badge {
+    top: 4px;
+    right: 4px;
+    min-height: 16px;
+    padding: 2px 5px;
+    font-size: 8px;
+  }
+
+  #btnCardOpeningDone {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+  }
+}
+
+@media (max-width: 380px) {
+  .card-opening-grid {
+    grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
+    gap: 6px;
+  }
+
+  .card-opening-pack {
+    width: 72px;
+    height: 98px;
+  }
+}

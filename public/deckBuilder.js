@@ -1,0 +1,250 @@
+let deckBuilderState = {
+  loaded: false,
+  decks: [],
+  activeDeckId: null,
+  currentDeckId: null,
+  cardIds: [],
+};
+
+function setInventoryTab(tabName) {
+  const isDeck = tabName === "deck";
+  $("collectionPanel").classList.toggle("hidden", isDeck);
+  $("deckBuilderPanel").classList.toggle("hidden", !isDeck);
+  $("tabCollection").classList.toggle("active", !isDeck);
+  $("tabDeckBuilder").classList.toggle("active", isDeck);
+  if (isDeck) openDeckBuilder();
+}
+
+async function fetchDeckState() {
+  const res = await fetch("/decks");
+  if (!res.ok) throw new Error("Could not load decks.");
+  return res.json();
+}
+
+function currentDeckCounts() {
+  return TCGDeckRules.countCards(deckBuilderState.cardIds);
+}
+
+function deckCollectionContext() {
+  return {
+    cardCollection: accountState?.user?.cardCollection || {},
+    unlockedCards: accountState?.user?.unlockedCards || [],
+  };
+}
+
+function validateCurrentDeck() {
+  return TCGDeckRules.validateDeck(deckBuilderState.cardIds, deckCollectionContext());
+}
+
+function blockingDeckErrors(validation) {
+  return validation.errors.filter((error) => !error.includes(`exactly ${TCGDeckRules.DECK_SIZE} cards`));
+}
+
+function renderSavedDeckSelect() {
+  const select = $("savedDeckSelect");
+  select.innerHTML = "";
+  deckBuilderState.decks.forEach((deck) => {
+    const opt = document.createElement("option");
+    opt.value = deck.id;
+    opt.textContent = `${deck.name}${deck.id === deckBuilderState.activeDeckId ? " (active)" : ""}`;
+    select.appendChild(opt);
+  });
+  if (deckBuilderState.currentDeckId) select.value = deckBuilderState.currentDeckId;
+}
+
+function loadDeck(deckId) {
+  const deck = deckBuilderState.decks.find((item) => item.id === deckId);
+  if (!deck) return;
+  deckBuilderState.currentDeckId = deck.id;
+  deckBuilderState.cardIds = deck.cardIds.slice();
+  $("deckNameInput").value = deck.name;
+  renderDeckBuilder();
+}
+
+function newDeck() {
+  deckBuilderState.currentDeckId = null;
+  deckBuilderState.cardIds = [];
+  $("deckNameInput").value = "New Deck";
+  renderDeckBuilder();
+}
+
+function ownedCards() {
+  return getInventoryCards()
+    .filter((card) => getCardQuantity(card) > 0)
+    .sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name));
+}
+
+function addDeckCard(cardId) {
+  if (deckBuilderState.cardIds.length >= TCGDeckRules.DECK_SIZE) {
+    showToast(`Deck already has ${TCGDeckRules.DECK_SIZE} cards.`);
+    return;
+  }
+
+  deckBuilderState.cardIds.push(cardId);
+  const validation = validateCurrentDeck();
+  const blockingErrors = blockingDeckErrors(validation);
+  if (blockingErrors.length > 0) {
+    deckBuilderState.cardIds.pop();
+    showToast(blockingErrors[0]);
+  }
+  renderDeckBuilder();
+}
+
+function removeDeckCard(cardId) {
+  const idx = deckBuilderState.cardIds.indexOf(cardId);
+  if (idx !== -1) deckBuilderState.cardIds.splice(idx, 1);
+  renderDeckBuilder();
+}
+
+function renderDeckPool() {
+  const counts = currentDeckCounts();
+  const pool = $("deckCardPool");
+  pool.innerHTML = "";
+
+  ownedCards().forEach((card) => {
+    const owned = getCardQuantity(card);
+    const used = counts[card.id] || 0;
+    const full = used >= owned || deckBuilderState.cardIds.length >= TCGDeckRules.DECK_SIZE;
+    const el = document.createElement("button");
+    el.className = `deck-pool-card${full ? " deck-pool-card-disabled" : ""}`;
+    el.disabled = full;
+    el.innerHTML = `
+      <span class="minion-card inventory-card deck-card-preview ${rarityClass(card)}">
+        ${inventoryCardFaceHTML(card, true)}
+        <span class="inventory-card-count">x${owned}</span>
+        <span class="deck-card-used">${used}/${owned}</span>
+      </span>
+    `;
+    el.addEventListener("click", () => addDeckCard(card.id));
+    attachCardTooltip(el, card);
+    pool.appendChild(el);
+  });
+
+  lazyLoadInventoryArt();
+}
+
+function renderDeckList() {
+  const counts = currentDeckCounts();
+  const list = $("deckList");
+  list.innerHTML = "";
+  if (deckBuilderState.cardIds.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "deck-list-empty";
+    empty.textContent = "No cards in this deck yet.";
+    list.appendChild(empty);
+    return;
+  }
+
+  Object.entries(counts)
+    .map(([cardId, count]) => ({ card: TCGCards.getCardById(cardId), count }))
+    .filter((item) => item.card)
+    .sort((a, b) => a.card.cost - b.card.cost || a.card.name.localeCompare(b.card.name))
+    .forEach(({ card, count }) => {
+      const row = document.createElement("button");
+      row.className = `deck-row ${rarityClass(card)}`;
+      row.type = "button";
+      row.title = "Remove one copy";
+      row.innerHTML = `
+        <span class="deck-row-cost">${card.cost}</span>
+        <span class="deck-row-name">${escapeHtml(card.name)}</span>
+        <span class="deck-row-count">x${count}</span>
+        <span class="deck-row-remove" aria-hidden="true">-</span>
+      `;
+      row.addEventListener("click", () => removeDeckCard(card.id));
+      list.appendChild(row);
+    });
+}
+
+function renderDeckStatus() {
+  $("deckCount").textContent = `${deckBuilderState.cardIds.length} / ${TCGDeckRules.DECK_SIZE}`;
+  const validation = validateCurrentDeck();
+  const blockingErrors = blockingDeckErrors(validation);
+  const cardsNeeded = TCGDeckRules.DECK_SIZE - deckBuilderState.cardIds.length;
+  $("deckStatus").textContent = validation.ok
+    ? "Deck is valid."
+    : blockingErrors[0] || (cardsNeeded > 0 ? `Add ${cardsNeeded} more card${cardsNeeded === 1 ? "" : "s"}.` : "");
+  $("deckStatus").classList.toggle("valid", validation.ok);
+  $("btnSaveDeck").disabled = !validation.ok;
+}
+
+function renderDeckBuilder() {
+  renderSavedDeckSelect();
+  renderDeckPool();
+  renderDeckList();
+  renderDeckStatus();
+}
+
+async function openDeckBuilder() {
+  if (!requireLoggedInForPlay()) return;
+  if (!deckBuilderState.loaded) {
+    try {
+      const state = await fetchDeckState();
+      deckBuilderState.loaded = true;
+      deckBuilderState.decks = state.decks || [];
+      deckBuilderState.activeDeckId = state.activeDeckId;
+      if (deckBuilderState.decks.length > 0) {
+        loadDeck(state.activeDeckId || deckBuilderState.decks[0].id);
+      }
+    } catch (err) {
+      showToast(err.message);
+    }
+  }
+  renderDeckBuilder();
+}
+
+async function saveCurrentDeck() {
+  const validation = validateCurrentDeck();
+  if (!validation.ok) return showToast(validation.errors[0]);
+
+  try {
+    const res = await fetch("/decks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: deckBuilderState.currentDeckId,
+        name: $("deckNameInput").value.trim() || "My Deck",
+        cardIds: deckBuilderState.cardIds,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Could not save deck.");
+    deckBuilderState.decks = data.state.decks || [];
+    deckBuilderState.activeDeckId = data.state.activeDeckId;
+    deckBuilderState.currentDeckId = data.deck.id;
+    showToast("Deck saved.");
+    renderDeckBuilder();
+  } catch (err) {
+    showToast(err.message);
+  }
+}
+
+async function autoBuildCurrentDeck() {
+  try {
+    const res = await fetch("/decks/auto", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: deckBuilderState.currentDeckId,
+        name: $("deckNameInput").value.trim() || "Auto Deck",
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Could not auto build deck.");
+    deckBuilderState.decks = data.state.decks || [];
+    deckBuilderState.activeDeckId = data.state.activeDeckId;
+    deckBuilderState.currentDeckId = data.deck.id;
+    deckBuilderState.cardIds = data.deck.cardIds.slice();
+    $("deckNameInput").value = data.deck.name;
+    showToast("Deck auto built.");
+    renderDeckBuilder();
+  } catch (err) {
+    showToast(err.message);
+  }
+}
+
+$("tabCollection").addEventListener("click", () => setInventoryTab("collection"));
+$("tabDeckBuilder").addEventListener("click", () => setInventoryTab("deck"));
+$("savedDeckSelect").addEventListener("change", (event) => loadDeck(event.target.value));
+$("btnNewDeck").addEventListener("click", newDeck);
+$("btnAutoDeck").addEventListener("click", autoBuildCurrentDeck);
+$("btnSaveDeck").addEventListener("click", saveCurrentDeck);

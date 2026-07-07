@@ -1,0 +1,264 @@
+/* ============================================================
+   CARDS — everything that visually is a "card": minions on the
+   board (.minion-card) and cards in hand (.hand-card). Both
+   share the same anatomy: 1:1 background art, keyword badges on
+   top, and a bottom strip with attack/name/health.
+   Rarity sets the border/glow color (rarity-*).
+   If you add a new keyword or card visual effect, it goes here.
+   ============================================================ */
+
+/* ---- Shared anatomy ---- */
+
+.minion-card,
+.hand-card {
+  aspect-ratio: 1 / 1;
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid var(--line);
+  transition: transform 0.2s cubic-bezier(0.215, 0.61, 0.355, 1), box-shadow 0.15s ease;
+  user-select: none;
+  background: linear-gradient(160deg, var(--panel-2), var(--panel));
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.card-art {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.2s cubic-bezier(0.215, 0.61, 0.355, 1);
+  will-change: transform;
+}
+.card-art-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.06), transparent 70%);
+}
+.card-art-icon {
+  font-size: 34px;
+  opacity: 0.28;
+  color: var(--cream);
+}
+
+.card-badges {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.keyword-badge {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  line-height: 1;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+.keyword-badge.kw-taunt { background: var(--taunt); color: #0d1509; }
+.keyword-badge.kw-charge { background: var(--gold); color: #241800; }
+.keyword-icon {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+.keyword-icon-taunt {
+  width: 11px;
+  height: 11px;
+}
+.tooltip-kw .keyword-icon {
+  width: 13px;
+  height: 13px;
+  display: inline-block;
+  vertical-align: -2px;
+}
+.keyword-badge.kw-divineShield {
+  background: radial-gradient(circle at 35% 30%, #d6f2fc, var(--mana) 70%);
+  color: #04222c;
+  box-shadow: 0 0 8px rgba(79, 195, 232, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+.card-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 3px 5px 4px;
+  background: linear-gradient(to top, rgba(8, 6, 12, 0.92), rgba(8, 6, 12, 0.55) 65%, transparent);
+}
+
+.card-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 10.5px;
+  line-height: 1.2;
+  color: var(--cream);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-stat {
+  flex-shrink: 0;
+  font-family: "Cinzel", serif;
+  font-weight: 700;
+  font-size: 15px;
+  min-width: 16px;
+  text-align: center;
+}
+.card-stat.atk { color: var(--gold); }
+.card-stat.hp { color: var(--hp); }
+.card-stat.val { color: var(--mana); }
+
+/* ---- Rarity: border color + glow ---- */
+
+.rarity-common { border-color: var(--line); }
+.rarity-rare { border-color: var(--mana); box-shadow: 0 0 10px rgba(79, 195, 232, 0.35); }
+.rarity-legendary { border-color: var(--gold); box-shadow: 0 0 14px rgba(232, 179, 79, 0.5); }
+.rarity-mythic {
+  border-color: var(--mythic);
+  box-shadow: 0 0 18px var(--mythic-glow), 0 0 6px var(--mythic-glow) inset;
+  animation: mythic-pulse 2.2s ease-in-out infinite alternate;
+}
+
+@keyframes mythic-pulse {
+  0%   { box-shadow: 0 0 12px var(--mythic-glow), 0 0 4px var(--mythic-glow) inset; }
+  100% { box-shadow: 0 0 28px var(--mythic-glow), 0 0 10px var(--mythic-glow) inset; }
+}
+
+/* ---- States ---- */
+
+.minion-card { width: clamp(128px, 9.2vw, 150px); }
+.minion-card:hover { transform: translateY(-5px); }
+.minion-card.taunt { box-shadow: inset 0 0 0 2px var(--taunt); }
+.minion-card.shield { box-shadow: inset 0 0 0 2px var(--mana); }
+.minion-card.exhausted { opacity: 0.55; cursor: not-allowed; }
+.minion-card.selected { outline: 2px solid var(--gold); transform: translateY(-5px); }
+.minion-card.targetable { outline: 2px solid var(--hp); cursor: crosshair; }
+
+.hand-card { width: clamp(132px, 9.8vw, 158px); }
+.hand-card:hover { transform: translateY(-12px); }
+.hand-card.selected { outline: 2px solid var(--gold); transform: translateY(-18px); }
+.hand-card.unaffordable { opacity: 0.4; }
+
+.hand-card .cost {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--mana), var(--mana-dim));
+  color: #061217;
+  font-family: "Cinzel", serif;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 6px rgba(79, 195, 232, 0.6);
+  z-index: 3;
+}
+
+.hand-area {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 16px;
+  justify-self: center;
+  align-self: end;
+  width: min(100%, 980px);
+  margin: 0 auto;
+  padding: 12px 18px 10px;
+  min-height: 176px;
+  border: 1px solid rgba(232, 179, 79, 0.18);
+  border-radius: 12px 12px 0 0;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(232, 179, 79, 0.09), transparent 62%),
+    radial-gradient(ellipse at 22% 0%, rgba(79, 195, 232, 0.07), transparent 54%),
+    linear-gradient(180deg, rgba(38, 32, 56, 0.72), rgba(14, 11, 22, 0.78));
+  box-shadow: inset 0 1px 0 rgba(255, 226, 168, 0.07), 0 -12px 28px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+@media (max-width: 720px) {
+  .minion-card { width: clamp(78px, 20vw, 104px); }
+  .hand-card { width: clamp(88px, 22vw, 112px); }
+  .card-name { font-size: clamp(8px, 2.25vw, 9.5px); }
+  .card-stat { font-size: clamp(12px, 3vw, 14px); }
+  .card-art-icon { font-size: 24px; }
+  .keyword-badge { width: 16px; height: 16px; font-size: 8px; }
+  .keyword-icon { width: 11px; height: 11px; }
+  .hand-area {
+    min-height: 122px;
+    gap: 8px;
+    flex-wrap: wrap;
+    width: min(100%, 560px);
+    padding: 9px 10px 5px;
+    border-radius: 9px 9px 0 0;
+  }
+  .hand-card .cost { width: 25px; height: 25px; font-size: 11px; top: -7px; left: -7px; }
+}
+
+/* ---- 3D Glossy reflection / shine overlay (all cards) ---- */
+.minion-card::after,
+.hand-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at var(--shine-x, 50%) var(--shine-y, 50%),
+    rgba(255, 255, 255, 0.16) 0%,
+    transparent 55%
+  );
+  opacity: var(--shine-opacity, 0);
+  transition: opacity 0.25s ease;
+  mix-blend-mode: overlay;
+}
+
+/* ---- Holographic foil overlay (legendary & mythic only) ---- */
+/* Uses a ::before element driven by --foil-angle CSS var from JS */
+.rarity-legendary::before,
+.rarity-mythic::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      calc(var(--foil-angle, 125deg)),
+      rgba(255, 60,  60,  0.12)  0%,
+      rgba(255, 150, 0,   0.12) 16%,
+      rgba(255, 255, 60,  0.12) 32%,
+      rgba(60,  255, 60,  0.12) 48%,
+      rgba(60,  120, 255, 0.12) 64%,
+      rgba(180, 60,  255, 0.12) 80%,
+      rgba(255, 60,  60,  0.12) 100%
+    );
+  mix-blend-mode: color-dodge;
+  opacity: var(--foil-opacity, 0.25); /* Visible at rest; stronger on hover */
+  transition: opacity 0.3s ease, background 0.15s ease;
+}

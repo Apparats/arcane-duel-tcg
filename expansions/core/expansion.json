@@ -1,0 +1,7 @@
+{
+  "id": "core",
+  "name": "Set Base",
+  "description": "Las 20 cartas iniciales de Duelo Arcano.",
+  "enabled": false,
+  "shop": false
+}

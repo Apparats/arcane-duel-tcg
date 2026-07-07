@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Arcana TCG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/menu.css" />
+<link rel="stylesheet" href="css/lobby.css" />
+<link rel="stylesheet" href="css/board.css" />
+<link rel="stylesheet" href="css/cards.css" />
+<link rel="stylesheet" href="css/inventory.css" />
+<link rel="stylesheet" href="css/deck-builder.css" />
+<link rel="stylesheet" href="css/shop.css" />
+<link rel="stylesheet" href="css/trade.css" />
+<link rel="stylesheet" href="css/pack-opening.css" />
+<link rel="stylesheet" href="css/fx.css" />
+<link rel="stylesheet" href="css/overlay.css" />
+</head>
+<body>
+  <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-content">
+      <svg class="mystic-spinner runic-seal" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle class="seal-stone" cx="60" cy="60" r="48" />
+        <circle class="seal-ring seal-ring-outer" cx="60" cy="60" r="43" />
+        <circle class="seal-ring seal-ring-inner" cx="60" cy="60" r="30" />
+        <g class="seal-runes">
+          <path d="M60 12v12M60 96v12M12 60h12M96 60h12M26 26l8 8M86 86l8 8M94 26l-8 8M34 86l-8 8" />
+          <path d="M60 31l17 29-17 29-17-29 17-29Z" />
+          <path d="M49 60h22M60 42v36" />
+        </g>
+        <path class="seal-spark" d="M60 38l6 17h16l-13 10 5 17-14-10-14 10 5-17-13-10h16l6-17Z" />
+      </svg>
+      <div class="loading-text">Awakening the seal...</div>
+    </div>
+  </div>
+
+  <!-- ---------- SCREEN: DISCORD AUTH ---------- -->
+  <section id="screen-auth" class="screen hidden auth-screen">
+    <div class="menu-glow" aria-hidden="true"></div>
+    <div class="auth-panel">
+      <div class="logo-container">
+        <svg class="mystic-logo runic-logo" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle class="logo-stone" cx="60" cy="60" r="52" />
+          <circle class="logo-ring logo-ring-outer" cx="60" cy="60" r="45" />
+          <circle class="logo-ring logo-ring-inner" cx="60" cy="60" r="32" />
+          <g class="logo-runes">
+            <path d="M60 11v14M60 95v14M11 60h14M95 60h14" />
+            <path d="M25 25l10 10M85 85l10 10M95 25l-10 10M35 85l-10 10" />
+            <path d="M60 34l18 26-18 26-18-26 18-26Z" />
+            <path d="M50 60h20M60 44v32" />
+          </g>
+          <path class="logo-card" d="M48 37h24l6 46H42l6-46Z" />
+          <path class="logo-glyph" d="M60 45l8 14-8 14-8-14 8-14Z M52 59h16" />
+        </svg>
+      </div>
+      <h1 class="brand menu-brand">ARCANA TCG</h1>
+      <p id="authStatus" class="auth-status">Checking Discord session...</p>
+      <button id="btnAuthLoginDiscord" class="btn btn-discord auth-login hidden">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="4" y="6" width="16" height="12" rx="4" />
+          <circle cx="9.5" cy="12" r="1.3" fill="currentColor" stroke="none" />
+          <circle cx="14.5" cy="12" r="1.3" fill="currentColor" stroke="none" />
+        </svg>
+        Login with Discord
+      </button>
+    </div>
+  </section>
+
+  <!-- ---------- SCREEN: PRESS TO CONTINUE ---------- -->
+  <section id="screen-enter" class="screen hidden enter-screen" tabindex="0" aria-label="Press to continue">
+    <div class="menu-glow" aria-hidden="true"></div>
+    <div class="enter-panel">
+      <div class="logo-container">
+        <svg class="mystic-logo runic-logo" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle class="logo-stone" cx="60" cy="60" r="52" />
+          <circle class="logo-ring logo-ring-outer" cx="60" cy="60" r="45" />
+          <circle class="logo-ring logo-ring-inner" cx="60" cy="60" r="32" />
+          <g class="logo-runes">
+            <path d="M60 11v14M60 95v14M11 60h14M95 60h14" />
+            <path d="M25 25l10 10M85 85l10 10M95 25l-10 10M35 85l-10 10" />
+            <path d="M60 34l18 26-18 26-18-26 18-26Z" />
+            <path d="M50 60h20M60 44v32" />
+          </g>
+          <path class="logo-card" d="M48 37h24l6 46H42l6-46Z" />
+          <path class="logo-glyph" d="M60 45l8 14-8 14-8-14 8-14Z M52 59h16" />
+        </svg>
+      </div>
+      <h1 class="brand menu-brand">ARCANA TCG</h1>
+      <p class="enter-prompt">Press anywhere to continue</p>
+    </div>
+  </section>
+
+  <!-- ---------- SCREEN: MAIN MENU ---------- -->
+  <section id="screen-menu" class="screen hidden">
+    <div class="menu-glow" aria-hidden="true"></div>
+    <div class="menu-options">
+      <button id="btnMoreOptions" class="btn menu-options-trigger" type="button" aria-expanded="false" aria-controls="menuOptionsPanel">
+        More options
+      </button>
+      <div id="menuOptionsPanel" class="menu-options-panel hidden">
+        <button id="btnInviteDiscordActivity" class="btn menu-option-button" type="button">Invite to server</button>
+        <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Config</button>
+      </div>
+    </div>
+    <div class="fireflies" aria-hidden="true">
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+      <div class="firefly"></div>
+    </div>
+
+    <div id="accountWidget" class="account-widget hidden">
+      <button id="btnLoginDiscord" class="btn btn-discord hidden">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 10.5 C8 9.5 8.8 8.5 10 8.5 C11.2 8.5 12 9.5 12 10.5 C12 11.5 11.2 12.5 10 12.5 C8.8 12.5 8 11.5 8 10.5 Z" opacity="0" />
+          <rect x="4" y="6" width="16" height="12" rx="4" />
+          <circle cx="9.5" cy="12" r="1.3" fill="currentColor" stroke="none" />
+          <circle cx="14.5" cy="12" r="1.3" fill="currentColor" stroke="none" />
+        </svg>
+        Login with Discord
+      </button>
+      <div id="accountProfile" class="account-profile hidden">
+        <img id="accountAvatar" class="account-avatar hidden" alt="" />
+        <span id="accountName" class="account-name"></span>
+        <span id="accountGold" class="account-gold">0 gold</span>
+        <button id="btnLogout" class="btn-link">Log out</button>
+      </div>
+    </div>
+
+    <div id="audioConfigPanel" class="audio-config-panel hidden" role="dialog" aria-modal="false" aria-labelledby="audioConfigTitle">
+      <div class="audio-config-header">
+        <h2 id="audioConfigTitle">Config</h2>
+        <button id="btnCloseAudioConfig" class="audio-config-close" type="button" aria-label="Close config">x</button>
+      </div>
+      <label class="volume-control" for="musicVolumeInput">
+        <span>Music</span>
+        <input id="musicVolumeInput" type="range" min="0" max="100" step="1" />
+        <strong id="musicVolumeValue">15%</strong>
+      </label>
+      <label class="volume-control" for="sfxVolumeInput">
+        <span>SFX</span>
+        <input id="sfxVolumeInput" type="range" min="0" max="100" step="1" />
+        <strong id="sfxVolumeValue">24%</strong>
+      </label>
+    </div>
+
+    <div class="menu-wrap">
+      <div class="logo-container">
+        <svg class="mystic-logo runic-logo" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle class="logo-stone" cx="60" cy="60" r="52" />
+          <circle class="logo-ring logo-ring-outer" cx="60" cy="60" r="45" />
+          <circle class="logo-ring logo-ring-inner" cx="60" cy="60" r="32" />
+          <g class="logo-runes">
+            <path d="M60 11v14M60 95v14M11 60h14M95 60h14" />
+            <path d="M25 25l10 10M85 85l10 10M95 25l-10 10M35 85l-10 10" />
+            <path d="M60 34l18 26-18 26-18-26 18-26Z" />
+            <path d="M50 60h20M60 44v32" />
+          </g>
+          <path class="logo-card" d="M48 37h24l6 46H42l6-46Z" />
+          <path class="logo-glyph" d="M60 45l8 14-8 14-8-14 8-14Z M52 59h16" />
+        </svg>
+      </div>
+      <h1 class="brand menu-brand">ARCANA TCG</h1>
+      <p class="brand-sub">Choose how you want to play</p>
+
+      <div class="menu-grid">
+        <button class="menu-tile menu-tile-primary" id="tileSingleplayer">
+          <span class="menu-tile-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+              <polygon points="12,2.5 20,5.5 20,11 12,21.5 4,11 4,5.5" />
+              <line x1="12" y1="7" x2="12" y2="16" stroke-width="1.2" opacity="0.7" />
+              <line x1="8.5" y1="9.5" x2="15.5" y2="13.5" stroke-width="1.2" opacity="0.7" />
+              <line x1="15.5" y1="9.5" x2="8.5" y2="13.5" stroke-width="1.2" opacity="0.7" />
+            </svg>
+          </span>
+          <span class="menu-tile-label">Play Singleplayer</span>
+          <span class="menu-tile-sub">Practice vs NPC and earn daily gold</span>
+          <span class="menu-tile-gold" id="singleplayerGoldProgress">0 / 20 gold today</span>
+        </button>
+        <button class="menu-tile menu-tile-primary" id="tileMultiplayer">
+          <span class="menu-tile-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+              <circle cx="8.5" cy="8" r="3" />
+              <circle cx="15.5" cy="8" r="3" />
+              <path d="M3.5 19c0-3.2 2-5.2 5-5.2s5 2 5 5.2" />
+              <path d="M10.5 19c0-3.2 2-5.2 5-5.2s5 2 5 5.2" />
+            </svg>
+          </span>
+          <span class="menu-tile-label">Play Multiplayer</span>
+          <span class="menu-tile-sub">Online 1v1 with a room code</span>
+          <span class="menu-tile-gold" id="multiplayerGoldProgress">0 / 60 gold today</span>
+        </button>
+      </div>
+
+      <div class="menu-grid menu-grid-secondary">
+        <button class="menu-tile menu-tile-secondary-active" id="tileInventory">
+          <span class="menu-tile-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+              <path d="M8 8 C8 5.5 9.8 4 12 4 C14.2 4 16 5.5 16 8" />
+              <polygon points="5,8 19,8 17.5,20 6.5,20" />
+            </svg>
+          </span>
+          <span class="menu-tile-label">Inventory</span>
+        </button>
+        <button class="menu-tile menu-tile-secondary-active" id="tileShop">
+          <span class="menu-tile-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="9" cy="15" r="6" />
+              <circle cx="15" cy="9" r="6" />
+            </svg>
+          </span>
+          <span class="menu-tile-label">Shop</span>
+          <span class="menu-tile-sub">Packs</span>
+        </button>
+        <button class="menu-tile menu-tile-secondary-active" id="tileTrade">
+          <span class="menu-tile-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+              <rect x="4" y="5" width="6" height="9" rx="1.2" />
+              <rect x="14" y="10" width="6" height="9" rx="1.2" />
+              <path d="M12 6h5l-1.8-1.8" />
+              <path d="M17 6l-1.8 1.8" />
+              <path d="M12 18H7l1.8 1.8" />
+              <path d="M7 18l1.8-1.8" />
+            </svg>
+          </span>
+          <span class="menu-tile-label">Trade</span>
+          <span class="menu-tile-sub">Cards</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- SCREEN: TRADE ---------- -->
+  <section id="screen-trade" class="screen hidden">
+    <div class="trade-wrap">
+      <div class="trade-header">
+        <button id="btnTradeBack" class="btn-link back-link-inline">← Back to menu</button>
+        <h1 class="brand trade-brand">TRADE</h1>
+        <p class="brand-sub">Exchange one card directly with another player</p>
+      </div>
+
+      <div class="trade-layout">
+        <section class="trade-code-panel">
+          <h2>Your trade code</h2>
+          <div class="trade-code-row">
+            <span id="tradeOwnCode" class="trade-code">------</span>
+            <button id="btnRefreshTradeCode" class="btn btn-secondary">Refresh</button>
+          </div>
+          <div class="trade-join-row">
+            <input id="tradeJoinCode" class="text-input code-input" maxlength="8" placeholder="CODE" />
+            <button id="btnStartTrade" class="btn btn-primary">Connect</button>
+          </div>
+          <div id="tradeSessions" class="trade-session-list"></div>
+        </section>
+
+        <section class="trade-session-panel">
+          <div class="trade-session-header">
+            <h2 id="tradeSessionTitle">No trade selected</h2>
+            <span id="tradeSessionStatus" class="trade-status">Waiting</span>
+          </div>
+          <div id="tradeOfferSummary" class="trade-offer-summary"></div>
+          <div class="trade-actions">
+            <button id="btnConfirmTrade" class="btn btn-primary" disabled>Confirm</button>
+            <button id="btnCancelTrade" class="btn btn-secondary" disabled>Cancel</button>
+          </div>
+        </section>
+
+        <section class="trade-card-panel">
+          <div class="trade-panel-header">
+            <h2>Your cards</h2>
+            <span id="tradeSelectedCard">Choose a card to offer</span>
+          </div>
+          <div id="tradeCardGrid" class="trade-card-grid"></div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- SCREEN: SHOP ---------- -->
+  <section id="screen-shop" class="screen hidden">
+    <div class="shop-wrap">
+      <div class="shop-header">
+        <button id="btnShopBack" class="btn-link back-link-inline">← Back to menu</button>
+        <h1 class="brand shop-brand">SHOP</h1>
+        <p class="brand-sub" id="shopGold">0 gold</p>
+      </div>
+
+      <div class="shop-layout">
+        <div id="shopPackList" class="shop-pack-list"></div>
+
+        <div class="pack-results">
+          <div class="pack-results-header">
+            <h2>Opened cards</h2>
+            <p id="packResultSummary">Buy a pack to reveal cards.</p>
+          </div>
+          <div id="packResultGrid" class="pack-result-grid"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- SCREEN: LOBBY ---------- -->
+  <section id="screen-lobby" class="screen hidden">
+    <div class="lobby-card">
+      <button id="btnBackToMenu" class="btn-link back-link">← Back to menu</button>
+
+      <h1 class="brand">ARCANA TCG</h1>
+      <p class="brand-sub" id="lobbySubtitle">Fast TCG</p>
+
+      <div id="singleplayerActions" class="lobby-actions hidden">
+        <button id="btnStartSingle" class="btn btn-npc">Start match</button>
+      </div>
+
+      <div id="multiplayerActions" class="lobby-actions hidden">
+        <div class="lobby-tabs" role="tablist" aria-label="Multiplayer modes">
+          <button id="tabRoomCode" class="lobby-tab" type="button">Room Code</button>
+          <button id="tabQuickplay" class="lobby-tab active" type="button">Quickplay</button>
+          <button id="tabRanked" class="lobby-tab locked" type="button" disabled>Ranked</button>
+        </div>
+
+        <div id="roomCodePanel" class="lobby-tab-panel hidden">
+          <button id="btnCreate" class="btn btn-primary">Create room</button>
+          <div class="divider"><span>or</span></div>
+          <div class="join-row">
+            <input id="joinCode" class="text-input code-input" maxlength="4" placeholder="CODE" />
+            <button id="btnJoin" class="btn btn-secondary">Join</button>
+          </div>
+        </div>
+
+        <div id="quickplayPanel" class="lobby-tab-panel">
+          <button id="btnQuickplay" class="btn btn-primary">Find opponent</button>
+          <button id="btnCancelQuickplay" class="btn btn-secondary hidden">Cancel search</button>
+          <p id="quickplayStatus" class="quickplay-status">Queue for a basic online 1v1 match.</p>
+        </div>
+      </div>
+
+      <div id="roomInfo" class="room-info hidden">
+        <p>Room code:</p>
+        <div id="roomCode" class="room-code"></div>
+        <p class="waiting-text">Share this code with your opponent. Waiting for them to join…</p>
+      </div>
+
+      <p id="lobbyError" class="error-text hidden"></p>
+    </div>
+  </section>
+
+  <!-- ---------- SCREEN: INVENTORY ---------- -->
+  <section id="screen-inventory" class="screen hidden">
+    <div class="inventory-wrap">
+      <div class="inventory-header">
+        <button id="btnInventoryBack" class="btn-link back-link-inline">← Back to menu</button>
+        <h1 class="brand inventory-brand">INVENTORY</h1>
+        <p class="brand-sub" id="inventoryCount">—</p>
+      </div>
+
+      <div class="inventory-tabs">
+        <button id="tabCollection" class="inventory-tab active">Collection</button>
+        <button id="tabDeckBuilder" class="inventory-tab">Deck Builder</button>
+      </div>
+
+      <div id="collectionPanel">
+      <div class="inventory-filters">
+        <div class="filter-group">
+          <label for="filterType">Type</label>
+          <select id="filterType" class="filter-select">
+            <option value="all">All</option>
+            <option value="minion">Minion</option>
+            <option value="spell">Spell</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filterRarity">Rarity</label>
+          <select id="filterRarity" class="filter-select">
+            <option value="all">All</option>
+            <option value="common">Common</option>
+            <option value="rare">Rare</option>
+            <option value="legendary">Legendary</option>
+            <option value="mythic">Mythic</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filterCountry">Country</label>
+          <select id="filterCountry" class="filter-select">
+            <option value="all">All</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filterRace">Race</label>
+          <select id="filterRace" class="filter-select">
+            <option value="all">All</option>
+          </select>
+        </div>
+        <button id="btnClearFilters" class="btn-link clear-filters-link">Clear filters</button>
+      </div>
+
+      <div id="inventoryGrid" class="inventory-grid"></div>
+      <p id="inventoryEmpty" class="inventory-empty hidden">No cards match these filters.</p>
+      </div>
+
+      <div id="deckBuilderPanel" class="deck-builder-panel hidden">
+        <div class="deck-toolbar">
+          <input id="deckNameInput" class="text-input deck-name-input" maxlength="32" placeholder="Deck name" />
+          <select id="savedDeckSelect" class="filter-select deck-select"></select>
+          <button id="btnNewDeck" class="btn btn-secondary">New deck</button>
+          <button id="btnAutoDeck" class="btn btn-secondary">Auto build</button>
+          <button id="btnSaveDeck" class="btn btn-primary">Save deck</button>
+        </div>
+        <div id="deckStatus" class="deck-status"></div>
+        <div class="deck-builder-layout">
+          <div class="deck-collection-panel">
+            <div class="deck-panel-header">
+              <h2>Owned cards</h2>
+              <span class="deck-panel-hint">Click a card to add it</span>
+            </div>
+            <div id="deckCardPool" class="deck-card-pool"></div>
+          </div>
+          <aside class="deck-list-panel">
+            <div class="deck-panel-header">
+              <h2>Current deck</h2>
+              <span id="deckCount" class="deck-count-pill">0 / 20</span>
+            </div>
+            <div id="deckList" class="deck-list"></div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- OVERLAY: CARD ZOOM ---------- -->
+  <div id="cardZoomOverlay" class="overlay hidden">
+    <div class="card-zoom-panel">
+      <button id="btnCloseZoom" class="btn-link close-zoom">✕ Close</button>
+      <div class="card-zoom-content">
+        <div id="cardZoomArt" class="minion-card card-zoom-art"></div>
+        <div class="card-zoom-details">
+          <h2 id="zoomName" class="zoom-name">—</h2>
+          <div id="zoomMeta" class="zoom-meta"></div>
+          <div id="zoomKeywords" class="zoom-keywords"></div>
+          <div id="zoomAbilities" class="zoom-abilities"></div>
+          <p id="zoomLore" class="zoom-lore"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- SCREEN: GAME ---------- -->
+  <section id="screen-game" class="screen hidden">
+    <div class="board-frame">
+      <span class="corner corner-tl"></span>
+      <span class="corner corner-tr"></span>
+      <span class="corner corner-bl"></span>
+      <span class="corner corner-br"></span>
+      <div class="board">
+
+      <!-- Opponent -->
+      <div class="player-row opponent-row">
+        <div class="hero-panel" id="oppHero">
+          <div class="hero-avatar hero-avatar-opponent" id="oppAvatar" aria-hidden="true"></div>
+          <div class="hero-name" id="oppName">Opponent</div>
+          <div class="hero-stats">
+            <span class="stat hp"><span id="oppHealth">30</span> ♥</span>
+            <span class="stat mana"><span id="oppMana">0</span>/<span id="oppManaMax">0</span> ◆</span>
+            <span class="stat deck" id="oppDeckCount">30 🂠</span>
+          </div>
+        </div>
+        <div id="oppBoard" class="minion-row"></div>
+        <div class="hand-back" id="oppHandBack"></div>
+      </div>
+
+      <!-- Center: turn seal + manuscript rule + log, with turn/surrender pinned to the right edge -->
+      <div class="center-strip">
+        <div id="turnSeal" class="turn-seal">—</div>
+        <div id="turnLabel" class="turn-label">—</div>
+        <div class="manuscript-rule"><span>◆</span></div>
+        <div id="gameLog" class="game-log"></div>
+
+        <div class="turn-actions">
+          <button id="btnEndTurn" class="btn btn-end-turn">End turn</button>
+          <button id="btnSurrender" class="btn btn-surrender">Surrender</button>
+        </div>
+      </div>
+
+      <!-- You -->
+      <div class="player-row self-row">
+        <div class="minion-row" id="selfBoard"></div>
+        <div class="hero-panel" id="selfHero">
+          <div class="hero-avatar hero-avatar-self" id="selfAvatar" aria-hidden="true"></div>
+          <div class="hero-name" id="selfName">You</div>
+          <div class="hero-stats">
+            <span class="stat hp"><span id="selfHealth">30</span> ♥</span>
+            <span class="stat mana"><span id="selfMana">0</span>/<span id="selfManaMax">0</span> ◆</span>
+            <span class="stat deck" id="selfDeckCount">30 🂠</span>
+          </div>
+        </div>
+      </div>
+
+        <div id="handArea" class="hand-area"></div>
+      </div>
+    </div>
+
+    <div id="targetHint" class="target-hint hidden">Choose a target (or click the enemy hero) — <button id="cancelTarget" class="btn-link">cancel</button></div>
+  </section>
+
+    <div id="roundBanner" class="round-banner hidden" aria-live="polite">
+      <div class="round-banner-title" id="roundBannerTitle">Round 1</div>
+      <div class="round-banner-subtitle" id="roundBannerSubtitle"></div>
+    </div>
+  <!-- ---------- OVERLAY: END OF MATCH ---------- -->
+  <div id="overlayEnd" class="overlay hidden">
+    <div class="overlay-card">
+      <h2 id="endTitle">—</h2>
+      <p id="endReward" class="end-reward"></p>
+      <button id="btnRestart" class="btn btn-primary">Back to menu</button>
+    </div>
+  </div>
+
+  <!-- ---------- MODAL: SURRENDER CONFIRMATION ---------- -->
+  <div id="surrenderModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="surrenderTitle">
+    <div class="overlay-card surrender-card">
+      <h2 id="surrenderTitle">Surrender?</h2>
+      <p id="surrenderWarning" class="surrender-warning">You will lose this match.</p>
+      <div class="surrender-actions">
+        <button id="btnCancelSurrender" class="btn btn-secondary">Cancel</button>
+        <button id="btnConfirmSurrender" class="btn btn-surrender-confirm">Surrender</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- ERROR TOAST ---------- -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
+  <div id="cardTooltip" class="card-tooltip hidden"></div>
+
+  <script src="cards.js"></script>
+  <script src="deckRules.js"></script>
+  <script src="engine.js"></script>
+  <script src="ai.js"></script>
+  <script src="audioConfig.js"></script>
+  <script src="audioManager.js"></script>
+  <script src="packOpening.js"></script>
+  <script src="client.js"></script>
+<script src="inventory.js"></script>
+<script src="deckBuilder.js"></script>
+<script src="shop.js"></script>
+<script src="trade.js"></script>
+</body>
+</html>

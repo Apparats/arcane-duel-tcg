@@ -1,0 +1,7 @@
+{
+  "id": "special",
+  "name": "Special",
+  "description": "Special grant-only cards. Not sold in the shop.",
+  "enabled": true,
+  "shop": false
+}

@@ -1,0 +1,33 @@
+# Example systemd unit for running the server on Oracle Cloud (or any
+# systemd-based Linux box) as a proper background service that
+# restarts automatically on crash or reboot.
+#
+# Setup:
+#   1. Copy the project to the server, e.g. /home/ubuntu/arcane-duel-tcg
+#   2. cp .env.example .env   (then fill in real values)
+#   3. npm install --omit=dev
+#   4. Edit the paths below (WorkingDirectory, EnvironmentFile, User) to match
+#   5. sudo cp deploy/arcane-duel.service /etc/systemd/system/
+#   6. sudo systemctl daemon-reload
+#   7. sudo systemctl enable --now arcane-duel
+#   8. journalctl -u arcane-duel -f     (to watch logs)
+
+[Unit]
+Description=Arcane Duel TCG server
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/arcane-duel-tcg
+EnvironmentFile=/home/ubuntu/arcane-duel-tcg/.env
+ExecStart=/usr/bin/node server/index.js
+Restart=on-failure
+RestartSec=5
+
+# Basic hardening — safe defaults for a small Node web service.
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

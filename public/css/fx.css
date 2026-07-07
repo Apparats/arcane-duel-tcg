@@ -1,0 +1,225 @@
+/* ============================================================
+   FX — board animations. Everything uses transform/opacity/box-shadow
+   (cheap for the browser) and is intentionally short (250–500ms):
+   these are quick-read signals, not a spectacle. If you add a new
+   animation, keep it short and light like these.
+   ============================================================ */
+
+/* ---- Attack: the attacker lunges toward the target and back ---- */
+
+@keyframes card-lunge {
+  0% { transform: translateY(0); }
+  38% { transform: translate(var(--lunge-dx, 0), var(--lunge-dy, -18px)) scale(1.04); filter: brightness(1.16); }
+  70% { transform: translate(0, 0) scale(1.02); filter: brightness(1.08); }
+  100% { transform: translateY(0); }
+}
+.lunging {
+  animation: card-lunge 0.43s cubic-bezier(0.18, 0.85, 0.22, 1);
+  z-index: 5;
+}
+
+/* ---- Impact: brief shake when taking damage ---- */
+
+@keyframes impact-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+.impact {
+  animation: impact-shake 0.28s ease-in-out;
+}
+
+/* ---- Damage / heal flashes ---- */
+
+@keyframes flash-damage {
+  0% { box-shadow: 0 0 0 0 rgba(214, 69, 69, 0); }
+  24% {
+    box-shadow:
+      0 0 0 2px rgba(255, 234, 174, 0.72),
+      0 0 22px 8px rgba(237, 58, 58, 0.92),
+      0 0 46px 12px rgba(237, 58, 58, 0.34);
+  }
+  100% { box-shadow: 0 0 0 0 rgba(214, 69, 69, 0); }
+}
+.flash-damage { animation: flash-damage 0.65s ease-out; }
+
+@keyframes flash-heal {
+  0% { box-shadow: 0 0 0 0 rgba(127, 176, 105, 0); }
+  24% {
+    box-shadow:
+      0 0 0 2px rgba(237, 255, 214, 0.64),
+      0 0 22px 8px rgba(107, 211, 124, 0.86),
+      0 0 44px 12px rgba(107, 211, 124, 0.28);
+  }
+  100% { box-shadow: 0 0 0 0 rgba(127, 176, 105, 0); }
+}
+.flash-heal { animation: flash-heal 0.65s ease-out; }
+
+/* ---- Minion death: shrinks and fades out ---- */
+
+@keyframes card-dying {
+  0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+  35% { transform: scale(1.08); opacity: 1; filter: brightness(1.4) saturate(1.3); }
+  100% { transform: scale(0.6); opacity: 0; filter: brightness(0.6); }
+}
+.dying {
+  animation: card-dying 0.34s ease-in forwards;
+  pointer-events: none;
+}
+
+/* ---- Summon: a new minion appears with a small "pop" ---- */
+
+@keyframes card-summon {
+  0% { transform: scale(0.5) translateY(10px); opacity: 0; }
+  70% { transform: scale(1.05) translateY(-2px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.summoned {
+  animation: card-summon 0.3s ease-out;
+}
+
+.summoned-from-hand {
+  z-index: 7;
+  box-shadow: 0 0 0 1px var(--gold), 0 0 20px rgba(232, 179, 79, 0.34);
+}
+
+/* ---- Floating damage/heal numbers ---- */
+
+.floating-number {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: "Cinzel", serif;
+  font-weight: 900;
+  font-size: clamp(30px, 3.6vw, 52px);
+  line-height: 1;
+  min-width: 1.6em;
+  padding: 8px 12px 9px;
+  text-align: center;
+  pointer-events: none;
+  z-index: 18;
+  border: 2px solid rgba(255, 235, 180, 0.82);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.22), transparent 45%),
+    rgba(10, 6, 12, 0.78);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.5),
+    0 0 22px rgba(255, 235, 180, 0.24);
+  text-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.75),
+    0 0 12px currentColor;
+  animation: float-up 1.08s cubic-bezier(0.16, 0.9, 0.24, 1) forwards;
+}
+.floating-number.damage {
+  color: #ff4d4d;
+  border-color: rgba(255, 193, 128, 0.92);
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.55),
+    0 0 26px rgba(255, 68, 68, 0.54);
+}
+.floating-number.heal {
+  color: #79ff92;
+  border-color: rgba(210, 255, 183, 0.86);
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.55),
+    0 0 24px rgba(102, 255, 126, 0.42);
+}
+
+@keyframes float-up {
+  0% { opacity: 0; transform: translate(-50%, -18%) scale(0.62); filter: blur(2px); }
+  12% { opacity: 1; transform: translate(-50%, -62%) scale(1.22); filter: blur(0); }
+  35% { opacity: 1; transform: translate(-50%, -76%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -190%) scale(0.96); }
+}
+
+/* ---- Round transition: blocks board input while the next turn is revealed ---- */
+
+.round-banner {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  grid-template-rows: 1fr auto 1fr;
+  pointer-events: all;
+  background:
+    radial-gradient(circle at center, rgba(232, 179, 79, 0.18), rgba(7, 5, 10, 0.78) 48%, rgba(7, 5, 10, 0.9));
+}
+
+.round-banner.hidden {
+  display: none;
+}
+
+.round-banner-title {
+  grid-row: 2;
+  font-family: "Cinzel", serif;
+  font-size: clamp(48px, 8vw, 118px);
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0;
+  text-transform: uppercase;
+  text-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.85),
+    0 0 36px rgba(232, 179, 79, 0.46);
+}
+
+.round-banner-title::before,
+.round-banner-title::after {
+  content: "";
+  display: block;
+  width: min(48vw, 520px);
+  height: 2px;
+  margin: 18px auto;
+  background: linear-gradient(90deg, transparent, rgba(232, 179, 79, 0.92), transparent);
+  box-shadow: 0 0 16px rgba(232, 179, 79, 0.42);
+}
+
+.round-banner-show .round-banner-title {
+  animation: round-banner-title 0.98s ease-in-out forwards;
+}
+
+.round-banner-result {
+  cursor: pointer;
+}
+
+.round-banner-result .round-banner-title {
+  animation: round-result-title 0.72s ease-out both;
+}
+
+.round-banner-subtitle {
+  grid-row: 3;
+  align-self: start;
+  margin-top: 22px;
+  max-width: min(84vw, 720px);
+  color: var(--cream);
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.85);
+}
+
+.round-banner-subtitle.hidden {
+  display: none;
+}
+
+@keyframes round-banner-title {
+  0% { opacity: 0; transform: scale(0.82); filter: blur(5px); }
+  18% { opacity: 1; transform: scale(1.04); filter: blur(0); }
+  72% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.08); }
+}
+
+@keyframes round-result-title {
+  0% { opacity: 0; transform: scale(0.82); filter: blur(5px); }
+  28% { opacity: 1; transform: scale(1.04); filter: blur(0); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+/* Respects users who prefer less on-screen motion. */
+@media (prefers-reduced-motion: reduce) {
+  .lunging, .impact, .flash-damage, .flash-heal, .dying, .summoned, .floating-number, .round-banner-title {
+    animation: none !important;
+  }
+}

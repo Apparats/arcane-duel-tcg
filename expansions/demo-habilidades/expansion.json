@@ -1,0 +1,7 @@
+{
+  "id": "demo",
+  "name": "Laboratorio de Habilidades",
+  "description": "Cartas de ejemplo para probar el sistema de habilidades (onPlay/onDeath). Podés borrar esta carpeta entera o poner \"enabled\": false acá abajo si no las querés en el mazo del evento — no rompe nada, el resto del juego no depende de ellas.",
+  "enabled": false,
+  "shop": false
+}
