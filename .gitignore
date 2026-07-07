@@ -4,3 +4,4 @@ node_modules/
 .DS_Store
 deploy/.oracle_key
 deploy/.env.oracle
+deploy/*.tar.gz
