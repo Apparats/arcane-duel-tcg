@@ -30,6 +30,8 @@ let quickplaySearching = false;
 let enabledExpansionIds = null;
 let activeMatchMode = null;
 let discordActivityLoginRunning = false;
+let discordActivitySdkPromise = null;
+let discordActivityReadyPromise = null;
 
 let lastAnimatedActionSeq = 0; // avoids replaying the same attack's animation
 let lastRoundBannerKey = null;
@@ -1175,6 +1177,42 @@ function isDiscordActivityEnvironment() {
   );
 }
 
+function hasDiscordActivityParams() {
+  const params = new URLSearchParams(window.location.search);
+  return params.has("frame_id") && params.has("instance_id") && params.has("platform");
+}
+
+function getDiscordActivitySdk() {
+  if (discordActivitySdkPromise) return discordActivitySdkPromise;
+  if (!hasDiscordActivityParams()) {
+    return Promise.reject(new Error("Discord Activity parameters are missing."));
+  }
+
+  const clientId = accountState?.discordClientId || DISCORD_CLIENT_ID;
+  discordActivitySdkPromise = import("./vendor/discord-embedded-app-sdk/index.mjs")
+    .then(({ DiscordSDK }) => {
+      const discordSdk = new DiscordSDK(clientId, { disableConsoleLogOverride: true });
+      discordActivityReadyPromise = discordSdk.ready();
+      return discordSdk;
+    })
+    .catch((err) => {
+      discordActivitySdkPromise = null;
+      discordActivityReadyPromise = null;
+      throw err;
+    });
+  return discordActivitySdkPromise;
+}
+
+function startDiscordActivitySdk() {
+  if (!hasDiscordActivityParams()) return;
+  getDiscordActivitySdk().catch((err) => {
+    reportClientLog("discord-activity-sdk-start-failed", {
+      stage: "construct",
+      message: err.message || String(err),
+    });
+  });
+}
+
 function getDiscordActivityContext() {
   let embedded = false;
   try {
@@ -1246,15 +1284,14 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
   setAuthGate(automatic ? "Waiting for Discord..." : "Opening Discord authorization...", false);
 
   try {
-    const { DiscordSDK } = await import("./vendor/discord-embedded-app-sdk/index.mjs");
-    const discordSdk = new DiscordSDK(accountState.discordClientId || DISCORD_CLIENT_ID, {
-      disableConsoleLogOverride: true,
-    });
-    await withTimeout(discordSdk.ready(), DISCORD_ACTIVITY_READY_TIMEOUT_MS, "Discord Activity SDK was not ready.")
+    const discordSdk = await getDiscordActivitySdk();
+    await withTimeout(discordActivityReadyPromise || discordSdk.ready(), DISCORD_ACTIVITY_READY_TIMEOUT_MS, "Discord Activity SDK was not ready.")
       .catch((err) => {
         err.stage = "ready";
         throw err;
       });
+
+    setAuthGate("Opening Discord authorization...", false);
 
     const existingAuth = await discordSdk.commands.authenticate({}).catch(() => null);
     if (existingAuth?.access_token) {
@@ -1543,6 +1580,7 @@ $("btnLogout").addEventListener("click", async () => {
   window.location.reload();
 });
 
+startDiscordActivitySdk();
 initAccountWidget();
 
 // Hide the initial loading screen once everything is loaded
