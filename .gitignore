@@ -5,3 +5,4 @@ node_modules/
 deploy/.oracle_key
 deploy/.env.oracle
 deploy/*.tar.gz
+deploy/*.tgz
