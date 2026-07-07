@@ -1543,7 +1543,6 @@ $("btnLogout").addEventListener("click", async () => {
   window.location.reload();
 });
 
-prewarmDiscordActivitySdk();
 initAccountWidget();
 
 // Hide the initial loading screen once everything is loaded
