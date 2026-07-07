@@ -1,0 +1,84 @@
+name: Deploy to Oracle VM
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout official source
+        uses: actions/checkout@v4
+
+      - name: Check deployment secrets
+        id: deploy_secrets
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+        run: |
+          if [ -z "$ORACLE_HOST" ] || [ -z "$ORACLE_SSH_KEY" ]; then
+            echo "::notice::Skipping deploy because ORACLE_HOST or ORACLE_SSH_KEY is not configured."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pack release
+        if: steps.deploy_secrets.outputs.ready == 'true'
+        run: |
+          tar \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            --exclude='*.log' \
+            --exclude='deploy/*.tar.gz' \
+            -czf arcane-duel-release.tgz .
+
+      - name: Configure SSH
+        if: steps.deploy_secrets.outputs.ready == 'true'
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+        run: |
+          test -n "$ORACLE_HOST"
+          test -n "$ORACLE_SSH_KEY"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
+          chmod 600 ~/.ssh/oracle_key
+          ssh-keyscan -H "$ORACLE_HOST" >> ~/.ssh/known_hosts
+
+      - name: Upload release
+        if: steps.deploy_secrets.outputs.ready == 'true'
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+        run: |
+          REMOTE_USER="${ORACLE_USER:-ubuntu}"
+          scp -i ~/.ssh/oracle_key arcane-duel-release.tgz "$REMOTE_USER@$ORACLE_HOST:/tmp/arcane-duel-release.tgz"
+          scp -i ~/.ssh/oracle_key deploy/activate-release.sh "$REMOTE_USER@$ORACLE_HOST:/tmp/activate-release.sh"
+
+      - name: Activate release
+        if: steps.deploy_secrets.outputs.ready == 'true'
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+          ORACLE_APP_DIR: ${{ secrets.ORACLE_APP_DIR }}
+          ORACLE_SERVICE: ${{ secrets.ORACLE_SERVICE }}
+        run: |
+          REMOTE_USER="${ORACLE_USER:-ubuntu}"
+          APP_DIR="${ORACLE_APP_DIR:-/home/ubuntu/arcane-duel-tcg}"
+          SERVICE_NAME="${ORACLE_SERVICE:-arcane-duel}"
+
+          ssh -i ~/.ssh/oracle_key "$REMOTE_USER@$ORACLE_HOST" \
+            "APP_DIR='$APP_DIR' SERVICE_NAME='$SERVICE_NAME' bash /tmp/activate-release.sh"
