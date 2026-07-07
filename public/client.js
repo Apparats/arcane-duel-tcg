@@ -11,6 +11,7 @@ const KEYWORD_ICON = {
 };
 const KEYWORD_FULL_LABEL = { taunt: "Taunt", charge: "Charge", divineShield: "Divine Shield" };
 const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", mythic: "Mythic" };
+const DISCORD_CLIENT_ID = "1523179359106502716";
 const TYPE_ICON = { minion: "⚔", spell: "✦" };
 
 let ws = null;
@@ -24,11 +25,12 @@ let accountState = null;
 let lastEconomyUpdate = null;
 let pendingInitialRewards = [];
 const ENTER_GATE_KEY = "arcane_enter_gate_seen";
-const DISCORD_ACTIVITY_READY_TIMEOUT_MS = 45000;
+const DISCORD_ACTIVITY_READY_TIMEOUT_MS = 12000;
 let quickplaySearching = false;
 let enabledExpansionIds = null;
 let activeMatchMode = null;
 let discordActivityLoginRunning = false;
+let discordActivitySdkPromise = null;
 
 let lastAnimatedActionSeq = 0; // avoids replaying the same attack's animation
 let lastRoundBannerKey = null;
@@ -1173,6 +1175,34 @@ function isDiscordActivityEnvironment() {
   );
 }
 
+function hasDiscordActivityParams() {
+  const params = new URLSearchParams(window.location.search);
+  return params.has("frame_id") && params.has("instance_id") && params.has("platform");
+}
+
+function getDiscordActivitySdk() {
+  if (discordActivitySdkPromise) return discordActivitySdkPromise;
+
+  const clientId = accountState?.discordClientId || DISCORD_CLIENT_ID;
+  discordActivitySdkPromise = import("./vendor/discord-embedded-app-sdk/index.mjs")
+    .then(({ DiscordSDK }) => new DiscordSDK(clientId, { disableConsoleLogOverride: true }))
+    .catch((err) => {
+      discordActivitySdkPromise = null;
+      throw err;
+    });
+  return discordActivitySdkPromise;
+}
+
+function prewarmDiscordActivitySdk() {
+  if (!hasDiscordActivityParams()) return;
+  getDiscordActivitySdk().catch((err) => {
+    reportClientLog("discord-activity-sdk-prewarm-failed", {
+      stage: "construct",
+      message: err.message || String(err),
+    });
+  });
+}
+
 function getDiscordActivityContext() {
   let embedded = false;
   try {
@@ -1229,8 +1259,7 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
   setAuthGate(automatic ? "Waiting for Discord..." : "Opening Discord authorization...", false);
 
   try {
-    const { DiscordSDK } = await import("./vendor/discord-embedded-app-sdk/index.mjs");
-    const discordSdk = new DiscordSDK(accountState.discordClientId);
+    const discordSdk = await getDiscordActivitySdk();
     await withTimeout(discordSdk.ready(), DISCORD_ACTIVITY_READY_TIMEOUT_MS, "Discord Activity SDK was not ready.")
       .catch((err) => {
         err.stage = "ready";
@@ -1505,6 +1534,7 @@ $("btnLogout").addEventListener("click", async () => {
   window.location.reload();
 });
 
+prewarmDiscordActivitySdk();
 initAccountWidget();
 
 // Hide the initial loading screen once everything is loaded
