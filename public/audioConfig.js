@@ -31,7 +31,6 @@ window.ArcaneAudioConfig = {
     menuClick: "sfx/tap3.wav",
     uiClick: "sfx/tap2.wav",
     hit: "sfx/hit.wav",
-    damage: "sfx/daamge.wav",
     victory: "sfx/winner.wav",
     defeat: "sfx/loses.wav",
     cardPlay: "sfx/card.wav",
