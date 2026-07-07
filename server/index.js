@@ -79,7 +79,15 @@ app.get("/expansions/enabled", (req, res) => {
 
   res.json({ expansions });
 });
-app.use(express.static(path.join(__dirname, "..", "public")));
+app.use(
+  express.static(path.join(__dirname, "..", "public"), {
+    setHeaders(res, filePath) {
+      if (filePath.endsWith(".html") || filePath.endsWith(".js")) {
+        res.setHeader("Cache-Control", "no-store");
+      }
+    },
+  })
+);
 
 const server = app.listen(PORT, () => {
   console.log(`TCG server listening on http://localhost:${PORT}`);
