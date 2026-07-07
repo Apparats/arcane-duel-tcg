@@ -1172,11 +1172,20 @@ function isDiscordActivityEnvironment() {
   );
 }
 
-async function loginWithDiscordActivity({ automatic = false } = {}) {
-  if (discordActivityLoginRunning) return;
+function withTimeout(promise, ms, message) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      window.setTimeout(() => reject(new Error(message)), ms);
+    }),
+  ]);
+}
+
+async function loginWithDiscordActivity({ automatic = false, showFailure = true } = {}) {
+  if (discordActivityLoginRunning) return false;
   if (!accountState?.discordClientId) {
     setAuthGate("Discord Activity login is not configured yet.", true);
-    return;
+    return false;
   }
 
   discordActivityLoginRunning = true;
@@ -1185,7 +1194,7 @@ async function loginWithDiscordActivity({ automatic = false } = {}) {
   try {
     const { DiscordSDK } = await import("./vendor/discord-embedded-app-sdk/index.mjs");
     const discordSdk = new DiscordSDK(accountState.discordClientId);
-    await discordSdk.ready();
+    await withTimeout(discordSdk.ready(), automatic ? 5000 : 7000, "Discord Activity SDK was not ready.");
 
     const state =
       window.crypto?.randomUUID?.() ||
@@ -1213,13 +1222,27 @@ async function loginWithDiscordActivity({ automatic = false } = {}) {
 
     discordActivityLoginRunning = false;
     await initAccountWidget();
+    return true;
   } catch (err) {
     console.error("Discord Activity login failed:", err);
     discordActivityLoginRunning = false;
-    setAuthGate("Discord Activity login failed. Try again.", true);
-    $("btnLoginDiscord").classList.remove("hidden");
-    showToast("Discord Activity login failed.");
+    if (showFailure) {
+      setAuthGate("Discord Activity login failed. Try again.", true);
+      $("btnLoginDiscord").classList.remove("hidden");
+      showToast("Discord Activity login failed.");
+    }
+    return false;
   }
+}
+
+async function loginWithDiscord() {
+  const activityHint = isDiscordActivityEnvironment();
+  const activityLoginSucceeded = await loginWithDiscordActivity({
+    automatic: false,
+    showFailure: activityHint,
+  });
+  if (activityLoginSucceeded || activityHint) return;
+  window.location.href = "/auth/discord";
 }
 
 function enterMainMenu() {
@@ -1385,21 +1408,9 @@ function requireLoggedInForPlay() {
   return true;
 }
 
-$("btnLoginDiscord").addEventListener("click", () => {
-  if (isDiscordActivityEnvironment()) {
-    loginWithDiscordActivity({ automatic: false });
-    return;
-  }
-  window.location.href = "/auth/discord";
-});
+$("btnLoginDiscord").addEventListener("click", loginWithDiscord);
 
-$("btnAuthLoginDiscord").addEventListener("click", () => {
-  if (isDiscordActivityEnvironment()) {
-    loginWithDiscordActivity({ automatic: false });
-    return;
-  }
-  window.location.href = "/auth/discord";
-});
+$("btnAuthLoginDiscord").addEventListener("click", loginWithDiscord);
 
 $("btnMoreOptions").addEventListener("click", (event) => {
   event.stopPropagation();
