@@ -36,14 +36,7 @@ jobs:
       - name: Pack release
         if: steps.deploy_secrets.outputs.ready == 'true'
         run: |
-          tar \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='node_modules' \
-            --exclude='.env' \
-            --exclude='*.log' \
-            --exclude='deploy/*.tar.gz' \
-            -czf arcane-duel-release.tgz .
+          git archive --format=tar.gz HEAD -o /tmp/arcane-duel-release.tgz
 
       - name: Configure SSH
         if: steps.deploy_secrets.outputs.ready == 'true'
@@ -65,7 +58,7 @@ jobs:
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
         run: |
           REMOTE_USER="${ORACLE_USER:-ubuntu}"
-          scp -i ~/.ssh/oracle_key arcane-duel-release.tgz "$REMOTE_USER@$ORACLE_HOST:/tmp/arcane-duel-release.tgz"
+          scp -i ~/.ssh/oracle_key /tmp/arcane-duel-release.tgz "$REMOTE_USER@$ORACLE_HOST:/tmp/arcane-duel-release.tgz"
           scp -i ~/.ssh/oracle_key deploy/activate-release.sh "$REMOTE_USER@$ORACLE_HOST:/tmp/activate-release.sh"
 
       - name: Activate release
