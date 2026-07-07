@@ -1155,7 +1155,15 @@ async function initAccountWidget() {
 
 function isDiscordActivityEnvironment() {
   const params = new URLSearchParams(window.location.search);
+  let isEmbedded = false;
+  try {
+    isEmbedded = window.self !== window.top;
+  } catch {
+    isEmbedded = true;
+  }
+
   return (
+    isEmbedded ||
     params.has("frame_id") ||
     params.has("instance_id") ||
     params.has("platform") ||
