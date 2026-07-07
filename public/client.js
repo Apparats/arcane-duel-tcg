@@ -1172,6 +1172,42 @@ function isDiscordActivityEnvironment() {
   );
 }
 
+function getDiscordActivityContext() {
+  let embedded = false;
+  try {
+    embedded = window.self !== window.top;
+  } catch {
+    embedded = true;
+  }
+
+  let referrerHost = "";
+  try {
+    referrerHost = document.referrer ? new URL(document.referrer).host : "";
+  } catch {
+    referrerHost = "invalid";
+  }
+
+  return {
+    embedded,
+    hasReferrer: Boolean(document.referrer),
+    hrefHost: window.location.host,
+    referrerHost,
+    searchKeys: Array.from(new URLSearchParams(window.location.search).keys()),
+  };
+}
+
+function reportClientLog(type, payload = {}) {
+  fetch("/client-log", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type,
+      ...payload,
+      context: getDiscordActivityContext(),
+    }),
+  }).catch(() => {});
+}
+
 function withTimeout(promise, ms, message) {
   return Promise.race([
     promise,
@@ -1194,18 +1230,27 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
   try {
     const { DiscordSDK } = await import("./vendor/discord-embedded-app-sdk/index.mjs");
     const discordSdk = new DiscordSDK(accountState.discordClientId);
-    await withTimeout(discordSdk.ready(), automatic ? 5000 : 7000, "Discord Activity SDK was not ready.");
+    await withTimeout(discordSdk.ready(), automatic ? 5000 : 7000, "Discord Activity SDK was not ready.")
+      .catch((err) => {
+        err.stage = "ready";
+        throw err;
+      });
 
     const state =
       window.crypto?.randomUUID?.() ||
       `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
-    const { code } = await discordSdk.commands.authorize({
-      client_id: accountState.discordClientId,
-      response_type: "code",
-      state,
-      prompt: "none",
-      scope: ["identify"],
-    });
+    const { code } = await discordSdk.commands
+      .authorize({
+        client_id: accountState.discordClientId,
+        response_type: "code",
+        state,
+        prompt: "none",
+        scope: ["identify", "applications.commands"],
+      })
+      .catch((err) => {
+        err.stage = "authorize";
+        throw err;
+      });
 
     const response = await fetch("/auth/discord/activity", {
       method: "POST",
@@ -1214,17 +1259,30 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok || !data.access_token) {
-      throw new Error(data.error || "Discord Activity login failed.");
+      const err = new Error(data.error || "Discord Activity token exchange failed.");
+      err.stage = "token";
+      throw err;
     }
 
-    const auth = await discordSdk.commands.authenticate({ access_token: data.access_token });
-    if (!auth) throw new Error("Discord Activity authentication was not accepted by the client.");
+    const auth = await discordSdk.commands.authenticate({ access_token: data.access_token }).catch((err) => {
+      err.stage = "authenticate";
+      throw err;
+    });
+    if (!auth) {
+      const err = new Error("Discord Activity authentication was not accepted by the client.");
+      err.stage = "authenticate";
+      throw err;
+    }
 
     discordActivityLoginRunning = false;
     await initAccountWidget();
     return true;
   } catch (err) {
     console.error("Discord Activity login failed:", err);
+    reportClientLog("discord-activity-login-failed", {
+      stage: err.stage || "unknown",
+      message: err.message || String(err),
+    });
     discordActivityLoginRunning = false;
     if (showFailure) {
       setAuthGate("Discord Activity login failed. Try again.", true);

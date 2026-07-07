@@ -26,6 +26,7 @@ function setSecurityHeaders(req, res, next) {
 function requireSameOrigin(req, res, next) {
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) return next();
   if (req.path === "/auth/discord/activity" || req.path === "/discord/activity") return next();
+  if (req.path === "/client-log") return next();
   if (sameOrigin(req)) return next();
   return res.status(403).json({ error: "Cross-origin requests are not allowed." });
 }

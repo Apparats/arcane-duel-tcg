@@ -44,6 +44,22 @@ app.use(cookieParser());
 app.use(setSecurityHeaders);
 app.use(express.json({ limit: HTTP_JSON_LIMIT }));
 app.use(requireSameOrigin);
+app.post("/client-log", createRateLimiter({ max: 60, keyPrefix: "client-log" }), (req, res) => {
+  const event = req.body && typeof req.body === "object" ? req.body : {};
+  const type = typeof event.type === "string" ? event.type.slice(0, 80) : "unknown";
+  const stage = typeof event.stage === "string" ? event.stage.slice(0, 80) : "unknown";
+  const message = typeof event.message === "string" ? event.message.slice(0, 240) : "";
+  const context = event.context && typeof event.context === "object" ? event.context : {};
+  const safeContext = {
+    embedded: Boolean(context.embedded),
+    hasReferrer: Boolean(context.hasReferrer),
+    hrefHost: typeof context.hrefHost === "string" ? context.hrefHost.slice(0, 120) : "",
+    referrerHost: typeof context.referrerHost === "string" ? context.referrerHost.slice(0, 120) : "",
+    searchKeys: Array.isArray(context.searchKeys) ? context.searchKeys.slice(0, 12) : [],
+  };
+  console.warn("Client log:", JSON.stringify({ type, stage, message, context: safeContext }));
+  res.json({ ok: true });
+});
 app.use("/auth", createRateLimiter({ max: 120, keyPrefix: "auth" }), authRouter);
 app.use("/shop", createRateLimiter({ max: 40, keyPrefix: "shop" }), shopRouter);
 app.use("/decks", createRateLimiter({ max: 80, keyPrefix: "decks" }), decksRouter);
