@@ -27,6 +27,7 @@ const ENTER_GATE_KEY = "arcane_enter_gate_seen";
 let quickplaySearching = false;
 let enabledExpansionIds = null;
 let activeMatchMode = null;
+let discordActivityLoginRunning = false;
 
 let lastAnimatedActionSeq = 0; // avoids replaying the same attack's animation
 let lastRoundBannerKey = null;
@@ -1143,8 +1144,73 @@ async function initAccountWidget() {
       switchScreen("enter");
     }
   } else {
+    if (isDiscordActivityEnvironment()) {
+      loginWithDiscordActivity({ automatic: true });
+      return;
+    }
     setAuthGate("Login with Discord to enter Arcana TCG.", true);
     $("btnLoginDiscord").classList.remove("hidden");
+  }
+}
+
+function isDiscordActivityEnvironment() {
+  const params = new URLSearchParams(window.location.search);
+  return (
+    params.has("frame_id") ||
+    params.has("instance_id") ||
+    params.has("platform") ||
+    document.referrer.includes("discord.com") ||
+    document.referrer.includes("discordsays.com")
+  );
+}
+
+async function loginWithDiscordActivity({ automatic = false } = {}) {
+  if (discordActivityLoginRunning) return;
+  if (!accountState?.discordClientId) {
+    setAuthGate("Discord Activity login is not configured yet.", true);
+    return;
+  }
+
+  discordActivityLoginRunning = true;
+  setAuthGate(automatic ? "Connecting to Discord..." : "Opening Discord authorization...", false);
+
+  try {
+    const { DiscordSDK } = await import("./vendor/discord-embedded-app-sdk/index.mjs");
+    const discordSdk = new DiscordSDK(accountState.discordClientId);
+    await discordSdk.ready();
+
+    const state =
+      window.crypto?.randomUUID?.() ||
+      `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+    const { code } = await discordSdk.commands.authorize({
+      client_id: accountState.discordClientId,
+      response_type: "code",
+      state,
+      prompt: "none",
+      scope: ["identify"],
+    });
+
+    const response = await fetch("/auth/discord/activity", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.access_token) {
+      throw new Error(data.error || "Discord Activity login failed.");
+    }
+
+    const auth = await discordSdk.commands.authenticate({ access_token: data.access_token });
+    if (!auth) throw new Error("Discord Activity authentication was not accepted by the client.");
+
+    discordActivityLoginRunning = false;
+    await initAccountWidget();
+  } catch (err) {
+    console.error("Discord Activity login failed:", err);
+    discordActivityLoginRunning = false;
+    setAuthGate("Discord Activity login failed. Try again.", true);
+    $("btnLoginDiscord").classList.remove("hidden");
+    showToast("Discord Activity login failed.");
   }
 }
 
@@ -1312,10 +1378,18 @@ function requireLoggedInForPlay() {
 }
 
 $("btnLoginDiscord").addEventListener("click", () => {
+  if (isDiscordActivityEnvironment()) {
+    loginWithDiscordActivity({ automatic: false });
+    return;
+  }
   window.location.href = "/auth/discord";
 });
 
 $("btnAuthLoginDiscord").addEventListener("click", () => {
+  if (isDiscordActivityEnvironment()) {
+    loginWithDiscordActivity({ automatic: false });
+    return;
+  }
   window.location.href = "/auth/discord";
 });
 

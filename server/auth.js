@@ -108,6 +108,53 @@ function isValidDiscordTokenResponse(tokenData) {
   );
 }
 
+async function exchangeDiscordCode(code, { redirectUri = null } = {}) {
+  const body = new URLSearchParams({
+    client_id: process.env.DISCORD_CLIENT_ID,
+    client_secret: process.env.DISCORD_CLIENT_SECRET,
+    grant_type: "authorization_code",
+    code,
+  });
+  if (redirectUri) body.set("redirect_uri", redirectUri);
+
+  const tokenRes = await fetch(`${DISCORD_API}/oauth2/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  if (!tokenRes.ok) {
+    const detail = await tokenRes.text();
+    const err = new Error("Discord token exchange failed.");
+    err.detail = detail;
+    throw err;
+  }
+
+  const tokenData = await tokenRes.json();
+  if (!isValidDiscordTokenResponse(tokenData)) {
+    throw new Error("Discord token exchange returned an invalid token payload.");
+  }
+  return tokenData;
+}
+
+async function fetchDiscordProfile(accessToken) {
+  const profileRes = await fetch(`${DISCORD_API}/users/@me`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!profileRes.ok) {
+    const detail = await profileRes.text();
+    const err = new Error("Discord profile fetch failed.");
+    err.detail = detail;
+    throw err;
+  }
+  return profileRes.json();
+}
+
+async function findOrCreateSessionUser(profile) {
+  const starterPool = getStarterCardPool();
+  const starterCards = starterPool.length > 0 ? buildStarterOpening(starterPool) : [];
+  return findOrCreateUserFromDiscord(profile, starterCards);
+}
+
 function readCookie(cookieHeader, name) {
   return String(cookieHeader || "")
     .split(";")
@@ -200,45 +247,42 @@ router.get("/discord/callback", async (req, res) => {
   clearOAuthStateCookie(res);
 
   try {
-    const tokenRes = await fetch(`${DISCORD_API}/oauth2/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: process.env.DISCORD_CLIENT_ID,
-        client_secret: process.env.DISCORD_CLIENT_SECRET,
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: process.env.DISCORD_REDIRECT_URI,
-      }),
-    });
-    if (!tokenRes.ok) {
-      console.error("Discord token exchange failed:", await tokenRes.text());
-      return res.redirect("/?authError=token_exchange_failed");
-    }
-    const tokenData = await tokenRes.json();
-    if (!isValidDiscordTokenResponse(tokenData)) {
-      console.error("Discord token exchange returned an invalid token payload.");
-      return res.redirect("/?authError=invalid_token_payload");
-    }
-
-    const profileRes = await fetch(`${DISCORD_API}/users/@me`, {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` },
-    });
-    if (!profileRes.ok) {
-      console.error("Discord profile fetch failed:", await profileRes.text());
-      return res.redirect("/?authError=profile_fetch_failed");
-    }
-    const profile = await profileRes.json();
-
-    const starterPool = getStarterCardPool();
-    const starterCards = starterPool.length > 0 ? buildStarterOpening(starterPool) : [];
-    const user = await findOrCreateUserFromDiscord(profile, starterCards);
+    const tokenData = await exchangeDiscordCode(code, { redirectUri: process.env.DISCORD_REDIRECT_URI });
+    const profile = await fetchDiscordProfile(tokenData.access_token);
+    const user = await findOrCreateSessionUser(profile);
     const session = signSession(user._id);
     setSessionCookie(res, session);
     res.redirect("/");
   } catch (err) {
-    console.error("Discord OAuth callback error:", err);
+    console.error("Discord OAuth callback error:", err.detail || err.message || err);
     res.redirect("/?authError=unexpected_error");
+  }
+});
+
+router.post("/discord/activity", async (req, res) => {
+  if (!isAuthEnabled() || !isDbEnabled()) {
+    return res.status(503).json({ error: "Discord login isn't configured on this server yet." });
+  }
+
+  const code = req.body?.code;
+  if (typeof code !== "string" || code.length < 8 || code.length > 512) {
+    return res.status(400).json({ error: "Missing Discord authorization code." });
+  }
+
+  try {
+    const tokenData = await exchangeDiscordCode(code);
+    const profile = await fetchDiscordProfile(tokenData.access_token);
+    const user = await findOrCreateSessionUser(profile);
+    const session = signSession(user._id);
+    setSessionCookie(res, session);
+    res.json({
+      ok: true,
+      access_token: tokenData.access_token,
+      user: toPublicUser(user),
+    });
+  } catch (err) {
+    console.error("Discord Activity auth error:", err.detail || err.message || err);
+    res.status(401).json({ error: "Discord Activity authentication failed." });
   }
 });
 
@@ -253,6 +297,7 @@ router.get("/me", async (req, res) => {
     rewards,
     dailyLoginReward,
     authEnabled: isAuthEnabled(),
+    discordClientId: process.env.DISCORD_CLIENT_ID || null,
     discordInviteUrl: getDiscordInviteUrl(),
   });
 });

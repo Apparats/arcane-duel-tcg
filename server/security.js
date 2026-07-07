@@ -14,7 +14,10 @@ function sameOrigin(req) {
 
 function setSecurityHeaders(req, res, next) {
   res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader(
+    "Content-Security-Policy",
+    "frame-ancestors 'self' https://discord.com https://*.discord.com"
+  );
   res.setHeader("Referrer-Policy", "same-origin");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   next();
@@ -22,6 +25,7 @@ function setSecurityHeaders(req, res, next) {
 
 function requireSameOrigin(req, res, next) {
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) return next();
+  if (req.path === "/auth/discord/activity") return next();
   if (sameOrigin(req)) return next();
   return res.status(403).json({ error: "Cross-origin requests are not allowed." });
 }
