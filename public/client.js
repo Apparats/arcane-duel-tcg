@@ -24,6 +24,7 @@ let accountState = null;
 let lastEconomyUpdate = null;
 let pendingInitialRewards = [];
 const ENTER_GATE_KEY = "arcane_enter_gate_seen";
+const DISCORD_ACTIVITY_READY_TIMEOUT_MS = 45000;
 let quickplaySearching = false;
 let enabledExpansionIds = null;
 let activeMatchMode = null;
@@ -1145,7 +1146,7 @@ async function initAccountWidget() {
     }
   } else {
     if (isDiscordActivityEnvironment()) {
-      loginWithDiscordActivity({ automatic: true });
+      loginWithDiscordActivity({ automatic: true, showFailure: false });
       return;
     }
     setAuthGate("Login with Discord to enter Arcana TCG.", true);
@@ -1225,12 +1226,12 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
   }
 
   discordActivityLoginRunning = true;
-  setAuthGate(automatic ? "Connecting to Discord..." : "Opening Discord authorization...", false);
+  setAuthGate(automatic ? "Waiting for Discord..." : "Opening Discord authorization...", false);
 
   try {
     const { DiscordSDK } = await import("./vendor/discord-embedded-app-sdk/index.mjs");
     const discordSdk = new DiscordSDK(accountState.discordClientId);
-    await withTimeout(discordSdk.ready(), automatic ? 5000 : 7000, "Discord Activity SDK was not ready.")
+    await withTimeout(discordSdk.ready(), DISCORD_ACTIVITY_READY_TIMEOUT_MS, "Discord Activity SDK was not ready.")
       .catch((err) => {
         err.stage = "ready";
         throw err;
