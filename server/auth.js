@@ -265,16 +265,12 @@ router.post("/discord/activity", async (req, res) => {
   }
 
   const code = req.body?.code;
-  const accessToken = req.body?.accessToken;
-  if (
-    (typeof code !== "string" || code.length < 8 || code.length > 512) &&
-    (typeof accessToken !== "string" || accessToken.length < 8 || accessToken.length > 2048)
-  ) {
+  if (typeof code !== "string" || code.length < 8 || code.length > 512) {
     return res.status(400).json({ error: "Missing Discord Activity authorization." });
   }
 
   try {
-    const tokenData = accessToken ? { access_token: accessToken } : await exchangeDiscordCode(code);
+    const tokenData = await exchangeDiscordCode(code);
     const profile = await fetchDiscordProfile(tokenData.access_token);
     const user = await findOrCreateSessionUser(profile);
     const session = signSession(user._id);

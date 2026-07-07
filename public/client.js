@@ -1160,18 +1160,9 @@ async function initAccountWidget() {
 
 function isDiscordActivityEnvironment() {
   const params = new URLSearchParams(window.location.search);
-  let isEmbedded = false;
-  try {
-    isEmbedded = window.self !== window.top;
-  } catch {
-    isEmbedded = true;
-  }
-
   return (
-    isEmbedded ||
-    params.has("frame_id") ||
-    params.has("instance_id") ||
-    params.has("platform") ||
+    (params.has("frame_id") && params.has("instance_id") && params.has("platform")) ||
+    window.location.host.endsWith(".discordsays.com") ||
     document.referrer.includes("discord.com") ||
     document.referrer.includes("discordsays.com")
   );
@@ -1196,6 +1187,7 @@ function getDiscordActivitySdk() {
       return discordSdk;
     })
     .catch((err) => {
+      // Reset so the next login attempt can re-initialize the SDK
       discordActivitySdkPromise = null;
       discordActivityReadyPromise = null;
       throw err;
@@ -1258,21 +1250,6 @@ function withTimeout(promise, ms, message) {
   ]);
 }
 
-async function createDiscordActivitySession(accessToken) {
-  const response = await fetch("/auth/discord/activity", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ accessToken }),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const err = new Error(data.error || "Discord Activity session failed.");
-    err.stage = "token";
-    throw err;
-  }
-  return data;
-}
-
 async function loginWithDiscordActivity({ automatic = false, showFailure = true } = {}) {
   if (discordActivityLoginRunning) return false;
   if (!accountState?.discordClientId) {
@@ -1293,40 +1270,21 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
 
     setAuthGate("Opening Discord authorization...", false);
 
-    const existingAuth = await discordSdk.commands.authenticate({}).catch(() => null);
-    if (existingAuth?.access_token) {
-      await createDiscordActivitySession(existingAuth.access_token);
-      discordActivityLoginRunning = false;
-      await initAccountWidget();
-      return true;
-    }
-
     const state =
       window.crypto?.randomUUID?.() ||
       `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
-    let code;
-    try {
-      const authorization = await discordSdk.commands.authorize({
+    const { code } = await discordSdk.commands
+      .authorize({
         client_id: accountState.discordClientId,
         response_type: "code",
         state,
         prompt: "none",
-        scope: ["identify", "applications.commands"],
+        scope: ["identify"],
+      })
+      .catch((err) => {
+        err.stage = "authorize";
+        throw err;
       });
-      code = authorization.code;
-    } catch (err) {
-      if (String(err.message || err).includes("Already authenticated")) {
-        const auth = await discordSdk.commands.authenticate({}).catch(() => null);
-        if (auth?.access_token) {
-          await createDiscordActivitySession(auth.access_token);
-          discordActivityLoginRunning = false;
-          await initAccountWidget();
-          return true;
-        }
-      }
-      err.stage = "authorize";
-      throw err;
-    }
 
     const response = await fetch("/auth/discord/activity", {
       method: "POST",
@@ -1359,6 +1317,9 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
       stage: err.stage || "unknown",
       message: err.message || String(err),
     });
+    // Reset SDK promise so a retry can re-initialize from scratch
+    discordActivitySdkPromise = null;
+    discordActivityReadyPromise = null;
     discordActivityLoginRunning = false;
     if (showFailure) {
       setAuthGate("Discord Activity login failed. Try again.", true);
@@ -1370,12 +1331,10 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
 }
 
 async function loginWithDiscord() {
-  const activityHint = isDiscordActivityEnvironment();
-  const activityLoginSucceeded = await loginWithDiscordActivity({
-    automatic: false,
-    showFailure: activityHint,
-  });
-  if (activityLoginSucceeded || activityHint) return;
+  if (hasDiscordActivityParams()) {
+    await loginWithDiscordActivity({ automatic: false, showFailure: true });
+    return;
+  }
   window.location.href = "/auth/discord";
 }
 
