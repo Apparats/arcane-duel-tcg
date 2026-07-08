@@ -1,6 +1,6 @@
 module.exports = {
   name: "Slandah al Shuja",
-  cost: 1,
+  cost: 2,
   type: "minion",
   attack: 2,
   health: 3,

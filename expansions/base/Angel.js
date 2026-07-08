@@ -6,7 +6,7 @@ module.exports = {
   health: 5,
   keywords: [],
   race: "Monster",
-  rarity: "legendary",
+  rarity: "rare",
   country: "South Korea",
   lore: "Do not be afraid.",
   image: "art/Angel.webp",
