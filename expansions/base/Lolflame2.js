@@ -1,5 +1,5 @@
 module.exports = {
-  name: "Lolflame-A",
+  name: "Lolflame",
   cost: 7,
   type: "minion",
   attack: 4,
