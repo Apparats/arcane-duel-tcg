@@ -5,7 +5,7 @@ module.exports = {
   attack: 3,
   health: 5,
   keywords: [],
-  race: "human",
+  race: "Human",
   rarity: "common",
   country: "Sierra Leone",
   lore: "He might not be able to talk, but he's able to fight.",

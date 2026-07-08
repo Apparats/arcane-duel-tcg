@@ -2,7 +2,7 @@ module.exports = {
   name: "Juniiya",
   cost: 8,
   type: "minion",
-  attack: 8,
+  attack: 7,
   health: 5,
   keywords: [],
   race: "Human",

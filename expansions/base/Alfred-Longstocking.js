@@ -1,9 +1,9 @@
 module.exports = {
   name: "Alfred Longstocking",
-  cost: 4,
+  cost: 5,
   type: "minion",
   attack: 1,
-  health: 10,
+  health: 8,
   keywords: ["taunt"],
   race: "Human",
   rarity: "rare",

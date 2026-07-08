@@ -1,13 +1,13 @@
 module.exports = {
   name: "RotiLapis",
-  cost: 10,
+  cost: 8,
   type: "minion",
-  attack: 7,
+  attack: 6,
   health: 3,
-  keywords: [],
+  keywords: ["charge"],
   race: "Human",
-  rarity: "common",
+  rarity: "rare",
   country: "Indonesia",
-  lore: "This card can instantly attack when prepared..",
+  lore: "This card can instantly attack when prepared.",
   image: "art/RotiLapis.webp",
 };
