@@ -11,6 +11,6 @@ module.exports = {
   lore: "Golden Warerita! After dying, it turns into a normal warerita.",
   image: "art/GoldenWarerita.webp",
   abilities: [
-    { trigger: "onDeath", effect: "summonMinion", cardId: "base:Warerita", count: 1 },
+    { trigger: "onDeath", effect: "summonMinion", cardId: "base:warerita", count: 1 },
   ],
 };
