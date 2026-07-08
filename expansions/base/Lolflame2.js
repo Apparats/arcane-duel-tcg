@@ -1,13 +1,13 @@
 module.exports = {
-  name: "Lolflame",
+  name: "Lolflame-A",
   cost: 7,
   type: "minion",
-  attack: 2,
+  attack: 4,
   health: 6,
-  keywords: ["charge"], ["taunt"], 
+  keywords: ["charge"], 
   race: "Monster",
   rarity: "mythic",
   country: "Djibouti",
-  lore: "This card can instantly attack when prepared. This card has attack priority above all.",
-  image: "art/Lolflame.webp",
+  lore: "This card can instantly attack when prepared.",
+  image: "art/Lolflame2.webp",
 };
