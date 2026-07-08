@@ -9,5 +9,5 @@ module.exports = {
   rarity: "mythic",
   country: "Djibouti",
   lore: "This card can instantly attack when prepared.",
-  image: "art/Lolflame2.webp",
+  image: "art/Lolflames.webp",
 };
