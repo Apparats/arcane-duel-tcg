@@ -28,6 +28,40 @@
   box-shadow: 0 0 0 2px rgba(255, 224, 136, 0.82), 0 0 30px rgba(242, 202, 80, 0.42) !important;
 }
 
+.targeting-arrow {
+  position: absolute;
+  inset: 0;
+  z-index: 24;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.targeting-arrow-path {
+  fill: none;
+  stroke: #ffe088;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 9 9;
+  marker-end: url(#targetingArrowHead);
+  filter: drop-shadow(0 0 5px rgba(242, 202, 80, 0.9));
+  animation: targeting-dash 0.75s linear infinite;
+}
+
+.targeting-arrow marker path {
+  fill: #ffe088;
+}
+
+@keyframes targeting-dash {
+  to { stroke-dashoffset: -18; }
+}
+
+.card-dragging {
+  cursor: grabbing !important;
+  filter: brightness(1.15) saturate(1.08);
+}
+
 @media (prefers-reduced-motion: reduce) {
   #selfBoard .minion-card.selected { animation: none; }
 }

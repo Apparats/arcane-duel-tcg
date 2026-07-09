@@ -750,6 +750,7 @@ function renderHand(state) {
     if (card.type === "spell") el.classList.add("spell");
     if (card.cost > state.me.manaCurrent) el.classList.add("unaffordable");
     if (idx === selectedHandIndex) el.classList.add("selected");
+    el.dataset.handIndex = String(idx);
 
     el.innerHTML = `
       ${cardArtHTML(card)}

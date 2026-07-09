@@ -44,12 +44,11 @@
   padding: 22px clamp(22px, 4vw, 68px) 0;
   border-radius: 2px;
   background:
-    linear-gradient(rgba(244, 203, 117, 0.036) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(244, 203, 117, 0.036) 1px, transparent 1px),
-    radial-gradient(ellipse at 50% 48%, rgba(151, 91, 27, 0.2), transparent 39%),
-    radial-gradient(ellipse at 50% 110%, rgba(0, 0, 0, 0.72), transparent 62%),
-    linear-gradient(115deg, #160a03 0%, #2b1508 28%, #1d0d04 58%, #100703 100%);
-  background-size: 64px 64px, 64px 64px, auto, auto, auto;
+    radial-gradient(circle at 50% 50%, rgba(255, 219, 135, 0.14), rgba(232, 179, 79, 0.055) 18%, transparent 42%),
+    linear-gradient(90deg, rgba(232, 179, 79, 0.05), transparent 18%, transparent 82%, rgba(232, 179, 79, 0.05)),
+    radial-gradient(ellipse at 50% 8%, rgba(79, 195, 232, 0.13), transparent 38%),
+    radial-gradient(ellipse at 50% 54%, rgba(232, 179, 79, 0.11), transparent 42%),
+    radial-gradient(ellipse at bottom, #221824 0%, var(--bg) 70%);
 }
 
 .board::before {
@@ -183,18 +182,24 @@
   grid-template-columns: repeat(5, minmax(0, clamp(82px, 10.4vw, 156px)));
   gap: clamp(8px, 1.35vw, 22px);
   padding: 13px clamp(8px, 2vw, 26px);
-  border: 1px solid rgba(242, 202, 80, 0.22);
-  border-radius: 8px;
-  background:
-    linear-gradient(90deg, rgba(242, 202, 80, 0.07) 1px, transparent 1px),
-    linear-gradient(rgba(242, 202, 80, 0.055) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(65, 31, 11, 0.56), rgba(15, 6, 2, 0.5));
-  background-size: 20% 100%, 100% 50%, auto;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.42), inset 0 12px 24px rgba(0, 0, 0, 0.14), 0 8px 18px rgba(0, 0, 0, 0.2);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-#oppBoard { background-color: rgba(21, 8, 4, 0.52); }
-#selfBoard { background-color: rgba(72, 34, 10, 0.36); }
+#oppBoard,
+#selfBoard { background: transparent; }
+
+#screen-game .minion-card,
+#screen-game .hand-card.unaffordable {
+  opacity: 1;
+}
+
+#screen-game .minion-card.exhausted,
+#screen-game .hand-card.unaffordable {
+  filter: grayscale(0.56) brightness(0.72);
+}
 
 .center-strip {
   min-height: 52px;
@@ -269,7 +274,7 @@
 
 @media (max-width: 720px) and (orientation: portrait) {
   .board-frame { padding: 3px; }
-  .board { grid-template-rows: minmax(138px, 1fr) auto minmax(138px, 1fr) auto; gap: 6px; padding: 12px 10px 0; background-size: 40px 40px, 40px 40px, auto, auto, auto; }
+  .board { grid-template-rows: minmax(138px, 1fr) auto minmax(138px, 1fr) auto; gap: 6px; padding: 12px 10px 0; }
   .opponent-row { grid-template-rows: auto minmax(0, 1fr); gap: 6px; }
   .self-row { grid-template-rows: minmax(0, 1fr) auto; gap: 6px; }
   #selfHero { justify-self: start; }
