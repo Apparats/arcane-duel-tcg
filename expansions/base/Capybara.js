@@ -1,8 +1,8 @@
 module.exports = {
   name: "Capybara",
-  cost: 1,
+  cost: 2,
   type: "minion",
-  attack: 1,
+  attack: 2,
   health: 1,
   keywords: ["charge"],
   race: "Monster",

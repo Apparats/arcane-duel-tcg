@@ -1,9 +1,9 @@
 module.exports = {
   name: "Laucha",
-  cost: 3,
+  cost: 4,
   type: "minion",
-  attack: 3,
-  health: 5,
+  attack: 4,
+  health: 4,
   keywords: [],
   race: "Monster",
   rarity: "common",

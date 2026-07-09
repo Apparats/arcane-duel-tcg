@@ -1,8 +1,8 @@
 module.exports = {
   name: "Galileo Gunplay",
-  cost: 3,
+  cost: 5,
   type: "minion",
-  attack: 3,
+  attack: 5,
   health: 4,
   keywords: [],
   race: "Human",

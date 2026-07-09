@@ -1,13 +1,15 @@
 module.exports = {
   name: "Gabibbo Ardito",
-  cost: 1,
+  cost: 6,
   type: "minion",
   attack: 1,
-  health: 4,
-  keywords: [],
+  health: 6,
+  keywords: ["charge"],
   race: "Monster",
-  rarity: "rare",
+  rarity: "mythic",
   country: "Italy",
-  lore: "Corruption is only bad if I am not involved.",
+  lore: "Corruption is only bad if I am not involved. This card clones itself every turn when played.",
   image: "art/Gabibbo_Ardito.webp",
+  abilities: [
+    { trigger: "onAnyTurnStart", effect: "summonMinion", cardId: "base:gabibbo_Ardito", count: 1 },
 };

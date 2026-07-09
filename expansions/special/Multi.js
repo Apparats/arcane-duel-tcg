@@ -2,7 +2,7 @@ module.exports = {
   name: "Multi",
   cost: 1,
   type: "minion",
-  attack: 3,
+  attack: 2,
   health: 1,
   keywords: [],
   race: "Monster",
