@@ -11,6 +11,6 @@ module.exports = {
   lore: "Corruption is only bad if I am not involved. This card clones itself every turn when played.",
   image: "art/Gabibbo_Ardito.webp",
   abilities: [
-    { trigger: "onAnyTurnStart", effect: "summonMinion", cardId: "base:gabibbo_Ardito", count: 1 },
+    { trigger: "onAnyTurnStart", effect: "summonMinion", cardId: "base:gabibbo_ardito", count: 1 },
   ],
 };
