@@ -9,7 +9,9 @@ window.ArcaneAudioConfig = {
     mainMenu: {
       src: [
         "music/MainMenu1.ogg",
-        "music/MainMenu2.ogg",
+        "music/mainMenu2.ogg",
+        "music/mainMenu3.ogg",
+        "music/mainMenu4.ogg",
       ],
       loop: true,
       volume: 1,
