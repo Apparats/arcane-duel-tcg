@@ -84,6 +84,7 @@
       instanceId: nextInstanceId(),
       cardId: cardDef.id,
       name: cardDef.name,
+      cost: cardDef.cost,
       attack: cardDef.attack,
       health: cardDef.health,
       maxHealth: cardDef.health,

@@ -170,10 +170,11 @@
 }
 
 .inventory-card .card-badges {
-  left: 6px;
+  left: 3px;
   right: auto;
-  top: 38px;
-  align-items: flex-start;
+  top: 35px;
+  width: 24px;
+  align-items: center;
 }
 
 /* ---- Card zoom overlay ---- */

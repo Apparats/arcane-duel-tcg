@@ -39,12 +39,17 @@
     source.style.zIndex = "";
     const art = source.querySelector(".card-art");
     if (art) art.style.transform = "";
+    const sourceRect = source.getBoundingClientRect();
     drag = {
       source,
       type,
       payload,
       startX: event.clientX,
       startY: event.clientY,
+      arrowStart: {
+        x: sourceRect.left + sourceRect.width / 2,
+        y: sourceRect.top + sourceRect.height / 2,
+      },
       moved: false,
     };
     source.dataset.dragArmed = "true";
@@ -62,11 +67,10 @@
 
   function drawArrow(clientX, clientY) {
     if (!drag || (drag.type !== "attack" && drag.type !== "targeted-spell")) return;
-    const sourceRect = drag.source.getBoundingClientRect();
     const boardRect = board.getBoundingClientRect();
     arrow.setAttribute("viewBox", `0 0 ${boardRect.width} ${boardRect.height}`);
-    const startX = sourceRect.left - boardRect.left + sourceRect.width / 2;
-    const startY = sourceRect.top - boardRect.top + sourceRect.height / 2;
+    const startX = drag.arrowStart.x - boardRect.left;
+    const startY = drag.arrowStart.y - boardRect.top;
     const endX = clientX - boardRect.left;
     const endY = clientY - boardRect.top;
     const controlX = startX + (endX - startX) * 0.5;

@@ -66,25 +66,30 @@
 }
 
 #screen-game .hand-card .card-cost {
-  top: -8px;
-  left: -8px;
-  width: 30px;
-  height: 30px;
-  border: 2px solid rgba(18, 7, 2, 0.88);
-  background: radial-gradient(circle at 34% 28%, #d9c3ff, #7655c8 58%, #35206f);
-  color: #fff7df;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.56), 0 0 10px rgba(172, 124, 255, 0.34);
+  top: -7px;
+  left: -6px;
+  width: 25px;
+  height: 29px;
+}
+
+#screen-game .hand-card .card-badges {
+  top: 25px;
+  left: -6px;
+  width: 25px;
+  align-items: center;
 }
 
 @media (max-width: 900px) and (orientation: landscape) {
   #screen-game .hand-area { width: min(62vw, 530px); min-height: 92px; margin-bottom: 10px; padding: 4px 9px 0; }
   #screen-game .hand-card { width: clamp(62px, 10vw, 88px); margin-left: clamp(-25px, -2.7vw, -11px); }
-  #screen-game .hand-card .card-cost { width: 20px; height: 20px; top: -5px; left: -5px; font-size: 9px; border-width: 1px; }
+  #screen-game .hand-card .card-cost { width: 18px; height: 21px; top: -5px; left: -5px; font-size: 9px; }
+  #screen-game .hand-card .card-badges { top: 18px; left: -5px; width: 18px; }
 }
 
 @media (max-width: 720px) and (orientation: portrait) {
   #screen-game .hand-area { width: min(100%, 430px); min-height: 118px; margin-bottom: 10px; padding: 5px 8px 0; }
   #screen-game .hand-card { width: clamp(76px, 21vw, 102px); margin-left: clamp(-31px, -7.2vw, -17px); }
-  #screen-game .hand-card .card-cost { width: 24px; height: 24px; top: -6px; left: -6px; font-size: 10px; }
+  #screen-game .hand-card .card-cost { width: 22px; height: 25px; top: -6px; left: -5px; font-size: 10px; }
+  #screen-game .hand-card .card-badges { top: 23px; left: -5px; width: 22px; }
   #screen-game .hand-card:hover { transform: translateY(calc(var(--hand-rest-y) - 18px)) rotate(var(--hand-angle)) scale(1.03); }
 }
