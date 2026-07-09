@@ -12,4 +12,5 @@ module.exports = {
   image: "art/Gabibbo_Ardito.webp",
   abilities: [
     { trigger: "onAnyTurnStart", effect: "summonMinion", cardId: "base:gabibbo_Ardito", count: 1 },
+  ],
 };
