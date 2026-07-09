@@ -65,7 +65,7 @@
   box-shadow: 0 22px 34px rgba(0, 0, 0, 0.7), 0 0 0 2px rgba(242, 202, 80, 0.72), 0 0 28px rgba(242, 202, 80, 0.38);
 }
 
-#screen-game .hand-card .cost {
+#screen-game .hand-card .card-cost {
   top: -8px;
   left: -8px;
   width: 30px;
@@ -79,12 +79,12 @@
 @media (max-width: 900px) and (orientation: landscape) {
   #screen-game .hand-area { width: min(62vw, 530px); min-height: 92px; margin-bottom: 7px; padding: 4px 9px 0; }
   #screen-game .hand-card { width: clamp(62px, 10vw, 88px); margin-left: clamp(-25px, -2.7vw, -11px); }
-  #screen-game .hand-card .cost { width: 20px; height: 20px; top: -5px; left: -5px; font-size: 9px; border-width: 1px; }
+  #screen-game .hand-card .card-cost { width: 20px; height: 20px; top: -5px; left: -5px; font-size: 9px; border-width: 1px; }
 }
 
 @media (max-width: 720px) and (orientation: portrait) {
   #screen-game .hand-area { width: min(100%, 430px); min-height: 118px; margin-bottom: 7px; padding: 5px 8px 0; }
   #screen-game .hand-card { width: clamp(76px, 21vw, 102px); margin-left: clamp(-31px, -7.2vw, -17px); }
-  #screen-game .hand-card .cost { width: 24px; height: 24px; top: -6px; left: -6px; font-size: 10px; }
+  #screen-game .hand-card .card-cost { width: 24px; height: 24px; top: -6px; left: -6px; font-size: 10px; }
   #screen-game .hand-card:hover { transform: translateY(calc(var(--hand-rest-y) - 18px)) rotate(var(--hand-angle)) scale(1.03); }
 }

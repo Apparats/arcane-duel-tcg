@@ -57,6 +57,7 @@ function showNextCardOpening() {
     el.style.setProperty("--reveal-delay", `${idx * CARD_REVEAL_INTERVAL_MS}ms`);
     el.innerHTML = `
       ${cardArtHTML(card)}
+      ${cardCostHTML(card)}
       <div class="card-badges">${keywordBadgesHTML(card)}</div>
       <div class="card-footer">
         ${

@@ -722,6 +722,7 @@ function renderBoard(container, board, isSelf) {
 
     el.innerHTML = `
       ${cardArtHTML(m)}
+      ${cardCostHTML(m)}
       <div class="card-badges">${keywordBadgesHTML(m)}</div>
       <div class="card-footer">
         <span class="card-stat atk">${m.attack}</span>
@@ -754,7 +755,7 @@ function renderHand(state) {
 
     el.innerHTML = `
       ${cardArtHTML(card)}
-      <div class="cost">${card.cost}</div>
+      ${cardCostHTML(card)}
       <div class="card-badges">${keywordBadgesHTML(card)}</div>
       <div class="card-footer">
         ${
@@ -1008,6 +1009,11 @@ function keywordBadgesHTML(card) {
 
 function keywordIconHTML(keyword) {
   return KEYWORD_ICON[keyword] || KEYWORD_LABEL[keyword] || "?";
+}
+
+function cardCostHTML(card) {
+  const cost = Number.isFinite(Number(card?.cost)) ? Number(card.cost) : 0;
+  return `<span class="card-cost" aria-label="${cost} mana">${cost}</span>`;
 }
 
 function rarityClass(card) {

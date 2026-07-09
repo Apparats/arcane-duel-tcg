@@ -134,6 +134,7 @@ function openInventory() {
 function inventoryCardFaceHTML(card, lazy = false) {
   return `
     ${cardArtHTML(card, lazy)}
+    ${cardCostHTML(card)}
     <div class="card-badges">${keywordBadgesHTML(card)}</div>
     <div class="card-footer">
       ${
@@ -147,6 +148,7 @@ function inventoryCardFaceHTML(card, lazy = false) {
 
 function lockedInventoryCardHTML(card) {
   return `
+    ${cardCostHTML(card)}
     <div class="inventory-card-locked-face">
       <span class="inventory-card-lock-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" focusable="false">
