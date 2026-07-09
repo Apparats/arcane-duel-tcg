@@ -12,4 +12,5 @@ module.exports = {
   image: "art/Lolflames.webp",
   abilities: [
     { trigger: "onAttackMinion", effect: "damageAllEnemyMinions", value: 1 },
+  ],
 };
