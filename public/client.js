@@ -1707,7 +1707,7 @@ document.addEventListener("mouseenter", (e) => {
   if (!card) return;
 
   // Skip cards that are dying or locked
-  if (card.classList.contains("dying") || card.classList.contains("inventory-card-locked")) return;
+  if (card.classList.contains("dying") || card.classList.contains("inventory-card-locked") || card.dataset.dragArmed) return;
 
   card.dataset.entering = "true";
   
@@ -1732,7 +1732,7 @@ document.addEventListener("mousemove", (e) => {
   if (!card) return;
 
   // Skip cards that are dying or locked
-  if (card.classList.contains("dying") || card.classList.contains("inventory-card-locked")) return;
+  if (card.classList.contains("dying") || card.classList.contains("inventory-card-locked") || card.dataset.dragArmed) return;
 
   const rect = card.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -1808,6 +1808,7 @@ document.addEventListener("mouseout", (e) => {
 
   // If moving out of the card (not to a child node)
   if (!e.relatedTarget || !card.contains(e.relatedTarget)) {
+    if (card.dataset.dragArmed) return;
     delete card.dataset.entering;
     card.style.transition = "";
     card.style.transform = "";

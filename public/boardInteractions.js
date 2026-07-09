@@ -21,13 +21,23 @@
   }
 
   function clearDrag() {
-    if (drag?.source) drag.source.classList.remove("card-dragging");
+    if (drag?.source) {
+      drag.source.classList.remove("card-dragging", "card-dragging-hand", "card-dragging-attack");
+      delete drag.source.dataset.dragArmed;
+      if (drag.type === "hand" || drag.type === "targeted-spell") drag.source.style.transform = "";
+    }
     drag = null;
     clearArrow();
   }
 
   function startDrag(event, source, type, payload) {
     if (event.pointerType === "mouse" && event.button !== 0) return;
+    // A hover tilt may still be applied when the pointer goes down. Clear it
+    // before the drag takes ownership of the card transform.
+    source.style.transform = "";
+    source.style.zIndex = "";
+    const art = source.querySelector(".card-art");
+    if (art) art.style.transform = "";
     drag = {
       source,
       type,
@@ -36,7 +46,17 @@
       startY: event.clientY,
       moved: false,
     };
+    source.dataset.dragArmed = "true";
     source.setPointerCapture?.(event.pointerId);
+  }
+
+  function moveHandCard(clientX, clientY) {
+    if (!drag?.source) return;
+    const handRestY = drag.source.style.getPropertyValue("--hand-rest-y") || "0px";
+    const handAngle = drag.source.style.getPropertyValue("--hand-angle") || "0deg";
+    const offsetX = clientX - drag.startX;
+    const offsetY = clientY - drag.startY;
+    drag.source.style.transform = `translate(${offsetX}px, ${offsetY}px) translateY(${handRestY}) rotate(${handAngle}) scale(1.06)`;
   }
 
   function drawArrow(clientX, clientY) {
@@ -124,6 +144,9 @@
     if (distance < MOVE_THRESHOLD) return;
     drag.moved = true;
     drag.source.classList.add("card-dragging");
+    drag.source.classList.toggle("card-dragging-attack", drag.type === "attack");
+    drag.source.classList.toggle("card-dragging-hand", drag.type !== "attack");
+    if (drag.type !== "attack") moveHandCard(event.clientX, event.clientY);
     drawArrow(event.clientX, event.clientY);
     event.preventDefault();
   }, { passive: false });

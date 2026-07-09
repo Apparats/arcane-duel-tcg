@@ -62,6 +62,20 @@
   filter: brightness(1.15) saturate(1.08);
 }
 
+#screen-game .hand-card.card-dragging-hand {
+  z-index: 30;
+  transition: none !important;
+  pointer-events: none;
+  box-shadow: 0 24px 34px rgba(0, 0, 0, 0.66), 0 0 26px rgba(242, 202, 80, 0.34);
+}
+
+#selfBoard .minion-card.card-dragging-attack {
+  z-index: 20;
+  transform: translateY(-14px) scale(1.08) !important;
+  transition: transform 0.16s ease, filter 0.16s ease !important;
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.66), 0 0 24px rgba(242, 202, 80, 0.4);
+}
+
 @media (prefers-reduced-motion: reduce) {
   #selfBoard .minion-card.selected { animation: none; }
 }
