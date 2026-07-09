@@ -12,4 +12,5 @@ module.exports = {
   image: "art/Zugzwang.webp",
   abilities: [
     { trigger: "onPlay", effect: "draw", value: 3 },
+  ],
 };
