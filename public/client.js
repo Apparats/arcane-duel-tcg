@@ -33,6 +33,8 @@ let activeMatchMode = null;
 let discordActivityLoginRunning = false;
 let discordActivitySdkPromise = null;
 let discordActivityReadyPromise = null;
+let discordActivityEvents = null;
+let discordActivityLayoutSubscriptionPromise = null;
 
 let lastAnimatedActionSeq = 0; // avoids replaying the same attack's animation
 let lastRoundBannerKey = null;
@@ -1182,7 +1184,8 @@ function getDiscordActivitySdk() {
 
   const clientId = accountState?.discordClientId || DISCORD_CLIENT_ID;
   discordActivitySdkPromise = import("./vendor/discord-embedded-app-sdk/index.mjs")
-    .then(({ DiscordSDK }) => {
+    .then(({ DiscordSDK, Events }) => {
+      discordActivityEvents = Events;
       const discordSdk = new DiscordSDK(clientId, { disableConsoleLogOverride: true });
       discordActivityReadyPromise = discordSdk.ready();
       return discordSdk;
@@ -1198,12 +1201,50 @@ function getDiscordActivitySdk() {
 
 function startDiscordActivitySdk() {
   if (!hasDiscordActivityParams()) return;
-  getDiscordActivitySdk().catch((err) => {
-    reportClientLog("discord-activity-sdk-start-failed", {
-      stage: "construct",
+  getDiscordActivitySdk()
+    .then(async (discordSdk) => {
+      await withTimeout(
+        discordActivityReadyPromise || discordSdk.ready(),
+        DISCORD_ACTIVITY_READY_TIMEOUT_MS,
+        "Discord Activity SDK was not ready."
+      );
+      await subscribeToDiscordActivityLayoutUpdates(discordSdk);
+    })
+    .catch((err) => {
+      reportClientLog("discord-activity-sdk-start-failed", {
+        stage: err.stage || "construct",
+        message: err.message || String(err),
+      });
+    });
+}
+
+function applyDiscordActivityLayoutMode(layoutMode) {
+  const layoutNames = {
+    0: "focused",
+    1: "pip",
+    2: "grid",
+    "-1": "unhandled",
+  };
+  const name = layoutNames[layoutMode] || "unknown";
+  document.documentElement.dataset.discordLayout = name;
+  window.dispatchEvent(new CustomEvent("discordactivitylayoutchange", { detail: { layoutMode, name } }));
+}
+
+async function subscribeToDiscordActivityLayoutUpdates(discordSdk) {
+  if (discordActivityLayoutSubscriptionPromise) return discordActivityLayoutSubscriptionPromise;
+
+  const eventName = discordActivityEvents?.ACTIVITY_LAYOUT_MODE_UPDATE || "ACTIVITY_LAYOUT_MODE_UPDATE";
+  const handleLayoutModeUpdate = ({ layout_mode: layoutMode } = {}) => {
+    applyDiscordActivityLayoutMode(layoutMode);
+  };
+
+  discordActivityLayoutSubscriptionPromise = discordSdk.subscribe(eventName, handleLayoutModeUpdate).catch((err) => {
+    discordActivityLayoutSubscriptionPromise = null;
+    reportClientLog("discord-activity-layout-subscribe-failed", {
       message: err.message || String(err),
     });
   });
+  return discordActivityLayoutSubscriptionPromise;
 }
 
 function getDiscordActivityContext() {
@@ -1341,6 +1382,7 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
         err.stage = "ready";
         throw err;
       });
+    await subscribeToDiscordActivityLayoutUpdates(discordSdk);
 
     setAuthGate("Opening Discord authorization...", false);
 

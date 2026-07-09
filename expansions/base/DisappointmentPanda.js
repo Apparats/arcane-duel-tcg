@@ -1,9 +1,9 @@
 module.exports = {
   name: "DisappointmentPanda",
-  cost: 3,
+  cost: 4,
   type: "minion",
-  attack: 2,
-  health: 6,
+  attack: 3,
+  health: 3,
   keywords: ["taunt"],
   race: "Monster",
   rarity: "common",

@@ -6,8 +6,8 @@
 
 .target-hint {
   position: fixed;
-  bottom: 14px;
-  left: 50%;
+  bottom: calc(14px + var(--safe-bottom));
+  left: calc(50% + (var(--safe-left) - var(--safe-right)) / 2);
   transform: translateX(-50%);
   background: var(--panel-2);
   border: 1px solid var(--gold);
@@ -80,8 +80,8 @@
 
 .toast {
   position: fixed;
-  top: 14px;
-  left: 50%;
+  top: calc(14px + var(--safe-top));
+  left: calc(50% + (var(--safe-left) - var(--safe-right)) / 2);
   transform: translateX(-50%);
   background: var(--hp);
   color: white;
