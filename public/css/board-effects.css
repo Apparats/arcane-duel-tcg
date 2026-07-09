@@ -1,0 +1,33 @@
+/* ============================================================
+   BOARD EFFECTS - tactical clarity states layered on top of fx.css.
+   ============================================================ */
+
+@keyframes ready-card-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(242, 202, 80, 0.58), 0 0 12px rgba(242, 202, 80, 0.18); }
+  50% { box-shadow: 0 0 0 2px rgba(255, 224, 136, 0.9), 0 0 24px rgba(242, 202, 80, 0.42); }
+}
+
+#selfBoard .minion-card.selected {
+  outline: 0;
+  border-color: #ffe088;
+  animation: ready-card-pulse 1.2s ease-in-out infinite;
+}
+
+#screen-game .targetable {
+  outline: 0;
+  border-color: #ffb2a5;
+  box-shadow: 0 0 0 2px rgba(255, 106, 89, 0.72), 0 0 22px rgba(255, 77, 77, 0.38);
+}
+
+#screen-game .hero-panel.targetable {
+  border-color: #ffb2a5;
+  box-shadow: 0 0 0 2px rgba(255, 106, 89, 0.66), 0 0 24px rgba(255, 77, 77, 0.3), inset 0 1px 0 rgba(255, 233, 198, 0.14);
+}
+
+.summoned-from-hand {
+  box-shadow: 0 0 0 2px rgba(255, 224, 136, 0.82), 0 0 30px rgba(242, 202, 80, 0.42) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #selfBoard .minion-card.selected { animation: none; }
+}

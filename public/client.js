@@ -739,9 +739,14 @@ function renderBoard(container, board, isSelf) {
 function renderHand(state) {
   const container = $("handArea");
   container.innerHTML = "";
+  const handCount = state.me.hand.length;
+  container.dataset.cardCount = String(handCount);
   state.me.hand.forEach((card, idx) => {
     const el = document.createElement("div");
     el.className = `hand-card ${rarityClass(card)}`;
+    const fanOffset = idx - (handCount - 1) / 2;
+    el.style.setProperty("--hand-angle", `${fanOffset * 3.2}deg`);
+    el.style.setProperty("--hand-rest-y", `${Math.abs(fanOffset) * 3}px`);
     if (card.type === "spell") el.classList.add("spell");
     if (card.cost > state.me.manaCurrent) el.classList.add("unaffordable");
     if (idx === selectedHandIndex) el.classList.add("selected");
@@ -1750,20 +1755,22 @@ document.addEventListener("mousemove", (e) => {
   // Hand card vs Board minion card adjustments (keep their selected state translate offset)
   let baseTranslateY = "0px";
   if (card.classList.contains("hand-card")) {
+    const handRestY = card.style.getPropertyValue("--hand-rest-y") || "0px";
+    const handAngle = card.style.getPropertyValue("--hand-angle") || "0deg";
     if (card.classList.contains("selected")) {
-      baseTranslateY = "-18px";
+      baseTranslateY = `calc(${handRestY} - 34px)`;
     } else {
-      baseTranslateY = "-12px"; // Match CSS hover lift
+      baseTranslateY = `calc(${handRestY} - 28px)`;
     }
+    card.style.transform = `translateY(${baseTranslateY}) rotate(${handAngle}) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
   } else if (card.classList.contains("minion-card")) {
     if (card.classList.contains("selected")) {
       baseTranslateY = "-5px";
     } else {
       baseTranslateY = "-5px"; // Match CSS hover lift
     }
+    card.style.transform = `translateY(${baseTranslateY}) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
   }
-
-  card.style.transform = `translateY(${baseTranslateY}) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
   card.style.zIndex = "10";
 
   // Keep the art at native scale so hover inspection does not blur or crop it.
