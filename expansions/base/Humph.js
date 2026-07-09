@@ -1,16 +1,13 @@
 module.exports = {
   name: "Humph",
-  cost: 6,
+  cost: 5,
   type: "minion",
   attack: 3,
   health: 6,
-  keywords: [], 
+  keywords: ["divineShield"], 
   race: "Human",
   rarity: "mythic",
   country: "Ireland",
-  lore: "Cork bai. When played this card buffs all friendly cards by 1.",
+  lore: "Cork bai. This card avoids the first attack against it.",
   image: "art/Humph.webp",
-  abilities: [
-    { trigger: "onPlay", effect: "buffAllFriendlyMinions", stat: "attack", value: 1 },
-  ],
 };
