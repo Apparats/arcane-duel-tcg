@@ -5,10 +5,11 @@
 
 (() => {
   const board = document.querySelector(".board");
+  const arrow = document.getElementById("targetingArrow");
   const arrowPath = document.getElementById("targetingArrowPath");
-  if (!board || !arrowPath) return;
+  if (!board || !arrow || !arrowPath) return;
 
-  const MOVE_THRESHOLD = 10;
+  const MOVE_THRESHOLD = 14;
   let drag = null;
   let suppressNextClick = false;
 
@@ -63,6 +64,7 @@
     if (!drag || (drag.type !== "attack" && drag.type !== "targeted-spell")) return;
     const sourceRect = drag.source.getBoundingClientRect();
     const boardRect = board.getBoundingClientRect();
+    arrow.setAttribute("viewBox", `0 0 ${boardRect.width} ${boardRect.height}`);
     const startX = sourceRect.left - boardRect.left + sourceRect.width / 2;
     const startY = sourceRect.top - boardRect.top + sourceRect.height / 2;
     const endX = clientX - boardRect.left;
@@ -84,10 +86,11 @@
 
   function finishAttack(clientX, clientY) {
     const target = targetFromPoint(clientX, clientY);
-    if (!target || (target.id === "self")) return;
+    if (!target || target.id === "self") return false;
     window.ArcaneAudio?.playSfx("attack");
     send("attack", { attackerInstanceId: drag.payload.instanceId, targetInstanceId: target.id });
     selectedAttackerId = null;
+    return true;
   }
 
   function finishHandDrag(clientX, clientY) {
@@ -96,27 +99,28 @@
     const overSelfBoard = Boolean(closest(document.elementFromPoint(clientX, clientY), "#selfBoard"));
 
     if (card.type === "minion") {
-      if (!overSelfBoard) return;
+      if (!overSelfBoard) return false;
       window.ArcaneAudio?.playSfx("cardPlay");
       pendingHandPlayAnimation = { cardId: card.id, rect: drag.source.getBoundingClientRect(), createdAt: performance.now() };
       send("playCard", { handIndex, targetInstanceId: null });
-      return;
+      return true;
     }
 
     if (card.effect === "draw" || !card.effect) {
-      if (!overSelfBoard) return;
+      if (!overSelfBoard) return false;
       window.ArcaneAudio?.playSfx("cardPlay");
       send("playCard", { handIndex, targetInstanceId: null });
-      return;
+      return true;
     }
 
-    if (!target) return;
+    if (!target) return false;
     const healTarget = target.id === "self" || target.minion?.parentElement?.id === "selfBoard";
-    if (card.effect === "heal" ? !healTarget : healTarget) return;
+    if (card.effect === "heal" ? !healTarget : healTarget) return false;
     window.ArcaneAudio?.playSfx("cardPlay");
     send("playCard", { handIndex, targetInstanceId: target.id });
     selectedHandIndex = null;
     hideTargetHint();
+    return true;
   }
 
   board.addEventListener("pointerdown", (event) => {
@@ -141,7 +145,8 @@
   document.addEventListener("pointermove", (event) => {
     if (!drag) return;
     const distance = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
-    if (distance < MOVE_THRESHOLD) return;
+    const threshold = event.pointerType === "touch" ? MOVE_THRESHOLD + 6 : MOVE_THRESHOLD;
+    if (distance < threshold) return;
     drag.moved = true;
     drag.source.classList.add("card-dragging");
     drag.source.classList.toggle("card-dragging-attack", drag.type === "attack");
@@ -155,9 +160,10 @@
     if (!drag) return;
     const activeDrag = drag;
     if (activeDrag.moved) {
-      suppressNextClick = true;
-      if (activeDrag.type === "attack") finishAttack(event.clientX, event.clientY);
-      else finishHandDrag(event.clientX, event.clientY);
+      const handled = activeDrag.type === "attack"
+        ? finishAttack(event.clientX, event.clientY)
+        : finishHandDrag(event.clientX, event.clientY);
+      suppressNextClick = Boolean(handled);
     }
     clearDrag();
   });

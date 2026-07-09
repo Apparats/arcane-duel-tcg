@@ -747,7 +747,9 @@ function renderHand(state) {
     el.className = `hand-card ${rarityClass(card)}`;
     const fanOffset = idx - (handCount - 1) / 2;
     el.style.setProperty("--hand-angle", `${fanOffset * 3.2}deg`);
-    el.style.setProperty("--hand-rest-y", `${Math.abs(fanOffset) * 3}px`);
+    // Lift the outer cards slightly so their rotation never reaches the
+    // lower board frame.
+    el.style.setProperty("--hand-rest-y", `${-Math.abs(fanOffset) * 5}px`);
     if (card.type === "spell") el.classList.add("spell");
     if (card.cost > state.me.manaCurrent) el.classList.add("unaffordable");
     if (idx === selectedHandIndex) el.classList.add("selected");
