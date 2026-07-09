@@ -11,6 +11,6 @@ module.exports = {
   lore: "Cork bai. When played this card buffs all friendly cards by 1.",
   image: "art/Humph.webp",
   abilities: [
-    { trigger: "onPlay", effect: "buffAllFriendlyMinions", "attack", value: 1 },
+    { trigger: "onPlay", effect: "buffAllFriendlyMinions", stat: "attack", value: 1 },
   ],
 };
