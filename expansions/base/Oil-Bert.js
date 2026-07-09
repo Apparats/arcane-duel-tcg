@@ -1,6 +1,6 @@
 module.exports = {
   name: "Oil Bert",
-  cost: 7,
+  cost: 6,
   type: "minion",
   attack: 4,
   health: 6,
