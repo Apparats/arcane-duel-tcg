@@ -18,7 +18,6 @@ const jwt = require("jsonwebtoken");
 const { buildStarterOpening } = require("./cardRewards");
 const {
   consumePendingRewards,
-  connectDB,
   findOrCreateUserFromDiscord,
   findUserById,
   getDailyRewardProgress,
@@ -66,11 +65,14 @@ function cookieSecure() {
   return process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production";
 }
 
-function setSessionCookie(res, token) {
+function setSessionCookie(res, token, { embedded = false } = {}) {
+  const secure = cookieSecure();
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: cookieSecure(),
-    sameSite: "lax",
+    secure,
+    // Discord Activities run in a cross-site iframe. Lax cookies are not
+    // reliably returned for later API calls from that context.
+    sameSite: embedded && secure ? "none" : "lax",
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days, mirrors SESSION_DURATION
   });
 }
@@ -165,9 +167,14 @@ function readCookie(cookieHeader, name) {
 
 // Reads the session cookie (if any) and resolves it to a public-safe
 // user object, or null if there's no valid session. Never throws.
-async function getSessionUser(req) {
+function readBearerToken(req) {
+  const value = String(req.get("authorization") || "");
+  const match = /^Bearer\s+([^\s]{1,4096})$/i.exec(value);
+  return match ? match[1] : null;
+}
+
+async function getSessionUserByToken(token) {
   if (!isAuthEnabled() || !isDbEnabled()) return null;
-  const token = req.cookies && req.cookies[COOKIE_NAME];
   if (!token) return null;
 
   try {
@@ -180,20 +187,15 @@ async function getSessionUser(req) {
   }
 }
 
-async function getSessionUserFromCookieHeader(cookieHeader) {
-  if (!isAuthEnabled() || !isDbEnabled()) return null;
-  const token = readCookie(cookieHeader, COOKIE_NAME);
-  if (!token) return null;
+// Prefer the Activity bearer session when present. Browser login continues to
+// use the httpOnly cookie, so normal OAuth navigation does not expose a JWT.
+async function getSessionUser(req) {
+  return getSessionUserByToken(readBearerToken(req) || req.cookies?.[COOKIE_NAME]);
+}
 
-  try {
-    await connectDB();
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await findUserById(payload.userId);
-    if (!user) return null;
-    return toPublicUser(user);
-  } catch (err) {
-    return null;
-  }
+async function getSessionUserFromCookieHeader(cookieHeader) {
+  const token = readCookie(cookieHeader, COOKIE_NAME);
+  return getSessionUserByToken(token);
 }
 
 // Never send the full Mongo document to the client — trim it to what
@@ -278,10 +280,11 @@ router.post("/discord/activity", async (req, res) => {
     const profile = await fetchDiscordProfile(tokenData.access_token);
     const user = await findOrCreateSessionUser(profile);
     const session = signSession(user._id);
-    setSessionCookie(res, session);
+    setSessionCookie(res, session, { embedded: true });
     res.json({
       ok: true,
       access_token: tokenData.access_token,
+      session_token: session,
       user: toPublicUser(user),
     });
   } catch (err) {
@@ -307,9 +310,10 @@ router.get("/me", async (req, res) => {
 });
 
 router.post("/logout", (req, res) => {
+  const secure = cookieSecure();
   res.clearCookie(COOKIE_NAME, {
-    secure: cookieSecure(),
-    sameSite: "lax",
+    secure,
+    sameSite: secure ? "none" : "lax",
   });
   res.json({ ok: true });
 });

@@ -11,7 +11,7 @@ function updateShopGold() {
 
 async function loadShopConfig() {
   if (shopConfig) return shopConfig;
-  const res = await fetch("/shop/config");
+  const res = await arcaneFetch("/shop/config");
   shopConfig = await res.json();
   renderShopPacks(shopConfig.packs || []);
   return shopConfig;
@@ -85,7 +85,7 @@ async function buyPack(packId) {
   });
 
   try {
-    const res = await fetch("/shop/buy-pack", {
+    const res = await arcaneFetch("/shop/buy-pack", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ packId }),

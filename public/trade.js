@@ -8,7 +8,7 @@ const tradeState = {
 };
 
 async function tradeRequest(path, options = {}) {
-  const res = await fetch(path, {
+  const res = await arcaneFetch(path, {
     ...options,
     headers: {
       "Content-Type": "application/json",

@@ -16,7 +16,7 @@ function setInventoryTab(tabName) {
 }
 
 async function fetchDeckState() {
-  const res = await fetch("/decks");
+  const res = await arcaneFetch("/decks");
   if (!res.ok) throw new Error("Could not load decks.");
   return res.json();
 }
@@ -197,7 +197,7 @@ async function saveCurrentDeck() {
   if (!validation.ok) return showToast(validation.errors[0]);
 
   try {
-    const res = await fetch("/decks", {
+    const res = await arcaneFetch("/decks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -220,7 +220,7 @@ async function saveCurrentDeck() {
 
 async function autoBuildCurrentDeck() {
   try {
-    const res = await fetch("/decks/auto", {
+    const res = await arcaneFetch("/decks/auto", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

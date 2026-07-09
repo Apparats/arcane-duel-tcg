@@ -48,6 +48,15 @@ const ROUND_BANNER_DELAY = 980;
 
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const apiFetch = (input, options = {}) => {
+  const headers = new Headers(options.headers || {});
+  const sessionToken = readActivitySessionToken();
+  if (sessionToken && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${sessionToken}`);
+  }
+  return fetch(input, { ...options, headers, credentials: "include" });
+};
+window.arcaneFetch = apiFetch;
 const closestElement = (target, selector) =>
   target && target.nodeType === Node.ELEMENT_NODE ? target.closest(selector) : null;
 const hoverTooltipQuery = window.matchMedia?.("(hover: hover) and (pointer: fine)");
@@ -1114,7 +1123,7 @@ async function initAccountWidget({ skipActivityAutoLogin = false } = {}) {
   switchScreen("auth");
   setAuthGate("Checking Discord session...", false);
   try {
-    const res = await fetch("/auth/me");
+    const res = await apiFetch("/auth/me");
     data = await res.json();
   } catch (err) {
     setAuthGate("Start the local server to continue with Discord login.", false);
@@ -1272,7 +1281,7 @@ function getDiscordActivityContext() {
 }
 
 function reportClientLog(type, payload = {}) {
-  fetch("/client-log", {
+  apiFetch("/client-log", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -1301,12 +1310,17 @@ function readActivityAuthCache() {
   }
 }
 
+function readActivitySessionToken() {
+  return readActivityAuthCache()?.sessionToken || null;
+}
+
 function writeActivityAuthCache(data) {
   if (!data?.access_token) return;
   sessionStorage.setItem(
     ACTIVITY_AUTH_CACHE_KEY,
     JSON.stringify({
       accessToken: data.access_token,
+      sessionToken: data.session_token || null,
       user: data.user || null,
     })
   );
@@ -1317,7 +1331,7 @@ function clearActivityAuthCache() {
 }
 
 async function createDiscordActivitySession(accessToken) {
-  const response = await fetch("/auth/discord/activity", {
+  const response = await apiFetch("/auth/discord/activity", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ accessToken }),
@@ -1331,24 +1345,12 @@ async function createDiscordActivitySession(accessToken) {
   return data;
 }
 
-function completeActivityLoginFromUser(user) {
-  if (!user) return;
-  accountState = { ...(accountState || {}), loggedIn: true, user };
-  $("btnLoginDiscord").classList.add("hidden");
-  $("accountProfile").classList.remove("hidden");
-  updateAccountDisplay(user);
-  if (user.avatarUrl) {
-    $("accountAvatar").src = user.avatarUrl;
-    $("accountAvatar").classList.remove("hidden");
-  }
-  if (hasSeenEnterGate()) switchScreen("menu");
-  else switchScreen("enter");
-}
-
-async function refreshAfterActivityLogin(fallbackUser) {
+async function refreshAfterActivityLogin() {
   await initAccountWidget({ skipActivityAutoLogin: true });
-  if (!accountState?.loggedIn && fallbackUser) {
-    completeActivityLoginFromUser(fallbackUser);
+  if (!accountState?.loggedIn) {
+    const err = new Error("Discord Activity session was not retained.");
+    err.stage = "session";
+    throw err;
   }
 }
 
@@ -1368,8 +1370,13 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
       setAuthGate("Restoring Discord session...", false);
       try {
         const session = await createDiscordActivitySession(cachedAuth.accessToken);
+        writeActivityAuthCache({
+          access_token: cachedAuth.accessToken,
+          session_token: session.session_token,
+          user: session.user || cachedAuth.user,
+        });
         discordActivityLoginRunning = false;
-        await refreshAfterActivityLogin(session.user || cachedAuth.user);
+        await refreshAfterActivityLogin();
         return true;
       } catch {
         clearActivityAuthCache();
@@ -1402,9 +1409,13 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
           const auth = await discordSdk.commands.authenticate({ access_token: null }).catch(() => null);
           if (auth?.access_token) {
             const session = await createDiscordActivitySession(auth.access_token);
-            writeActivityAuthCache({ access_token: auth.access_token, user: session.user || auth.user });
+            writeActivityAuthCache({
+              access_token: auth.access_token,
+              session_token: session.session_token,
+              user: session.user || auth.user,
+            });
             discordActivityLoginRunning = false;
-            await refreshAfterActivityLogin(session.user || auth.user);
+            await refreshAfterActivityLogin();
             return { code: null };
           }
         }
@@ -1414,7 +1425,7 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
 
     if (!code) return true;
 
-    const response = await fetch("/auth/discord/activity", {
+    const response = await apiFetch("/auth/discord/activity", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code }),
@@ -1438,7 +1449,7 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
     }
 
     discordActivityLoginRunning = false;
-    await refreshAfterActivityLogin(data.user || auth.user);
+    await refreshAfterActivityLogin();
     return true;
   } catch (err) {
     console.error("Discord Activity login failed:", err);
@@ -1530,7 +1541,7 @@ function inviteDiscordActivity() {
 
 async function loadEnabledExpansions() {
   try {
-    const res = await fetch("/expansions/enabled");
+    const res = await apiFetch("/expansions/enabled");
     const data = await res.json();
     enabledExpansionIds = new Set((data.expansions || []).map((expansion) => expansion.id));
   } catch (err) {
@@ -1660,8 +1671,9 @@ $("screen-enter").addEventListener("keydown", (event) => {
 });
 
 $("btnLogout").addEventListener("click", async () => {
+  clearActivityAuthCache();
   try {
-    await fetch("/auth/logout", { method: "POST" });
+    await apiFetch("/auth/logout", { method: "POST" });
   } catch (err) {
     // ignore — worst case the cookie just expires on its own later
   }
