@@ -1014,7 +1014,17 @@ function keywordIconHTML(keyword) {
 }
 
 function cardCostHTML(card) {
-  const cost = Number.isFinite(Number(card?.cost)) ? Number(card.cost) : 0;
+  // Board instances from matches created before a catalog update can carry a
+  // stale cost. The catalog is the canonical visual source for every card ID.
+  const cardId = card?.cardId || card?.id;
+  const catalogCard = typeof TCGCards !== "undefined" ? TCGCards.getCardById(cardId) : null;
+  const catalogCost = Number(catalogCard?.cost);
+  const instanceCost = Number(card?.cost);
+  const cost = Number.isFinite(catalogCost)
+    ? catalogCost
+    : Number.isFinite(instanceCost)
+      ? instanceCost
+      : 0;
   return `<span class="card-cost" aria-label="${cost} mana">${cost}</span>`;
 }
 
