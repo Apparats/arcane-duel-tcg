@@ -94,6 +94,34 @@
   min-width: 220px;
 }
 
+.auth-legal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 16px;
+  color: rgba(225, 215, 193, 0.42);
+  font-size: 12px;
+}
+
+.auth-legal-link {
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: var(--cream-dim);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: rgba(225, 215, 193, 0.32);
+  text-underline-offset: 3px;
+}
+
+.auth-legal-link:hover,
+.auth-legal-link:focus-visible {
+  color: var(--gold);
+  text-decoration-color: currentColor;
+}
+
 /* ---- Smooth ambient glow (multi-layer to avoid banding/pixelation) ---- */
 
 .menu-glow {
@@ -587,7 +615,8 @@
   box-shadow: 0 10px 26px rgba(255, 94, 43, 0.22), inset 0 1px 0 rgba(255, 240, 226, 0.42);
 }
 
-.menu-tile-support .menu-tile-icon,
+.menu-tile-support .menu-tile-icon { color: #6b351d; }
+
 .menu-tile-support .menu-tile-label { color: #fffaf4; }
 
 .menu-tile-support .menu-tile-sub { color: rgba(255, 250, 244, 0.84); }
@@ -632,6 +661,54 @@
   line-height: 1.5;
 }
 
+.legal-card {
+  display: flex;
+  width: min(92vw, 680px);
+  max-height: min(78vh, 720px);
+  padding: 24px 28px;
+  flex-direction: column;
+  text-align: left;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.62), inset 0 0 0 1px rgba(232, 179, 79, 0.08);
+}
+
+.legal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex: 0 0 auto;
+}
+
+.legal-header h2 { margin-bottom: 0; }
+
+.legal-content {
+  min-height: 0;
+  margin-top: 18px;
+  overflow-y: auto;
+  color: var(--cream-dim);
+  font-size: 14px;
+  line-height: 1.55;
+  scrollbar-color: rgba(232, 179, 79, 0.55) transparent;
+}
+
+.legal-content h3 {
+  margin: 20px 0 6px;
+  color: var(--cream);
+  font-family: "Cinzel", serif;
+  font-size: 15px;
+}
+
+.legal-content h3:first-of-type { margin-top: 12px; }
+
+.legal-content p { margin: 0 0 10px; }
+
+.legal-content strong { color: var(--gold); }
+
+.legal-updated {
+  color: rgba(225, 215, 193, 0.52);
+  font-size: 12px;
+}
+
 .menu-tile-lock {
   display: inline-flex;
   align-items: center;
@@ -652,6 +729,12 @@
   .menu-brand { font-size: 38px; }
   .brand-sub { font-size: 14px; }
   .menu-grid { grid-template-columns: 1fr; gap: 16px; margin-top: 24px; }
+
+  .legal-card {
+    width: min(94vw, 680px);
+    max-height: min(82vh, 720px);
+    padding: 20px;
+  }
   .menu-grid-secondary {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;

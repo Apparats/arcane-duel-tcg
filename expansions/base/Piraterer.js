@@ -1,9 +1,9 @@
 module.exports = {
   name: "Piraterer",
-  cost: 9,
+  cost: 10,
   type: "minion",
-  attack: 3,
-  health: 9,
+  attack: 5,
+  health: 10,
   keywords: [],
   race: "Human",
   rarity: "rare",

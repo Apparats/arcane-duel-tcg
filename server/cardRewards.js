@@ -1,22 +1,15 @@
 const PACK_RARITY_WEIGHTS = {
-  common: 68,
-  rare: 24,
-  legendary: 7,
-  mythic: 1,
+  common: 65,
+  rare: 25,
+  legendary: 8,
+  mythic: 2,
 };
 
-const STARTER_RECIPE = [
-  { rarity: "common", count: 12 },
-  { rarity: "rare", count: 2 },
-  { rarity: "legendary", count: 1 },
-];
-const STARTER_EXTRA_COUNT = 5;
-const STARTER_EXTRA_RARITY_WEIGHTS = {
-  common: 76,
-  rare: 24,
-};
+const STARTER_CARD_COUNT = 20;
+const STARTER_GUARANTEED_RARITY = "mythic";
+const STARTER_RARITY_LIMITS = { legendary: 3, mythic: 1 };
 const STARTER_MAX_COPIES_PER_CARD = 2;
-const STARTER_CARD_COUNT = STARTER_RECIPE.reduce((sum, entry) => sum + entry.count, STARTER_EXTRA_COUNT);
+const STARTER_CARD_COPY_LIMITS = { legendary: 1, mythic: 1 };
 
 function assertDrawCount(count, label = "card count") {
   if (!Number.isInteger(count) || count < 1 || count > 20) {
@@ -43,8 +36,11 @@ function cardsByRarity(cards, rarity) {
   return cards.filter((card) => (card.rarity || "common") === rarity);
 }
 
-function availableUnderCopyLimit(cards, counts, maxCopies) {
-  return cards.filter((card) => (counts[card.id] || 0) < maxCopies);
+function availableStarterCards(cards, counts) {
+  return cards.filter((card) => {
+    const copyLimit = STARTER_CARD_COPY_LIMITS[card.rarity || "common"] || STARTER_MAX_COPIES_PER_CARD;
+    return (counts[card.id] || 0) < copyLimit;
+  });
 }
 
 function addDrawnCard(card, counts) {
@@ -57,31 +53,6 @@ function countDrawnCards(cards) {
     counts[card.id] = (counts[card.id] || 0) + 1;
     return counts;
   }, {});
-}
-
-function uniqueCardsById(cards) {
-  return [...new Map(cards.map((card) => [card.id, card])).values()];
-}
-
-function enforceMaxCopies(openedCards, cardPool, maxCopies = STARTER_MAX_COPIES_PER_CARD) {
-  const uniquePool = uniqueCardsById(cardPool);
-  const counts = {};
-
-  return openedCards.map((card) => {
-    if ((counts[card.id] || 0) < maxCopies) {
-      counts[card.id] = (counts[card.id] || 0) + 1;
-      return card;
-    }
-
-    const replacementPool = uniquePool.filter((candidate) => (counts[candidate.id] || 0) < maxCopies);
-    if (replacementPool.length === 0) {
-      throw new Error("Starter card pool does not have enough unique cards for the copy limit.");
-    }
-
-    const replacement = randomFrom(replacementPool);
-    counts[replacement.id] = (counts[replacement.id] || 0) + 1;
-    return replacement;
-  });
 }
 
 function drawWeightedCards(cards, count) {
@@ -101,46 +72,37 @@ function drawWeightedCardsFromRarities(cards, count, rarities) {
   });
 }
 
-function drawRecipeCards(cards, recipe = STARTER_RECIPE) {
-  return recipe.flatMap(({ rarity, count }) => {
-    const pool = cardsByRarity(cards, rarity);
-    const fallback = pool.length > 0 ? pool : cards;
-    return Array.from({ length: count }, () => randomFrom(fallback));
-  });
-}
+function drawStarterCards(cards) {
+  const counts = {};
+  const rarityCounts = { [STARTER_GUARANTEED_RARITY]: 0 };
+  const mythicCandidates = availableStarterCards(cardsByRarity(cards, STARTER_GUARANTEED_RARITY), counts);
+  if (mythicCandidates.length === 0) {
+    throw new Error("Starter card pool needs at least one mythic card.");
+  }
 
-function drawRecipeCardsWithLimit(cards, counts, recipe = STARTER_RECIPE, maxCopies = STARTER_MAX_COPIES_PER_CARD) {
-  return recipe.flatMap(({ rarity, count }) => {
-    const rarityPool = cardsByRarity(cards, rarity);
-    const pool = rarityPool.length > 0 ? rarityPool : cards;
+  const opening = [addDrawnCard(randomFrom(mythicCandidates), counts)];
+  rarityCounts[STARTER_GUARANTEED_RARITY] = 1;
+  const nonMythicRarities = Object.entries(PACK_RARITY_WEIGHTS)
+    .filter(([rarity]) => rarity !== STARTER_GUARANTEED_RARITY)
+    .map(([value, weight]) => ({ value, weight }));
 
-    return Array.from({ length: count }, () => {
-      const candidates = availableUnderCopyLimit(pool, counts, maxCopies);
-      const fallbackCandidates = availableUnderCopyLimit(cards, counts, maxCopies);
-      const card = randomFrom(candidates.length > 0 ? candidates : fallbackCandidates);
-      return addDrawnCard(card, counts);
+  while (opening.length < STARTER_CARD_COUNT) {
+    const eligibleRarities = nonMythicRarities.filter(({ value }) => {
+      const rarityLimit = STARTER_RARITY_LIMITS[value] ?? Infinity;
+      if ((rarityCounts[value] || 0) >= rarityLimit) return false;
+      return availableStarterCards(cardsByRarity(cards, value), counts).length > 0;
     });
-  });
-}
-
-function drawWeightedCardsFromRaritiesWithLimit(cards, count, rarities, counts, maxCopies = STARTER_MAX_COPIES_PER_CARD) {
-  assertDrawCount(count, "draw count");
-  return Array.from({ length: count }, () => {
-    for (let attempts = 0; attempts < 8; attempts++) {
-      const rarityPool = cardsByRarity(cards, weightedPick(rarities));
-      const candidates = availableUnderCopyLimit(rarityPool, counts, maxCopies);
-      if (candidates.length > 0) return addDrawnCard(randomFrom(candidates), counts);
+    if (eligibleRarities.length === 0) {
+      throw new Error("Starter card pool does not have enough cards for a legal starter deck.");
     }
 
-    const allowedRarities = new Set(rarities.map((entry) => entry.value));
-    const fallbackCandidates = availableUnderCopyLimit(
-      cards.filter((card) => allowedRarities.has(card.rarity || "common")),
-      counts,
-      maxCopies
-    );
-    const card = randomFrom(fallbackCandidates.length > 0 ? fallbackCandidates : availableUnderCopyLimit(cards, counts, maxCopies));
-    return addDrawnCard(card, counts);
-  });
+    const rarity = weightedPick(eligibleRarities);
+    const candidates = availableStarterCards(cardsByRarity(cards, rarity), counts);
+    opening.push(addDrawnCard(randomFrom(candidates), counts));
+    rarityCounts[rarity] = (rarityCounts[rarity] || 0) + 1;
+  }
+
+  return opening;
 }
 
 function summarizeOpening(openedCards, existingCollection = {}) {
@@ -172,13 +134,19 @@ function buildPackOpening(cards, packSize) {
 }
 
 function buildStarterOpening(cards) {
-  const counts = {};
-  const guaranteedCards = drawRecipeCardsWithLimit(cards, counts, STARTER_RECIPE);
-  const extraRarities = Object.entries(STARTER_EXTRA_RARITY_WEIGHTS).map(([value, weight]) => ({ value, weight }));
-  const extraCards = drawWeightedCardsFromRaritiesWithLimit(cards, STARTER_EXTRA_COUNT, extraRarities, counts);
-  const opening = enforceMaxCopies([...guaranteedCards, ...extraCards], cards);
+  const opening = drawStarterCards(cards);
+  const rarityCounts = opening.reduce((counts, card) => {
+    const rarity = card.rarity || "common";
+    counts[rarity] = (counts[rarity] || 0) + 1;
+    return counts;
+  }, {});
   const maxCopies = Math.max(...Object.values(countDrawnCards(opening)));
-  if (opening.length !== STARTER_CARD_COUNT || maxCopies > STARTER_MAX_COPIES_PER_CARD) {
+  if (
+    opening.length !== STARTER_CARD_COUNT ||
+    maxCopies > STARTER_MAX_COPIES_PER_CARD ||
+    rarityCounts.mythic !== 1 ||
+    (rarityCounts.legendary || 0) > STARTER_RARITY_LIMITS.legendary
+  ) {
     throw new Error("Starter card generation failed copy-limit validation.");
   }
   return opening;
@@ -188,8 +156,8 @@ module.exports = {
   buildPackOpening,
   buildStarterOpening,
   summarizeOpening,
-  STARTER_RECIPE,
-  STARTER_EXTRA_COUNT,
-  STARTER_EXTRA_RARITY_WEIGHTS,
+  PACK_RARITY_WEIGHTS,
+  STARTER_CARD_COUNT,
+  STARTER_GUARANTEED_RARITY,
   STARTER_MAX_COPIES_PER_CARD,
 };

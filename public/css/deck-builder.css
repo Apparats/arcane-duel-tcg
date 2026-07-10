@@ -146,6 +146,15 @@
   box-shadow: var(--shadow);
 }
 
+/* Deck rows inherit card rarity classes, but the holographic card overlay
+   is too noisy for this compact list. Keep the rarity signal in the border. */
+.deck-row.rarity-common { border-color: rgba(168, 159, 192, 0.52); border-left-color: #b7afc8; }
+.deck-row.rarity-rare { border-color: rgba(79, 195, 232, 0.46); border-left-color: var(--mana); box-shadow: inset 3px 0 10px rgba(79, 195, 232, 0.12); }
+.deck-row.rarity-legendary { border-color: rgba(232, 179, 79, 0.58); border-left-color: var(--gold); box-shadow: inset 3px 0 10px rgba(232, 179, 79, 0.14); }
+.deck-row.rarity-mythic { border-color: rgba(214, 58, 42, 0.62); border-left-color: var(--mythic); box-shadow: inset 3px 0 10px rgba(214, 58, 42, 0.16); animation: none; }
+.deck-row.rarity-legendary::before,
+.deck-row.rarity-mythic::before { content: none; }
+
 .deck-list {
   display: grid;
   gap: 6px;

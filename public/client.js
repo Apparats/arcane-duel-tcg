@@ -26,6 +26,9 @@ let accountState = null;
 let lastEconomyUpdate = null;
 let pendingInitialRewards = [];
 const ENTER_GATE_KEY = "arcane_enter_gate_seen";
+const ACTIVE_MULTIPLAYER_MATCH_KEY = "arcane_active_multiplayer_match";
+const RECONNECT_RETRY_MS = 3_000;
+const RECONNECT_WINDOW_MS = 60_000;
 const DISCORD_ACTIVITY_READY_TIMEOUT_MS = 12000;
 let quickplaySearching = false;
 let enabledExpansionIds = null;
@@ -35,6 +38,10 @@ let discordActivitySdkPromise = null;
 let discordActivityReadyPromise = null;
 let discordActivityEvents = null;
 let discordActivityLayoutSubscriptionPromise = null;
+let reconnectingMultiplayer = false;
+let reconnectDeadline = 0;
+let reconnectTimer = null;
+let resumeAckTimer = null;
 
 let lastAnimatedActionSeq = 0; // avoids replaying the same attack's animation
 let lastRoundBannerKey = null;
@@ -74,19 +81,98 @@ function connect(onOpen) {
     return;
   }
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-  ws = new WebSocket(`${protocol}//${location.host}`);
+  const socket = new WebSocket(`${protocol}//${location.host}`);
+  ws = socket;
 
-  if (onOpen) ws.addEventListener("open", onOpen, { once: true });
-  ws.addEventListener("message", (ev) => {
+  if (onOpen) socket.addEventListener("open", onOpen, { once: true });
+  socket.addEventListener("message", (ev) => {
     const msg = JSON.parse(ev.data);
     handleServerMessage(msg);
   });
-  ws.addEventListener("close", () => {
+  socket.addEventListener("close", () => {
+    if (ws === socket) ws = null;
+    if (shouldReconnectMultiplayer()) {
+      showToast("Connection lost. Reconnecting to your match...");
+      beginMultiplayerReconnect();
+      return;
+    }
     if (!isLocalMode) showToast("Lost connection to the server.");
   });
-  ws.addEventListener("error", () => {
-    if (!isLocalMode) showToast("Couldn't connect to the online server. Is it running?");
+  socket.addEventListener("error", () => {
+    if (!isLocalMode && !reconnectingMultiplayer) showToast("Couldn't connect to the online server. Is it running?");
   });
+}
+
+function hasStoredMultiplayerMatch() {
+  try {
+    return sessionStorage.getItem(ACTIVE_MULTIPLAYER_MATCH_KEY) === "1";
+  } catch (err) {
+    return false;
+  }
+}
+
+function rememberMultiplayerMatch() {
+  try {
+    sessionStorage.setItem(ACTIVE_MULTIPLAYER_MATCH_KEY, "1");
+  } catch (err) {
+    // Reconnection still works in the current page if storage is unavailable.
+  }
+}
+
+function forgetMultiplayerMatch() {
+  try {
+    sessionStorage.removeItem(ACTIVE_MULTIPLAYER_MATCH_KEY);
+  } catch (err) {
+    // Ignore storage failures.
+  }
+}
+
+function shouldReconnectMultiplayer() {
+  return !isLocalMode && activeMatchMode === "multiplayer" && hasStoredMultiplayerMatch();
+}
+
+function clearMultiplayerReconnect() {
+  reconnectingMultiplayer = false;
+  reconnectDeadline = 0;
+  clearTimeout(reconnectTimer);
+  clearTimeout(resumeAckTimer);
+  reconnectTimer = null;
+  resumeAckTimer = null;
+}
+
+function beginMultiplayerReconnect() {
+  if (!shouldReconnectMultiplayer()) return;
+  reconnectingMultiplayer = true;
+  if (!reconnectDeadline) reconnectDeadline = Date.now() + RECONNECT_WINDOW_MS;
+  scheduleMultiplayerReconnect(0);
+}
+
+function scheduleMultiplayerReconnect(delay) {
+  if (reconnectTimer || !reconnectingMultiplayer) return;
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    if (Date.now() >= reconnectDeadline) {
+      clearMultiplayerReconnect();
+      forgetMultiplayerMatch();
+      showToast("Your match could not be restored.");
+      returnToMenuFromMatch();
+      return;
+    }
+    connect(() => {
+      if (!reconnectingMultiplayer) return;
+      send("resumeMatch", {});
+      const reconnectSocket = ws;
+      resumeAckTimer = setTimeout(() => {
+        if (reconnectingMultiplayer && ws === reconnectSocket && reconnectSocket?.readyState === WebSocket.OPEN) reconnectSocket.close();
+      }, 5_000);
+    });
+  }, delay);
+}
+
+function resumeSavedMultiplayerMatch() {
+  if (!hasStoredMultiplayerMatch()) return;
+  activeMatchMode = "multiplayer";
+  beginMultiplayerReconnect();
 }
 
 function send(type, payload = {}) {
@@ -102,6 +188,8 @@ function send(type, payload = {}) {
 // ---------------- LOCAL MODE (VS NPC) ----------------
 
 function startLocalMatch(playerName) {
+  clearMultiplayerReconnect();
+  forgetMultiplayerMatch();
   isLocalMode = true;
   activeMatchMode = "singleplayer";
   myState = null;
@@ -114,6 +202,8 @@ function startLocalMatch(playerName) {
 }
 
 function startServerSingleplayer() {
+  clearMultiplayerReconnect();
+  forgetMultiplayerMatch();
   isLocalMode = false;
   activeMatchMode = "singleplayer";
   myState = null;
@@ -263,11 +353,20 @@ function handleServerMessage(msg) {
     case "matchStarted":
       setQuickplaySearching(false);
       activeMatchMode = activeMatchMode || "multiplayer";
+      if (activeMatchMode === "multiplayer") rememberMultiplayerMatch();
+      else forgetMultiplayerMatch();
       myState = null;
       lastAnimatedActionSeq = 0;
       lastRoundBannerKey = null;
       resetStateQueue();
       switchScreen("game");
+      break;
+    case "matchResumed":
+      clearMultiplayerReconnect();
+      activeMatchMode = "multiplayer";
+      rememberMultiplayerMatch();
+      switchScreen("game");
+      showToast("Match reconnected.");
       break;
     case "state":
       applyIncomingState(msg.payload);
@@ -278,8 +377,23 @@ function handleServerMessage(msg) {
       updateAccountDisplay({ ...(accountState?.user || {}), ...msg.payload });
       if (myState?.winner !== null) updateEndRewardText();
       break;
-    case "opponentLeft":
-      showToast("Your opponent disconnected.");
+    case "opponentDisconnected":
+      showToast("Your opponent disconnected. Waiting up to one minute to reconnect.");
+      break;
+    case "opponentReconnected":
+      showToast("Your opponent reconnected.");
+      break;
+    case "matchCancelled":
+      clearMultiplayerReconnect();
+      forgetMultiplayerMatch();
+      myState = null;
+      resetStateQueue();
+      showToast(msg.payload?.message || "Match cancelled.");
+      returnToMenuFromMatch();
+      break;
+    case "disconnectPenalty":
+      updateAccountDisplay({ ...(accountState?.user || {}), gold: msg.payload.gold });
+      showToast(`Disconnect penalty: -${msg.payload.penaltyGold} gold.`);
       break;
     case "error":
       pendingHandPlayAnimation = null;
@@ -585,11 +699,49 @@ $("btnBackToMenu").addEventListener("click", () => {
 
 function setLobbyTab(tab) {
   const isQuickplay = tab === "quickplay";
-  $("tabRoomCode").classList.toggle("active", !isQuickplay);
+  const isRoomCode = tab === "room";
+  const isRanking = tab === "ranking";
+  $("tabRoomCode").classList.toggle("active", isRoomCode);
   $("tabQuickplay").classList.toggle("active", isQuickplay);
-  $("roomCodePanel").classList.toggle("hidden", isQuickplay);
+  $("tabRanking").classList.toggle("active", isRanking);
+  $("roomCodePanel").classList.toggle("hidden", !isRoomCode);
   $("quickplayPanel").classList.toggle("hidden", !isQuickplay);
+  $("rankingPanel").classList.toggle("hidden", !isRanking);
   $("roomInfo").classList.add("hidden");
+}
+
+function rankingRowHTML(player) {
+  const rank = Number(player?.rank) || 0;
+  const wins = Number(player?.wins) || 0;
+  const name = escapeHtml(player?.username || "Player");
+  const avatar = player?.avatarUrl
+    ? `<img class="ranking-avatar" src="${escapeHtmlAttr(player.avatarUrl)}" alt="" />`
+    : `<span class="ranking-avatar ranking-avatar-empty" aria-hidden="true"></span>`;
+  return `<li class="ranking-row"><span class="ranking-rank">#${rank}</span><span class="ranking-player">${avatar}<span class="ranking-name">${name}</span></span><span class="ranking-wins">${wins}</span></li>`;
+}
+
+async function loadQuickplayRanking() {
+  const list = $("rankingList");
+  const current = $("rankingCurrentPlayer");
+  if (!list || !current) return;
+  list.innerHTML = '<li class="ranking-empty">Loading ranking...</li>';
+  current.classList.add("hidden");
+
+  try {
+    const res = await apiFetch("/ranking/quickplay");
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Could not load the quickplay ranking.");
+    const players = Array.isArray(data.players) ? data.players : [];
+    list.innerHTML = players.length > 0
+      ? players.map(rankingRowHTML).join("")
+      : '<li class="ranking-empty">No quickplay wins yet.</li>';
+    if (data.currentPlayer) {
+      current.innerHTML = rankingRowHTML(data.currentPlayer);
+      current.classList.remove("hidden");
+    }
+  } catch (err) {
+    list.innerHTML = `<li class="ranking-empty">${escapeHtml(err.message || "Could not load the quickplay ranking.")}</li>`;
+  }
 }
 
 function setQuickplaySearching(searching) {
@@ -602,7 +754,10 @@ function setQuickplaySearching(searching) {
 
 $("tabRoomCode").addEventListener("click", () => setLobbyTab("room"));
 $("tabQuickplay").addEventListener("click", () => setLobbyTab("quickplay"));
-$("tabRanked").addEventListener("click", () => showToast("Ranked isn't available yet."));
+$("tabRanking").addEventListener("click", () => {
+  setLobbyTab("ranking");
+  loadQuickplayRanking();
+});
 
 $("btnCreate").addEventListener("click", () => {
   if (!requireLoggedInForPlay()) return;
@@ -980,6 +1135,9 @@ $("roundBanner").addEventListener("click", () => {
 });
 
 function returnToMenuFromMatch() {
+  clearMultiplayerReconnect();
+  forgetMultiplayerMatch();
+  activeMatchMode = null;
   hideRoundBanner();
   $("overlayEnd").classList.add("hidden");
   clearSelection();
@@ -1402,6 +1560,7 @@ async function loginWithDiscordActivity({ automatic = false, showFailure = true 
       } catch {
         clearActivityAuthCache();
       }
+      resumeSavedMultiplayerMatch();
     }
 
     const discordSdk = await getDiscordActivitySdk();
@@ -1535,6 +1694,20 @@ function setChangelogOpen(open) {
   if (!modal) return;
   modal.classList.toggle("hidden", !open);
   if (open) setMenuOptionsOpen(false);
+}
+
+function setLegalNoticeOpen(noticeKey) {
+  const modal = $("legalModal");
+  const notice = window.ArcaneLegalNotices?.[noticeKey];
+  if (!modal || !notice) return;
+  $("legalTitle").textContent = notice.title;
+  $("legalContent").innerHTML = notice.content;
+  modal.classList.remove("hidden");
+  setMenuOptionsOpen(false);
+}
+
+function closeLegalNotice() {
+  $("legalModal")?.classList.add("hidden");
 }
 
 function syncVolumeControl(kind) {
@@ -1673,6 +1846,15 @@ $("btnLoginDiscord").addEventListener("click", loginWithDiscord);
 
 $("btnAuthLoginDiscord").addEventListener("click", loginWithDiscord);
 
+$("btnOpenTerms").addEventListener("click", () => setLegalNoticeOpen("terms"));
+$("btnOpenPrivacy").addEventListener("click", () => setLegalNoticeOpen("privacy"));
+$("btnOpenTermsMenu").addEventListener("click", () => setLegalNoticeOpen("terms"));
+$("btnOpenPrivacyMenu").addEventListener("click", () => setLegalNoticeOpen("privacy"));
+$("btnCloseLegal").addEventListener("click", closeLegalNotice);
+$("legalModal").addEventListener("click", (event) => {
+  if (event.target === event.currentTarget) closeLegalNotice();
+});
+
 $("btnMoreOptions").addEventListener("click", (event) => {
   event.stopPropagation();
   toggleMenuOptions();
@@ -1700,22 +1882,15 @@ document.addEventListener("click", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") setChangelogOpen(false);
+  if (event.key === "Escape") {
+    setChangelogOpen(false);
+    closeLegalNotice();
+  }
 });
 
 $("screen-enter").addEventListener("click", enterMainMenu);
 $("screen-enter").addEventListener("keydown", (event) => {
   if (event.key === "Enter" || event.key === " ") enterMainMenu();
-});
-
-$("btnLogout").addEventListener("click", async () => {
-  clearActivityAuthCache();
-  try {
-    await apiFetch("/auth/logout", { method: "POST" });
-  } catch (err) {
-    // ignore — worst case the cookie just expires on its own later
-  }
-  window.location.reload();
 });
 
 startDiscordActivitySdk();

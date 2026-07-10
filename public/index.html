@@ -6,16 +6,16 @@
 <title>Arcana TCG</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css" />
-<link rel="stylesheet" href="css/menu.css?v=20260710-menu-changelog-1" />
-<link rel="stylesheet" href="css/lobby.css" />
+<link rel="stylesheet" href="css/base.css?v=20260710-submenu-buttons-1" />
+<link rel="stylesheet" href="css/menu.css?v=20260710-legal-1" />
+<link rel="stylesheet" href="css/lobby.css?v=20260710-ranking-1" />
 <link rel="stylesheet" href="css/board.css" />
 <link rel="stylesheet" href="css/cards.css?v=20260710-inventory-scroll-1" />
 <link rel="stylesheet" href="css/board-arena.css?v=20260710-mobile-layout-1" />
 <link rel="stylesheet" href="css/board-hand.css?v=20260709-6" />
 <link rel="stylesheet" href="css/inventory.css?v=20260709-card-cost-2" />
-<link rel="stylesheet" href="css/deck-builder.css" />
-<link rel="stylesheet" href="css/shop.css" />
+<link rel="stylesheet" href="css/deck-builder.css?v=20260710-rarity-rows-1" />
+<link rel="stylesheet" href="css/shop.css?v=20260710-shop-progress-1" />
 <link rel="stylesheet" href="css/trade.css" />
 <link rel="stylesheet" href="css/pack-opening.css" />
 <link rel="stylesheet" href="css/fx.css" />
@@ -70,6 +70,11 @@
         </svg>
         Login with Discord
       </button>
+      <div class="auth-legal" aria-label="Legal information">
+        <button id="btnOpenTerms" class="auth-legal-link" type="button">Terms of Service</button>
+        <span aria-hidden="true">|</span>
+        <button id="btnOpenPrivacy" class="auth-legal-link" type="button">Privacy Notice</button>
+      </div>
     </div>
   </section>
 
@@ -106,6 +111,8 @@
       </button>
       <div id="menuOptionsPanel" class="menu-options-panel hidden">
         <button id="btnInviteDiscordActivity" class="btn menu-option-button" type="button">Invite to server</button>
+        <button id="btnOpenTermsMenu" class="btn menu-option-button" type="button">Terms of Service</button>
+        <button id="btnOpenPrivacyMenu" class="btn menu-option-button" type="button">Privacy Notice</button>
         <div class="menu-option-config">
           <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Config</button>
           <span class="menu-version">Version 1.0</span>
@@ -153,7 +160,6 @@
         <img id="accountAvatar" class="account-avatar hidden" alt="" />
         <span id="accountName" class="account-name"></span>
         <span id="accountGold" class="account-gold">0 gold</span>
-        <button id="btnLogout" class="btn-link">Log out</button>
       </div>
     </div>
 
@@ -205,7 +211,7 @@
           </span>
           <span class="menu-tile-label">Play Singleplayer</span>
           <span class="menu-tile-sub">Practice vs NPC and earn daily gold</span>
-          <span class="menu-tile-gold" id="singleplayerGoldProgress">0 / 20 gold today</span>
+          <span class="menu-tile-gold" id="singleplayerGoldProgress">0 / 50 gold today</span>
         </button>
         <button class="menu-tile menu-tile-primary" id="tileMultiplayer">
           <span class="menu-tile-icon">
@@ -218,7 +224,7 @@
           </span>
           <span class="menu-tile-label">Play Multiplayer</span>
           <span class="menu-tile-sub">Online 1v1 with a room code</span>
-          <span class="menu-tile-gold" id="multiplayerGoldProgress">0 / 60 gold today</span>
+          <span class="menu-tile-gold" id="multiplayerGoldProgress">0 / 100 gold today</span>
         </button>
       </div>
 
@@ -355,7 +361,7 @@
         <div class="lobby-tabs" role="tablist" aria-label="Multiplayer modes">
           <button id="tabRoomCode" class="lobby-tab" type="button">Room Code</button>
           <button id="tabQuickplay" class="lobby-tab active" type="button">Quickplay</button>
-          <button id="tabRanked" class="lobby-tab locked" type="button" disabled>Ranked</button>
+          <button id="tabRanking" class="lobby-tab" type="button">Ranking</button>
         </div>
 
         <div id="roomCodePanel" class="lobby-tab-panel hidden">
@@ -371,6 +377,15 @@
           <button id="btnQuickplay" class="btn btn-primary">Find opponent</button>
           <button id="btnCancelQuickplay" class="btn btn-secondary hidden">Cancel search</button>
           <p id="quickplayStatus" class="quickplay-status">Queue for a basic online 1v1 match.</p>
+        </div>
+
+        <div id="rankingPanel" class="lobby-tab-panel ranking-panel hidden">
+          <div class="ranking-header">
+            <h2>Quickplay Ranking</h2>
+            <span>Wins</span>
+          </div>
+          <ol id="rankingList" class="ranking-list"></ol>
+          <div id="rankingCurrentPlayer" class="ranking-current hidden"></div>
         </div>
       </div>
 
@@ -585,6 +600,17 @@
     </div>
   </div>
 
+  <!-- ---------- MODAL: LEGAL NOTICES ---------- -->
+  <div id="legalModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="legalTitle">
+    <div class="overlay-card legal-card">
+      <div class="legal-header">
+        <h2 id="legalTitle">Legal Notice</h2>
+        <button id="btnCloseLegal" class="changelog-close" type="button" aria-label="Close legal notice">x</button>
+      </div>
+      <div id="legalContent" class="legal-content"></div>
+    </div>
+  </div>
+
   <!-- ---------- ERROR TOAST ---------- -->
   <div id="toast" class="toast hidden"></div>
 
@@ -598,11 +624,12 @@
   <script src="audioConfig.js"></script>
   <script src="audioManager.js"></script>
   <script src="packOpening.js?v=20260709-card-cost-1"></script>
-<script src="client.js?v=20260710-menu-changelog-1"></script>
+<script src="legalNotices.js?v=20260710-legal-1"></script>
+<script src="client.js?v=20260710-legal-1"></script>
 <script src="boardInteractions.js?v=20260709-touch-2"></script>
 <script src="inventory.js?v=20260709-card-cost-1"></script>
 <script src="deckBuilder.js"></script>
-<script src="shop.js"></script>
+<script src="shop.js?v=20260710-shop-progress-1"></script>
 <script src="trade.js"></script>
 </body>
 </html>

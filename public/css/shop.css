@@ -160,7 +160,7 @@
 @media (max-width: 760px) {
   .shop-header .back-link-inline {
     position: static;
-    display: inline-block;
+    display: inline-flex;
     margin-bottom: 10px;
   }
 

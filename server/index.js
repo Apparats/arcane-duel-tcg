@@ -8,19 +8,21 @@ const { WebSocketServer } = require("ws");
 const { Game } = require("../public/engine");
 const { getCardById } = require("../public/cards");
 const { MAX_BOARD } = require("../public/deckRules");
-const { connectDB, grantMatchEconomy, isDbEnabled } = require("./db");
-const { router: authRouter, getSessionUserFromCookieHeader, isAuthEnabled } = require("./auth");
+const { connectDB, grantMatchEconomy, getQuickplayRanking, isDbEnabled, recordMultiplayerDisconnect, resetConsecutiveDisconnects } = require("./db");
+const { router: authRouter, getSessionUser, getSessionUserFromCookieHeader, isAuthEnabled } = require("./auth");
 const { router: shopRouter } = require("./shop");
 const { router: decksRouter } = require("./decks");
 const { router: tradesRouter } = require("./trades");
 const { getActiveDeckCardIds } = require("./deckService");
 const { createRateLimiter, requireSameOrigin, setSecurityHeaders } = require("./security");
+const { DEFAULT_RECONNECT_GRACE_MS, startReconnectGrace, clearReconnectGrace, clearAllReconnectGraces } = require("./reconnectService");
 
 const PORT = process.env.PORT || 8443;
 const HTTP_JSON_LIMIT = "32kb";
 const WS_MAX_PAYLOAD_BYTES = 16 * 1024;
 const WS_RATE_WINDOW_MS = 5 * 1000;
 const WS_RATE_MAX_MESSAGES = 30;
+const WS_HEARTBEAT_INTERVAL_MS = 15_000;
 const CLIENT_TIMING_FIELDS = new Set([
   "clientnow",
   "clienttime",
@@ -64,6 +66,16 @@ app.use("/auth", createRateLimiter({ max: 120, keyPrefix: "auth" }), authRouter)
 app.use("/shop", createRateLimiter({ max: 40, keyPrefix: "shop" }), shopRouter);
 app.use("/decks", createRateLimiter({ max: 80, keyPrefix: "decks" }), decksRouter);
 app.use("/trades", createRateLimiter({ max: 80, keyPrefix: "trades" }), tradesRouter);
+app.get("/ranking/quickplay", createRateLimiter({ max: 30, keyPrefix: "ranking" }), async (req, res) => {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Login with Discord is required." });
+  try {
+    res.json(await getQuickplayRanking(user.id, 50));
+  } catch (err) {
+    console.error("Quickplay ranking failed:", err.message);
+    res.status(500).json({ error: "Could not load the quickplay ranking." });
+  }
+});
 app.get("/expansions/enabled", (req, res) => {
   const expansionsDir = path.join(__dirname, "..", "expansions");
   const expansions = fs
@@ -105,7 +117,7 @@ const server = app.listen(PORT, () => {
 
 const wss = new WebSocketServer({ server, maxPayload: WS_MAX_PAYLOAD_BYTES });
 
-// roomCode -> { game, sockets, names, avatars, userIds, mode, rewardGranted, surrenderedBy }
+// roomCode -> { game, sockets, names, avatars, userIds, mode, rewardGranted, surrenderedBy, reconnects }
 const rooms = new Map();
 const quickplayQueue = [];
 
@@ -200,6 +212,44 @@ function removeFromQuickplayQueue(ws) {
   if (index >= 0) quickplayQueue.splice(index, 1);
 }
 
+function cancelDisconnectedMatch(room, disconnectedIdx) {
+  if (!room.game || room.sockets[disconnectedIdx] !== null || !room.reconnects?.[disconnectedIdx]) return;
+  const roomCode = room.game.roomCode;
+  if (rooms.get(roomCode) !== room) return;
+
+  clearAllReconnectGraces(room);
+  room.sockets.forEach((socket) => {
+    if (!socket) return;
+    send(socket, "matchCancelled", { message: "Match cancelled because a player did not reconnect within one minute." });
+    socket.roomCode = null;
+    socket.playerIdx = null;
+  });
+  rooms.delete(roomCode);
+}
+
+function markMultiplayerDisconnected(room, playerIdx) {
+  const reconnect = startReconnectGrace(room, playerIdx, {
+    graceMs: DEFAULT_RECONNECT_GRACE_MS,
+    onExpired: cancelDisconnectedMatch,
+  });
+  const opponentIdx = playerIdx === 0 ? 1 : 0;
+  send(room.sockets[opponentIdx], "opponentDisconnected", { reconnectDeadline: reconnect.deadline });
+
+  const userId = room.userIds[playerIdx];
+  if (userId) {
+    recordMultiplayerDisconnect(userId)
+      .then((result) => {
+        if (!Array.isArray(room.disconnectEvents)) room.disconnectEvents = [null, null];
+        room.disconnectEvents[playerIdx] = result;
+        if (room.sockets[playerIdx] && result.penaltyGold > 0) {
+          send(room.sockets[playerIdx], "disconnectPenalty", result);
+        }
+        if (result.penalized) console.warn(`Disconnect penalty applied to user ${userId}.`);
+      })
+      .catch((err) => console.error("Failed to record multiplayer disconnect:", err.message));
+  }
+}
+
 function detachSocketFromRoom(ws, { notifyOpponent = false } = {}) {
   removeFromQuickplayQueue(ws);
   if (!ws.roomCode || !rooms.has(ws.roomCode)) return;
@@ -207,6 +257,7 @@ function detachSocketFromRoom(ws, { notifyOpponent = false } = {}) {
   const room = rooms.get(ws.roomCode);
   const idx = ws.playerIdx;
   if (idx !== null && room.sockets[idx] === ws) {
+    clearReconnectGrace(room, idx);
     room.sockets[idx] = null;
     if (notifyOpponent) {
       const otherIdx = idx === 0 ? 1 : 0;
@@ -214,7 +265,7 @@ function detachSocketFromRoom(ws, { notifyOpponent = false } = {}) {
     }
   }
 
-  if (room.sockets.every((socket) => socket === null)) {
+  if (room.sockets.every((socket) => socket === null) && !room.reconnects?.some(Boolean)) {
     rooms.delete(ws.roomCode);
   }
 
@@ -222,7 +273,25 @@ function detachSocketFromRoom(ws, { notifyOpponent = false } = {}) {
   ws.playerIdx = null;
 }
 
-async function startMultiplayerMatch(playerA, playerB) {
+function handleSocketClose(ws) {
+  removeFromQuickplayQueue(ws);
+  if (!ws.roomCode || !rooms.has(ws.roomCode)) return;
+
+  const room = rooms.get(ws.roomCode);
+  const idx = ws.playerIdx;
+  const activeMultiplayer = room.mode === "multiplayer" && room.game && room.game.winner === null;
+  if (idx !== null && room.sockets[idx] === ws && activeMultiplayer) {
+    room.sockets[idx] = null;
+    ws.roomCode = null;
+    ws.playerIdx = null;
+    markMultiplayerDisconnected(room, idx);
+    return;
+  }
+
+  detachSocketFromRoom(ws, { notifyOpponent: true });
+}
+
+async function startMultiplayerMatch(playerA, playerB, { matchType = "quickplay" } = {}) {
   const code = makeRoomCode();
   const decks = await Promise.all([getActiveDeckCardIds(playerA.user.id), getActiveDeckCardIds(playerB.user.id)]);
   const room = {
@@ -232,8 +301,11 @@ async function startMultiplayerMatch(playerA, playerB) {
     avatars: [playerA.user.avatarUrl || null, playerB.user.avatarUrl || null],
     userIds: [playerA.user.id, playerB.user.id],
     mode: "multiplayer",
+    matchType,
     rewardGranted: false,
     surrenderedBy: null,
+    reconnects: [null, null],
+    disconnectEvents: [null, null],
   };
 
   rooms.set(code, room);
@@ -250,7 +322,12 @@ wss.on("connection", (ws, req) => {
   ws.playerIdx = null;
   ws.roomCode = null;
   ws.rateLimit = null;
+  ws.isAlive = true;
   ws.sessionUserPromise = getSessionUserFromCookieHeader(req.headers.cookie);
+
+  ws.on("pong", () => {
+    ws.isAlive = true;
+  });
 
   ws.on("message", async (raw) => {
     if (isSocketRateLimited(ws)) {
@@ -275,9 +352,20 @@ wss.on("connection", (ws, req) => {
   });
 
   ws.on("close", () => {
-    detachSocketFromRoom(ws, { notifyOpponent: true });
+    handleSocketClose(ws);
   });
 });
+
+const heartbeatTimer = setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (ws.readyState !== ws.OPEN) return;
+    if (ws.isAlive === false) return ws.terminate();
+    ws.isAlive = false;
+    ws.ping();
+  });
+}, WS_HEARTBEAT_INTERVAL_MS);
+
+wss.on("close", () => clearInterval(heartbeatTimer));
 
 async function requireSessionUser(ws) {
   const user = await ws.sessionUserPromise;
@@ -301,10 +389,42 @@ async function settleRewards(room) {
         mode: room.mode,
         result: resultFor(room.game, idx),
         surrendered: room.surrenderedBy === idx,
+        quickplay: room.matchType === "quickplay",
       });
       send(room.sockets[idx], "economyUpdate", economy);
     })
   );
+
+  if (room.mode === "multiplayer") {
+    clearAllReconnectGraces(room);
+    await Promise.all(room.userIds.filter(Boolean).map((userId) => resetConsecutiveDisconnects(userId)));
+  }
+}
+
+async function resumeMultiplayerMatch(ws) {
+  const user = await requireSessionUser(ws);
+  const match = [...rooms.values()].find((room) => {
+    if (room.mode !== "multiplayer" || !room.game || room.game.winner !== null) return false;
+    const idx = room.userIds.findIndex((userId) => String(userId) === String(user.id));
+    return idx >= 0 && room.sockets[idx] === null && room.reconnects?.[idx];
+  });
+
+  if (!match) {
+    send(ws, "matchCancelled", { message: "Your multiplayer match is no longer available." });
+    return;
+  }
+
+  const playerIdx = match.userIds.findIndex((userId) => String(userId) === String(user.id));
+  clearReconnectGrace(match, playerIdx);
+  match.sockets[playerIdx] = ws;
+  ws.roomCode = match.game.roomCode;
+  ws.playerIdx = playerIdx;
+  send(ws, "matchResumed", {});
+  if (match.disconnectEvents?.[playerIdx]?.penaltyGold > 0) {
+    send(ws, "disconnectPenalty", match.disconnectEvents[playerIdx]);
+  }
+  send(match.sockets[playerIdx === 0 ? 1 : 0], "opponentReconnected", {});
+  broadcastState(match);
 }
 
 function chooseNpcPlayable(game) {
@@ -398,6 +518,8 @@ async function handleMessage(ws, msg) {
       mode: "singleplayer",
       rewardGranted: false,
       surrenderedBy: null,
+      reconnects: [null, null],
+      disconnectEvents: [null, null],
     };
     rooms.set(code, room);
     ws.roomCode = code;
@@ -419,8 +541,11 @@ async function handleMessage(ws, msg) {
       avatars: [user.avatarUrl || null, null],
       userIds: [user.id, null],
       mode: "multiplayer",
+      matchType: "room",
       rewardGranted: false,
       surrenderedBy: null,
+      reconnects: [null, null],
+      disconnectEvents: [null, null],
     });
     ws.roomCode = code;
     ws.playerIdx = 0;
@@ -449,6 +574,11 @@ async function handleMessage(ws, msg) {
     send(room.sockets[0], "matchStarted", {});
     send(room.sockets[1], "matchStarted", {});
     broadcastState(room);
+    return;
+  }
+
+  if (type === "resumeMatch") {
+    await resumeMultiplayerMatch(ws);
     return;
   }
 

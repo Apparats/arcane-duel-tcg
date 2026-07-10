@@ -135,6 +135,64 @@
   animation: quickplay-dots 1.2s steps(4, end) infinite;
 }
 
+.ranking-panel {
+  gap: 8px;
+  min-height: 0;
+}
+
+.ranking-header,
+.ranking-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 54px;
+  align-items: center;
+  gap: 10px;
+}
+
+.ranking-header {
+  padding: 0 10px 7px;
+  border-bottom: 1px solid rgba(232, 179, 79, 0.2);
+  color: var(--cream-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.ranking-header h2 {
+  grid-column: 1 / span 2;
+  margin: 0;
+  color: var(--gold);
+  font-family: "Cinzel", serif;
+  font-size: 14px;
+  text-align: left;
+}
+
+.ranking-list {
+  display: grid;
+  gap: 4px;
+  max-height: min(48vh, 430px);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.ranking-row {
+  min-height: 38px;
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 5px;
+  background: rgba(8, 6, 15, 0.42);
+}
+
+.ranking-rank { color: var(--gold); font-family: "Cinzel", serif; font-size: 12px; }
+.ranking-player { display: flex; min-width: 0; align-items: center; gap: 8px; }
+.ranking-avatar { width: 24px; height: 24px; flex: 0 0 auto; border: 1px solid rgba(232, 179, 79, 0.42); border-radius: 50%; object-fit: cover; }
+.ranking-name { overflow: hidden; color: var(--cream); font-size: 13px; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.ranking-wins { color: var(--mana); font-family: "Cinzel", serif; font-size: 12px; text-align: right; }
+.ranking-current { margin-top: 8px; }
+.ranking-current .ranking-row { border-color: rgba(232, 179, 79, 0.48); background: rgba(232, 179, 79, 0.1); }
+.ranking-empty { margin: 18px 0; color: var(--cream-dim); font-size: 13px; }
+
 @keyframes quickplay-dots {
   0% { content: ""; }
   25% { content: "."; }

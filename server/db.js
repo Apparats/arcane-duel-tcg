@@ -118,7 +118,7 @@ async function findOrCreateUserFromDiscord(discordProfile, starterOpening = null
         decks: starterDeck ? [starterDeck] : [],
         activeDeckId: starterDeck?.id || null,
         pendingRewards,
-        stats: { wins: 0, losses: 0, surrenders: 0, packsOpened: 0 },
+        stats: { wins: 0, losses: 0, surrenders: 0, packsOpened: 0, quickplayWins: 0 },
         gold: 0,
         warnings: [],
         economy: {
@@ -150,8 +150,8 @@ async function consumePendingRewards(userId) {
 }
 
 const DAILY_REWARD_LIMITS = {
-  singleplayer: 20,
-  multiplayer: 60,
+  singleplayer: 50,
+  multiplayer: 100,
 };
 
 const MATCH_REWARDS = {
@@ -160,6 +160,8 @@ const MATCH_REWARDS = {
 };
 
 const SURRENDER_GOLD_PENALTY = 10;
+const DISCONNECT_GOLD_PENALTY = 20;
+const DISCONNECT_PENALTY_THRESHOLD = 4;
 const DAILY_LOGIN_GOLD = 50;
 const PACK_PRICE_GOLD = 20;
 const PACK_SIZE = 5;
@@ -283,7 +285,7 @@ async function exchangeCardsBetweenUsers({ fromUserId, toUserId, fromCardId, toC
   });
 }
 
-async function grantMatchEconomy(userId, { mode, result, surrendered = false }) {
+async function grantMatchEconomy(userId, { mode, result, surrendered = false, quickplay = false }) {
   if (!["singleplayer", "multiplayer"].includes(mode)) throw new Error("Invalid economy mode.");
   if (!["win", "loss", "draw"].includes(result)) throw new Error("Invalid match result.");
 
@@ -313,6 +315,7 @@ async function grantMatchEconomy(userId, { mode, result, surrendered = false }) 
   };
 
   if (result === "win") update.$inc["stats.wins"] = 1;
+  if (result === "win" && mode === "multiplayer" && quickplay) update.$inc["stats.quickplayWins"] = 1;
   if (result === "loss") update.$inc["stats.losses"] = 1;
   if (surrendered) {
     update.$inc["stats.surrenders"] = 1;
@@ -343,6 +346,94 @@ async function grantMatchEconomy(userId, { mode, result, surrendered = false }) 
     warnings: updated.warnings || [],
     stats: updated.stats || { wins: 0, losses: 0, surrenders: 0 },
   };
+  });
+}
+
+function publicRankingPlayer(user, rank) {
+  return {
+    rank,
+    username: user.username || "Player",
+    wins: user.stats?.quickplayWins || 0,
+    avatarUrl: user.avatar ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png` : null,
+    userId: String(user._id),
+  };
+}
+
+function rankQuickplayPlayers(users, userId, limit = 50) {
+  const safeLimit = Math.max(1, Math.min(Number.isInteger(limit) ? limit : 50, 50));
+  const players = users.filter((user) => (user.stats?.quickplayWins || 0) > 0);
+
+  players.sort((left, right) => {
+    const winDiff = (right.stats?.quickplayWins || 0) - (left.stats?.quickplayWins || 0);
+    return winDiff || String(left._id).localeCompare(String(right._id));
+  });
+
+  const ranked = players.map((player, index) => publicRankingPlayer(player, index + 1));
+  const own = ranked.find((player) => player.userId === String(userId)) || null;
+  return {
+    players: ranked.slice(0, safeLimit),
+    currentPlayer: own && own.rank > safeLimit ? own : null,
+  };
+}
+
+async function getQuickplayRanking(userId, limit = 50) {
+  const users = getDB().collection("users");
+  const players = await users
+    .find({ "stats.quickplayWins": { $gt: 0 } }, { projection: { username: 1, avatar: 1, discordId: 1, stats: 1 } })
+    .toArray();
+  return rankQuickplayPlayers(players, userId, limit);
+}
+
+async function recordMultiplayerDisconnect(userId) {
+  const users = getDB().collection("users");
+  const _id = toObjectId(userId, "user id");
+  return withUserLock(String(_id), async () => {
+    const user = await users.findOne({ _id }, { projection: { gold: 1, stats: 1, warnings: 1 } });
+    if (!user) throw new Error("User not found.");
+
+    const previousCount = user.stats?.consecutiveDisconnects || 0;
+    const nextCount = previousCount + 1;
+    const penalized = nextCount >= DISCONNECT_PENALTY_THRESHOLD;
+    const penaltyGold = penalized ? Math.min(DISCONNECT_GOLD_PENALTY, user.gold || 0) : 0;
+    const now = new Date();
+    const update = {
+      $set: {
+        gold: Math.max(0, (user.gold || 0) - penaltyGold),
+        "stats.consecutiveDisconnects": penalized ? 0 : nextCount,
+        updatedAt: now,
+      },
+    };
+
+    if (penalized) {
+      update.$push = {
+        warnings: {
+          type: "disconnect",
+          message: `Disconnect penalty: -${penaltyGold} gold after ${DISCONNECT_PENALTY_THRESHOLD} consecutive disconnects.`,
+          createdAt: now,
+        },
+      };
+    }
+
+    await users.updateOne({ _id }, update);
+    const updated = await users.findOne({ _id }, { projection: { gold: 1, stats: 1, warnings: 1 } });
+    return {
+      gold: updated?.gold || 0,
+      consecutiveDisconnects: updated?.stats?.consecutiveDisconnects || 0,
+      penaltyGold,
+      penalized,
+      warnings: updated?.warnings || [],
+    };
+  });
+}
+
+async function resetConsecutiveDisconnects(userId) {
+  const users = getDB().collection("users");
+  const _id = toObjectId(userId, "user id");
+  return withUserLock(String(_id), async () => {
+    await users.updateOne(
+      { _id, "stats.consecutiveDisconnects": { $gt: 0 } },
+      { $set: { "stats.consecutiveDisconnects": 0, updatedAt: new Date() } }
+    );
   });
 }
 
@@ -450,11 +541,17 @@ module.exports = {
   getDailyRewardProgress,
   grantDailyLoginReward,
   grantMatchEconomy,
+  getQuickplayRanking,
+  rankQuickplayPlayers,
+  recordMultiplayerDisconnect,
+  resetConsecutiveDisconnects,
   exchangeCardsBetweenUsers,
   DAILY_REWARD_LIMITS,
   MATCH_REWARDS,
   DAILY_LOGIN_GOLD,
   SURRENDER_GOLD_PENALTY,
+  DISCONNECT_GOLD_PENALTY,
+  DISCONNECT_PENALTY_THRESHOLD,
   PACK_PRICE_GOLD,
   PACK_SIZE,
   buyPack,

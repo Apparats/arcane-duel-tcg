@@ -9,6 +9,15 @@ function updateShopGold() {
   $("shopGold").textContent = `${currentGold()} gold`;
 }
 
+function packCollectionProgress(pack) {
+  const collection = accountState?.user?.cardCollection || {};
+  const unlockedCards = new Set(accountState?.user?.unlockedCards || []);
+  const expansionPrefix = `${pack.expansionId}:`;
+  const expansionCards = (window.TCGCards?.CARDS || []).filter((card) => card.id?.startsWith(expansionPrefix));
+  const owned = expansionCards.filter((card) => unlockedCards.has(card.id) || (collection[card.id] || 0) > 0).length;
+  return `${owned} / ${pack.cardCount} collected`;
+}
+
 async function loadShopConfig() {
   if (shopConfig) return shopConfig;
   const res = await arcaneFetch("/shop/config");
@@ -38,6 +47,7 @@ function renderShopPacks(packs) {
           <span>${pack.priceGold} gold</span>
           <span>${pack.size} cards</span>
           <span>${pack.cardCount} in set</span>
+          <span>${packCollectionProgress(pack)}</span>
         </div>
         <button class="btn btn-primary btn-buy-pack" data-pack-id="${escapeHtmlAttr(pack.id)}">Open pack</button>
       </div>
@@ -102,6 +112,7 @@ async function buyPack(packId) {
     };
     updateAccountDisplay(userUpdate);
     updateShopGold();
+    renderShopPacks(shopConfig?.packs || []);
     renderPackResults(data.pack);
     queueCardOpening({
       title: "Pack opened",
