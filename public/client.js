@@ -197,8 +197,8 @@ async function processStateQueue() {
 async function applyQueuedState(newState, generation) {
   const prev = myState;
   const diff = prev ? computeAndPlayImpactAnimations(prev, newState) : { anyImpact: false, newMinions: [] };
-  const roundKey = `${newState.turnNumber}:${newState.isYourTurn ? "self" : "opponent"}`;
-  const isRoundChange = prev && hasTurnChanged(prev, newState) && roundKey !== lastRoundBannerKey;
+  const roundKey = String(newState.turnNumber);
+  const isRoundChange = prev && prev.turnNumber !== newState.turnNumber && roundKey !== lastRoundBannerKey;
   const delay = (diff.anyImpact ? SETTLE_DELAY : 0) + (isRoundChange ? ROUND_BANNER_DELAY : 0);
 
   if (isRoundChange) {
@@ -219,10 +219,6 @@ async function applyQueuedState(newState, generation) {
     el.classList.add("summoned");
   });
   if (myState.winner !== null) showEndOverlay(myState);
-}
-
-function hasTurnChanged(prev, next) {
-  return prev.turnNumber !== next.turnNumber || prev.isYourTurn !== next.isYourTurn;
 }
 
 function showRoundBanner(titleText, { subtitle = "", duration = null, mode = "round" } = {}) {

@@ -543,6 +543,8 @@
     endTurn(playerIdx) {
       this._assertActive(playerIdx);
       const next = this._opponentIdx(playerIdx);
+      // turnNumber is the shared round counter: A plays round 1, then B
+      // plays round 1. It advances only as control returns to the starter.
       if (next === 0) this.turnNumber += 1;
       this._startTurn(next);
     }

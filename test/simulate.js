@@ -49,6 +49,7 @@ function main() {
   game.endTurn(0);
   let state1 = game.getStateFor(1);
   assert(state1.turn === 1, "Player 1 should have the turn after Player 0 ends.");
+  assert(state1.turnNumber === 1, "Player 1 should still play in shared round 1.");
 
   const p1CardIdx = firstPlayableMinion(state1);
   if (p1CardIdx !== -1) {
@@ -56,6 +57,11 @@ function main() {
     state1 = game.getStateFor(1);
     assert(state1.me.board.length === 1, "Player 1 should have played a minion.");
   }
+
+  game.endTurn(1);
+  state0 = game.getStateFor(0);
+  assert(state0.turn === 0, "Player 0 should regain the turn after Player 1 ends.");
+  assert(state0.turnNumber === 2, "The shared round should advance only after both players finish round 1.");
 
   game.surrender(1);
   state0 = game.getStateFor(0);
