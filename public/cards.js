@@ -16,7 +16,7 @@
   const CARDS = [
     {
       "name": "Aleex",
-      "cost": 3,
+      "cost": 2,
       "type": "minion",
       "attack": 2,
       "health": 3,
@@ -34,7 +34,7 @@
       "cost": 4,
       "type": "minion",
       "attack": 1,
-      "health": 10,
+      "health": 8,
       "keywords": [
         "taunt"
       ],
@@ -54,7 +54,7 @@
       "health": 5,
       "keywords": [],
       "race": "Monster",
-      "rarity": "legendary",
+      "rarity": "rare",
       "country": "South Korea",
       "lore": "Do not be afraid.",
       "image": "art/Angel.webp",
@@ -63,7 +63,7 @@
     },
     {
       "name": "ArchbishopMaximilian",
-      "cost": 4,
+      "cost": 3,
       "type": "minion",
       "attack": 2,
       "health": 5,
@@ -78,10 +78,10 @@
     },
     {
       "name": "Babu",
-      "cost": 6,
+      "cost": 9,
       "type": "minion",
       "attack": 3,
-      "health": 11,
+      "health": 10,
       "keywords": [
         "taunt"
       ],
@@ -95,10 +95,10 @@
     },
     {
       "name": "Barto",
-      "cost": 2,
+      "cost": 3,
       "type": "minion",
       "attack": 2,
-      "health": 4,
+      "health": 5,
       "keywords": [
         "taunt"
       ],
@@ -131,8 +131,8 @@
       "name": "Bloodgiver",
       "cost": 5,
       "type": "minion",
-      "attack": 3,
-      "health": 6,
+      "attack": 4,
+      "health": 5,
       "keywords": [],
       "race": "Human",
       "rarity": "legendary",
@@ -166,11 +166,13 @@
     },
     {
       "name": "Capybara",
-      "cost": 3,
+      "cost": 2,
       "type": "minion",
-      "attack": 3,
-      "health": 4,
-      "keywords": [],
+      "attack": 2,
+      "health": 1,
+      "keywords": [
+        "charge"
+      ],
       "race": "Monster",
       "rarity": "common",
       "country": "Argentina",
@@ -196,10 +198,10 @@
     },
     {
       "name": "DisappointmentPanda",
-      "cost": 3,
+      "cost": 4,
       "type": "minion",
-      "attack": 2,
-      "health": 6,
+      "attack": 3,
+      "health": 3,
       "keywords": [
         "taunt"
       ],
@@ -230,12 +232,12 @@
     },
     {
       "name": "Eraserhead",
-      "cost": 4,
+      "cost": 5,
       "type": "minion",
       "attack": 3,
       "health": 5,
       "keywords": [],
-      "race": "human",
+      "race": "Human",
       "rarity": "common",
       "country": "Sierra Leone",
       "lore": "He might not be able to talk, but he's able to fight.",
@@ -248,7 +250,7 @@
       "cost": 5,
       "type": "minion",
       "attack": 3,
-      "health": 8,
+      "health": 6,
       "keywords": [
         "taunt"
       ],
@@ -262,24 +264,34 @@
     },
     {
       "name": "Gabibbo Ardito",
-      "cost": 1,
+      "cost": 6,
       "type": "minion",
       "attack": 1,
-      "health": 4,
-      "keywords": [],
+      "health": 6,
+      "keywords": [
+        "charge"
+      ],
       "race": "Monster",
-      "rarity": "rare",
+      "rarity": "mythic",
       "country": "Italy",
-      "lore": "Corruption is only bad if I am not involved.",
+      "lore": "Corruption is only bad if I am not involved. This card clones itself every turn when played.",
       "image": "art/Gabibbo_Ardito.webp",
+      "abilities": [
+        {
+          "trigger": "onAnyTurnStart",
+          "effect": "summonMinion",
+          "cardId": "base:gabibbo-ardito",
+          "count": 1
+        }
+      ],
       "id": "base:gabibbo-ardito",
       "_expansionId": "base"
     },
     {
       "name": "Galileo Gunplay",
-      "cost": 3,
+      "cost": 5,
       "type": "minion",
-      "attack": 3,
+      "attack": 5,
       "health": 4,
       "keywords": [],
       "race": "Human",
@@ -291,10 +303,33 @@
       "_expansionId": "base"
     },
     {
-      "name": "Hazzard",
-      "cost": 4,
+      "name": "GoldenWarerita",
+      "cost": 3,
       "type": "minion",
-      "attack": 5,
+      "attack": 2,
+      "health": 6,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "mythic",
+      "country": "Arcana",
+      "lore": "Golden Warerita! After dying, it turns into a normal warerita.",
+      "image": "art/GoldenWarerita.webp",
+      "abilities": [
+        {
+          "trigger": "onDeath",
+          "effect": "summonMinion",
+          "cardId": "base:warerita",
+          "count": 1
+        }
+      ],
+      "id": "base:goldenwarerita",
+      "_expansionId": "base"
+    },
+    {
+      "name": "Hazzard",
+      "cost": 5,
+      "type": "minion",
+      "attack": 4,
       "health": 1,
       "keywords": [
         "charge"
@@ -308,11 +343,28 @@
       "_expansionId": "base"
     },
     {
+      "name": "Humph",
+      "cost": 5,
+      "type": "minion",
+      "attack": 3,
+      "health": 6,
+      "keywords": [
+        "divineShield"
+      ],
+      "race": "Human",
+      "rarity": "mythic",
+      "country": "Ireland",
+      "lore": "Cork bai. This card avoids the first attack against it.",
+      "image": "art/Humph.webp",
+      "id": "base:humph",
+      "_expansionId": "base"
+    },
+    {
       "name": "Jakal",
       "cost": 7,
       "type": "minion",
-      "attack": 1,
-      "health": 12,
+      "attack": 2,
+      "health": 10,
       "keywords": [],
       "race": "Monster",
       "rarity": "legendary",
@@ -333,7 +385,7 @@
       "name": "Juniiya",
       "cost": 8,
       "type": "minion",
-      "attack": 8,
+      "attack": 7,
       "health": 5,
       "keywords": [],
       "race": "Human",
@@ -349,7 +401,7 @@
       "cost": 1,
       "type": "minion",
       "attack": 1,
-      "health": 2,
+      "health": 4,
       "keywords": [],
       "race": "Human",
       "rarity": "rare",
@@ -361,7 +413,7 @@
     },
     {
       "name": "Kurzemnieks",
-      "cost": 2,
+      "cost": 3,
       "type": "minion",
       "attack": 2,
       "health": 4,
@@ -378,7 +430,7 @@
     },
     {
       "name": "Kysely",
-      "cost": 9,
+      "cost": 8,
       "type": "minion",
       "attack": 2,
       "health": 8,
@@ -393,10 +445,10 @@
     },
     {
       "name": "Laucha",
-      "cost": 3,
+      "cost": 4,
       "type": "minion",
-      "attack": 3,
-      "health": 5,
+      "attack": 4,
+      "health": 4,
       "keywords": [],
       "race": "Monster",
       "rarity": "common",
@@ -411,9 +463,9 @@
       "cost": 10,
       "type": "minion",
       "attack": 8,
-      "health": 8,
+      "health": 7,
       "keywords": [],
-      "race": "Unknown",
+      "race": "Monster",
       "rarity": "common",
       "country": "Uzbekistan",
       "lore": "Uzbekistan lover.",
@@ -439,11 +491,35 @@
       "_expansionId": "base"
     },
     {
+      "name": "Lolflame",
+      "cost": 5,
+      "type": "minion",
+      "attack": 3,
+      "health": 6,
+      "keywords": [
+        "charge"
+      ],
+      "race": "Monster",
+      "rarity": "mythic",
+      "country": "Djibouti",
+      "lore": "This card can instantly attack when prepared. This card also deals +1 damage to all enemy cards.",
+      "image": "art/Lolflames.webp",
+      "abilities": [
+        {
+          "trigger": "onAttackMinion",
+          "effect": "damageAllEnemyMinions",
+          "value": 1
+        }
+      ],
+      "id": "base:lolflame2",
+      "_expansionId": "base"
+    },
+    {
       "name": "Miyabi",
       "cost": 2,
       "type": "minion",
       "attack": 1,
-      "health": 4,
+      "health": 5,
       "keywords": [],
       "race": "Monster",
       "rarity": "common",
@@ -455,9 +531,9 @@
     },
     {
       "name": "Mostor",
-      "cost": 4,
+      "cost": 5,
       "type": "minion",
-      "attack": 2,
+      "attack": 3,
       "health": 6,
       "keywords": [
         "charge"
@@ -481,8 +557,8 @@
       "name": "Mr Labubu",
       "cost": 5,
       "type": "minion",
-      "attack": 3,
-      "health": 5,
+      "attack": 4,
+      "health": 4,
       "keywords": [],
       "race": "Monster",
       "rarity": "rare",
@@ -494,15 +570,15 @@
     },
     {
       "name": "Multimaker",
-      "cost": 7,
+      "cost": 8,
       "type": "minion",
       "attack": 1,
-      "health": 9,
+      "health": 7,
       "keywords": [],
       "race": "Human",
       "rarity": "legendary",
       "country": "Arcana",
-      "lore": "Has no flag, but always a plan B. This card spawns on the deck a multi card every turn",
+      "lore": "Has no flag, but always a plan B. This card spawns on the board a multi card every turn",
       "image": "art/Multimaker.webp",
       "abilities": [
         {
@@ -520,7 +596,7 @@
       "cost": 4,
       "type": "minion",
       "attack": 3,
-      "health": 4,
+      "health": 5,
       "keywords": [],
       "race": "Human",
       "rarity": "common",
@@ -534,9 +610,11 @@
       "name": "NiNa",
       "cost": 1,
       "type": "minion",
-      "attack": 1,
-      "health": 3,
-      "keywords": [],
+      "attack": 0,
+      "health": 4,
+      "keywords": [
+        "taunt"
+      ],
       "race": "Monster",
       "rarity": "common",
       "country": "United Kingdom",
@@ -547,10 +625,10 @@
     },
     {
       "name": "Oil Bert",
-      "cost": 7,
+      "cost": 6,
       "type": "minion",
       "attack": 4,
-      "health": 7,
+      "health": 6,
       "keywords": [],
       "race": "Human",
       "rarity": "rare",
@@ -598,15 +676,15 @@
     },
     {
       "name": "PrinceMVC",
-      "cost": 6,
+      "cost": 10,
       "type": "minion",
-      "attack": 3,
+      "attack": 4,
       "health": 10,
       "keywords": [
         "taunt"
       ],
       "race": "Human",
-      "rarity": "common",
+      "rarity": "rare",
       "country": "Nigeria",
       "lore": "The real Nigerian King. This card has attack priority above all.",
       "image": "art/PrinceMVC.webp",
@@ -638,7 +716,7 @@
       "name": "Ranger",
       "cost": 10,
       "type": "minion",
-      "attack": 8,
+      "attack": 7,
       "health": 8,
       "keywords": [],
       "race": "Human",
@@ -666,15 +744,17 @@
     },
     {
       "name": "RotiLapis",
-      "cost": 10,
+      "cost": 8,
       "type": "minion",
-      "attack": 7,
+      "attack": 6,
       "health": 3,
-      "keywords": [],
+      "keywords": [
+        "charge"
+      ],
       "race": "Human",
-      "rarity": "common",
+      "rarity": "rare",
       "country": "Indonesia",
-      "lore": "This card can instantly attack when prepared..",
+      "lore": "This card can instantly attack when prepared.",
       "image": "art/RotiLapis.webp",
       "id": "base:rotilapis",
       "_expansionId": "base"
@@ -696,7 +776,7 @@
     },
     {
       "name": "Saaaru",
-      "cost": 5,
+      "cost": 4,
       "type": "minion",
       "attack": 2,
       "health": 6,
@@ -713,7 +793,7 @@
     },
     {
       "name": "Slandah al Shuja",
-      "cost": 1,
+      "cost": 2,
       "type": "minion",
       "attack": 2,
       "health": 3,
@@ -728,10 +808,10 @@
     },
     {
       "name": "StormHazard",
-      "cost": 4,
+      "cost": 3,
       "type": "minion",
-      "attack": 2,
-      "health": 4,
+      "attack": 3,
+      "health": 3,
       "keywords": [
         "charge"
       ],
@@ -759,7 +839,7 @@
       "_expansionId": "base"
     },
     {
-      "name": "Turmwehr",
+      "name": "Sturmwehr",
       "cost": 1,
       "type": "minion",
       "attack": 1,
@@ -771,16 +851,16 @@
       "rarity": "common",
       "country": "Austria",
       "lore": "One day we meet in Valhalla. This card has attack priority above all.",
-      "image": "art/Turmwehr.webp",
+      "image": "art/Sturmwehr.webp",
       "id": "base:turmwehr",
       "_expansionId": "base"
     },
     {
       "name": "User",
-      "cost": 1,
+      "cost": 0,
       "type": "minion",
       "attack": 1,
-      "health": 3,
+      "health": 1,
       "keywords": [],
       "race": "Human",
       "rarity": "common",
@@ -792,7 +872,7 @@
     },
     {
       "name": "V for Vendetta",
-      "cost": 2,
+      "cost": 3,
       "type": "minion",
       "attack": 2,
       "health": 4,
@@ -809,7 +889,7 @@
     },
     {
       "name": "Vergil",
-      "cost": 3,
+      "cost": 2,
       "type": "minion",
       "attack": 2,
       "health": 4,
@@ -838,26 +918,34 @@
       "_expansionId": "base"
     },
     {
-      "name": "GoldenWarerita",
-      "cost": 2,
+      "name": "Zugzwang",
+      "cost": 5,
       "type": "minion",
-      "attack": 1,
-      "health": 7,
-      "keywords": [],
-      "race": "Monster",
+      "attack": 3,
+      "health": 6,
+      "keywords": [
+        "charge"
+      ],
+      "race": "Human",
       "rarity": "mythic",
-      "country": "Arcana",
-      "lore": "Supporter's reward, a golden Warerita!.",
-      "image": "art/GoldenWarerita.webp",
-      "showInInventory": false,
-      "id": "special:goldenwarerita",
-      "_expansionId": "special"
+      "country": "Bolivia",
+      "lore": "I'm too sick for a pill! This card can instantly attack when prepared. This card also draws 3 more cards when played.",
+      "image": "art/Zugzwang.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "drawCards",
+          "value": 3
+        }
+      ],
+      "id": "base:zugzwang",
+      "_expansionId": "base"
     },
     {
       "name": "Multi",
       "cost": 1,
       "type": "minion",
-      "attack": 3,
+      "attack": 2,
       "health": 1,
       "keywords": [],
       "race": "Monster",

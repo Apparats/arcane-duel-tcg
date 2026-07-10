@@ -99,8 +99,13 @@
 
   function finishHandDrag(clientX, clientY) {
     const { card, handIndex } = drag.payload;
+    const elementAtDrop = document.elementFromPoint(clientX, clientY);
+    // Returning a dragged card to the hand is always a cancellation. It must
+    // happen before board targeting, because a released pointer also emits a
+    // click and the normal click-to-play path would otherwise fire.
+    if (closest(elementAtDrop, "#handArea")) return false;
     const target = targetFromPoint(clientX, clientY);
-    const overSelfBoard = Boolean(closest(document.elementFromPoint(clientX, clientY), "#selfBoard"));
+    const overSelfBoard = Boolean(closest(elementAtDrop, "#selfBoard"));
 
     if (card.type === "minion") {
       if (!overSelfBoard) return false;
@@ -164,10 +169,14 @@
     if (!drag) return;
     const activeDrag = drag;
     if (activeDrag.moved) {
-      const handled = activeDrag.type === "attack"
-        ? finishAttack(event.clientX, event.clientY)
-        : finishHandDrag(event.clientX, event.clientY);
-      suppressNextClick = Boolean(handled);
+      if (activeDrag.type === "attack") {
+        finishAttack(event.clientX, event.clientY);
+      } else {
+        finishHandDrag(event.clientX, event.clientY);
+      }
+      // A completed drag, including a cancelled one, must not fall through
+      // into the click-to-play or click-to-attack controls.
+      suppressNextClick = true;
     }
     clearDrag();
   });
