@@ -1,6 +1,7 @@
 const { getCardById } = require("../public/cards");
 const { exchangeCardsBetweenUsers } = require("./db");
 const { assertMongoKeySegment, sanitizeString } = require("./mongoSafety");
+const { secureRandomCode, secureRandomId } = require("./random");
 
 const CODE_LENGTH = 6;
 const SESSION_TTL_MS = 30 * 60 * 1000;
@@ -12,13 +13,13 @@ const sessions = new Map(); // sessionId -> trade session
 function makeCode() {
   let code;
   do {
-    code = Math.random().toString(36).slice(2, 2 + CODE_LENGTH).toUpperCase();
+    code = secureRandomCode(CODE_LENGTH);
   } while (codeOwners.has(code));
   return code;
 }
 
 function makeSessionId() {
-  return `trade_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  return `trade_${secureRandomId(18)}`;
 }
 
 function compactUser(user) {

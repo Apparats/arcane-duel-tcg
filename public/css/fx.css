@@ -45,6 +45,34 @@
 }
 .flash-damage { animation: flash-damage 0.65s ease-out; }
 
+/* One combined animation prevents the damage glow from replacing the shake. */
+.damage-impact {
+  animation:
+    impact-shake 0.34s cubic-bezier(0.2, 0.75, 0.3, 1),
+    flash-damage 0.65s ease-out;
+}
+
+#screen-game::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 22;
+  pointer-events: none;
+  opacity: 0;
+  background: rgba(214, 30, 34, 0.26);
+  mix-blend-mode: screen;
+}
+
+@keyframes hero-damage-screen {
+  0% { opacity: 0; }
+  16% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+#screen-game.hero-damage-screen::after {
+  animation: hero-damage-screen 0.42s ease-out;
+}
+
 @keyframes flash-heal {
   0% { box-shadow: 0 0 0 0 rgba(127, 176, 105, 0); }
   24% {
@@ -219,7 +247,7 @@
 
 /* Respects users who prefer less on-screen motion. */
 @media (prefers-reduced-motion: reduce) {
-  .lunging, .impact, .flash-damage, .flash-heal, .dying, .summoned, .floating-number, .round-banner-title {
+  .lunging, .impact, .damage-impact, .flash-damage, .flash-heal, .dying, .summoned, .floating-number, .round-banner-title, #screen-game.hero-damage-screen::after {
     animation: none !important;
   }
 }

@@ -25,6 +25,7 @@ const {
   isDbEnabled,
 } = require("./db");
 const { getStarterCardPool } = require("./shopCatalog");
+const { issueWsTicket } = require("./wsTicketService");
 
 const DISCORD_API = "https://discord.com/api/v10";
 const COOKIE_NAME = "arcane_session";
@@ -157,14 +158,6 @@ async function findOrCreateSessionUser(profile) {
   return findOrCreateUserFromDiscord(profile, starterCards);
 }
 
-function readCookie(cookieHeader, name) {
-  return String(cookieHeader || "")
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${name}=`))
-    ?.slice(name.length + 1);
-}
-
 // Reads the session cookie (if any) and resolves it to a public-safe
 // user object, or null if there's no valid session. Never throws.
 function readBearerToken(req) {
@@ -191,11 +184,6 @@ async function getSessionUserByToken(token) {
 // use the httpOnly cookie, so normal OAuth navigation does not expose a JWT.
 async function getSessionUser(req) {
   return getSessionUserByToken(readBearerToken(req) || req.cookies?.[COOKIE_NAME]);
-}
-
-async function getSessionUserFromCookieHeader(cookieHeader) {
-  const token = readCookie(cookieHeader, COOKIE_NAME);
-  return getSessionUserByToken(token);
 }
 
 // Never send the full Mongo document to the client — trim it to what
@@ -309,6 +297,13 @@ router.get("/me", async (req, res) => {
   });
 });
 
+router.post("/ws-ticket", async (req, res) => {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Login with Discord is required." });
+  res.setHeader("Cache-Control", "no-store");
+  res.json({ ticket: issueWsTicket(user) });
+});
+
 router.post("/logout", (req, res) => {
   const secure = cookieSecure();
   res.clearCookie(COOKIE_NAME, {
@@ -318,4 +313,4 @@ router.post("/logout", (req, res) => {
   res.json({ ok: true });
 });
 
-module.exports = { router, getSessionUser, getSessionUserFromCookieHeader, isAuthEnabled };
+module.exports = { router, getSessionUser, isAuthEnabled };

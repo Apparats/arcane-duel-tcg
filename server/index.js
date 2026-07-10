@@ -9,13 +9,17 @@ const { Game } = require("../public/engine");
 const { getCardById } = require("../public/cards");
 const { MAX_BOARD } = require("../public/deckRules");
 const { connectDB, grantMatchEconomy, getQuickplayRanking, isDbEnabled, recordMultiplayerDisconnect, resetConsecutiveDisconnects } = require("./db");
-const { router: authRouter, getSessionUser, getSessionUserFromCookieHeader, isAuthEnabled } = require("./auth");
+const { router: authRouter, getSessionUser, isAuthEnabled } = require("./auth");
 const { router: shopRouter } = require("./shop");
 const { router: decksRouter } = require("./decks");
 const { router: tradesRouter } = require("./trades");
 const { getActiveDeckCardIds } = require("./deckService");
-const { createRateLimiter, requireSameOrigin, setSecurityHeaders } = require("./security");
+const { createRateLimiter, isTrustedWebSocketOrigin, requireSameOrigin, setSecurityHeaders } = require("./security");
 const { DEFAULT_RECONNECT_GRACE_MS, startReconnectGrace, clearReconnectGrace, clearAllReconnectGraces } = require("./reconnectService");
+const { assertUserCanStartMatch, assertUserIsNotAlreadyInRoom } = require("./matchAccess");
+const { clearTurnTimer, ensureTurnTimer, turnKey } = require("./turnTimerService");
+const { cleanupExpiredWsTickets, consumeWsTicket } = require("./wsTicketService");
+const { secureRandomCode, secureRandomInt } = require("./random");
 
 const PORT = process.env.PORT || 8443;
 const HTTP_JSON_LIMIT = "32kb";
@@ -23,6 +27,9 @@ const WS_MAX_PAYLOAD_BYTES = 16 * 1024;
 const WS_RATE_WINDOW_MS = 5 * 1000;
 const WS_RATE_MAX_MESSAGES = 30;
 const WS_HEARTBEAT_INTERVAL_MS = 15_000;
+const MAX_WS_CONNECTIONS = readBoundedEnvInt("MAX_WS_CONNECTIONS", 200, { min: 10, max: 2_000 });
+const MAX_WS_SOCKETS_PER_USER = readBoundedEnvInt("MAX_WS_SOCKETS_PER_USER", 3, { min: 1, max: 10 });
+const MAX_WS_SOCKETS_PER_IP = readBoundedEnvInt("MAX_WS_SOCKETS_PER_IP", 5, { min: 1, max: 100 });
 const CLIENT_TIMING_FIELDS = new Set([
   "clientnow",
   "clienttime",
@@ -39,6 +46,11 @@ const CLIENT_TIMING_FIELDS = new Set([
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const NPC_STEP_DELAY_MS = 1200;
 const BOARD_KEYWORD_LIMITS = { taunt: 2, charge: 3 };
+
+function readBoundedEnvInt(name, fallback, { min, max }) {
+  const parsed = Number.parseInt(process.env[name] || "", 10);
+  return Number.isInteger(parsed) && parsed >= min && parsed <= max ? parsed : fallback;
+}
 
 const app = express();
 app.set("trust proxy", 1); // needed behind Cloudflare/any reverse proxy, so secure cookies work correctly
@@ -115,16 +127,68 @@ const server = app.listen(PORT, () => {
   }
 });
 
-const wss = new WebSocketServer({ server, maxPayload: WS_MAX_PAYLOAD_BYTES });
+const wss = new WebSocketServer({ noServer: true, maxPayload: WS_MAX_PAYLOAD_BYTES });
 
 // roomCode -> { game, sockets, names, avatars, userIds, mode, rewardGranted, surrenderedBy, reconnects }
 const rooms = new Map();
 const quickplayQueue = [];
+const socketsByUserId = new Map();
+const socketsByIp = new Map();
+
+function registerAuthenticatedSocket(ws, user) {
+  const userId = String(user.id);
+  const sockets = socketsByUserId.get(userId) || new Set();
+  if (sockets.size >= MAX_WS_SOCKETS_PER_USER) return false;
+  sockets.add(ws);
+  socketsByUserId.set(userId, sockets);
+  ws.authenticatedUserId = userId;
+  return true;
+}
+
+function unregisterAuthenticatedSocket(ws) {
+  const userId = ws.authenticatedUserId;
+  if (!userId) return;
+  const sockets = socketsByUserId.get(userId);
+  sockets?.delete(ws);
+  if (!sockets || sockets.size === 0) socketsByUserId.delete(userId);
+  ws.authenticatedUserId = null;
+}
+
+function requestIp(req) {
+  const cloudflareIp = req.headers["cf-connecting-ip"];
+  if (typeof cloudflareIp === "string" && cloudflareIp.length <= 64) return cloudflareIp;
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") return forwarded.split(",")[0].trim().slice(0, 64);
+  return String(req.socket.remoteAddress || "unknown").slice(0, 64);
+}
+
+function registerSocketIp(ws, ip) {
+  const sockets = socketsByIp.get(ip) || new Set();
+  if (sockets.size >= MAX_WS_SOCKETS_PER_IP) return false;
+  sockets.add(ws);
+  socketsByIp.set(ip, sockets);
+  ws.clientIp = ip;
+  return true;
+}
+
+function unregisterSocketIp(ws) {
+  const ip = ws.clientIp;
+  if (!ip) return;
+  const sockets = socketsByIp.get(ip);
+  sockets?.delete(ws);
+  if (!sockets || sockets.size === 0) socketsByIp.delete(ip);
+  ws.clientIp = null;
+}
+
+function rejectUpgrade(socket, statusCode, statusText) {
+  socket.write(`HTTP/1.1 ${statusCode} ${statusText}\r\nConnection: close\r\n\r\n`);
+  socket.destroy();
+}
 
 function makeRoomCode() {
   let code;
   do {
-    code = Math.random().toString(36).slice(2, 6).toUpperCase();
+    code = secureRandomCode(4);
   } while (rooms.has(code));
   return code;
 }
@@ -137,9 +201,32 @@ function send(ws, type, payload) {
 
 function broadcastState(room) {
   if (!room.game) return;
+  syncTurnTimer(room);
   room.sockets.forEach((ws, idx) => {
     if (ws) send(ws, "state", addPlayerVisuals(room.game.getStateFor(idx), room, idx));
   });
+}
+
+function shouldRunTurnTimer(room) {
+  return room.mode !== "singleplayer" || room.game.turn === 0;
+}
+
+function syncTurnTimer(room) {
+  if (!room.game || room.game.winner !== null || !shouldRunTurnTimer(room)) {
+    clearTurnTimer(room);
+    return;
+  }
+  ensureTurnTimer(room, expireTurn);
+}
+
+async function expireTurn(room, expectedTurnKey) {
+  if (!room.game || room.game.winner !== null || turnKey(room.game) !== expectedTurnKey) return;
+  const playerIdx = room.game.turn;
+  room.game._addLog(`${room.game.players[playerIdx].name}'s turn expired.`);
+  room.game.endTurn(playerIdx);
+  broadcastState(room);
+  if (room.mode === "singleplayer") await runNpcTurn(room);
+  await settleRewards(room);
 }
 
 function addPlayerVisuals(state, room, viewerIdx) {
@@ -218,6 +305,7 @@ function cancelDisconnectedMatch(room, disconnectedIdx) {
   if (rooms.get(roomCode) !== room) return;
 
   clearAllReconnectGraces(room);
+  clearTurnTimer(room);
   room.sockets.forEach((socket) => {
     if (!socket) return;
     send(socket, "matchCancelled", { message: "Match cancelled because a player did not reconnect within one minute." });
@@ -295,7 +383,7 @@ async function startMultiplayerMatch(playerA, playerB, { matchType = "quickplay"
   const code = makeRoomCode();
   const decks = await Promise.all([getActiveDeckCardIds(playerA.user.id), getActiveDeckCardIds(playerB.user.id)]);
   const room = {
-    game: new Game(code, playerA.name, playerB.name, { decks }),
+    game: new Game(code, playerA.name, playerB.name, { decks, randomInt: secureRandomInt }),
     sockets: [playerA.ws, playerB.ws],
     names: [playerA.name, playerB.name],
     avatars: [playerA.user.avatarUrl || null, playerB.user.avatarUrl || null],
@@ -318,12 +406,46 @@ async function startMultiplayerMatch(playerA, playerB, { matchType = "quickplay"
   broadcastState(room);
 }
 
-wss.on("connection", (ws, req) => {
+server.on("upgrade", (req, socket, head) => {
+  if (!isTrustedWebSocketOrigin(req)) return rejectUpgrade(socket, 403, "Forbidden");
+  if (wss.clients.size >= MAX_WS_CONNECTIONS) return rejectUpgrade(socket, 503, "Service Unavailable");
+
+  let ticket;
+  try {
+    ticket = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`).searchParams.get("ticket");
+  } catch {
+    return rejectUpgrade(socket, 400, "Bad Request");
+  }
+
+  const user = consumeWsTicket(ticket);
+  if (!user) return rejectUpgrade(socket, 401, "Unauthorized");
+
+  const ip = requestIp(req);
+  if ((socketsByIp.get(ip)?.size || 0) >= MAX_WS_SOCKETS_PER_IP) {
+    return rejectUpgrade(socket, 429, "Too Many Requests");
+  }
+  if ((socketsByUserId.get(String(user.id))?.size || 0) >= MAX_WS_SOCKETS_PER_USER) {
+    return rejectUpgrade(socket, 429, "Too Many Requests");
+  }
+
+  wss.handleUpgrade(req, socket, head, (ws) => {
+    ws.clientIp = ip;
+    wss.emit("connection", ws, req, user);
+  });
+});
+
+wss.on("connection", (ws, req, user) => {
   ws.playerIdx = null;
   ws.roomCode = null;
   ws.rateLimit = null;
   ws.isAlive = true;
-  ws.sessionUserPromise = getSessionUserFromCookieHeader(req.headers.cookie);
+  ws.sessionUser = user;
+  if (!registerSocketIp(ws, ws.clientIp) || !registerAuthenticatedSocket(ws, user)) {
+    unregisterSocketIp(ws);
+    unregisterAuthenticatedSocket(ws);
+    ws.close(1013, "Connection limit reached");
+    return;
+  }
 
   ws.on("pong", () => {
     ws.isAlive = true;
@@ -352,6 +474,8 @@ wss.on("connection", (ws, req) => {
   });
 
   ws.on("close", () => {
+    unregisterSocketIp(ws);
+    unregisterAuthenticatedSocket(ws);
     handleSocketClose(ws);
   });
 });
@@ -366,9 +490,11 @@ const heartbeatTimer = setInterval(() => {
 }, WS_HEARTBEAT_INTERVAL_MS);
 
 wss.on("close", () => clearInterval(heartbeatTimer));
+const ticketCleanupTimer = setInterval(cleanupExpiredWsTickets, 10_000);
+ticketCleanupTimer.unref();
 
 async function requireSessionUser(ws) {
-  const user = await ws.sessionUserPromise;
+  const user = ws.sessionUser;
   if (!user) throw new Error("Login with Discord is required to play.");
   return user;
 }
@@ -381,6 +507,7 @@ function resultFor(game, idx) {
 async function settleRewards(room) {
   if (!room.game || room.game.winner === null || room.rewardGranted) return;
   room.rewardGranted = true;
+  clearTurnTimer(room);
 
   await Promise.all(
     room.userIds.map(async (userId, idx) => {
@@ -505,12 +632,13 @@ async function handleMessage(ws, msg) {
 
   if (type === "startSingleplayer") {
     const user = await requireSessionUser(ws);
+    assertUserCanStartMatch(rooms, user.id);
     detachSocketFromRoom(ws);
     const playerDeck = await getActiveDeckCardIds(user.id);
     const code = makeRoomCode();
     const name = user.username || "Player";
     const room = {
-      game: new Game(code, name, "NPC", { decks: [playerDeck] }),
+      game: new Game(code, name, "NPC", { decks: [playerDeck], randomInt: secureRandomInt }),
       sockets: [ws, null],
       names: [name, "NPC"],
       avatars: [user.avatarUrl || null, null],
@@ -531,6 +659,7 @@ async function handleMessage(ws, msg) {
 
   if (type === "createRoom") {
     const user = await requireSessionUser(ws);
+    assertUserCanStartMatch(rooms, user.id);
     detachSocketFromRoom(ws);
     const name = user.username || "Player 1";
     const code = makeRoomCode();
@@ -555,12 +684,14 @@ async function handleMessage(ws, msg) {
 
   if (type === "joinRoom") {
     const user = await requireSessionUser(ws);
-    detachSocketFromRoom(ws);
     const code = (payload && payload.roomCode || "").toUpperCase().trim();
     const name = user.username || "Player 2";
     const room = rooms.get(code);
     if (!room) return broadcastError(ws, "Room not found.");
     if (room.sockets[1]) return broadcastError(ws, "That room is already full.");
+    assertUserCanStartMatch(rooms, user.id);
+    assertUserIsNotAlreadyInRoom(room, user.id);
+    detachSocketFromRoom(ws);
 
     room.sockets[1] = ws;
     room.names[1] = name;
@@ -570,7 +701,7 @@ async function handleMessage(ws, msg) {
     ws.playerIdx = 1;
 
     const decks = await Promise.all(room.userIds.map((userId) => getActiveDeckCardIds(userId)));
-    room.game = new Game(code, room.names[0], room.names[1], { decks });
+    room.game = new Game(code, room.names[0], room.names[1], { decks, randomInt: secureRandomInt });
     send(room.sockets[0], "matchStarted", {});
     send(room.sockets[1], "matchStarted", {});
     broadcastState(room);
@@ -584,6 +715,7 @@ async function handleMessage(ws, msg) {
 
   if (type === "quickplay") {
     const user = await requireSessionUser(ws);
+    assertUserCanStartMatch(rooms, user.id);
     detachSocketFromRoom(ws);
     const name = user.username || "Player";
     const opponentIndex = quickplayQueue.findIndex((entry) => entry.ws.readyState === entry.ws.OPEN && entry.user.id !== user.id);

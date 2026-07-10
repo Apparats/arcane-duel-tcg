@@ -661,6 +661,52 @@
   line-height: 1.5;
 }
 
+.changelog-entry {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(232, 179, 79, 0.2);
+}
+
+.changelog-entry-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.changelog-entry-meta h3 {
+  margin: 0;
+  color: var(--cream);
+  font-family: "Cinzel", serif;
+  font-size: 17px;
+}
+
+.changelog-entry-meta span {
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.changelog-entry-intro {
+  margin: 12px 0;
+  color: var(--cream-dim);
+  font-size: 14px;
+}
+
+.changelog-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--cream-dim);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.changelog-list li::marker { color: var(--gold); }
+
 .legal-card {
   display: flex;
   width: min(92vw, 680px);

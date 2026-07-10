@@ -16,6 +16,7 @@ const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const TYPE_ICON = { minion: "⚔", spell: "✦" };
 
 let ws = null;
+let wsConnectPromise = null;
 let myState = null;          // last state received (server or local engine)
 let selectedHandIndex = null; // index of the hand card selected to play
 let selectedAttackerId = null; // instanceId of the minion selected to attack
@@ -72,35 +73,63 @@ function canUseHoverTooltips() {
   return hoverTooltipQuery ? hoverTooltipQuery.matches : true;
 }
 
+async function requestWebSocketTicket() {
+  const res = await apiFetch("/auth/ws-ticket", { method: "POST" });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || typeof data.ticket !== "string") {
+    throw new Error(data.error || "Could not secure the game connection.");
+  }
+  return data.ticket;
+}
+
 function connect(onOpen) {
   if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
     if (onOpen) {
       if (ws.readyState === WebSocket.OPEN) onOpen();
       else ws.addEventListener("open", onOpen, { once: true });
     }
-    return;
+    return Promise.resolve(ws);
   }
-  const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-  const socket = new WebSocket(`${protocol}//${location.host}`);
-  ws = socket;
+  if (wsConnectPromise) {
+    if (onOpen) wsConnectPromise.then(onOpen).catch(() => {});
+    return wsConnectPromise;
+  }
 
-  if (onOpen) socket.addEventListener("open", onOpen, { once: true });
-  socket.addEventListener("message", (ev) => {
-    const msg = JSON.parse(ev.data);
-    handleServerMessage(msg);
-  });
-  socket.addEventListener("close", () => {
-    if (ws === socket) ws = null;
-    if (shouldReconnectMultiplayer()) {
-      showToast("Connection lost. Reconnecting to your match...");
-      beginMultiplayerReconnect();
-      return;
-    }
-    if (!isLocalMode) showToast("Lost connection to the server.");
-  });
-  socket.addEventListener("error", () => {
-    if (!isLocalMode && !reconnectingMultiplayer) showToast("Couldn't connect to the online server. Is it running?");
-  });
+  const connection = (async () => {
+    const ticket = await requestWebSocketTicket();
+    const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+    const socket = new WebSocket(`${protocol}//${location.host}?ticket=${encodeURIComponent(ticket)}`);
+    ws = socket;
+
+    socket.addEventListener("message", (ev) => {
+      const msg = JSON.parse(ev.data);
+      handleServerMessage(msg);
+    });
+    socket.addEventListener("close", () => {
+      if (ws === socket) ws = null;
+      if (shouldReconnectMultiplayer()) {
+        showToast("Connection lost. Reconnecting to your match...");
+        beginMultiplayerReconnect();
+        return;
+      }
+      if (!isLocalMode) showToast("Lost connection to the server.");
+    });
+    socket.addEventListener("error", () => {
+      if (!isLocalMode && !reconnectingMultiplayer) showToast("Couldn't connect to the online server. Is it running?");
+    });
+
+    return new Promise((resolve, reject) => {
+      socket.addEventListener("open", () => resolve(socket), { once: true });
+      socket.addEventListener("error", () => reject(new Error("Could not open the game connection.")), { once: true });
+    });
+  })();
+
+  wsConnectPromise = connection;
+  if (onOpen) connection.then(onOpen).catch((err) => showToast(err.message || "Could not connect to the server."));
+  connection.finally(() => {
+    if (wsConnectPromise === connection) wsConnectPromise = null;
+  }).catch(() => {});
+  return connection;
 }
 
 function hasStoredMultiplayerMatch() {
@@ -430,9 +459,20 @@ function spawnFloatingNumber(targetEl, text, kind) {
 
 function flashDamage(el) {
   if (!el) return false;
-  el.classList.add("impact", "flash-damage");
-  setTimeout(() => el.classList.remove("impact", "flash-damage"), 650);
+  el.classList.remove("damage-impact");
+  void el.offsetWidth;
+  el.classList.add("damage-impact");
+  setTimeout(() => el.classList.remove("damage-impact"), 650);
   return true;
+}
+
+function flashSelfHeroScreen() {
+  const screen = $("screen-game");
+  if (!screen) return;
+  screen.classList.remove("hero-damage-screen");
+  void screen.offsetWidth;
+  screen.classList.add("hero-damage-screen");
+  setTimeout(() => screen.classList.remove("hero-damage-screen"), 420);
 }
 
 function playDamageSfx() {
@@ -453,7 +493,9 @@ function diffAndFlashHero(prevHero, nextHero, panelEl) {
   if (delta === 0) return false;
   if (delta < 0) {
     spawnFloatingNumber(panelEl, `${delta}`, "damage");
-    return flashDamage(panelEl);
+    const flashed = flashDamage(panelEl);
+    if (panelEl === $("selfHero")) flashSelfHeroScreen();
+    return flashed;
   }
   spawnFloatingNumber(panelEl, `+${delta}`, "heal");
   return flashHeal(panelEl);

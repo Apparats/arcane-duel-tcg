@@ -27,10 +27,10 @@
     charge: 3,
   };
 
-  function shuffle(arr) {
+  function shuffle(arr, randomInt = (maxExclusive) => Math.floor(Math.random() * maxExclusive)) {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = randomInt(i + 1);
       [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
@@ -56,14 +56,14 @@
     return returnCount > 0 ? `${cardId}${CARD_REF_RETURN_SEPARATOR}${returnCount}` : cardId;
   }
 
-  function makePlayer(name, deckIds = null) {
+  function makePlayer(name, deckIds = null, randomInt) {
     return {
       name,
       health: START_HEALTH,
       maxHealth: START_HEALTH,
       manaMax: 0,
       manaCurrent: 0,
-      deck: shuffle(deckIds && deckIds.length ? deckIds.slice(0, 20) : fallbackDeck()),
+      deck: shuffle(deckIds && deckIds.length ? deckIds.slice(0, 20) : fallbackDeck(), randomInt),
       hand: [],
       board: [], // { instanceId, cardId, attack, health, maxHealth, keywords, canAttack, damaged }
       playedCounts: {},
@@ -223,7 +223,7 @@
     returnToDeck(game, ctx) {
       const p = game.players[ctx.casterIdx];
       p.deck.push(ctx.cardId);
-      p.deck = shuffle(p.deck);
+      p.deck = shuffle(p.deck, game.randomInt);
       game._addLog(`${ctx.sourceName} returns to the deck.`);
     },
 
@@ -233,7 +233,7 @@
       if (returnCount >= limit - 1) return;
       const p = game.players[ctx.casterIdx];
       p.deck.push(cardRefWithReturnCount(ctx.cardId, returnCount + 1));
-      p.deck = shuffle(p.deck);
+      p.deck = shuffle(p.deck, game.randomInt);
       game._addLog(`${ctx.sourceName} returns to the deck.`);
     },
 
@@ -253,7 +253,13 @@
   class Game {
     constructor(roomCode, player1Name, player2Name, options = {}) {
       this.roomCode = roomCode;
-      this.players = [makePlayer(player1Name, options.decks?.[0]), makePlayer(player2Name, options.decks?.[1])];
+      this.randomInt = typeof options.randomInt === "function"
+        ? options.randomInt
+        : (maxExclusive) => Math.floor(Math.random() * maxExclusive);
+      this.players = [
+        makePlayer(player1Name, options.decks?.[0], this.randomInt),
+        makePlayer(player2Name, options.decks?.[1], this.randomInt),
+      ];
       this.turn = 0; // index of the active player
       this.turnNumber = 1;
       this.winner = null; // 0, 1, or null

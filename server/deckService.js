@@ -1,7 +1,8 @@
-const { buildAutoDeck, buildFallbackDeck, validateDeck, DECK_SIZE, CARD_COPY_LIMITS, RARITY_TOTAL_LIMITS } = require("../public/deckRules");
+const { buildAutoDeck, validateDeck, DECK_SIZE, CARD_COPY_LIMITS, RARITY_TOTAL_LIMITS } = require("../public/deckRules");
 const { getDB } = require("./db");
 const { assertMongoKeySegment, sanitizeString, toObjectId } = require("./mongoSafety");
 const { withUserLock } = require("./userLocks");
+const { secureRandomId } = require("./random");
 
 function publicDeck(deck) {
   return {
@@ -24,6 +25,17 @@ function buildValidatedAutoDeck(user) {
     throw err;
   }
   return cardIds;
+}
+
+function validActiveDeck(user) {
+  const active = (user?.decks || []).find((deck) => deck.id === user.activeDeckId);
+  if (!active?.cardIds) return null;
+  const collection = { cardCollection: user.cardCollection || {}, unlockedCards: user.unlockedCards || [] };
+  return validateDeck(active.cardIds, collection).ok ? active.cardIds : null;
+}
+
+function makeDeckId(prefix) {
+  return `${prefix}_${secureRandomId(12)}`;
 }
 
 async function getDeckState(userId) {
@@ -59,7 +71,7 @@ async function saveDeck(userId, { id, name, cardIds }) {
   }
 
   const now = new Date();
-  const deckId = id ? assertMongoKeySegment(id, "deck id") : `deck_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+  const deckId = id ? assertMongoKeySegment(id, "deck id") : makeDeckId("deck");
   const existing = user.decks || [];
   const previous = existing.find((deck) => deck.id === deckId);
   const deck = {
@@ -94,7 +106,7 @@ async function autoBuildDeck(userId, { id, name } = {}) {
   if (!user) throw new Error("User not found.");
 
   const now = new Date();
-  const deckId = id ? assertMongoKeySegment(id, "deck id") : `deck_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+  const deckId = id ? assertMongoKeySegment(id, "deck id") : makeDeckId("deck");
   const existing = user.decks || [];
   const previous = existing.find((deck) => deck.id === deckId);
   const deck = {
@@ -141,22 +153,22 @@ async function getActiveDeckCardIds(userId) {
   const users = getDB().collection("users");
   const _id = toObjectId(userId, "user id");
   const user = await users.findOne({ _id }, { projection: { decks: 1, activeDeckId: 1, cardCollection: 1, unlockedCards: 1 } });
-  const active = (user?.decks || []).find((deck) => deck.id === user.activeDeckId);
-  if (active?.cardIds) return active.cardIds;
+  const activeCardIds = validActiveDeck(user);
+  if (activeCardIds) return activeCardIds;
 
   return withUserLock(String(_id), async () => {
     const lockedUser = await users.findOne(
       { _id },
       { projection: { decks: 1, activeDeckId: 1, cardCollection: 1, unlockedCards: 1 } }
     );
-    const lockedActive = (lockedUser?.decks || []).find((deck) => deck.id === lockedUser.activeDeckId);
-    if (lockedActive?.cardIds) return lockedActive.cardIds;
+    const lockedActiveCardIds = validActiveDeck(lockedUser);
+    if (lockedActiveCardIds) return lockedActiveCardIds;
 
     try {
       const cardIds = buildValidatedAutoDeck(lockedUser || {});
       const now = new Date();
       const deck = {
-        id: `auto_${now.getTime().toString(36)}`,
+        id: makeDeckId("auto"),
         name: "Auto Deck",
         cardIds,
         createdAt: now,
@@ -174,7 +186,9 @@ async function getActiveDeckCardIds(userId) {
       );
       return cardIds;
     } catch (err) {
-      return buildFallbackDeck();
+      const safeError = new Error("A valid 20-card deck is required before starting a match.");
+      safeError.code = "VALID_DECK_REQUIRED";
+      throw safeError;
     }
   });
 }

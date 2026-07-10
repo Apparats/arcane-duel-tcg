@@ -10,6 +10,7 @@ const STARTER_GUARANTEED_RARITY = "mythic";
 const STARTER_RARITY_LIMITS = { legendary: 3, mythic: 1 };
 const STARTER_MAX_COPIES_PER_CARD = 2;
 const STARTER_CARD_COPY_LIMITS = { legendary: 1, mythic: 1 };
+const { secureRandomFrom, secureRandomInt } = require("./random");
 
 function assertDrawCount(count, label = "card count") {
   if (!Number.isInteger(count) || count < 1 || count > 20) {
@@ -19,15 +20,15 @@ function assertDrawCount(count, label = "card count") {
 }
 
 function randomFrom(pool) {
-  return pool[Math.floor(Math.random() * pool.length)];
+  return secureRandomFrom(pool);
 }
 
 function weightedPick(entries) {
   const total = entries.reduce((sum, entry) => sum + entry.weight, 0);
-  let roll = Math.random() * total;
+  let roll = secureRandomInt(total);
   for (const entry of entries) {
+    if (roll < entry.weight) return entry.value;
     roll -= entry.weight;
-    if (roll <= 0) return entry.value;
   }
   return entries[entries.length - 1].value;
 }
