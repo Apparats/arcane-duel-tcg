@@ -12,6 +12,8 @@
   const MOVE_THRESHOLD = 14;
   let drag = null;
   let suppressNextClick = false;
+  let suppressedDragSource = null;
+  let clearSuppressedClickTimer = null;
 
   function closest(target, selector) {
     return target && target.nodeType === Node.ELEMENT_NODE ? target.closest(selector) : null;
@@ -19,6 +21,23 @@
 
   function clearArrow() {
     arrowPath.setAttribute("d", "");
+  }
+
+  function clearSuppressedClick() {
+    suppressNextClick = false;
+    suppressedDragSource = null;
+    clearTimeout(clearSuppressedClickTimer);
+  }
+
+  function suppressDragClick(source) {
+    suppressNextClick = true;
+    suppressedDragSource = source;
+    clearTimeout(clearSuppressedClickTimer);
+    // Some touch browsers do not emit a click after a captured drag. Expire
+    // the guard, while matching the source below keeps other controls live.
+    clearSuppressedClickTimer = setTimeout(() => {
+      clearSuppressedClick();
+    }, 500);
   }
 
   function clearDrag() {
@@ -133,6 +152,8 @@
   }
 
   board.addEventListener("pointerdown", (event) => {
+    // A new gesture must never inherit the cancelled-drag click guard.
+    clearSuppressedClick();
     const handCard = closest(event.target, ".hand-card");
     if (handCard) {
       const handIndex = Number(handCard.dataset.handIndex);
@@ -176,7 +197,7 @@
       }
       // A completed drag, including a cancelled one, must not fall through
       // into the click-to-play or click-to-attack controls.
-      suppressNextClick = true;
+      suppressDragClick(activeDrag.source);
     }
     clearDrag();
   });
@@ -185,8 +206,11 @@
 
   document.addEventListener("click", (event) => {
     if (!suppressNextClick) return;
-    suppressNextClick = false;
-    event.preventDefault();
-    event.stopImmediatePropagation();
+    const isDragClick = suppressedDragSource?.contains(event.target);
+    clearSuppressedClick();
+    if (isDragClick) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
   }, true);
 })();
