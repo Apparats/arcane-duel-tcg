@@ -9,7 +9,7 @@ module.exports = {
   rarity: "mythic",
   country: "Bolivia",
   lore: "You’re made of spare parts, aren’t you, bud?. This card buffs all allied cards by +2",
-  image: "art/Zugzwang.webp",
+  image: "art/Dezadin.webp",
   abilities: [
     { trigger: "onPlay", effect: "buffAllFriendlyMinions", attack: 2, health: 2 },
   ],
