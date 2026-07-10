@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="css/lobby.css" />
 <link rel="stylesheet" href="css/board.css" />
 <link rel="stylesheet" href="css/cards.css?v=20260709-card-cost-3" />
-<link rel="stylesheet" href="css/board-arena.css?v=20260709-mobile-board-1" />
+<link rel="stylesheet" href="css/board-arena.css?v=20260709-hero-frames-1" />
 <link rel="stylesheet" href="css/board-hand.css?v=20260709-6" />
 <link rel="stylesheet" href="css/inventory.css?v=20260709-card-cost-2" />
 <link rel="stylesheet" href="css/deck-builder.css" />
@@ -493,9 +493,9 @@
           <div class="hero-avatar hero-avatar-opponent" id="oppAvatar" aria-hidden="true"></div>
           <div class="hero-name" id="oppName">Opponent</div>
           <div class="hero-stats">
-            <span class="stat hp"><span id="oppHealth">30</span> ♥</span>
-            <span class="stat mana"><span id="oppMana">0</span>/<span id="oppManaMax">0</span> ◆</span>
-            <span class="stat deck" id="oppDeckCount">30 🂠</span>
+            <span class="stat hp" aria-label="Health"><span id="oppHealth">30</span></span>
+            <span class="stat mana" aria-label="Mana"><span id="oppMana">0</span>/<span id="oppManaMax">0</span></span>
+            <span class="stat deck" id="oppDeckCount" aria-label="Cards remaining">30</span>
           </div>
         </div>
         <div id="oppBoard" class="minion-row"></div>
@@ -522,9 +522,9 @@
           <div class="hero-avatar hero-avatar-self" id="selfAvatar" aria-hidden="true"></div>
           <div class="hero-name" id="selfName">You</div>
           <div class="hero-stats">
-            <span class="stat hp"><span id="selfHealth">30</span> ♥</span>
-            <span class="stat mana"><span id="selfMana">0</span>/<span id="selfManaMax">0</span> ◆</span>
-            <span class="stat deck" id="selfDeckCount">30 🂠</span>
+            <span class="stat hp" aria-label="Health"><span id="selfHealth">30</span></span>
+            <span class="stat mana" aria-label="Mana"><span id="selfMana">0</span>/<span id="selfManaMax">0</span></span>
+            <span class="stat deck" id="selfDeckCount" aria-label="Cards remaining">30</span>
           </div>
         </div>
       </div>
