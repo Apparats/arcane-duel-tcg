@@ -567,6 +567,7 @@ $("tileSingleplayer").addEventListener("click", () => {
   startServerSingleplayer();
 });
 $("tileMultiplayer").addEventListener("click", () => openLobby("multiplayer"));
+$("tileSupport").addEventListener("click", () => window.open("https://ko-fi.com/apparat", "_blank", "noopener,noreferrer"));
 
 document.querySelectorAll(".menu-tile-locked").forEach((tile) => {
   tile.addEventListener("click", () => {
@@ -1529,6 +1530,13 @@ function setAudioConfigOpen(open) {
   if (open) syncAudioConfigControls();
 }
 
+function setChangelogOpen(open) {
+  const modal = $("changelogModal");
+  if (!modal) return;
+  modal.classList.toggle("hidden", !open);
+  if (open) setMenuOptionsOpen(false);
+}
+
 function syncVolumeControl(kind) {
   const input = $(`${kind}VolumeInput`);
   const label = $(`${kind}VolumeValue`);
@@ -1677,12 +1685,22 @@ $("btnOpenAudioConfig").addEventListener("click", () => {
   setAudioConfigOpen(true);
 });
 
+$("btnOpenChangelog").addEventListener("click", () => setChangelogOpen(true));
+$("btnCloseChangelog").addEventListener("click", () => setChangelogOpen(false));
+$("changelogModal").addEventListener("click", (event) => {
+  if (event.target === event.currentTarget) setChangelogOpen(false);
+});
+
 $("btnCloseAudioConfig").addEventListener("click", () => setAudioConfigOpen(false));
 $("musicVolumeInput").addEventListener("input", (event) => updateVolumeFromInput("music", event.target.value));
 $("sfxVolumeInput").addEventListener("input", (event) => updateVolumeFromInput("sfx", event.target.value));
 
 document.addEventListener("click", (event) => {
   if (!closestElement(event.target, ".menu-options")) setMenuOptionsOpen(false);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") setChangelogOpen(false);
 });
 
 $("screen-enter").addEventListener("click", enterMainMenu);

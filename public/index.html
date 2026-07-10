@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/base.css" />
-<link rel="stylesheet" href="css/menu.css?v=20260709-activity-layout-2" />
+<link rel="stylesheet" href="css/menu.css?v=20260710-menu-changelog-1" />
 <link rel="stylesheet" href="css/lobby.css" />
 <link rel="stylesheet" href="css/board.css" />
 <link rel="stylesheet" href="css/cards.css?v=20260710-inventory-scroll-1" />
@@ -106,7 +106,10 @@
       </button>
       <div id="menuOptionsPanel" class="menu-options-panel hidden">
         <button id="btnInviteDiscordActivity" class="btn menu-option-button" type="button">Invite to server</button>
-        <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Config</button>
+        <div class="menu-option-config">
+          <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Config</button>
+          <span class="menu-version">Version 1.0</span>
+        </div>
       </div>
     </div>
     <div class="fireflies" aria-hidden="true">
@@ -188,7 +191,7 @@
         </svg>
       </div>
       <h1 class="brand menu-brand">ARCANA TCG</h1>
-      <p class="brand-sub">Choose how you want to play</p>
+      <button id="btnOpenChangelog" class="changelog-button" type="button">Changelog</button>
 
       <div class="menu-grid">
         <button class="menu-tile menu-tile-primary" id="tileSingleplayer">
@@ -252,6 +255,16 @@
           </span>
           <span class="menu-tile-label">Trade</span>
           <span class="menu-tile-sub">Cards</span>
+        </button>
+        <button class="menu-tile menu-tile-secondary-active menu-tile-support" id="tileSupport" type="button">
+          <span class="menu-tile-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20s-7-3.8-7-9.2C5 8.4 6.6 7 8.7 7c1.5 0 2.7.8 3.3 1.9C12.6 7.8 13.8 7 15.3 7 17.4 7 19 8.4 19 10.8 19 16.2 12 20 12 20Z" />
+              <path d="m18.5 3 .6 1.7L21 5.3l-1.9.6-.6 1.8-.6-1.8L16 5.3l1.9-.6.6-1.7Z" />
+            </svg>
+          </span>
+          <span class="menu-tile-label">Support Arcana</span>
+          <span class="menu-tile-sub">And make yourself a mythical card</span>
         </button>
       </div>
     </div>
@@ -561,6 +574,17 @@
     </div>
   </div>
 
+  <!-- ---------- MODAL: CHANGELOG ---------- -->
+  <div id="changelogModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="changelogTitle">
+    <div class="overlay-card changelog-card">
+      <div class="changelog-header">
+        <h2 id="changelogTitle">Changelog</h2>
+        <button id="btnCloseChangelog" class="changelog-close" type="button" aria-label="Close changelog">x</button>
+      </div>
+      <p class="changelog-placeholder">Changelog entries will appear here.</p>
+    </div>
+  </div>
+
   <!-- ---------- ERROR TOAST ---------- -->
   <div id="toast" class="toast hidden"></div>
 
@@ -574,7 +598,7 @@
   <script src="audioConfig.js"></script>
   <script src="audioManager.js"></script>
   <script src="packOpening.js?v=20260709-card-cost-1"></script>
-<script src="client.js?v=20260709-global-rounds-1"></script>
+<script src="client.js?v=20260710-menu-changelog-1"></script>
 <script src="boardInteractions.js?v=20260709-touch-2"></script>
 <script src="inventory.js?v=20260709-card-cost-1"></script>
 <script src="deckBuilder.js"></script>
