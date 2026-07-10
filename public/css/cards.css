@@ -16,7 +16,6 @@
   border-radius: 8px;
   overflow: visible;
   cursor: pointer;
-  touch-action: none;
   border: 2px solid var(--line);
   transition: transform 0.2s cubic-bezier(0.215, 0.61, 0.355, 1), box-shadow 0.15s ease;
   user-select: none;
@@ -184,6 +183,13 @@
 .hand-card:hover { transform: translateY(-12px); }
 .hand-card.selected { outline: 2px solid var(--gold); transform: translateY(-18px); }
 .hand-card.unaffordable { opacity: 0.4; }
+
+/* Touch gestures only belong to the live match. Collection, shop, and deck
+   pages must retain native vertical scrolling on cards. */
+#screen-game .minion-card,
+#screen-game .hand-card {
+  touch-action: none;
+}
 
 .hand-area {
   display: flex;

@@ -67,6 +67,18 @@ function main() {
   state0 = game.getStateFor(0);
   assert(state0.winner === 0, "Player 0 should win when Player 1 surrenders.");
 
+  const turnSummonTest = new Game("TURN-SUMMONS", "Summoner", "Opponent", {
+    decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
+  });
+  turnSummonTest.players[0].board = [testMinion("maker", "base:multimaker")];
+  turnSummonTest.players[1].board = [testMinion("gabibbo", "base:gabibbo-ardito")];
+  turnSummonTest.endTurn(0);
+  assert(turnSummonTest.players[0].board.length === 1, "Multimaker should not summon during the opponent's turn.");
+  assert(turnSummonTest.players[1].board.length === 2, "Gabibbo should clone at the start of its owner's turn.");
+  turnSummonTest.endTurn(1);
+  assert(turnSummonTest.players[0].board.length === 2, "Multimaker should summon one Multi at the start of its owner's turn.");
+  assert(turnSummonTest.players[1].board.length === 2, "Gabibbo should not clone during the opponent's turn.");
+
   const boardTest = new Game("BOARD", "Board1", "Board2", {
     decks: [
       Array(20).fill("core:recluta-novato"),

@@ -8,9 +8,9 @@ module.exports = {
   race: "Monster",
   rarity: "mythic",
   country: "Italy",
-  lore: "Corruption is only bad if I am not involved. This card clones itself every turn when played.",
+  lore: "Corruption is only bad if I am not involved. At the start of your turn, clone this card.",
   image: "art/Gabibbo_Ardito.webp",
   abilities: [
-    { trigger: "onAnyTurnStart", effect: "summonMinion", cardId: "base:gabibbo-ardito", count: 1 },
+    { trigger: "onTurnStart", effect: "summonMinion", cardId: "base:gabibbo-ardito", count: 1 },
   ],
 };

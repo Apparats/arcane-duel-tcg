@@ -197,6 +197,31 @@
       "_expansionId": "base"
     },
     {
+      "name": "Dezadin",
+      "cost": 5,
+      "type": "minion",
+      "attack": 4,
+      "health": 5,
+      "keywords": [
+        "charge"
+      ],
+      "race": "Monster",
+      "rarity": "mythic",
+      "country": "Bolivia",
+      "lore": "You’re made of spare parts, aren’t you, bud?. This card buffs all already summoned cards by +2",
+      "image": "art/Dezadin.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "buffAllFriendlyMinions",
+          "attack": 2,
+          "health": 2
+        }
+      ],
+      "id": "base:dezadin",
+      "_expansionId": "base"
+    },
+    {
       "name": "DisappointmentPanda",
       "cost": 4,
       "type": "minion",
@@ -274,11 +299,11 @@
       "race": "Monster",
       "rarity": "mythic",
       "country": "Italy",
-      "lore": "Corruption is only bad if I am not involved. This card clones itself every turn when played.",
+      "lore": "Corruption is only bad if I am not involved. At the start of your turn, clone this card.",
       "image": "art/Gabibbo_Ardito.webp",
       "abilities": [
         {
-          "trigger": "onAnyTurnStart",
+          "trigger": "onTurnStart",
           "effect": "summonMinion",
           "cardId": "base:gabibbo-ardito",
           "count": 1
@@ -578,11 +603,11 @@
       "race": "Human",
       "rarity": "legendary",
       "country": "Arcana",
-      "lore": "Has no flag, but always a plan B. This card spawns on the board a multi card every turn",
+      "lore": "Has no flag, but always a plan B. At the start of your turn, summon a Multi.",
       "image": "art/Multimaker.webp",
       "abilities": [
         {
-          "trigger": "onAnyTurnStart",
+          "trigger": "onTurnStart",
           "effect": "summonMinion",
           "cardId": "special:multi",
           "count": 1
@@ -625,7 +650,7 @@
     },
     {
       "name": "Oil Bert",
-      "cost": 6,
+      "cost": 5,
       "type": "minion",
       "attack": 4,
       "health": 6,
