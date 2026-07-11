@@ -18,6 +18,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { getShopPackSettings } = require("../server/expansionPack");
 
 const ROOT = path.join(__dirname, "..");
 const EXPANSIONS_DIR = path.join(ROOT, "expansions");
@@ -46,6 +47,7 @@ const VALID_ABILITY_EFFECTS = [
   "returnToDeckIfPlayedLessThan",
   "destroySelf",
   "destroySelfIfPlayedAtLeast",
+  "applyStatus",
 ];
 
 class BuildError extends Error {}
@@ -89,6 +91,17 @@ function loadExpansionMeta(expansionDir) {
   }
   if (!meta.id || typeof meta.id !== "string") {
     fail(`expansion.json in "${label}" needs an "id" field (string, no spaces).`);
+  }
+  try {
+    getShopPackSettings(meta, {
+      defaultPrice: 20,
+      defaultSize: 5,
+      maxPrice: 100000,
+      maxSize: 20,
+      publicDir: path.join(ROOT, "public"),
+    });
+  } catch (err) {
+    fail(`Invalid shop settings in ${label}: ${err.message}`);
   }
   return meta;
 }
@@ -224,6 +237,26 @@ function validateAbilities(card, label) {
       if (ability.health !== undefined && !isIntegerInRange(ability.health, -99, 99)) {
         fail(`${abLabel}: "health" must be an integer between -99 and 99.`);
       }
+    } else if (ability.effect === "applyStatus") {
+      const validStatuses = ["weakened", "frozen", "silenced", "poisoned", "marked"];
+      if (ability.trigger !== "onPlay") {
+        fail(`${abLabel}: applyStatus can only use the "onPlay" trigger.`);
+      }
+      if (ability.target !== "enemyMinion") {
+        fail(`${abLabel}: applyStatus needs target: "enemyMinion".`);
+      }
+      if (!validStatuses.includes(ability.status)) {
+        fail(`${abLabel}: "status" must be one of ${validStatuses.join(", ")}.`);
+      }
+      if (ability.value !== undefined && !isIntegerInRange(ability.value, 1, 99)) {
+        fail(`${abLabel}: "value" must be an integer between 1 and 99 if you include it.`);
+      }
+      if (ability.turns !== undefined && !isIntegerInRange(ability.turns, 1, 9)) {
+        fail(`${abLabel}: "turns" must be an integer between 1 and 9 if you include it.`);
+      }
+      if (ability.status === "silenced" && ability.turns !== undefined) {
+        fail(`${abLabel}: silenced is permanent, so do not set "turns".`);
+      }
     } else if (["returnToDeck", "destroySelf"].includes(ability.effect)) {
       // No extra params required.
     } else {
@@ -237,7 +270,7 @@ function validateAbilities(card, label) {
   });
 }
 
-function collectCards() {
+function collectCards({ excludedExpansionIds = new Set() } = {}) {
   if (!fs.existsSync(EXPANSIONS_DIR)) {
     fail(`"expansions/" folder doesn't exist. Create at least one (see expansions/core as an example).`);
   }
@@ -257,6 +290,11 @@ function collectCards() {
 
   expansionDirs.forEach((dir) => {
     const meta = loadExpansionMeta(dir);
+
+    if (excludedExpansionIds.has(meta.id)) {
+      console.log(`⏭  "${meta.id}" excluded by build option — skipping.`);
+      return;
+    }
 
     if (meta.enabled === false) {
       console.log(`⏭  "${meta.id}" disabled (enabled: false in expansion.json) — skipping.`);
@@ -339,9 +377,9 @@ function renderOutput(cards) {
 `;
 }
 
-function runOnce({ checkOnly }) {
+function runOnce({ checkOnly, excludedExpansionIds }) {
   try {
-    const cards = collectCards();
+    const cards = collectCards({ excludedExpansionIds });
     if (checkOnly) {
       console.log(`\n✅ ${cards.length} card(s) valid. (--check: public/cards.js was not written)\n`);
     } else {
@@ -363,8 +401,14 @@ function main() {
   const args = process.argv.slice(2);
   const checkOnly = args.includes("--check");
   const watch = args.includes("--watch");
+  const excludedExpansionIds = new Set(
+    args
+      .filter((arg) => arg.startsWith("--exclude-expansion="))
+      .map((arg) => arg.slice("--exclude-expansion=".length))
+      .filter(Boolean)
+  );
 
-  const ok = runOnce({ checkOnly });
+  const ok = runOnce({ checkOnly, excludedExpansionIds });
   if (!watch && !ok) process.exitCode = 1;
 
   if (watch) {
@@ -372,7 +416,7 @@ function main() {
     fs.watch(EXPANSIONS_DIR, { recursive: true }, (_, filename) => {
       if (!filename || !filename.endsWith(".js") && !filename.endsWith(".json")) return;
       console.log(`↻ Change detected in ${filename}, rebuilding...`);
-      runOnce({ checkOnly: false });
+      runOnce({ checkOnly: false, excludedExpansionIds });
     });
   }
 }

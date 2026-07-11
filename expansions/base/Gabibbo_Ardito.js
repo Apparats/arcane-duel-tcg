@@ -2,7 +2,7 @@ module.exports = {
   name: "Gabibbo Ardito",
   cost: 6,
   type: "minion",
-  attack: 1,
+  attack: 2,
   health: 6,
   keywords: ["charge"],
   race: "Monster",

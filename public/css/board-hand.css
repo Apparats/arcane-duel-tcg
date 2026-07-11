@@ -102,7 +102,7 @@
 }
 
 @media (max-width: 720px) and (orientation: portrait) {
-  #screen-game .hand-area { width: min(100%, 430px); min-height: 118px; margin-bottom: 10px; padding: 5px 8px 0; }
+  #screen-game .hand-area { width: min(100%, 430px); min-height: 118px; margin-bottom: 4px; padding: 5px 8px 0; }
   #screen-game .hand-card { width: clamp(76px, 21vw, 102px); margin-left: clamp(-31px, -7.2vw, -17px); }
   #screen-game .hand-card .card-cost { width: 22px; height: 25px; top: -6px; left: -5px; font-size: 10px; }
   #screen-game .hand-card .card-badges { top: 23px; left: -5px; width: 22px; }

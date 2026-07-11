@@ -10,8 +10,24 @@ const KEYWORD_ICON = {
     '<svg class="keyword-icon keyword-icon-charge" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" fill="currentColor"/></svg>',
 };
 const KEYWORD_FULL_LABEL = { taunt: "Taunt", charge: "Charge", divineShield: "Divine Shield" };
+const STATUS_LABEL = {
+  weakened: "W",
+  frozen: "F",
+  silenced: "X",
+  poisoned: "P",
+  marked: "!",
+};
+const STATUS_FULL_LABEL = {
+  weakened: "Weakened",
+  frozen: "Frozen",
+  silenced: "Silenced",
+  poisoned: "Poisoned",
+  marked: "Marked",
+};
 const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", mythic: "Mythic" };
 const DISCORD_CLIENT_ID = "1523179359106502716";
+const CHANGELOG_VERSION = "1.2";
+const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const TYPE_ICON = { minion: "⚔", spell: "✦" };
 
@@ -54,6 +70,7 @@ let pendingHandPlayAnimation = null;
 const predictedAttackKeys = new Set();
 let turnClockOffsetMs = 0;
 let turnTimerInterval = null;
+let lastHandTurnKey = null;
 const SETTLE_DELAY = 460;      // ms we wait after an impact before "settling" the final state
 const ROUND_BANNER_DELAY = 980;
 const ALLOWED_EMOTES = new Set(["😄", "😭", "😯", "😡", "🫄", "💀"]);
@@ -294,6 +311,7 @@ function resetStateQueue() {
   stateQueue = [];
   isApplyingStateQueue = false;
   stateQueueGeneration += 1;
+  lastHandTurnKey = null;
 }
 
 function applyIncomingState(newState) {
@@ -966,6 +984,7 @@ function render(state) {
 
   // Own hand
   renderHand(state);
+  syncHandVisibility(state);
 
   // End turn button
   $("btnEndTurn").disabled = !state.isYourTurn;
@@ -1040,7 +1059,7 @@ function boardCardMarkup(minion) {
   return `
       ${cardArtHTML(minion)}
       ${cardCostHTML(minion)}
-      <div class="card-badges">${keywordBadgesHTML(minion)}</div>
+      <div class="card-badges">${keywordBadgesHTML(minion)}${statusBadgesHTML(minion)}</div>
       <div class="card-footer">
         <span class="card-stat atk">${minion.attack}</span>
         <span class="card-name">${escapeHtml(minion.name)}</span>
@@ -1059,13 +1078,15 @@ function boardVisualKey(minion) {
     minion.cost,
     minion.divineShield ? 1 : 0,
     (minion.keywords || []).join(","),
+    JSON.stringify(minion.statuses || []),
   ].join("|");
 }
 
 function updateBoardCard(el, minion, isSelf) {
   const classNames = ["minion-card", rarityClass(minion)];
-  if (minion.keywords.includes("taunt")) classNames.push("taunt");
+  if ((minion.keywords || []).includes("taunt")) classNames.push("taunt");
   if (minion.divineShield) classNames.push("shield");
+  activeStatuses(minion).forEach((status) => classNames.push(`status-${status.type}`));
   if (isSelf && !minion.canAttack) classNames.push("exhausted");
   if (isSelf && minion.instanceId === selectedAttackerId) classNames.push("selected");
   el.className = classNames.join(" ");
@@ -1125,8 +1146,11 @@ function onHandCardClick(idx, card, state, cardEl = null) {
 
   selectedAttackerId = null;
 
-  // Minion: played immediately (no target)
-  if (card.type === "minion") {
+  const needsEnemyMinionTarget = cardRequiresEnemyMinionTarget(card);
+
+  // Minions normally enter the board immediately. A minion with an on-play
+  // status effect waits for an enemy target before the server accepts it.
+  if (card.type === "minion" && !needsEnemyMinionTarget) {
     selectedHandIndex = null;
     pendingHandPlayAnimation = cardEl
       ? { cardId: card.id, rect: cardEl.getBoundingClientRect(), createdAt: performance.now() }
@@ -1139,7 +1163,7 @@ function onHandCardClick(idx, card, state, cardEl = null) {
 
   // Draw spell, or a spell that works purely off "abilities" (no
   // classic effect): neither one needs you to pick a target.
-  if (card.effect === "draw" || !card.effect) {
+  if ((card.effect === "draw" || !card.effect) && !needsEnemyMinionTarget) {
     selectedHandIndex = null;
     predictCardPlay(cardEl);
     window.ArcaneAudio?.playSfx("cardPlay");
@@ -1147,9 +1171,13 @@ function onHandCardClick(idx, card, state, cardEl = null) {
     return;
   }
 
-  // Damage/heal spell: ask for a target
+  // Damage/heal spells and status cards: ask for a target.
   selectedHandIndex = idx;
-  showTargetHint(card.effect === "heal" ? "Choose who to heal (or your own hero)" : "Choose a target (or the enemy hero)");
+  showTargetHint(needsEnemyMinionTarget
+    ? "Choose an enemy minion"
+    : card.effect === "heal"
+      ? "Choose who to heal (or your own hero)"
+      : "Choose a target (or the enemy hero)");
   render(myState);
 }
 
@@ -1159,6 +1187,10 @@ function onMinionClick(minion, isSelf) {
 
   // Case 1: I have a spell selected, waiting for a target
   if (selectedHandIndex !== null) {
+    const selectedCard = state.me.hand[selectedHandIndex];
+    if (cardRequiresEnemyMinionTarget(selectedCard) && isSelf) {
+      return showToast("Choose an enemy minion.");
+    }
     predictCardPlay(document.querySelector(`.hand-card[data-hand-index="${selectedHandIndex}"]`));
     window.ArcaneAudio?.playSfx("cardPlay");
     send("playCard", { handIndex: selectedHandIndex, targetInstanceId: minion.instanceId });
@@ -1190,6 +1222,10 @@ function onHeroClick(isSelf) {
   if (!state.isYourTurn) return showToast("It's not your turn.");
 
   if (selectedHandIndex !== null) {
+    const selectedCard = state.me.hand[selectedHandIndex];
+    if (cardRequiresEnemyMinionTarget(selectedCard)) {
+      return showToast("Choose an enemy minion.");
+    }
     const target = isSelf ? "faceSelf" : "faceEnemy";
     predictCardPlay(document.querySelector(`.hand-card[data-hand-index="${selectedHandIndex}"]`));
     window.ArcaneAudio?.playSfx("cardPlay");
@@ -1223,6 +1259,48 @@ $("btnSurrender").addEventListener("click", () => {
   if (!myState || myState.winner !== null) return;
   showSurrenderModal();
 });
+
+$("btnToggleHand").addEventListener("click", () => {
+  if (shouldAutoHideHand(myState)) {
+    const gameScreen = $("screen-game");
+    if (!gameScreen.classList.contains("hand-collapsed")) {
+      setHandCollapsed(true);
+      return;
+    }
+    const previewOpen = gameScreen.classList.toggle("hand-preview-open");
+    const button = $("btnToggleHand");
+    button.setAttribute("aria-expanded", String(previewOpen));
+    button.setAttribute("aria-label", previewOpen ? "Hide hand" : "Show hand");
+    return;
+  }
+  setHandCollapsed(!$("screen-game").classList.contains("hand-collapsed"));
+});
+
+function hasPlayableHandCard(state) {
+  const mana = Number(state?.me?.manaCurrent);
+  return Number.isFinite(mana) && Boolean(state?.me?.hand?.some((card) => Number(card.cost) <= mana));
+}
+
+function shouldAutoHideHand(state) {
+  return !state || state.winner !== null || !state.isYourTurn || !hasPlayableHandCard(state);
+}
+
+function setHandCollapsed(collapsed) {
+  const gameScreen = $("screen-game");
+  const button = $("btnToggleHand");
+  gameScreen.classList.remove("hand-preview-open");
+  gameScreen.classList.toggle("hand-collapsed", collapsed);
+  button.setAttribute("aria-expanded", String(!collapsed));
+  button.setAttribute("aria-label", collapsed ? "Show hand" : "Hide hand");
+}
+
+function syncHandVisibility(state) {
+  const turnKey = `${state.roomCode || "local"}:${state.turnNumber}:${state.turn}`;
+  const startsYourTurn = state.isYourTurn && turnKey !== lastHandTurnKey;
+  lastHandTurnKey = turnKey;
+  $("screen-game").classList.remove("hand-preview-open");
+  setHandCollapsed(startsYourTurn ? false : shouldAutoHideHand(state));
+}
 
 function showSurrenderModal() {
   clearSelection();
@@ -1275,15 +1353,17 @@ function hideTargetHint() {
 function updateTargetableHighlights(state) {
   const targetingSpell = selectedHandIndex !== null;
   const targetingAttack = selectedAttackerId !== null;
+  const selectedCard = targetingSpell ? state.me.hand[selectedHandIndex] : null;
+  const enemyMinionOnly = cardRequiresEnemyMinionTarget(selectedCard);
 
-  $("oppHero").classList.toggle("targetable", targetingSpell || targetingAttack);
-  $("selfHero").classList.toggle("targetable", targetingSpell);
+  $("oppHero").classList.toggle("targetable", targetingAttack || (targetingSpell && !enemyMinionOnly));
+  $("selfHero").classList.toggle("targetable", targetingSpell && !enemyMinionOnly);
 
   document.querySelectorAll("#oppBoard .minion-card").forEach((el) => {
     el.classList.toggle("targetable", targetingSpell || targetingAttack);
   });
   document.querySelectorAll("#selfBoard .minion-card").forEach((el) => {
-    el.classList.toggle("targetable", targetingSpell);
+    el.classList.toggle("targetable", targetingSpell && !enemyMinionOnly);
   });
 }
 
@@ -1368,6 +1448,35 @@ function keywordIconHTML(keyword) {
   return KEYWORD_ICON[keyword] || KEYWORD_LABEL[keyword] || "?";
 }
 
+function activeStatuses(card) {
+  return Array.isArray(card?.statuses) ? card.statuses : [];
+}
+
+function statusBadgesHTML(card) {
+  return activeStatuses(card)
+    .map((status) => `<span class="status-badge status-${status.type}" aria-label="${STATUS_FULL_LABEL[status.type] || status.type}" title="${escapeHtmlAttr(statusDescription(status))}">${STATUS_LABEL[status.type] || "?"}</span>`)
+    .join("");
+}
+
+function statusDescription(status) {
+  const amount = status.value || 1;
+  const duration = status.turnsRemaining == null ? "permanently" : `for ${status.turnsRemaining} turn${status.turnsRemaining === 1 ? "" : "s"}`;
+  switch (status.type) {
+    case "weakened": return `Weakened: -${amount} Attack ${duration}.`;
+    case "frozen": return `Frozen: cannot attack ${duration}.`;
+    case "silenced": return "Silenced: abilities and keywords are removed permanently.";
+    case "poisoned": return `Poisoned: takes ${amount} damage at the start of its turn, ${duration}.`;
+    case "marked": return `Marked: the next damage taken is increased by ${amount}, ${duration}.`;
+    default: return "Status effect.";
+  }
+}
+
+function cardRequiresEnemyMinionTarget(card) {
+  return Boolean(card?.abilities?.some((ability) =>
+    ability.effect === "applyStatus" && ability.target === "enemyMinion"
+  ));
+}
+
 function cardCostHTML(card) {
   // Board instances from matches created before a catalog update can carry a
   // stale cost. The catalog is the canonical visual source for every card ID.
@@ -1429,6 +1538,12 @@ function showCardTooltip(card, e) {
         .map((k) => `<span class="tooltip-kw kw-${k}">${keywordIconHTML(k)} ${KEYWORD_FULL_LABEL[k] || k}</span>`)
         .join("")}</div>`
     : "";
+  const statuses = activeStatuses(card);
+  const statusesHTML = statuses.length
+    ? `<div class="tooltip-keywords tooltip-statuses">${statuses
+        .map((status) => `<span class="tooltip-kw status-${status.type}">${escapeHtml(statusDescription(status))}</span>`)
+        .join("")}</div>`
+    : "";
 
   t.innerHTML = `
     <div class="tooltip-header">
@@ -1440,6 +1555,7 @@ function showCardTooltip(card, e) {
       <span class="tooltip-country">🏳 ${escapeHtml(card.country || "—")}</span>
     </div>
     ${keywordsHTML}
+    ${statusesHTML}
     ${card.lore ? `<div class="tooltip-lore">${escapeHtml(card.lore)}</div>` : ""}
   `;
   t.classList.remove("hidden");
@@ -1894,7 +2010,31 @@ function setChangelogOpen(open) {
   const modal = $("changelogModal");
   if (!modal) return;
   modal.classList.toggle("hidden", !open);
-  if (open) setMenuOptionsOpen(false);
+  if (open) {
+    markChangelogSeen();
+    setMenuOptionsOpen(false);
+  }
+}
+
+function markChangelogSeen() {
+  try {
+    localStorage.setItem(CHANGELOG_SEEN_STORAGE_KEY, CHANGELOG_VERSION);
+  } catch (err) {
+    // The badge remains visible if storage is unavailable.
+  }
+  syncChangelogNewBadge();
+}
+
+function syncChangelogNewBadge() {
+  const badge = $("changelogNewBadge");
+  if (!badge) return;
+  let seenVersion = null;
+  try {
+    seenVersion = localStorage.getItem(CHANGELOG_SEEN_STORAGE_KEY);
+  } catch (err) {
+    // The badge remains visible if storage is unavailable.
+  }
+  badge.classList.toggle("hidden", seenVersion === CHANGELOG_VERSION);
 }
 
 function setHowToPlayOpen(open) {
@@ -2144,6 +2284,7 @@ $("btnOpenAudioConfig").addEventListener("click", () => {
 });
 
 $("btnOpenChangelog").addEventListener("click", () => setChangelogOpen(true));
+syncChangelogNewBadge();
 $("btnCloseChangelog").addEventListener("click", () => setChangelogOpen(false));
 $("changelogModal").addEventListener("click", (event) => {
   if (event.target === event.currentTarget) setChangelogOpen(false);

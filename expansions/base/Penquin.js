@@ -2,7 +2,7 @@ module.exports = {
   name: "Penquin",
   cost: 4,
   type: "minion",
-  attack: 2,
+  attack: 3,
   health: 5,
   keywords: [],
   race: "Monster",

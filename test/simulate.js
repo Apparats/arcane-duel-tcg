@@ -1,5 +1,6 @@
 const { Game } = require("../public/engine");
 const { buildFallbackDeck, validateDeck } = require("../public/deckRules");
+const { discardActiveSingleplayerMatch } = require("../server/singleplayerMatchService");
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -16,6 +17,7 @@ function testMinion(instanceId, cardId = "base:aleex", keywords = []) {
     keywords,
     canAttack: false,
     divineShield: false,
+    statuses: [],
   };
 }
 
@@ -156,6 +158,66 @@ function main() {
   mostorTest._damageMinion(0, mostorTest.players[0].board[0], 99);
   assert(mostorTest.players[0].board.length === 0, "Mostor should leave the board after its second death.");
   assert(mostorTest.players[0].deck.length === 0, "Mostor should disappear after its second death.");
+
+  const staleSocket = { roomCode: "NPC1", playerIdx: 0 };
+  const staleSingleplayerRoom = {
+    game: { roomCode: "NPC1", winner: null },
+    mode: "singleplayer",
+    sockets: [staleSocket, null],
+    userIds: ["player-1", null],
+  };
+  const staleRooms = new Map([["NPC1", staleSingleplayerRoom]]);
+  let clearedSingleplayerTimer = false;
+  let clearedSingleplayerReconnects = false;
+  assert(
+    discardActiveSingleplayerMatch(staleRooms, "player-1", {
+      clearTurnTimer: () => { clearedSingleplayerTimer = true; },
+      clearAllReconnectGraces: () => { clearedSingleplayerReconnects = true; },
+    }),
+    "Starting singleplayer should replace a stale singleplayer room."
+  );
+  assert(!staleRooms.has("NPC1") && staleSocket.roomCode === null, "Replacing singleplayer should release its room and socket.");
+  assert(clearedSingleplayerTimer && clearedSingleplayerReconnects, "Replacing singleplayer should clear timers and reconnect state.");
+
+  const statusTest = new Game("STATUS", "Status1", "Status2", {
+    decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
+  });
+  const target = testMinion("status-target");
+  target.attack = 5;
+  target.health = 8;
+  target.maxHealth = 8;
+  target.canAttack = true;
+  statusTest.players[1].board = [target];
+
+  statusTest._applyStatus(1, target, { status: "weakened", value: 2, turns: 1 });
+  assert(target.attack === 3, "Weakened should immediately reduce attack.");
+  statusTest.endTurn(0);
+  assert(target.attack === 3, "Weakened should remain through the affected player's turn.");
+  statusTest.endTurn(1);
+  assert(target.attack === 5, "Weakened should restore attack when it expires.");
+
+  statusTest._applyStatus(1, target, { status: "frozen", turns: 1 });
+  statusTest.endTurn(0);
+  assert(target.canAttack === false, "Frozen should prevent attacks on the affected player's turn.");
+  statusTest.endTurn(1);
+  statusTest.endTurn(0);
+  assert(target.canAttack === true, "Frozen should allow attacks again after it expires.");
+
+  target.health = 8;
+  statusTest._applyStatus(1, target, { status: "poisoned", value: 2, turns: 2 });
+  statusTest.endTurn(1);
+  statusTest.endTurn(0);
+  assert(target.health === 6, "Poisoned should deal damage at the start of the affected player's turn.");
+
+  statusTest._applyStatus(1, target, { status: "marked", value: 2 });
+  statusTest._damageMinion(1, target, 1);
+  assert(target.health === 3, "Marked should increase the next incoming damage.");
+  assert(!target.statuses.some((status) => status.type === "marked"), "Marked should be consumed by damage.");
+
+  target.keywords = ["taunt", "divineShield"];
+  target.divineShield = true;
+  statusTest._applyStatus(1, target, { status: "silenced" });
+  assert(target.keywords.length === 0 && !target.divineShield, "Silenced should remove keywords and Divine Shield.");
 
   console.log("--- TEST OK ---");
 }

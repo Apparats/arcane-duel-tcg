@@ -1,9 +1,9 @@
 module.exports = {
   name: "Humph",
-  cost: 5,
+  cost: 6,
   type: "minion",
-  attack: 3,
-  health: 6,
+  attack: 8,
+  health: 3,
   keywords: ["divineShield"], 
   race: "Human",
   rarity: "mythic",

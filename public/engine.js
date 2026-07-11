@@ -26,6 +26,7 @@
     taunt: 2,
     charge: 3,
   };
+  const STATUS_TYPES = new Set(["weakened", "frozen", "silenced", "poisoned", "marked"]);
 
   function shuffle(arr, randomInt = (maxExclusive) => Math.floor(Math.random() * maxExclusive)) {
     const a = [...arr];
@@ -91,6 +92,7 @@
       keywords: [...keywords],
       canAttack: keywords.includes("charge"),
       divineShield: keywords.includes("divineShield"),
+      statuses: [],
       race: cardDef.race,
       rarity: cardDef.rarity,
       country: cardDef.country,
@@ -248,6 +250,13 @@
       if ((ctx.playedCount || 0) < threshold) return;
       ABILITY_EFFECTS.destroySelf(game, ctx, ability);
     },
+
+    applyStatus(game, ctx, ability) {
+      const target = game._findMinion(ctx.targetInstanceId);
+      if (!target || target.playerIdx === ctx.casterIdx) throw new Error("Choose an enemy minion.");
+      game._applyStatus(target.playerIdx, target.minion, ability);
+      game._addLog(`${ctx.sourceName} applies ${ability.status} to ${target.minion.name}.`);
+    },
   };
 
   class Game {
@@ -307,8 +316,9 @@
       const p = this.players[playerIdx];
       p.manaMax = Math.min(MAX_MANA, p.manaMax + 1);
       p.manaCurrent = p.manaMax;
+      [...p.board].forEach((m) => this._resolveStartOfTurnStatuses(playerIdx, m));
       p.board.forEach((m) => {
-        m.canAttack = true;
+        m.canAttack = !this._hasStatus(m, "frozen");
       });
       this._draw(playerIdx, 1);
       this.turn = playerIdx;
@@ -321,7 +331,12 @@
       [...p.board].forEach((m) => {
         const cardDef = getCardById(m.cardId);
         if (cardDef) {
-          this._triggerAbilities(cardDef, "onTurnStart", { casterIdx: playerIdx, sourceName: m.name, instanceId: m.instanceId });
+          this._triggerAbilities(cardDef, "onTurnStart", {
+            casterIdx: playerIdx,
+            sourceName: m.name,
+            instanceId: m.instanceId,
+            silenced: this._hasStatus(m, "silenced"),
+          });
         }
       });
 
@@ -335,6 +350,7 @@
               instanceId: m.instanceId,
               cardId: m.cardId,
               playedCount: m.playedCount || 0,
+              silenced: this._hasStatus(m, "silenced"),
             });
           }
         });
@@ -360,6 +376,7 @@
     // no-op — 99% of cards (all the base ones, for example) pass through
     // here with no effect.
     _triggerAbilities(cardDef, trigger, ctx) {
+      if (ctx.silenced) return;
       const abilities = (cardDef.abilities || []).filter((a) => a.trigger === trigger);
       abilities.forEach((ability) => {
         const handler = ABILITY_EFFECTS[ability.effect];
@@ -384,6 +401,7 @@
       const card = getCardById(cardId);
       if (!card) throw new Error("Unknown card.");
       if (card.cost > p.manaCurrent) throw new Error("Not enough mana.");
+      this._validateAbilityTargets(playerIdx, card, targetInstanceId);
 
       if (card.type === "minion") {
         const limitError = boardLimitError(p, card);
@@ -402,6 +420,7 @@
           cardId: card.id,
           playedCount,
           returnCount,
+          targetInstanceId,
         });
       } else if (card.type === "spell") {
         p.manaCurrent -= card.cost;
@@ -410,7 +429,11 @@
           this._resolveSpell(playerIdx, card, targetInstanceId);
         }
         this._addLog(`${p.name} casts ${card.name}.`);
-        this._triggerAbilities(card, "onPlay", { casterIdx: playerIdx, sourceName: card.name });
+        this._triggerAbilities(card, "onPlay", {
+          casterIdx: playerIdx,
+          sourceName: card.name,
+          targetInstanceId,
+        });
       }
       this._checkWin();
     }
@@ -458,11 +481,24 @@
       return null;
     }
 
+    _validateAbilityTargets(playerIdx, card, targetInstanceId) {
+      const needsEnemyMinion = (card.abilities || []).some((ability) =>
+        ability.trigger === "onPlay" && ability.effect === "applyStatus" && ability.target === "enemyMinion"
+      );
+      if (!needsEnemyMinion) return;
+      const target = this._findMinion(targetInstanceId);
+      if (!target || target.playerIdx === playerIdx) {
+        throw new Error("Choose an enemy minion.");
+      }
+    }
+
     _damageMinion(ownerIdx, minion, amount) {
       if (minion.divineShield && amount > 0) {
         minion.divineShield = false;
         return;
       }
+      const marked = amount > 0 ? this._takeStatus(minion, "marked") : null;
+      if (marked) amount += marked.value || 1;
       minion.health -= amount;
       if (minion.health <= 0) {
         this._destroyMinion(ownerIdx, minion);
@@ -483,8 +519,60 @@
           cardId: minion.cardId,
           playedCount: minion.playedCount || 0,
           returnCount: minion.returnCount || 0,
+          silenced: this._hasStatus(minion, "silenced"),
         });
       }
+    }
+
+    _hasStatus(minion, type) {
+      return (minion.statuses || []).some((status) => status.type === type);
+    }
+
+    _takeStatus(minion, type) {
+      const statuses = minion.statuses || [];
+      const index = statuses.findIndex((status) => status.type === type);
+      if (index < 0) return null;
+      return statuses.splice(index, 1)[0];
+    }
+
+    _applyStatus(ownerIdx, minion, ability) {
+      const type = ability.status;
+      if (!STATUS_TYPES.has(type)) throw new Error("Invalid status.");
+      minion.statuses = minion.statuses || [];
+      const existing = this._takeStatus(minion, type);
+      if (existing?.type === "weakened") minion.attack += existing.appliedValue || 0;
+
+      const value = Math.max(1, Number.isInteger(ability.value) ? ability.value : 1);
+      const turns = Math.max(1, Number.isInteger(ability.turns) ? ability.turns : type === "poisoned" || type === "marked" ? 2 : 1);
+      const status = { type, value, turnsRemaining: type === "silenced" ? null : turns };
+
+      if (type === "weakened") {
+        status.appliedValue = Math.min(value, minion.attack);
+        minion.attack -= status.appliedValue;
+      }
+      if (type === "frozen") minion.canAttack = false;
+      if (type === "silenced") {
+        minion.keywords = [];
+        minion.divineShield = false;
+      }
+      minion.statuses.push(status);
+    }
+
+    _resolveStartOfTurnStatuses(ownerIdx, minion) {
+      const poison = (minion.statuses || []).find((status) => status.type === "poisoned");
+      if (poison) this._damageMinion(ownerIdx, minion, poison.value || 1);
+    }
+
+    _expireStatusesAtTurnEnd(playerIdx) {
+      this.players[playerIdx].board.forEach((minion) => {
+        minion.statuses = (minion.statuses || []).filter((status) => {
+          if (status.turnsRemaining == null) return true;
+          status.turnsRemaining -= 1;
+          if (status.turnsRemaining > 0) return true;
+          if (status.type === "weakened") minion.attack += status.appliedValue || 0;
+          return false;
+        });
+      });
     }
 
     _attackDamageAgainst(attacker, target) {
@@ -540,6 +628,7 @@
           playedCount: attacker.playedCount || 0,
           targetInstanceId: target.instanceId,
           targetRace: target.race,
+          silenced: this._hasStatus(attacker, "silenced"),
         });
       }
       this._recordAction({ type: "attack", attackerInstanceId, targetInstanceId, isFace: false });
@@ -552,6 +641,7 @@
       // turnNumber is the shared round counter: A plays round 1, then B
       // plays round 1. It advances only as control returns to the starter.
       if (next === 0) this.turnNumber += 1;
+      this._expireStatusesAtTurnEnd(playerIdx);
       this._startTurn(next);
     }
 
@@ -587,6 +677,11 @@
           keywords: m.keywords,
           canAttack: m.canAttack,
           divineShield: m.divineShield,
+          statuses: (m.statuses || []).map((status) => ({
+            type: status.type,
+            value: status.value,
+            turnsRemaining: status.turnsRemaining,
+          })),
           race: m.race,
           rarity: m.rarity,
           country: m.country,

@@ -160,6 +160,11 @@
 .tooltip-kw.kw-taunt { background: rgba(127, 176, 105, 0.16); color: var(--taunt); border: 1px solid var(--taunt); }
 .tooltip-kw.kw-charge { background: rgba(232, 179, 79, 0.16); color: var(--gold); border: 1px solid var(--gold); }
 .tooltip-kw.kw-divineShield { background: rgba(79, 195, 232, 0.16); color: var(--mana); border: 1px solid var(--mana); }
+.tooltip-kw.status-weakened { background: rgba(215, 71, 60, 0.16); color: #ffb0a2; border: 1px solid #d76052; }
+.tooltip-kw.status-frozen { background: rgba(90, 211, 255, 0.16); color: #b4efff; border: 1px solid #69d6f6; }
+.tooltip-kw.status-silenced { background: rgba(192, 195, 208, 0.13); color: #e0e2ec; border: 1px solid #8e93a5; }
+.tooltip-kw.status-poisoned { background: rgba(125, 192, 54, 0.16); color: #c9f28d; border: 1px solid #96c849; }
+.tooltip-kw.status-marked { background: rgba(255, 97, 72, 0.15); color: #ffc09d; border: 1px solid #ff895f; }
 
 .tooltip-lore {
   font-size: 12px;

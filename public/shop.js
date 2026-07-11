@@ -39,7 +39,7 @@ function renderShopPacks(packs) {
     const el = document.createElement("div");
     el.className = "shop-pack";
     el.innerHTML = `
-      <div class="shop-pack-art" aria-hidden="true"><span></span></div>
+      <div class="shop-pack-art" aria-hidden="true"><img class="shop-pack-art-image" src="${escapeHtmlAttr(pack.art || "art/reverse.webp")}" alt="" /></div>
       <div class="shop-pack-body">
         <h2>${escapeHtml(pack.name)}</h2>
         <p>${escapeHtml(pack.description || `Cards from ${pack.expansionName}.`)}</p>

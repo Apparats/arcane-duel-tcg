@@ -168,7 +168,7 @@
       "name": "Capybara",
       "cost": 2,
       "type": "minion",
-      "attack": 2,
+      "attack": 4,
       "health": 1,
       "keywords": [
         "charge"
@@ -198,13 +198,11 @@
     },
     {
       "name": "Dezadin",
-      "cost": 5,
+      "cost": 7,
       "type": "minion",
-      "attack": 4,
+      "attack": 3,
       "health": 5,
-      "keywords": [
-        "charge"
-      ],
+      "keywords": [],
       "race": "Monster",
       "rarity": "mythic",
       "country": "Bolivia",
@@ -259,8 +257,8 @@
       "name": "Eraserhead",
       "cost": 5,
       "type": "minion",
-      "attack": 3,
-      "health": 5,
+      "attack": 4,
+      "health": 7,
       "keywords": [],
       "race": "Human",
       "rarity": "common",
@@ -291,7 +289,7 @@
       "name": "Gabibbo Ardito",
       "cost": 6,
       "type": "minion",
-      "attack": 1,
+      "attack": 2,
       "health": 6,
       "keywords": [
         "charge"
@@ -317,7 +315,7 @@
       "cost": 5,
       "type": "minion",
       "attack": 5,
-      "health": 4,
+      "health": 6,
       "keywords": [],
       "race": "Human",
       "rarity": "common",
@@ -329,10 +327,10 @@
     },
     {
       "name": "GoldenWarerita",
-      "cost": 3,
+      "cost": 4,
       "type": "minion",
-      "attack": 2,
-      "health": 6,
+      "attack": 3,
+      "health": 7,
       "keywords": [],
       "race": "Monster",
       "rarity": "mythic",
@@ -369,10 +367,10 @@
     },
     {
       "name": "Humph",
-      "cost": 5,
+      "cost": 6,
       "type": "minion",
-      "attack": 3,
-      "health": 6,
+      "attack": 8,
+      "health": 3,
       "keywords": [
         "divineShield"
       ],
@@ -438,9 +436,9 @@
     },
     {
       "name": "Kurzemnieks",
-      "cost": 3,
+      "cost": 4,
       "type": "minion",
-      "attack": 2,
+      "attack": 5,
       "health": 4,
       "keywords": [
         "charge"
@@ -580,10 +578,10 @@
     },
     {
       "name": "Mr Labubu",
-      "cost": 5,
+      "cost": 4,
       "type": "minion",
-      "attack": 4,
-      "health": 4,
+      "attack": 7,
+      "health": 2,
       "keywords": [],
       "race": "Monster",
       "rarity": "rare",
@@ -667,7 +665,7 @@
       "name": "Penquin",
       "cost": 4,
       "type": "minion",
-      "attack": 2,
+      "attack": 3,
       "health": 5,
       "keywords": [],
       "race": "Monster",
@@ -720,7 +718,7 @@
       "name": "Radu",
       "cost": 4,
       "type": "minion",
-      "attack": 2,
+      "attack": 3,
       "health": 5,
       "keywords": [],
       "race": "Human",
@@ -835,8 +833,8 @@
       "name": "StormHazard",
       "cost": 3,
       "type": "minion",
-      "attack": 3,
-      "health": 3,
+      "attack": 4,
+      "health": 2,
       "keywords": [
         "charge"
       ],
@@ -899,7 +897,7 @@
       "name": "V for Vendetta",
       "cost": 3,
       "type": "minion",
-      "attack": 2,
+      "attack": 3,
       "health": 4,
       "keywords": [
         "taunt"
@@ -916,8 +914,8 @@
       "name": "Vergil",
       "cost": 2,
       "type": "minion",
-      "attack": 2,
-      "health": 4,
+      "attack": 1,
+      "health": 6,
       "keywords": [],
       "race": "Human",
       "rarity": "common",
@@ -944,10 +942,10 @@
     },
     {
       "name": "Zugzwang",
-      "cost": 5,
+      "cost": 9,
       "type": "minion",
-      "attack": 3,
-      "health": 6,
+      "attack": 10,
+      "health": 5,
       "keywords": [
         "charge"
       ],
@@ -965,6 +963,29 @@
       ],
       "id": "base:zugzwang",
       "_expansionId": "base"
+    },
+    {
+      "name": "Moths",
+      "cost": 5,
+      "type": "minion",
+      "attack": 1,
+      "health": 4,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "mythic",
+      "country": "Arcana",
+      "lore": "A moth! Every turn this card heals your board by 1!",
+      "image": "art/Moths.webp",
+      "showInInventory": false,
+      "abilities": [
+        {
+          "trigger": "onTurnStart",
+          "effect": "buffAllFriendlyMinions",
+          "health": 1
+        }
+      ],
+      "id": "special:moths",
+      "_expansionId": "special"
     },
     {
       "name": "Multi",

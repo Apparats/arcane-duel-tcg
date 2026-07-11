@@ -115,6 +115,28 @@
   box-shadow: 0 0 8px rgba(79, 195, 232, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.5);
 }
 
+.status-badge {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 50%;
+  color: #fff;
+  font-family: "Cinzel", serif;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.78);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.72), inset 0 1px 1px rgba(255, 255, 255, 0.24);
+}
+.status-badge.status-weakened { background: radial-gradient(circle at 35% 25%, #ffb9a6, #a73737 70%); }
+.status-badge.status-frozen { background: radial-gradient(circle at 35% 25%, #e5fbff, #287eb8 70%); color: #09294c; }
+.status-badge.status-silenced { background: radial-gradient(circle at 35% 25%, #ced0da, #4d5060 70%); }
+.status-badge.status-poisoned { background: radial-gradient(circle at 35% 25%, #d8ff9b, #568b28 70%); color: #142707; }
+.status-badge.status-marked { background: radial-gradient(circle at 35% 25%, #ffd5a6, #c34b22 70%); }
+
 .card-footer {
   position: absolute;
   left: 0;
@@ -220,6 +242,7 @@
   .card-stat { font-size: clamp(12px, 3vw, 14px); }
   .card-art-icon { font-size: 24px; }
   .keyword-badge { width: 16px; height: 16px; font-size: 8px; }
+  .status-badge { width: 16px; height: 16px; font-size: 8px; }
   .card-cost { width: 22px; height: 25px; font-size: 10px; }
   .card-badges { top: 31px; left: 2px; width: 22px; }
   .keyword-icon { width: 11px; height: 11px; }

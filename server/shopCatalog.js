@@ -2,7 +2,8 @@ const fs = require("fs");
 const path = require("path");
 const { CARDS } = require("../public/cards");
 const { PACK_PRICE_GOLD, PACK_SIZE } = require("./db");
-const { assertMongoKeySegment, assertPositiveInteger, sanitizeString } = require("./mongoSafety");
+const { assertMongoKeySegment, sanitizeString } = require("./mongoSafety");
+const { getShopPackSettings, isShopExpansion } = require("./expansionPack");
 
 const EXPANSIONS_DIR = path.join(__dirname, "..", "expansions");
 const MAX_PACK_PRICE_GOLD = 100000;
@@ -12,10 +13,6 @@ function readExpansionMeta(dir) {
   const metaPath = path.join(EXPANSIONS_DIR, dir, "expansion.json");
   if (!fs.existsSync(metaPath)) return null;
   return JSON.parse(fs.readFileSync(metaPath, "utf8"));
-}
-
-function isShopExpansion(meta) {
-  return meta && meta.enabled !== false && (meta.shop === true || meta.availableInShop === true);
 }
 
 function cardsForExpansion(expansionId) {
@@ -30,23 +27,23 @@ function getShopPacks() {
     .filter(isShopExpansion)
     .map((meta) => {
       const expansionId = assertMongoKeySegment(meta.id, "expansion id");
-      const priceGold = assertPositiveInteger(meta.packPriceGold ?? PACK_PRICE_GOLD, "pack price", {
-        min: 1,
-        max: MAX_PACK_PRICE_GOLD,
-      });
-      const size = assertPositiveInteger(meta.packSize ?? PACK_SIZE, "pack size", {
-        min: 1,
-        max: MAX_PACK_SIZE,
+      const settings = getShopPackSettings(meta, {
+        defaultPrice: PACK_PRICE_GOLD,
+        defaultSize: PACK_SIZE,
+        maxPrice: MAX_PACK_PRICE_GOLD,
+        maxSize: MAX_PACK_SIZE,
+        publicDir: path.join(__dirname, "..", "public"),
       });
 
       return {
         id: expansionId,
-        name: sanitizeString(meta.packName || `${meta.name || expansionId} Pack`, { label: "pack name", max: 80 }),
+        name: sanitizeString(settings.packName, { label: "pack name", max: 80 }),
         expansionId,
         expansionName: sanitizeString(meta.name || expansionId, { label: "expansion name", max: 80 }),
         description: sanitizeString(meta.description || "", { label: "pack description", max: 240 }),
-        priceGold,
-        size,
+        priceGold: settings.packPriceGold,
+        size: settings.packSize,
+        art: settings.packArt,
         cards: cardsForExpansion(expansionId),
       };
     })
@@ -74,6 +71,7 @@ function toPublicPack(pack) {
     description: pack.description,
     priceGold: pack.priceGold,
     size: pack.size,
+    art: pack.art,
     cardCount: pack.cards.length,
   };
 }

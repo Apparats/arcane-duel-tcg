@@ -249,10 +249,17 @@ async function exchangeCardsBetweenUsers({ fromUserId, toUserId, fromCardId, toC
     try {
       let result;
       await session.withTransaction(async () => {
-        const [fromUser, toUser] = await Promise.all([
-          users.findOne({ _id: fromId }, { session, projection: { cardCollection: 1, unlockedCards: 1, decks: 1 } }),
-          users.findOne({ _id: toId }, { session, projection: { cardCollection: 1, unlockedCards: 1, decks: 1 } }),
-        ]);
+        // The MongoDB driver does not allow concurrent operations on the same
+        // session while a transaction is active. Keep these reads serial so a
+        // trade remains atomic on Atlas without conflicting its transaction.
+        const fromUser = await users.findOne(
+          { _id: fromId },
+          { session, projection: { cardCollection: 1, unlockedCards: 1, decks: 1 } }
+        );
+        const toUser = await users.findOne(
+          { _id: toId },
+          { session, projection: { cardCollection: 1, unlockedCards: 1, decks: 1 } }
+        );
         if (!fromUser || !toUser) throw new Error("Trade user not found.");
 
         assertCardCanBeTraded(fromUser, safeFromCardId);
@@ -284,10 +291,14 @@ async function exchangeCardsBetweenUsers({ fromUserId, toUserId, fromCardId, toC
           { session }
         );
 
-        const [updatedFrom, updatedTo] = await Promise.all([
-          users.findOne({ _id: fromId }, { session, projection: { cardCollection: 1, unlockedCards: 1 } }),
-          users.findOne({ _id: toId }, { session, projection: { cardCollection: 1, unlockedCards: 1 } }),
-        ]);
+        const updatedFrom = await users.findOne(
+          { _id: fromId },
+          { session, projection: { cardCollection: 1, unlockedCards: 1 } }
+        );
+        const updatedTo = await users.findOne(
+          { _id: toId },
+          { session, projection: { cardCollection: 1, unlockedCards: 1 } }
+        );
 
         result = {
           from: {

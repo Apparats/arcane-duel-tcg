@@ -4,6 +4,7 @@
   "description": "Simple Hearthstone-style TCG, online 1v1 over WebSocket. Authoritative server + vanilla client.",
   "main": "server/index.js",
   "scripts": {
+    "prestart": "node scripts/build-cards.js",
     "start": "node server/index.js",
     "test:smoke": "node test/simulate.js",
     "cards:build": "node scripts/build-cards.js",

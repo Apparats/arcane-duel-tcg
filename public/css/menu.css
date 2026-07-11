@@ -452,6 +452,24 @@
   outline: none;
 }
 
+.changelog-new-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 16px;
+  margin-left: 5px;
+  padding: 1px 5px;
+  border: 1px solid rgba(255, 225, 180, 0.72);
+  border-radius: 3px;
+  background: #c24e2c;
+  box-shadow: 0 0 9px rgba(234, 97, 55, 0.42);
+  color: #fff5e7;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
 .menu-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

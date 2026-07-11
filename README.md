@@ -430,6 +430,11 @@ uses. **Don't edit `public/cards.js` by hand**, it has a warning at
 the top reminding you: it gets overwritten every time you run the
 build.
 
+Restart the Node server after rebuilding so its authoritative match engine
+loads the new catalog too. `npm start` runs the compiler automatically before
+starting the server. The browser loads `cards.js` with revalidation enabled,
+so a normal refresh picks up the latest compiled values and badges.
+
 If something's wrong (a missing field, a keyword that doesn't exist,
 two cards with the same id), the build stops and tells you exactly
 which file and which field is broken, instead of failing silently
@@ -447,6 +452,31 @@ npm run cards:watch   # rebuilds only whenever you save a change in expansions/
 Set `"enabled": false` in its `expansion.json` and rebuild — it gets
 skipped entirely, without deleting the files. Useful for testing a new
 card set for the event without mixing it into the base deck yet.
+
+### Shop pack settings
+
+An expansion only appears in the shop when `"shop": true`. These optional
+fields in the same `expansion.json` customize its pack while keeping safe
+defaults (`20` gold, `5` cards, and `art/reverse.webp`):
+
+```json
+{
+  "id": "the-gates",
+  "name": "The Gates",
+  "description": "A new chapter opens.",
+  "enabled": true,
+  "shop": true,
+  "packName": "The Gates Pack",
+  "packPriceGold": 35,
+  "packSize": 3,
+  "packArt": "art/the-gates-pack.webp"
+}
+```
+
+`packArt` must be an existing `.webp`, `.png`, `.jpg`, or `.jpeg` file inside
+`public/art`. `shopPackArt` is also accepted as an alias. The card compiler
+validates these values, so run `npm run cards:check` before publishing an
+expansion.
 
 ## Special abilities (abilities)
 
@@ -490,6 +520,7 @@ abilities: [
 | `healAllFriendlyMinions` | `value` | heals all your minions for `value` |
 | `summonMinion` | `cardId`, `count` (optional, default 1) | summons copies of another card (by id) onto your board |
 | `buffAllFriendlyMinions` | `attack` and/or `health` | adds stats to all your minions |
+| `applyStatus` | `target: "enemyMinion"`, `status`, `value`/`turns` (optional) | applies a targeted debuff to an enemy minion when the card is played |
 
 A spell can be "classic" (with a single-target `effect`/`value`, as
 usual) **or** work entirely through `abilities` — in that case just
@@ -527,3 +558,41 @@ the table cover), you add a new one in two places:
 Without that, the compiler will reject any card that uses an effect
 that isn't on the list — on purpose, so a typo in the effect's name
 gets caught at build time instead of mid-match.
+
+### Debuffs and status effects
+
+`applyStatus` is an `"onPlay"` ability that always asks the player to choose
+an enemy minion. The engine validates that target before spending mana or
+removing the card from hand, so the browser cannot apply a status to itself or
+send an arbitrary result. The status state, durations, damage, and expiry all
+live in `public/engine.js` and are serialized only after the authoritative
+action resolves.
+
+```js
+abilities: [
+  {
+    trigger: "onPlay",
+    effect: "applyStatus",
+    target: "enemyMinion",
+    status: "weakened",
+    value: 2,
+    turns: 1,
+  },
+]
+```
+
+Available `status` values:
+
+| status | `value` default | duration default | behavior |
+|---|---:|---:|---|
+| `weakened` | 1 | 1 turn | reduces current Attack by `value`, then restores it when it expires |
+| `frozen` | - | 1 turn | prevents the minion from attacking during its next turn |
+| `silenced` | - | permanent | removes its keywords and Divine Shield, and prevents its triggered abilities from firing |
+| `poisoned` | 1 | 2 turns | deals `value` damage at the start of the affected minion's turn |
+| `marked` | 1 | 2 turns | adds `value` to the next damage the minion actually takes, then consumes itself |
+
+`turns` counts the affected player's turns and is reduced at the end of each
+one. `silenced` is permanent and must not set `turns`. A Divine Shield absorbs
+the hit before `marked` is consumed. The board uses a labeled colored badge and
+a matching subtle card treatment for every active status; hover the card to
+read its exact value and remaining duration.

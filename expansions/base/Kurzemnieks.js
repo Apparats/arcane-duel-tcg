@@ -1,8 +1,8 @@
 module.exports = {
   name: "Kurzemnieks",
-  cost: 3,
+  cost: 4,
   type: "minion",
-  attack: 2,
+  attack: 5,
   health: 4,
   keywords: ["charge"],
   race: "Human",

@@ -17,6 +17,7 @@ const { getActiveDeckCardIds } = require("./deckService");
 const { createRateLimiter, isTrustedWebSocketOrigin, requireSameOrigin, setSecurityHeaders } = require("./security");
 const { DEFAULT_RECONNECT_GRACE_MS, startReconnectGrace, clearReconnectGrace, clearAllReconnectGraces } = require("./reconnectService");
 const { assertUserCanStartMatch, assertUserIsNotAlreadyInRoom } = require("./matchAccess");
+const { discardActiveSingleplayerMatch } = require("./singleplayerMatchService");
 const { clearTurnTimer, ensureTurnTimer, turnKey } = require("./turnTimerService");
 const { cleanupExpiredWsTickets, consumeWsTicket } = require("./wsTicketService");
 const { secureRandomCode, secureRandomInt } = require("./random");
@@ -683,6 +684,7 @@ async function handleMessage(ws, msg) {
 
   if (type === "startSingleplayer") {
     const user = await requireSessionUser(ws);
+    discardActiveSingleplayerMatch(rooms, user.id, { clearTurnTimer, clearAllReconnectGraces });
     assertUserCanStartMatch(rooms, user.id);
     detachSocketFromRoom(ws);
     const playerDeck = await getActiveDeckCardIds(user.id);

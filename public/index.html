@@ -2,25 +2,25 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Arcana TCG</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css?v=20260710-submenu-buttons-1" />
-<link rel="stylesheet" href="css/menu.css?v=20260710-how-to-play-1" />
+<link rel="stylesheet" href="css/base.css?v=20260711-mobile-viewport-1" />
+<link rel="stylesheet" href="css/menu.css?v=20260711-changelog-new-1" />
 <link rel="stylesheet" href="css/lobby.css?v=20260710-online-count-1" />
 <link rel="stylesheet" href="css/board.css" />
-<link rel="stylesheet" href="css/cards.css?v=20260710-inventory-scroll-1" />
-<link rel="stylesheet" href="css/board-arena.css?v=20260710-turn-timer-1" />
-<link rel="stylesheet" href="css/board-hand.css?v=20260710-hand-overlay-depth-1" />
+<link rel="stylesheet" href="css/cards.css?v=20260711-status-effects-1" />
+<link rel="stylesheet" href="css/board-arena.css?v=20260711-mobile-center-balance-1" />
+<link rel="stylesheet" href="css/board-hand.css?v=20260711-mobile-board-layout-1" />
 <link rel="stylesheet" href="css/inventory.css?v=20260709-card-cost-2" />
 <link rel="stylesheet" href="css/deck-builder.css?v=20260710-keyword-filters-1" />
-<link rel="stylesheet" href="css/shop.css?v=20260710-shop-progress-1" />
+<link rel="stylesheet" href="css/shop.css?v=20260711-custom-pack-art-1" />
 <link rel="stylesheet" href="css/trade.css" />
 <link rel="stylesheet" href="css/pack-opening.css" />
 <link rel="stylesheet" href="css/fx.css?v=20260710-damage-impact-1" />
-<link rel="stylesheet" href="css/board-effects.css?v=20260710-board-no-select-1" />
-<link rel="stylesheet" href="css/overlay.css" />
+<link rel="stylesheet" href="css/board-effects.css?v=20260711-status-effects-1" />
+<link rel="stylesheet" href="css/overlay.css?v=20260711-status-effects-1" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -116,7 +116,7 @@
         <button id="btnOpenPrivacyMenu" class="btn menu-option-button" type="button">Privacy Notice</button>
         <div class="menu-option-config">
           <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Config</button>
-          <span class="menu-version">Version 1.1</span>
+          <span class="menu-version">Version 1.2</span>
         </div>
       </div>
     </div>
@@ -200,7 +200,7 @@
       <h1 class="brand menu-brand">ARCANA TCG</h1>
       <div class="menu-info-actions">
         <button id="btnOpenHowToPlay" class="changelog-button" type="button">How to Play</button>
-        <button id="btnOpenChangelog" class="changelog-button" type="button">Changelog</button>
+        <button id="btnOpenChangelog" class="changelog-button" type="button">Changelog <span id="changelogNewBadge" class="changelog-new-badge hidden">NEW!</span></button>
       </div>
 
       <div class="menu-grid">
@@ -614,9 +614,12 @@
             <span class="stat deck" id="selfDeckCount" aria-label="Cards remaining">30</span>
           </div>
         </div>
-      </div>
+        </div>
 
         <div id="handArea" class="hand-area"></div>
+        <button id="btnToggleHand" class="hand-toggle" type="button" aria-label="Hide hand" aria-expanded="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/></svg>
+        </button>
       </div>
     </div>
 
@@ -655,6 +658,19 @@
         <h2 id="changelogTitle">Changelog</h2>
         <button id="btnCloseChangelog" class="changelog-close" type="button" aria-label="Close changelog">x</button>
       </div>
+      <article class="changelog-entry">
+        <div class="changelog-entry-meta">
+          <h3>Version 1.2</h3>
+          <span>Battlefield Update</span>
+        </div>
+        <p class="changelog-entry-intro">A clearer battlefield and smoother card collection experience.</p>
+        <ul class="changelog-list">
+          <li>Reworked the mobile battlefield with more room for both boards, a bottom-positioned hero, and a collapsible hand.</li>
+          <li>Your hand now opens at the start of your turn and can still be inspected whenever you want.</li>
+          <li>Improved trade reliability and card update syncing across the game.</li>
+          <li>Added clearer visual indicators for active card effects and refreshed card balance.</li>
+        </ul>
+      </article>
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
           <h3>Version 1.1</h3>
@@ -786,7 +802,7 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=20260710-owner-turn-summons-1"></script>
+  <script src="cards.js"></script>
   <script src="deckRules.js"></script>
   <script src="engine.js?v=20260709-global-rounds-1"></script>
   <script src="ai.js"></script>
@@ -794,11 +810,11 @@
   <script src="audioManager.js?v=20260710-audio-pool-1"></script>
   <script src="packOpening.js?v=20260709-card-cost-1"></script>
 <script src="legalNotices.js?v=20260710-card-request-1"></script>
-<script src="client.js?v=20260710-opponent-emote-1"></script>
+<script src="client.js?v=20260711-changelog-new-1"></script>
 <script src="boardInteractions.js?v=20260710-responsive-actions-1"></script>
 <script src="inventory.js?v=20260710-keyword-filters-1"></script>
 <script src="deckBuilder.js?v=20260710-keyword-filters-1"></script>
-<script src="shop.js?v=20260710-shop-progress-1"></script>
+<script src="shop.js?v=20260711-custom-pack-art-1"></script>
 <script src="trade.js"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@ module.exports = {
   name: "V for Vendetta",
   cost: 3,
   type: "minion",
-  attack: 2,
+  attack: 3,
   health: 4,
   keywords: ["taunt"],
   race: "Human",
