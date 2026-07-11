@@ -111,6 +111,7 @@
     const target = targetFromPoint(clientX, clientY);
     if (!target || target.id === "self") return false;
     window.ArcaneAudio?.playSfx("attack");
+    predictAttack(drag.payload.instanceId, target.id);
     send("attack", { attackerInstanceId: drag.payload.instanceId, targetInstanceId: target.id });
     selectedAttackerId = null;
     return true;
@@ -130,6 +131,7 @@
       if (!overSelfBoard) return false;
       window.ArcaneAudio?.playSfx("cardPlay");
       pendingHandPlayAnimation = { cardId: card.id, rect: drag.source.getBoundingClientRect(), createdAt: performance.now() };
+      predictCardPlay(drag.source);
       send("playCard", { handIndex, targetInstanceId: null });
       return true;
     }
@@ -137,6 +139,7 @@
     if (card.effect === "draw" || !card.effect) {
       if (!overSelfBoard) return false;
       window.ArcaneAudio?.playSfx("cardPlay");
+      predictCardPlay(drag.source);
       send("playCard", { handIndex, targetInstanceId: null });
       return true;
     }
@@ -145,6 +148,7 @@
     const healTarget = target.id === "self" || target.minion?.parentElement?.id === "selfBoard";
     if (card.effect === "heal" ? !healTarget : healTarget) return false;
     window.ArcaneAudio?.playSfx("cardPlay");
+    predictCardPlay(drag.source);
     send("playCard", { handIndex, targetInstanceId: target.id });
     selectedHandIndex = null;
     hideTargetHint();

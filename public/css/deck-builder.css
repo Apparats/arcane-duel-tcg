@@ -83,6 +83,22 @@
   font-size: 12px;
 }
 
+.deck-filters {
+  justify-content: flex-start;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.deck-filters .filter-select {
+  min-width: 116px;
+  padding: 7px 9px;
+  font-size: 12px;
+}
+
+.deck-filters .clear-filters-link {
+  margin-bottom: 5px;
+}
+
 .deck-card-pool {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -356,6 +372,24 @@
     grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
     gap: 10px;
     padding-bottom: 28px;
+  }
+
+  .deck-filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .deck-filters .filter-group,
+  .deck-filters .filter-select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .deck-filters .clear-filters-link {
+    justify-self: start;
+    margin: 0;
   }
 
   .deck-card-preview {

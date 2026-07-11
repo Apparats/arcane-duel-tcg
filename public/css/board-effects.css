@@ -62,6 +62,13 @@
   filter: brightness(1.15) saturate(1.08);
 }
 
+#screen-game .hand-card.action-pending,
+#screen-game .btn-end-turn.action-pending {
+  filter: brightness(1.18) saturate(1.08);
+  opacity: 0.56;
+  pointer-events: none;
+}
+
 #screen-game .hand-card.card-dragging-hand {
   z-index: 30;
   transition: none !important;

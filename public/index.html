@@ -14,12 +14,12 @@
 <link rel="stylesheet" href="css/board-arena.css?v=20260710-turn-timer-1" />
 <link rel="stylesheet" href="css/board-hand.css?v=20260709-6" />
 <link rel="stylesheet" href="css/inventory.css?v=20260709-card-cost-2" />
-<link rel="stylesheet" href="css/deck-builder.css?v=20260710-rarity-rows-1" />
+<link rel="stylesheet" href="css/deck-builder.css?v=20260710-deck-filters-1" />
 <link rel="stylesheet" href="css/shop.css?v=20260710-shop-progress-1" />
 <link rel="stylesheet" href="css/trade.css" />
 <link rel="stylesheet" href="css/pack-opening.css" />
 <link rel="stylesheet" href="css/fx.css?v=20260710-damage-impact-1" />
-<link rel="stylesheet" href="css/board-effects.css?v=20260709-3" />
+<link rel="stylesheet" href="css/board-effects.css?v=20260710-responsive-actions-1" />
 <link rel="stylesheet" href="css/overlay.css" />
 </head>
 <body>
@@ -467,7 +467,41 @@
               <h2>Owned cards</h2>
               <span class="deck-panel-hint">Click a card to add it</span>
             </div>
+            <div class="inventory-filters deck-filters">
+              <div class="filter-group">
+                <label for="deckFilterType">Type</label>
+                <select id="deckFilterType" class="filter-select">
+                  <option value="all">All</option>
+                  <option value="minion">Minion</option>
+                  <option value="spell">Spell</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="deckFilterRarity">Rarity</label>
+                <select id="deckFilterRarity" class="filter-select">
+                  <option value="all">All</option>
+                  <option value="common">Common</option>
+                  <option value="rare">Rare</option>
+                  <option value="legendary">Legendary</option>
+                  <option value="mythic">Mythic</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="deckFilterCountry">Country</label>
+                <select id="deckFilterCountry" class="filter-select">
+                  <option value="all">All</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="deckFilterRace">Race</label>
+                <select id="deckFilterRace" class="filter-select">
+                  <option value="all">All</option>
+                </select>
+              </div>
+              <button id="btnClearDeckFilters" class="btn-link clear-filters-link">Clear filters</button>
+            </div>
             <div id="deckCardPool" class="deck-card-pool"></div>
+            <p id="deckPoolEmpty" class="deck-list-empty hidden">No owned cards match these filters.</p>
           </div>
           <aside class="deck-list-panel">
             <div class="deck-panel-header">
@@ -636,13 +670,13 @@
   <script src="engine.js?v=20260709-global-rounds-1"></script>
   <script src="ai.js"></script>
   <script src="audioConfig.js"></script>
-  <script src="audioManager.js"></script>
+  <script src="audioManager.js?v=20260710-audio-pool-1"></script>
   <script src="packOpening.js?v=20260709-card-cost-1"></script>
 <script src="legalNotices.js?v=20260710-legal-1"></script>
-<script src="client.js?v=20260710-turn-timer-1"></script>
-<script src="boardInteractions.js?v=20260709-touch-2"></script>
+<script src="client.js?v=20260710-responsive-actions-1"></script>
+<script src="boardInteractions.js?v=20260710-responsive-actions-1"></script>
 <script src="inventory.js?v=20260709-card-cost-1"></script>
-<script src="deckBuilder.js"></script>
+<script src="deckBuilder.js?v=20260710-deck-filters-1"></script>
 <script src="shop.js?v=20260710-shop-progress-1"></script>
 <script src="trade.js"></script>
 </body>

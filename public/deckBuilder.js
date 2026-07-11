@@ -6,6 +6,8 @@ let deckBuilderState = {
   cardIds: [],
 };
 
+let deckFiltersReady = false;
+
 function setInventoryTab(tabName) {
   const isDeck = tabName === "deck";
   $("collectionPanel").classList.toggle("hidden", isDeck);
@@ -74,6 +76,26 @@ function ownedCards() {
     .sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name));
 }
 
+function populateDeckFilters() {
+  if (deckFiltersReady) return;
+
+  const cards = getInventoryCards();
+  const countries = [...new Set(cards.map((card) => card.country).filter(Boolean))].sort();
+  const races = [...new Set(cards.map((card) => card.race).filter(Boolean))].sort();
+  fillSelect($("deckFilterCountry"), countries);
+  fillSelect($("deckFilterRace"), races);
+  deckFiltersReady = true;
+}
+
+function currentDeckFilters() {
+  return {
+    type: $("deckFilterType").value,
+    rarity: $("deckFilterRarity").value,
+    country: $("deckFilterCountry").value,
+    race: $("deckFilterRace").value,
+  };
+}
+
 function addDeckCard(cardId) {
   if (deckBuilderState.cardIds.length >= TCGDeckRules.DECK_SIZE) {
     showToast(`Deck already has ${TCGDeckRules.DECK_SIZE} cards.`);
@@ -99,9 +121,11 @@ function removeDeckCard(cardId) {
 function renderDeckPool() {
   const counts = currentDeckCounts();
   const pool = $("deckCardPool");
+  const cards = ownedCards().filter((card) => cardMatchesFilters(card, currentDeckFilters()));
   pool.innerHTML = "";
+  $("deckPoolEmpty").classList.toggle("hidden", cards.length > 0);
 
-  ownedCards().forEach((card) => {
+  cards.forEach((card) => {
     const owned = getCardQuantity(card);
     const used = counts[card.id] || 0;
     const full = used >= owned || deckBuilderState.cardIds.length >= TCGDeckRules.DECK_SIZE;
@@ -176,6 +200,7 @@ function renderDeckBuilder() {
 
 async function openDeckBuilder() {
   if (!requireLoggedInForPlay()) return;
+  populateDeckFilters();
   if (!deckBuilderState.loaded) {
     try {
       const state = await fetchDeckState();
@@ -248,3 +273,15 @@ $("savedDeckSelect").addEventListener("change", (event) => loadDeck(event.target
 $("btnNewDeck").addEventListener("click", newDeck);
 $("btnAutoDeck").addEventListener("click", autoBuildCurrentDeck);
 $("btnSaveDeck").addEventListener("click", saveCurrentDeck);
+
+["deckFilterType", "deckFilterRarity", "deckFilterCountry", "deckFilterRace"].forEach((id) => {
+  $(id).addEventListener("change", renderDeckPool);
+});
+
+$("btnClearDeckFilters").addEventListener("click", () => {
+  $("deckFilterType").value = "all";
+  $("deckFilterRarity").value = "all";
+  $("deckFilterCountry").value = "all";
+  $("deckFilterRace").value = "all";
+  renderDeckPool();
+});

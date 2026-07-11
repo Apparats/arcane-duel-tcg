@@ -3,6 +3,7 @@
   const musicCache = new Map();
   const musicState = new Map();
   const sfxCache = new Map();
+  const sfxVoicePools = new Map();
   const STORAGE_KEY = "arcane_audio_volumes";
   const MUSIC_FADE_MS = 650;
 
@@ -11,6 +12,7 @@
   let currentMusic = null;
   let currentMusicLocalVolume = 1;
   const fadeTimers = new WeakMap();
+  const MAX_SFX_VOICES = 4;
 
   function clampVolume(value, fallback = 1) {
     const number = Number(value);
@@ -150,6 +152,7 @@
   async function unlock() {
     if (!isEnabled()) return false;
     unlocked = true;
+    preloadSfx();
     if (currentMusicId) await playMusic(currentMusicId);
     return true;
   }
@@ -228,13 +231,39 @@
     return sfxCache.get(cacheKey);
   }
 
+  function preloadSfx() {
+    Object.keys(config.sfx || {}).forEach((id) => {
+      const audio = getSfx(id);
+      audio?.load();
+    });
+  }
+
+  function getSfxVoice(id) {
+    const base = getSfx(id);
+    if (!base) return null;
+    const key = `${id}:${base.src}`;
+    const pool = sfxVoicePools.get(key) || [base];
+    sfxVoicePools.set(key, pool);
+
+    const idle = pool.find((audio) => audio.paused || audio.ended);
+    if (idle) return idle;
+    if (pool.length < MAX_SFX_VOICES) {
+      const voice = base.cloneNode();
+      voice.preload = "auto";
+      pool.push(voice);
+      return voice;
+    }
+    return pool[0];
+  }
+
   function playSfx(id) {
     if (!isEnabled() || !unlocked) return;
-    const base = getSfx(id);
-    if (!base) return;
-
-    const sound = base.cloneNode();
-    sound.volume = base.volume;
+    const sound = getSfxVoice(id);
+    if (!sound) return;
+    sound.pause();
+    sound.currentTime = 0;
+    sound.volume = effectiveVolume("sfx");
+    sound.playbackRate = 0.98 + Math.random() * 0.04;
     sound.play().catch(() => {});
   }
 
@@ -273,6 +302,7 @@
     onScreenChange,
     getChannelVolume,
     setChannelVolume,
+    preloadSfx,
     get unlocked() {
       return unlocked;
     },

@@ -51,6 +51,7 @@ let isApplyingStateQueue = false;
 let stateQueueGeneration = 0;
 let roundBannerMode = null;
 let pendingHandPlayAnimation = null;
+const predictedAttackKeys = new Set();
 let turnClockOffsetMs = 0;
 let turnTimerInterval = null;
 const SETTLE_DELAY = 460;      // ms we wait after an impact before "settling" the final state
@@ -572,14 +573,24 @@ function animateCardFromHand(cardEl, cardId) {
 function animateAttackLunge(prev, action) {
   const attackerEl = findCardElement(action.attackerInstanceId);
   if (!attackerEl) return false;
-  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-  if (reduceMotion || !attackerEl.animate) return false;
   const attackerIsSelf = prev.me.board.some((m) => m.instanceId === action.attackerInstanceId);
   const targetEl = action.targetInstanceId
     ? findCardElement(action.targetInstanceId)
     : attackerIsSelf
       ? $("oppHero")
       : $("selfHero");
+  const key = attackPredictionKey(action.attackerInstanceId, action.targetInstanceId || "face");
+  if (predictedAttackKeys.delete(key)) return false;
+  return animateAttackLungeElements(attackerEl, targetEl, attackerIsSelf);
+}
+
+function attackPredictionKey(attackerInstanceId, targetInstanceId) {
+  return `${attackerInstanceId}:${targetInstanceId || "face"}`;
+}
+
+function animateAttackLungeElements(attackerEl, targetEl, attackerIsSelf) {
+  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  if (reduceMotion || !attackerEl?.animate) return false;
   let dx = 0;
   let dy = attackerIsSelf ? -24 : 24;
   if (targetEl) {
@@ -605,6 +616,24 @@ function animateAttackLunge(prev, action) {
     attackerEl.style.zIndex = "";
   }, 440);
   return true;
+}
+
+function predictAttack(attackerInstanceId, targetInstanceId) {
+  const attackerEl = findCardElement(attackerInstanceId);
+  if (!attackerEl) return;
+  const targetEl = targetInstanceId && targetInstanceId !== "face"
+    ? findCardElement(targetInstanceId)
+    : $("oppHero");
+  const key = attackPredictionKey(attackerInstanceId, targetInstanceId);
+  predictedAttackKeys.add(key);
+  animateAttackLungeElements(attackerEl, targetEl, true);
+  setTimeout(() => predictedAttackKeys.delete(key), 1_500);
+}
+
+function predictCardPlay(cardEl) {
+  if (!cardEl) return;
+  cardEl.classList.add("action-pending");
+  setTimeout(() => cardEl.classList.remove("action-pending"), 1_500);
 }
 
 // Runs BEFORE replacing the DOM with the new state: while the old
@@ -889,6 +918,7 @@ function render(state) {
 
   // End turn button
   $("btnEndTurn").disabled = !state.isYourTurn;
+  $("btnEndTurn").classList.remove("action-pending");
 
   updateTargetableHighlights(state);
 }
@@ -934,31 +964,69 @@ function setHeroAvatar(el, player) {
 }
 
 function renderBoard(container, board, isSelf) {
-  container.innerHTML = "";
-  board.forEach((m) => {
-    const el = document.createElement("div");
-    el.className = `minion-card ${rarityClass(m)}`;
-    if (m.keywords.includes("taunt")) el.classList.add("taunt");
-    if (m.divineShield) el.classList.add("shield"); // only while the shield is still active
-    if (isSelf && !m.canAttack) el.classList.add("exhausted");
-    if (isSelf && m.instanceId === selectedAttackerId) el.classList.add("selected");
-    el.dataset.instanceId = m.instanceId;
+  const existing = new Map(
+    [...container.children]
+      .filter((element) => element.dataset?.instanceId)
+      .map((element) => [element.dataset.instanceId, element])
+  );
 
-    el.innerHTML = `
-      ${cardArtHTML(m)}
-      ${cardCostHTML(m)}
-      <div class="card-badges">${keywordBadgesHTML(m)}</div>
-      <div class="card-footer">
-        <span class="card-stat atk">${m.attack}</span>
-        <span class="card-name">${escapeHtml(m.name)}</span>
-        <span class="card-stat hp">${m.health}</span>
-      </div>
-    `;
-
-    el.addEventListener("click", () => onMinionClick(m, isSelf));
-    attachCardTooltip(el, m);
+  board.forEach((minion) => {
+    let el = existing.get(minion.instanceId);
+    if (!el) {
+      el = document.createElement("div");
+      el.addEventListener("click", () => onMinionClick(el._minion, el._isSelf));
+      attachCardTooltip(el, () => el._minion);
+    }
+    existing.delete(minion.instanceId);
+    updateBoardCard(el, minion, isSelf);
     container.appendChild(el);
   });
+
+  existing.forEach((el) => el.remove());
+}
+
+function boardCardMarkup(minion) {
+  return `
+      ${cardArtHTML(minion)}
+      ${cardCostHTML(minion)}
+      <div class="card-badges">${keywordBadgesHTML(minion)}</div>
+      <div class="card-footer">
+        <span class="card-stat atk">${minion.attack}</span>
+        <span class="card-name">${escapeHtml(minion.name)}</span>
+        <span class="card-stat hp">${minion.health}</span>
+      </div>
+    `;
+}
+
+function boardVisualKey(minion) {
+  return [
+    minion.cardId,
+    minion.name,
+    minion.attack,
+    minion.health,
+    minion.maxHealth,
+    minion.cost,
+    minion.divineShield ? 1 : 0,
+    (minion.keywords || []).join(","),
+  ].join("|");
+}
+
+function updateBoardCard(el, minion, isSelf) {
+  const classNames = ["minion-card", rarityClass(minion)];
+  if (minion.keywords.includes("taunt")) classNames.push("taunt");
+  if (minion.divineShield) classNames.push("shield");
+  if (isSelf && !minion.canAttack) classNames.push("exhausted");
+  if (isSelf && minion.instanceId === selectedAttackerId) classNames.push("selected");
+  el.className = classNames.join(" ");
+  el.dataset.instanceId = minion.instanceId;
+  el._minion = minion;
+  el._isSelf = isSelf;
+
+  const visualKey = boardVisualKey(minion);
+  if (el.dataset.visualKey !== visualKey) {
+    el.dataset.visualKey = visualKey;
+    el.innerHTML = boardCardMarkup(minion);
+  }
 }
 
 function renderHand(state) {
@@ -1012,6 +1080,7 @@ function onHandCardClick(idx, card, state, cardEl = null) {
     pendingHandPlayAnimation = cardEl
       ? { cardId: card.id, rect: cardEl.getBoundingClientRect(), createdAt: performance.now() }
       : null;
+    predictCardPlay(cardEl);
     window.ArcaneAudio?.playSfx("cardPlay");
     send("playCard", { handIndex: idx, targetInstanceId: null });
     return;
@@ -1021,6 +1090,7 @@ function onHandCardClick(idx, card, state, cardEl = null) {
   // classic effect): neither one needs you to pick a target.
   if (card.effect === "draw" || !card.effect) {
     selectedHandIndex = null;
+    predictCardPlay(cardEl);
     window.ArcaneAudio?.playSfx("cardPlay");
     send("playCard", { handIndex: idx, targetInstanceId: null });
     return;
@@ -1038,6 +1108,7 @@ function onMinionClick(minion, isSelf) {
 
   // Case 1: I have a spell selected, waiting for a target
   if (selectedHandIndex !== null) {
+    predictCardPlay(document.querySelector(`.hand-card[data-hand-index="${selectedHandIndex}"]`));
     window.ArcaneAudio?.playSfx("cardPlay");
     send("playCard", { handIndex: selectedHandIndex, targetInstanceId: minion.instanceId });
     selectedHandIndex = null;
@@ -1048,6 +1119,7 @@ function onMinionClick(minion, isSelf) {
   // Case 2: I have an attacker selected and I click an enemy minion
   if (selectedAttackerId && !isSelf) {
     window.ArcaneAudio?.playSfx("attack");
+    predictAttack(selectedAttackerId, minion.instanceId);
     send("attack", { attackerInstanceId: selectedAttackerId, targetInstanceId: minion.instanceId });
     selectedAttackerId = null;
     return;
@@ -1068,6 +1140,7 @@ function onHeroClick(isSelf) {
 
   if (selectedHandIndex !== null) {
     const target = isSelf ? "faceSelf" : "faceEnemy";
+    predictCardPlay(document.querySelector(`.hand-card[data-hand-index="${selectedHandIndex}"]`));
     window.ArcaneAudio?.playSfx("cardPlay");
     send("playCard", { handIndex: selectedHandIndex, targetInstanceId: target });
     selectedHandIndex = null;
@@ -1077,6 +1150,7 @@ function onHeroClick(isSelf) {
 
   if (selectedAttackerId && !isSelf) {
     window.ArcaneAudio?.playSfx("attack");
+    predictAttack(selectedAttackerId, "face");
     send("attack", { attackerInstanceId: selectedAttackerId, targetInstanceId: "face" });
     selectedAttackerId = null;
   }
@@ -1087,6 +1161,9 @@ $("selfHero").addEventListener("click", () => onHeroClick(true));
 
 $("btnEndTurn").addEventListener("click", () => {
   clearSelection();
+  $("btnEndTurn").classList.add("action-pending");
+  $("btnEndTurn").disabled = true;
+  setTimeout(() => $("btnEndTurn").classList.remove("action-pending"), 1_500);
   window.ArcaneAudio?.playSfx("endTurn");
   send("endTurn", {});
 });
@@ -1279,12 +1356,13 @@ function escapeHtmlAttr(str) {
 // ---------------- CARD TOOLTIP ----------------
 
 function attachCardTooltip(el, card) {
+  const getCard = typeof card === "function" ? card : () => card;
   el.addEventListener("pointerdown", () => {
     if (!canUseHoverTooltips()) hideCardTooltip();
   });
   if (!canUseHoverTooltips()) return;
 
-  el.addEventListener("mouseenter", (e) => showCardTooltip(card, e));
+  el.addEventListener("mouseenter", (e) => showCardTooltip(getCard(), e));
   el.addEventListener("mousemove", positionCardTooltip);
   el.addEventListener("mouseleave", hideCardTooltip);
 }
