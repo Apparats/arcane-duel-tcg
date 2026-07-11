@@ -17,6 +17,11 @@ let client = null;
 let db = null;
 let connecting = null;
 
+function readBoundedEnvInt(name, fallback, { min, max }) {
+  const parsed = Number.parseInt(process.env[name] || "", 10);
+  return Number.isInteger(parsed) && parsed >= min && parsed <= max ? parsed : fallback;
+}
+
 function isDbEnabled() {
   return Boolean(process.env.MONGODB_URI);
 }
@@ -32,12 +37,19 @@ async function connectDB() {
   if (connecting) return connecting;
 
   connecting = (async () => {
-    client = new MongoClient(process.env.MONGODB_URI);
+    client = new MongoClient(process.env.MONGODB_URI, {
+      // Atlas' driver default is generous for a small single-process game.
+      // Keep this configurable while avoiding idle connection pressure on the VM.
+      maxPoolSize: readBoundedEnvInt("MONGODB_MAX_POOL_SIZE", 10, { min: 2, max: 100 }),
+    });
     await client.connect();
     db = client.db(process.env.MONGODB_DB_NAME || "arcane_duel");
 
     // Indexes are idempotent — safe to run every time the server boots.
-    await db.collection("users").createIndex({ discordId: 1 }, { unique: true });
+    await Promise.all([
+      db.collection("users").createIndex({ discordId: 1 }, { unique: true }),
+      db.collection("users").createIndex({ "stats.quickplayWins": -1, _id: 1 }),
+    ]);
 
     console.log("MongoDB connected.");
     return db;
@@ -378,10 +390,30 @@ function rankQuickplayPlayers(users, userId, limit = 50) {
 
 async function getQuickplayRanking(userId, limit = 50) {
   const users = getDB().collection("users");
-  const players = await users
-    .find({ "stats.quickplayWins": { $gt: 0 } }, { projection: { username: 1, avatar: 1, discordId: 1, stats: 1 } })
-    .toArray();
-  return rankQuickplayPlayers(players, userId, limit);
+  const safeLimit = Math.max(1, Math.min(Number.isInteger(limit) ? limit : 50, 50));
+  const projection = { username: 1, avatar: 1, discordId: 1, stats: 1 };
+  const sort = { "stats.quickplayWins": -1, _id: 1 };
+  const [topPlayers, currentUser] = await Promise.all([
+    users.find({ "stats.quickplayWins": { $gt: 0 } }, { projection }).sort(sort).limit(safeLimit).toArray(),
+    users.findOne({ _id: toObjectId(userId, "user id") }, { projection }),
+  ]);
+
+  const players = topPlayers.map((player, index) => publicRankingPlayer(player, index + 1));
+  const wins = currentUser?.stats?.quickplayWins || 0;
+  if (wins <= 0 || players.some((player) => player.userId === String(userId))) {
+    return { players, currentPlayer: null };
+  }
+
+  const playersAhead = await users.countDocuments({
+    $or: [
+      { "stats.quickplayWins": { $gt: wins } },
+      { "stats.quickplayWins": wins, _id: { $lt: currentUser._id } },
+    ],
+  });
+  return {
+    players,
+    currentPlayer: publicRankingPlayer(currentUser, playersAhead + 1),
+  };
 }
 
 async function recordMultiplayerDisconnect(userId) {

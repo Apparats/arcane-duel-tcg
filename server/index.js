@@ -46,10 +46,30 @@ const CLIENT_TIMING_FIELDS = new Set([
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const NPC_STEP_DELAY_MS = 1200;
 const BOARD_KEYWORD_LIMITS = { taunt: 2, charge: 3 };
+const PUBLIC_DIR = path.join(__dirname, "..", "public");
+let enabledExpansionsCache = null;
 
 function readBoundedEnvInt(name, fallback, { min, max }) {
   const parsed = Number.parseInt(process.env[name] || "", 10);
   return Number.isInteger(parsed) && parsed >= min && parsed <= max ? parsed : fallback;
+}
+
+function getEnabledExpansions() {
+  if (enabledExpansionsCache) return enabledExpansionsCache;
+
+  const expansionsDir = path.join(__dirname, "..", "expansions");
+  enabledExpansionsCache = fs
+    .readdirSync(expansionsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => {
+      const metaPath = path.join(expansionsDir, entry.name, "expansion.json");
+      if (!fs.existsSync(metaPath)) return null;
+      return JSON.parse(fs.readFileSync(metaPath, "utf8"));
+    })
+    .filter((meta) => meta && meta.enabled !== false)
+    .map((meta) => ({ id: meta.id, name: meta.name || meta.id }));
+
+  return enabledExpansionsCache;
 }
 
 const app = express();
@@ -89,25 +109,22 @@ app.get("/ranking/quickplay", createRateLimiter({ max: 30, keyPrefix: "ranking" 
   }
 });
 app.get("/expansions/enabled", (req, res) => {
-  const expansionsDir = path.join(__dirname, "..", "expansions");
-  const expansions = fs
-    .readdirSync(expansionsDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => {
-      const metaPath = path.join(expansionsDir, entry.name, "expansion.json");
-      if (!fs.existsSync(metaPath)) return null;
-      return JSON.parse(fs.readFileSync(metaPath, "utf8"));
-    })
-    .filter((meta) => meta && meta.enabled !== false)
-    .map((meta) => ({ id: meta.id, name: meta.name || meta.id }));
-
-  res.json({ expansions });
+  res.json({ expansions: getEnabledExpansions() });
+});
+app.use((req, res, next) => {
+  const version = typeof req.query?.v === "string" ? req.query.v : "";
+  if (/^[a-zA-Z0-9._-]{1,80}$/.test(version) && /\.(?:css|js)$/.test(req.path)) {
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+  }
+  next();
 });
 app.use(
-  express.static(path.join(__dirname, "..", "public"), {
+  express.static(PUBLIC_DIR, {
     setHeaders(res, filePath) {
-      if (filePath.endsWith(".html") || filePath.endsWith(".js")) {
+      if (filePath.endsWith(".html")) {
         res.setHeader("Cache-Control", "no-store");
+      } else if ((filePath.endsWith(".css") || filePath.endsWith(".js")) && !res.getHeader("Cache-Control")) {
+        res.setHeader("Cache-Control", "no-cache");
       }
     },
   })

@@ -60,6 +60,16 @@
   margin: 0;
 }
 
+.shop-upcoming-expansions {
+  margin: 2px 0 0;
+  padding: 16px 8px 4px;
+  border-top: 1px solid rgba(232, 179, 79, 0.2);
+  color: var(--cream-dim);
+  font-family: "Cinzel", serif;
+  font-size: 13px;
+  text-align: center;
+}
+
 .shop-pack-art {
   display: grid;
   place-items: center;

@@ -54,6 +54,11 @@ function renderShopPacks(packs) {
     `;
     list.appendChild(el);
   });
+
+  const upcoming = document.createElement("p");
+  upcoming.className = "shop-upcoming-expansions";
+  upcoming.textContent = "More expansions soon";
+  list.appendChild(upcoming);
 }
 
 async function openShop() {
