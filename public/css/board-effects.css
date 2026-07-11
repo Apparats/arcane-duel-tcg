@@ -2,6 +2,15 @@
    BOARD EFFECTS - tactical clarity states layered on top of fx.css.
    ============================================================ */
 
+/* The board is a direct manipulation surface. Text selection and the mobile
+   copy callout interfere with card drags, target clicks, and touch attacks. */
+#screen-game,
+#screen-game * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 @keyframes ready-card-pulse {
   0%, 100% { box-shadow: 0 0 0 1px rgba(242, 202, 80, 0.58), 0 0 12px rgba(242, 202, 80, 0.18); }
   50% { box-shadow: 0 0 0 2px rgba(255, 224, 136, 0.9), 0 0 24px rgba(242, 202, 80, 0.42); }
@@ -167,6 +176,17 @@
   border-bottom: 1px solid rgba(255, 248, 220, 0.76);
   background: rgba(246, 242, 226, 0.96);
   transform: translateX(-50%) rotate(45deg);
+}
+
+.emote-bubble-opponent {
+  top: calc(100% + 16px);
+  bottom: auto;
+}
+
+.emote-bubble-opponent::after {
+  top: -7px;
+  bottom: auto;
+  transform: translateX(-50%) rotate(225deg);
 }
 
 .emote-bubble-show { animation: emote-bubble-pop 2.6s ease both; }

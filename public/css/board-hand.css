@@ -71,6 +71,11 @@
   left: -6px;
   width: 25px;
   height: 29px;
+  z-index: 20;
+  /* The artwork moves forward for the 3D tilt. Keep UI overlays in front
+     in the same 3D space so browsers cannot paint the art over the mana. */
+  transform: translateZ(12px);
+  backface-visibility: hidden;
 }
 
 #screen-game .hand-card .card-badges {
@@ -78,6 +83,15 @@
   left: -6px;
   width: 25px;
   align-items: center;
+  z-index: 20;
+  transform: translateZ(12px);
+  backface-visibility: hidden;
+}
+
+#screen-game .hand-card .card-footer {
+  z-index: 20;
+  transform: translateZ(12px);
+  backface-visibility: hidden;
 }
 
 @media (max-width: 900px) and (orientation: landscape) {

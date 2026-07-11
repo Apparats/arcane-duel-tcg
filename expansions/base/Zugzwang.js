@@ -1,9 +1,9 @@
 module.exports = {
   name: "Zugzwang",
-  cost: 5,
+  cost: 9,
   type: "minion",
-  attack: 3,
-  health: 6,
+  attack: 10,
+  health: 5,
   keywords: ["charge"], 
   race: "Human",
   rarity: "mythic",

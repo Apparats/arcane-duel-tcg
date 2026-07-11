@@ -773,6 +773,7 @@ function showEmote(emote, isSelf) {
     hero.appendChild(bubble);
   }
   bubble.textContent = emote;
+  bubble.classList.toggle("emote-bubble-opponent", !isSelf);
   bubble.classList.remove("emote-bubble-show");
   void bubble.offsetWidth;
   bubble.classList.add("emote-bubble-show");
