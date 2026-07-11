@@ -654,9 +654,13 @@
 
 .changelog-card {
   width: min(90vw, 480px);
+  max-height: min(82dvh, 760px);
   padding: 26px 28px;
   text-align: left;
   box-shadow: 0 22px 70px rgba(0, 0, 0, 0.62), inset 0 0 0 1px rgba(232, 179, 79, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .changelog-header {
@@ -667,6 +671,14 @@
 }
 
 .changelog-header h2 { margin-bottom: 0; }
+
+.changelog-content {
+  min-height: 0;
+  margin-top: 20px;
+  padding-right: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 
 .changelog-close {
   width: 30px;
@@ -686,10 +698,12 @@
 }
 
 .changelog-entry {
-  margin-top: 20px;
+  margin-top: 0;
   padding-top: 18px;
   border-top: 1px solid rgba(232, 179, 79, 0.2);
 }
+
+.changelog-entry + .changelog-entry { margin-top: 20px; }
 
 .changelog-entry-meta {
   display: flex;
@@ -906,6 +920,12 @@
   .legal-card {
     width: min(94vw, 680px);
     max-height: min(82vh, 720px);
+    padding: 20px;
+  }
+
+  .changelog-card {
+    width: min(94vw, 480px);
+    max-height: min(84dvh, 720px);
     padding: 20px;
   }
   .how-to-play-card { width: min(94vw, 670px); max-height: min(86vh, 760px); padding: 20px; }
