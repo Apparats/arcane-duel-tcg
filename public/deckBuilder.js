@@ -81,9 +81,7 @@ function populateDeckFilters() {
 
   const cards = getInventoryCards();
   const countries = [...new Set(cards.map((card) => card.country).filter(Boolean))].sort();
-  const races = [...new Set(cards.map((card) => card.race).filter(Boolean))].sort();
   fillSelect($("deckFilterCountry"), countries);
-  fillSelect($("deckFilterRace"), races);
   deckFiltersReady = true;
 }
 
@@ -92,7 +90,7 @@ function currentDeckFilters() {
     type: $("deckFilterType").value,
     rarity: $("deckFilterRarity").value,
     country: $("deckFilterCountry").value,
-    race: $("deckFilterRace").value,
+    keyword: $("deckFilterKeyword").value,
   };
 }
 
@@ -274,7 +272,7 @@ $("btnNewDeck").addEventListener("click", newDeck);
 $("btnAutoDeck").addEventListener("click", autoBuildCurrentDeck);
 $("btnSaveDeck").addEventListener("click", saveCurrentDeck);
 
-["deckFilterType", "deckFilterRarity", "deckFilterCountry", "deckFilterRace"].forEach((id) => {
+["deckFilterType", "deckFilterRarity", "deckFilterCountry", "deckFilterKeyword"].forEach((id) => {
   $(id).addEventListener("change", renderDeckPool);
 });
 
@@ -282,6 +280,6 @@ $("btnClearDeckFilters").addEventListener("click", () => {
   $("deckFilterType").value = "all";
   $("deckFilterRarity").value = "all";
   $("deckFilterCountry").value = "all";
-  $("deckFilterRace").value = "all";
+  $("deckFilterKeyword").value = "all";
   renderDeckPool();
 });

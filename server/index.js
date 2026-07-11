@@ -8,7 +8,7 @@ const { WebSocketServer } = require("ws");
 const { Game } = require("../public/engine");
 const { getCardById } = require("../public/cards");
 const { MAX_BOARD } = require("../public/deckRules");
-const { connectDB, grantMatchEconomy, getQuickplayRanking, isDbEnabled, recordMultiplayerDisconnect, resetConsecutiveDisconnects } = require("./db");
+const { connectDB, grantMatchEconomy, getQuickplayRanking, isDbEnabled, recordMultiplayerDisconnect, resetConsecutiveDisconnects, submitCardRequest } = require("./db");
 const { router: authRouter, getSessionUser, isAuthEnabled } = require("./auth");
 const { router: shopRouter } = require("./shop");
 const { router: decksRouter } = require("./decks");
@@ -45,6 +45,8 @@ const CLIENT_TIMING_FIELDS = new Set([
 ]);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const NPC_STEP_DELAY_MS = 1200;
+const EMOTE_COOLDOWN_MS = 1_500;
+const ALLOWED_EMOTES = new Set(["😄", "😭", "😯", "😡", "🫄", "💀"]);
 const BOARD_KEYWORD_LIMITS = { taunt: 2, charge: 3 };
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
 let enabledExpansionsCache = null;
@@ -106,6 +108,17 @@ app.get("/ranking/quickplay", createRateLimiter({ max: 30, keyPrefix: "ranking" 
   } catch (err) {
     console.error("Quickplay ranking failed:", err.message);
     res.status(500).json({ error: "Could not load the quickplay ranking." });
+  }
+});
+app.post("/card-requests", createRateLimiter({ max: 10, keyPrefix: "card-requests" }), async (req, res) => {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Login with Discord is required." });
+  try {
+    const request = await submitCardRequest(user.id, req.body?.wareraName);
+    res.json({ ok: true, wareraName: request.wareraName });
+  } catch (err) {
+    const status = err.code === "CARD_REQUEST_DAILY_LIMIT" ? 429 : 400;
+    res.status(status).json({ error: err.message || "Could not save the card request." });
   }
 });
 app.get("/expansions/enabled", (req, res) => {
@@ -779,6 +792,16 @@ async function handleMessage(ws, msg) {
   if (!room || !room.game) return broadcastError(ws, "You're not in an active match.");
   const game = room.game;
   const idx = ws.playerIdx;
+
+  if (type === "emote") {
+    const emote = typeof payload?.emote === "string" ? payload.emote : "";
+    if (!ALLOWED_EMOTES.has(emote)) return broadcastError(ws, "That emote is not available.");
+    const now = Date.now();
+    if (now - (ws.lastEmoteAt || 0) < EMOTE_COOLDOWN_MS) return;
+    ws.lastEmoteAt = now;
+    room.sockets.forEach((socket, recipientIdx) => send(socket, "emote", { emote, isSelf: recipientIdx === idx }));
+    return;
+  }
 
   if (type === "playCard") {
     requireIntent(type, payload);

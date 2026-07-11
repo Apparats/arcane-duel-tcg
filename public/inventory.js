@@ -101,9 +101,7 @@ function populateInventoryFilters() {
   if (inventoryFiltersReady) return;
   const cards = getInventoryCards();
   const countries = [...new Set(cards.map((c) => c.country).filter(Boolean))].sort();
-  const races = [...new Set(cards.map((c) => c.race).filter(Boolean))].sort();
   fillSelect($("filterCountry"), countries);
-  fillSelect($("filterRace"), races);
   inventoryFiltersReady = true;
 }
 
@@ -112,7 +110,7 @@ function currentInventoryFilters() {
     type: $("filterType").value,
     rarity: $("filterRarity").value,
     country: $("filterCountry").value,
-    race: $("filterRace").value,
+    keyword: $("filterKeyword").value,
   };
 }
 
@@ -120,7 +118,9 @@ function cardMatchesFilters(card, filters) {
   if (filters.type !== "all" && card.type !== filters.type) return false;
   if (filters.rarity !== "all" && card.rarity !== filters.rarity) return false;
   if (filters.country !== "all" && card.country !== filters.country) return false;
-  if (filters.race !== "all" && card.race !== filters.race) return false;
+  const keywords = Array.isArray(card.keywords) ? card.keywords : [];
+  if (filters.keyword === "normal" && (keywords.includes("taunt") || keywords.includes("charge") || keywords.includes("divineShield"))) return false;
+  if (filters.keyword !== "all" && filters.keyword !== "normal" && !keywords.includes(filters.keyword)) return false;
   return true;
 }
 
@@ -215,7 +215,7 @@ function lazyLoadInventoryArt() {
   }
 }
 
-["filterType", "filterRarity", "filterCountry", "filterRace"].forEach((id) => {
+["filterType", "filterRarity", "filterCountry", "filterKeyword"].forEach((id) => {
   $(id).addEventListener("change", renderInventoryGrid);
 });
 
@@ -223,7 +223,7 @@ $("btnClearFilters").addEventListener("click", () => {
   $("filterType").value = "all";
   $("filterRarity").value = "all";
   $("filterCountry").value = "all";
-  $("filterRace").value = "all";
+  $("filterKeyword").value = "all";
   renderInventoryGrid();
 });
 

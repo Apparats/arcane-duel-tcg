@@ -20,7 +20,7 @@ window.ArcaneLegalNotices = {
     content: `
       <p class="legal-updated">Last updated: July 10, 2026</p>
       <h3>Data we use</h3>
-      <p>To provide the game, we process your Discord account identifier and profile information made available through Discord, such as your username and avatar. We also store game account data, including your collection, decks, gold, match results, trading information, and ranking progress.</p>
+      <p>To provide the game, we process your Discord account identifier and profile information made available through Discord, such as your username and avatar. We also store game account data, including your collection, decks, gold, match results, trading information, and ranking progress. If you submit a card request, we store the Warera name you provide with that request.</p>
       <p>We use essential session cookies and may keep limited technical and security logs, such as error, connection, and abuse-prevention records. More sensitive information like IP's or device data it's not stored within the game.</p>
       <h3>Why we use it</h3>
       <p>We use this data to authenticate you through Discord, save and operate your account, run matches and trades, prevent abuse, keep the service secure, and diagnose technical problems. The game is free and we do not sell personal data or use it for advertising.</p>

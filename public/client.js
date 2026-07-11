@@ -56,6 +56,7 @@ let turnClockOffsetMs = 0;
 let turnTimerInterval = null;
 const SETTLE_DELAY = 460;      // ms we wait after an impact before "settling" the final state
 const ROUND_BANNER_DELAY = 980;
+const ALLOWED_EMOTES = new Set(["😄", "😭", "😯", "😡", "🫄", "💀"]);
 
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -248,7 +249,10 @@ function startServerSingleplayer() {
 
 function handleLocalAction(type, payload) {
   try {
-    if (type === "playCard") {
+    if (type === "emote") {
+      showEmote(payload?.emote, true);
+      return;
+    } else if (type === "playCard") {
       localGame.playCard(0, payload.handIndex, payload.targetInstanceId || null);
     } else if (type === "attack") {
       localGame.attack(0, payload.attackerInstanceId, payload.targetInstanceId);
@@ -402,6 +406,9 @@ function handleServerMessage(msg) {
       break;
     case "state":
       applyIncomingState(msg.payload);
+      break;
+    case "emote":
+      showEmote(msg.payload?.emote, Boolean(msg.payload?.isSelf));
       break;
     case "economyUpdate":
       lastEconomyUpdate = msg.payload;
@@ -747,6 +754,30 @@ async function loadOnlinePlayerCount() {
   } catch {
     // The fixed minimum remains visible if the availability request fails.
   }
+}
+
+function closeEmotePanel() {
+  $("emotePanel")?.classList.add("hidden");
+  $("btnEmotes")?.setAttribute("aria-expanded", "false");
+}
+
+function showEmote(emote, isSelf) {
+  if (!ALLOWED_EMOTES.has(emote)) return;
+  const hero = $(isSelf ? "selfHero" : "oppHero");
+  if (!hero) return;
+
+  let bubble = hero.querySelector(".emote-bubble");
+  if (!bubble) {
+    bubble = document.createElement("span");
+    bubble.className = "emote-bubble";
+    hero.appendChild(bubble);
+  }
+  bubble.textContent = emote;
+  bubble.classList.remove("emote-bubble-show");
+  void bubble.offsetWidth;
+  bubble.classList.add("emote-bubble-show");
+  clearTimeout(hero._emoteTimer);
+  hero._emoteTimer = setTimeout(() => bubble.remove(), 2600);
 }
 
 function openLobby(mode) {
@@ -1865,6 +1896,13 @@ function setChangelogOpen(open) {
   if (open) setMenuOptionsOpen(false);
 }
 
+function setHowToPlayOpen(open) {
+  const modal = $("howToPlayModal");
+  if (!modal) return;
+  modal.classList.toggle("hidden", !open);
+  if (open) setMenuOptionsOpen(false);
+}
+
 function setLegalNoticeOpen(noticeKey) {
   const modal = $("legalModal");
   const notice = window.ArcaneLegalNotices?.[noticeKey];
@@ -1877,6 +1915,49 @@ function setLegalNoticeOpen(noticeKey) {
 
 function closeLegalNotice() {
   $("legalModal")?.classList.add("hidden");
+}
+
+function setCardRequestOpen(open) {
+  const modal = $("cardRequestModal");
+  if (!modal) return;
+  modal.classList.toggle("hidden", !open);
+  if (!open) return;
+
+  $("cardRequestStatus").classList.add("hidden");
+  $("cardRequestStatus").textContent = "";
+  setMenuOptionsOpen(false);
+  setTimeout(() => $("cardRequestName")?.focus(), 0);
+}
+
+async function submitCardRequest() {
+  if (!requireLoggedInForPlay()) return;
+  const input = $("cardRequestName");
+  const status = $("cardRequestStatus");
+  const button = $("btnSubmitCardRequest");
+  const wareraName = input.value.trim();
+  if (!wareraName) {
+    status.textContent = "Enter your Warera name first.";
+    status.classList.remove("hidden");
+    return;
+  }
+
+  button.disabled = true;
+  try {
+    const res = await apiFetch("/card-requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ wareraName }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Could not save the card request.");
+    status.textContent = "Request saved. Thank you.";
+    status.classList.remove("hidden");
+  } catch (err) {
+    status.textContent = err.message || "Could not save the card request.";
+    status.classList.remove("hidden");
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function syncVolumeControl(kind) {
@@ -2019,9 +2100,34 @@ $("btnOpenTerms").addEventListener("click", () => setLegalNoticeOpen("terms"));
 $("btnOpenPrivacy").addEventListener("click", () => setLegalNoticeOpen("privacy"));
 $("btnOpenTermsMenu").addEventListener("click", () => setLegalNoticeOpen("terms"));
 $("btnOpenPrivacyMenu").addEventListener("click", () => setLegalNoticeOpen("privacy"));
+$("btnRequestCard").addEventListener("click", () => setCardRequestOpen(true));
+$("btnCloseCardRequest").addEventListener("click", () => setCardRequestOpen(false));
+$("btnSubmitCardRequest").addEventListener("click", submitCardRequest);
+$("cardRequestModal").addEventListener("click", (event) => {
+  if (event.target === event.currentTarget) setCardRequestOpen(false);
+});
 $("btnCloseLegal").addEventListener("click", closeLegalNotice);
 $("legalModal").addEventListener("click", (event) => {
   if (event.target === event.currentTarget) closeLegalNotice();
+});
+
+$("btnEmotes").addEventListener("click", () => {
+  if (!myState || myState.winner !== null) return;
+  const panel = $("emotePanel");
+  const open = panel.classList.contains("hidden");
+  panel.classList.toggle("hidden", !open);
+  $("btnEmotes").setAttribute("aria-expanded", String(open));
+});
+
+$("emotePanel").addEventListener("click", (event) => {
+  const button = event.target instanceof Element ? event.target.closest(".emote-choice") : null;
+  if (!button || !myState || myState.winner !== null) return;
+  closeEmotePanel();
+  send("emote", { emote: button.dataset.emote });
+});
+
+document.addEventListener("pointerdown", (event) => {
+  if (!(event.target instanceof Element) || !event.target.closest(".emote-control")) closeEmotePanel();
 });
 
 $("btnMoreOptions").addEventListener("click", (event) => {
@@ -2040,6 +2146,12 @@ $("btnOpenChangelog").addEventListener("click", () => setChangelogOpen(true));
 $("btnCloseChangelog").addEventListener("click", () => setChangelogOpen(false));
 $("changelogModal").addEventListener("click", (event) => {
   if (event.target === event.currentTarget) setChangelogOpen(false);
+});
+
+$("btnOpenHowToPlay").addEventListener("click", () => setHowToPlayOpen(true));
+$("btnCloseHowToPlay").addEventListener("click", () => setHowToPlayOpen(false));
+$("howToPlayModal").addEventListener("click", (event) => {
+  if (event.target === event.currentTarget) setHowToPlayOpen(false);
 });
 
 $("btnCloseAudioConfig").addEventListener("click", () => setAudioConfigOpen(false));
@@ -2148,7 +2260,7 @@ document.addEventListener("mousemove", (e) => {
     }
     card.style.transform = `translateY(${baseTranslateY}) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
   }
-  card.style.zIndex = "10";
+  card.style.zIndex = card.classList.contains("hand-card") ? "40" : "10";
 
   // Keep the art at native scale so hover inspection does not blur or crop it.
   // Depth now comes from card tilt, shine, and foil instead of zooming the image.

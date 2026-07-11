@@ -439,6 +439,12 @@
   text-underline-offset: 3px;
 }
 
+.menu-info-actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+
 .changelog-button:hover,
 .changelog-button:focus-visible {
   color: var(--gold);
@@ -707,6 +713,65 @@
 
 .changelog-list li::marker { color: var(--gold); }
 
+.how-to-play-card {
+  width: min(92vw, 670px);
+  max-height: min(82vh, 760px);
+  padding: 26px 28px;
+  text-align: left;
+}
+
+.how-to-play-content {
+  display: grid;
+  gap: 18px;
+  max-height: min(66vh, 610px);
+  margin-top: 20px;
+  padding-right: 7px;
+  overflow-y: auto;
+  color: var(--cream-dim);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.how-to-play-content section {
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(232, 179, 79, 0.17);
+}
+
+.how-to-play-content section:last-child { border-bottom: 0; padding-bottom: 0; }
+.how-to-play-content h3 {
+  margin: 0 0 7px;
+  color: var(--cream);
+  font-family: "Cinzel", serif;
+  font-size: 16px;
+}
+.how-to-play-content p { margin: 0; }
+.how-to-play-content ul { display: grid; gap: 5px; margin: 8px 0 0; padding-left: 19px; }
+.how-to-play-content li::marker { color: var(--gold); }
+
+.how-to-legend { display: grid; gap: 8px; margin-top: 10px; }
+.how-to-legend > div { display: flex; align-items: center; gap: 9px; }
+.how-to-token,
+.how-to-badge {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-family: "Cinzel", serif;
+  font-size: 12px;
+  font-weight: 700;
+}
+.how-to-mana { background: radial-gradient(circle at 35% 30%, var(--mana), var(--mana-dim)); color: #061217; }
+.how-to-attack { background: rgba(232, 179, 79, 0.2); border: 1px solid var(--gold); color: var(--gold); }
+.how-to-health { background: rgba(214, 69, 69, 0.2); border: 1px solid var(--hp); color: var(--hp); }
+.how-to-badge { border: 1px solid var(--line); color: var(--cream); background: rgba(8, 6, 15, 0.55); }
+.how-to-taunt { color: var(--taunt); border-color: rgba(127, 176, 105, 0.7); }
+.how-to-taunt svg { width: 16px; height: 16px; }
+.how-to-charge { color: var(--gold); border-color: rgba(232, 179, 79, 0.7); }
+.how-to-shield { color: var(--mana); border-color: rgba(79, 195, 232, 0.7); }
+.how-to-note { margin-top: 10px !important; font-size: 12px; }
+
 .legal-card {
   display: flex;
   width: min(92vw, 680px);
@@ -755,6 +820,50 @@
   font-size: 12px;
 }
 
+.card-request-card {
+  position: relative;
+  width: min(92vw, 430px);
+  padding: 28px;
+  text-align: left;
+}
+
+.card-request-card h2 {
+  margin: 0 36px 10px 0;
+  color: var(--gold);
+  font-family: "Cinzel", serif;
+  font-size: 22px;
+}
+
+.card-request-card p {
+  margin: 0 0 18px;
+  color: var(--cream-dim);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.card-request-card label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--cream);
+  font-size: 12px;
+}
+
+.card-request-card .text-input {
+  box-sizing: border-box;
+  margin-bottom: 10px;
+}
+
+.card-request-status {
+  min-height: 20px;
+  color: var(--taunt) !important;
+}
+
+.card-request-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
 .menu-tile-lock {
   display: inline-flex;
   align-items: center;
@@ -781,6 +890,9 @@
     max-height: min(82vh, 720px);
     padding: 20px;
   }
+  .how-to-play-card { width: min(94vw, 670px); max-height: min(86vh, 760px); padding: 20px; }
+  .how-to-play-content { max-height: min(70vh, 620px); margin-top: 16px; }
+  .card-request-card { width: min(94vw, 430px); padding: 22px; }
   .menu-grid-secondary {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;

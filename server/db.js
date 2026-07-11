@@ -46,9 +46,19 @@ async function connectDB() {
     db = client.db(process.env.MONGODB_DB_NAME || "arcane_duel");
 
     // Indexes are idempotent — safe to run every time the server boots.
+    const cardRequests = db.collection("card_requests");
+    // Migrate the early single-request index if this feature was deployed
+    // before daily requests were introduced.
+    try {
+      await cardRequests.dropIndex("userId_1");
+    } catch (err) {
+      if (err?.codeName !== "IndexNotFound" && err?.code !== 27 && err?.code !== 26) throw err;
+    }
+
     await Promise.all([
       db.collection("users").createIndex({ discordId: 1 }, { unique: true }),
       db.collection("users").createIndex({ "stats.quickplayWins": -1, _id: 1 }),
+      cardRequests.createIndex({ userId: 1, requestDay: 1 }, { unique: true }),
     ]);
 
     console.log("MongoDB connected.");
@@ -562,6 +572,40 @@ async function buyPack(userId, pack) {
   });
 }
 
+function normalizeWareraName(value) {
+  if (typeof value !== "string") throw new Error("Enter your Warera name.");
+  const wareraName = value.trim().replace(/\s+/g, " ");
+  if (wareraName.length < 2 || wareraName.length > 48) {
+    throw new Error("Warera names must be between 2 and 48 characters.");
+  }
+  if (/[\u0000-\u001F\u007F]/.test(wareraName)) throw new Error("That Warera name is not valid.");
+  return wareraName;
+}
+
+async function submitCardRequest(userId, wareraNameInput) {
+  const userIdObject = toObjectId(userId, "user id");
+  const wareraName = normalizeWareraName(wareraNameInput);
+  const now = new Date();
+  const requestDay = now.toISOString().slice(0, 10);
+  try {
+    await getDB().collection("card_requests").insertOne({
+      userId: userIdObject,
+      requestDay,
+      wareraName,
+      status: "pending",
+      createdAt: now,
+    });
+  } catch (err) {
+    if (err?.code === 11000) {
+      const limitError = new Error("You can submit one card request per day.");
+      limitError.code = "CARD_REQUEST_DAILY_LIMIT";
+      throw limitError;
+    }
+    throw err;
+  }
+  return { wareraName };
+}
+
 module.exports = {
   isDbEnabled,
   connectDB,
@@ -587,4 +631,5 @@ module.exports = {
   PACK_PRICE_GOLD,
   PACK_SIZE,
   buyPack,
+  submitCardRequest,
 };
