@@ -103,6 +103,19 @@
 
 #oppHero { grid-area: hero; }
 #selfHero { grid-area: hero; justify-self: start; }
+
+/* The player's hero stays compact so the friendly board has more room to read. */
+#selfHero {
+  width: clamp(108px, 10.5vw, 128px);
+  min-width: 108px;
+  min-height: 84px;
+  margin-bottom: 14px;
+}
+#selfHero .hero-avatar { top: 7px; width: 52px; height: 52px; }
+#selfHero .hero-name { width: calc(100% + 16px); font-size: 10px; }
+#selfHero .hero-stats .hp { left: -16px; bottom: -16px; width: 42px; height: 42px; font-size: 10px; }
+#selfHero .hero-stats .mana { right: -16px; bottom: -14px; width: 41px; height: 41px; font-size: 8px; }
+#selfHero .hero-stats .deck { top: 6px; right: 7px; font-size: 7px; }
 #oppBoard,
 #selfBoard { grid-area: board; min-width: 0; align-self: stretch; }
 
@@ -304,6 +317,21 @@
   color: #f7d778;
 }
 
+.turn-timer {
+  color: rgba(226, 231, 255, 0.76);
+  font-family: "Cinzel", serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.turn-timer-warning {
+  color: #ff8d87;
+  text-shadow: 0 0 10px rgba(255, 76, 69, 0.7);
+}
+
 .manuscript-rule { max-width: 760px; opacity: 0.64; }
 .game-log { display: none; }
 
@@ -342,6 +370,11 @@
   .board-frame { padding: 4px; }
   .minion-row { grid-template-columns: repeat(5, minmax(0, clamp(48px, 11.8vw, 88px))); gap: 8px; padding: 7px; }
   #oppHero, #selfHero { width: 90px; min-width: 90px; min-height: 68px; margin-bottom: 13px; }
+  #selfHero { width: 80px; min-width: 80px; min-height: 61px; margin-bottom: 11px; }
+  #selfHero .hero-avatar { top: 5px; width: 36px; height: 36px; }
+  #selfHero .hero-name { width: calc(100% + 10px); font-size: 7px; }
+  #selfHero .hero-stats .hp { left: -12px; bottom: -13px; width: 32px; height: 32px; font-size: 8px; }
+  #selfHero .hero-stats .mana { right: -12px; bottom: -12px; width: 31px; height: 31px; font-size: 6px; }
   .hero-panel { padding: 0; }
   .hero-avatar { top: 5px; width: 40px; height: 40px; border-width: 1px; box-shadow: 0 0 0 2px rgba(52, 23, 4, 0.96), 0 4px 8px rgba(0, 0, 0, 0.52); }
   .hero-name { top: calc(100% + 3px); width: calc(100% + 12px); font-size: 8px; letter-spacing: 0.35px; }
@@ -355,6 +388,7 @@
   .center-strip { min-height: 38px; padding: 0 124px; }
   .turn-seal { width: 27px; height: 27px; font-size: 7px; }
   .turn-label { font-size: 8px; }
+  .turn-timer { font-size: 7px; }
   .btn-end-turn { min-width: 104px; min-height: 42px; font-size: 9px; }
   .btn-surrender { font-size: 8px; padding: 3px 8px; }
 }
@@ -387,6 +421,11 @@
   #oppBoard .minion-card:nth-child(n + 4) { margin-top: -8px; z-index: 2; }
   #selfBoard .minion-card:nth-child(n + 4) { margin-top: 8px; z-index: 1; }
   #oppHero, #selfHero { width: 106px; min-width: 106px; min-height: 79px; margin-bottom: 14px; }
+  #selfHero { width: 94px; min-width: 94px; min-height: 71px; margin-bottom: 12px; }
+  #selfHero .hero-avatar { top: 5px; width: 40px; height: 40px; }
+  #selfHero .hero-name { width: calc(100% + 12px); font-size: 8px; }
+  #selfHero .hero-stats .hp { left: -13px; bottom: -14px; width: 35px; height: 35px; font-size: 8px; }
+  #selfHero .hero-stats .mana { right: -13px; bottom: -12px; width: 34px; height: 34px; font-size: 7px; }
   .hero-panel { padding: 0; }
   .hero-avatar { top: 6px; width: 46px; height: 46px; }
   .hero-name { top: calc(100% + 3px); width: calc(100% + 16px); font-size: 9px; letter-spacing: 0.45px; }
@@ -399,6 +438,7 @@
   .center-strip { min-height: 36px; padding: 0 116px 0 0; }
   .turn-seal { width: 26px; height: 26px; font-size: 7px; }
   .turn-label { font-size: 8px; letter-spacing: 0.7px; }
+  .turn-timer { font-size: 7px; letter-spacing: 0.45px; }
   .manuscript-rule { display: none; }
   .turn-actions { right: 6px; flex-direction: row; gap: 4px; }
   .btn-end-turn { min-width: 84px; min-height: 38px; padding: 6px 7px; border-radius: 6px; font-size: 8px; }

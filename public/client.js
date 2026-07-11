@@ -51,6 +51,8 @@ let isApplyingStateQueue = false;
 let stateQueueGeneration = 0;
 let roundBannerMode = null;
 let pendingHandPlayAnimation = null;
+let turnClockOffsetMs = 0;
+let turnTimerInterval = null;
 const SETTLE_DELAY = 460;      // ms we wait after an impact before "settling" the final state
 const ROUND_BANNER_DELAY = 980;
 
@@ -872,6 +874,7 @@ function render(state) {
   $("turnLabel").textContent = state.isYourTurn
     ? "Your turn"
     : `${state.opponent.name}'s turn`;
+  renderTurnTimer(state);
 
   // Log
   $("gameLog").innerHTML = state.log.map((l) => `<div>${escapeHtml(l)}</div>`).join("");
@@ -888,6 +891,33 @@ function render(state) {
   $("btnEndTurn").disabled = !state.isYourTurn;
 
   updateTargetableHighlights(state);
+}
+
+function renderTurnTimer(state) {
+  const timer = $("turnTimer");
+  if (!timer) return;
+  clearInterval(turnTimerInterval);
+  turnTimerInterval = null;
+  turnClockOffsetMs = Number.isFinite(state.serverNow) ? state.serverNow - Date.now() : 0;
+
+  if (!Number.isFinite(state.turnDeadline)) {
+    timer.textContent = state.opponent?.name === "NPC" && !state.isYourTurn ? "NPC is thinking" : "40s per turn";
+    timer.classList.remove("turn-timer-warning");
+    return;
+  }
+
+  const durationSeconds = Math.max(1, Math.round((state.turnDurationMs || 40_000) / 1_000));
+  const updateTimer = () => {
+    const remaining = Math.max(0, Math.ceil((state.turnDeadline - (Date.now() + turnClockOffsetMs)) / 1_000));
+    timer.textContent = `${remaining}s / ${durationSeconds}s`;
+    timer.classList.toggle("turn-timer-warning", remaining <= 10);
+    if (remaining <= 0) {
+      clearInterval(turnTimerInterval);
+      turnTimerInterval = null;
+    }
+  };
+  updateTimer();
+  turnTimerInterval = setInterval(updateTimer, 250);
 }
 
 function setHeroAvatar(el, player) {

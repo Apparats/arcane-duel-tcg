@@ -233,6 +233,9 @@ function addPlayerVisuals(state, room, viewerIdx) {
   const opponentIdx = viewerIdx === 0 ? 1 : 0;
   return {
     ...state,
+    serverNow: Date.now(),
+    turnDeadline: room.turnTimer?.deadline || null,
+    turnDurationMs: room.turnTimer ? 40_000 : null,
     me: { ...state.me, avatarUrl: room.avatars?.[viewerIdx] || null },
     opponent: { ...state.opponent, avatarUrl: room.avatars?.[opponentIdx] || null },
   };
@@ -622,8 +625,22 @@ async function runNpcTurn(room) {
       game.endTurn(1);
       broadcastState(room);
     }
+  } catch (err) {
+    console.error("NPC turn failed:", err.message);
   } finally {
-    room.npcTurnRunning = false;
+    try {
+      // Never leave the player facing an inert NPC turn. This also covers an
+      // unexpected card-effect or socket serialization failure mid-turn.
+      if (game.winner === null && game.turn === 1) {
+        game._addLog("NPC turn recovered after an unexpected error.");
+        game.endTurn(1);
+        broadcastState(room);
+      }
+    } catch (recoveryError) {
+      console.error("NPC turn recovery failed:", recoveryError.message);
+    } finally {
+      room.npcTurnRunning = false;
+    }
   }
 }
 
