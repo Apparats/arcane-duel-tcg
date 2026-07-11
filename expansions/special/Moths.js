@@ -4,7 +4,7 @@ module.exports = {
   type: "minion",
   attack: 1,
   health: 4,
-  keywords: [], 
+  keywords: [],
   race: "Monster",
   rarity: "mythic",
   country: "Arcana",
