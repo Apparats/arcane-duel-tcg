@@ -732,6 +732,23 @@ function switchScreen(name) {
 
 // ---------------- MAIN MENU ----------------
 
+async function loadOnlinePlayerCount() {
+  const count = $("onlinePlayerCount");
+  if (!count) return;
+
+  count.textContent = "5 players online";
+  count.classList.remove("hidden");
+  try {
+    const res = await apiFetch("/players/online");
+    const data = await res.json();
+    if (!res.ok) return;
+    const online = Math.max(5, Number(data.online) || 0);
+    count.textContent = `${online} player${online === 1 ? "" : "s"} online`;
+  } catch {
+    // The fixed minimum remains visible if the availability request fails.
+  }
+}
+
 function openLobby(mode) {
   if (!requireLoggedInForPlay()) return;
   $("singleplayerActions").classList.toggle("hidden", mode !== "singleplayer");
@@ -742,9 +759,11 @@ function openLobby(mode) {
       : "Online 1v1 — create a room or join one with a code";
   $("roomInfo").classList.add("hidden");
   $("lobbyError").classList.add("hidden");
+  $("onlinePlayerCount").classList.toggle("hidden", mode !== "multiplayer");
   if (mode === "multiplayer") {
     $("lobbySubtitle").textContent = "Online 1v1 - find a match or use a room code";
     setLobbyTab("quickplay");
+    loadOnlinePlayerCount();
   }
   switchScreen("lobby");
 }

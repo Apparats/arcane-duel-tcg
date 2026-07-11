@@ -33,6 +33,28 @@
   font-size: 12px;
 }
 
+.online-player-count {
+  position: absolute;
+  top: 17px;
+  right: 18px;
+  color: var(--mana);
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.online-player-count::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 5px 1px 0;
+  border-radius: 50%;
+  background: var(--taunt);
+  box-shadow: 0 0 7px rgba(127, 176, 105, 0.8);
+  vertical-align: middle;
+}
+
 .brand {
   font-family: "Cinzel", serif;
   font-size: 32px;

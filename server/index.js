@@ -152,6 +152,10 @@ const quickplayQueue = [];
 const socketsByUserId = new Map();
 const socketsByIp = new Map();
 
+app.get("/players/online", createRateLimiter({ max: 60, keyPrefix: "online-players" }), (req, res) => {
+  res.json({ online: Math.max(5, socketsByUserId.size) });
+});
+
 function registerAuthenticatedSocket(ws, user) {
   const userId = String(user.id);
   const sockets = socketsByUserId.get(userId) || new Set();
