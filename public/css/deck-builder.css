@@ -37,6 +37,56 @@
 .deck-name-input { max-width: 220px; }
 .deck-select { min-width: 180px; }
 
+.deck-select-control {
+  display: flex;
+  min-width: 0;
+  gap: 5px;
+}
+
+.deck-select-control .deck-select { min-width: 0; }
+
+.deck-delete-button {
+  width: 42px;
+  min-height: 42px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255, 120, 124, 0.9);
+  border-radius: 5px;
+  background: linear-gradient(180deg, rgba(159, 38, 48, 0.88), rgba(91, 18, 29, 0.96));
+  color: #fff0ef;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 2px 8px rgba(110, 17, 26, 0.38);
+  cursor: pointer;
+}
+
+.deck-delete-button:hover:not(:disabled),
+.deck-delete-button:focus-visible:not(:disabled) {
+  background: linear-gradient(180deg, rgba(207, 57, 67, 0.96), rgba(126, 24, 36, 0.98));
+  border-color: #ffd0cd;
+  box-shadow: 0 0 14px rgba(232, 75, 83, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  outline: none;
+}
+
+.deck-delete-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.34;
+}
+
+.deck-delete-button svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.delete-deck-card { max-width: min(90vw, 390px); }
+.delete-deck-card p { margin: -6px 0 22px; color: var(--cream-dim); font-size: 14px; line-height: 1.45; }
+.delete-deck-actions { display: flex; justify-content: center; gap: 10px; }
+
 .deck-status {
   min-height: 22px;
   margin-bottom: 18px;
@@ -281,11 +331,13 @@
   }
 
   .deck-name-input,
-  .deck-select {
+  .deck-select-control {
     width: 100%;
     min-width: 0;
     max-width: none;
   }
+
+  .deck-select { width: 100%; }
 
   .deck-toolbar .btn {
     width: 100%;

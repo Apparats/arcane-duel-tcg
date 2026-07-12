@@ -4,6 +4,7 @@
    ============================================================ */
 
 #screen-lobby {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,6 +12,30 @@
   background:
     radial-gradient(circle at 50% 18%, rgba(232, 179, 79, 0.14), transparent 34%),
     radial-gradient(circle at center, #21170f 0%, #090705 100%);
+}
+
+#screen-lobby.lobby-singleplayer {
+  overflow: hidden;
+  background:
+    linear-gradient(125deg, rgba(72, 136, 164, 0.16), transparent 34%),
+    linear-gradient(180deg, #102833 0%, #071722 52%, #020910 100%);
+}
+
+#screen-lobby.lobby-singleplayer::before {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(112deg, transparent 18%, rgba(168, 228, 242, 0.08) 39%, transparent 58%),
+    linear-gradient(112deg, transparent 34%, rgba(79, 162, 192, 0.1) 51%, transparent 68%);
+  animation: lobby-winter-breathe 5.2s ease-in-out infinite;
+}
+
+@keyframes lobby-winter-breathe {
+  0%, 100% { opacity: 0.5; transform: scale(0.94); filter: blur(20px) brightness(0.85); }
+  50% { opacity: 1; transform: scale(1.06); filter: blur(30px) brightness(1.24); }
 }
 
 .lobby-card {
@@ -24,7 +49,10 @@
   box-shadow: var(--shadow), inset 0 0 0 1px rgba(255, 255, 255, 0.035);
   text-align: center;
   position: relative;
+  z-index: 1;
 }
+
+.lobby-snow { z-index: 0; }
 
 .back-link {
   position: absolute;
@@ -97,6 +125,99 @@
 .code-input { text-transform: uppercase; letter-spacing: 4px; text-align: center; margin-bottom: 0; }
 
 .lobby-actions { display: flex; flex-direction: column; gap: 16px; }
+
+.singleplayer-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.singleplayer-mode {
+  min-height: 148px;
+  padding: 18px 14px;
+  border: 1px solid rgba(232, 179, 79, 0.3);
+  border-radius: 6px;
+  background:
+    linear-gradient(155deg, rgba(38, 32, 56, 0.86), rgba(17, 13, 24, 0.92)),
+    radial-gradient(circle at 50% 0%, rgba(232, 179, 79, 0.1), transparent 55%);
+  color: var(--cream);
+  font-family: inherit;
+  text-align: center;
+}
+
+.singleplayer-mode-npc {
+  border-color: rgba(232, 179, 79, 0.64);
+  background:
+    linear-gradient(155deg, rgba(75, 53, 28, 0.78), rgba(27, 18, 23, 0.94)),
+    radial-gradient(circle at 50% 0%, rgba(232, 179, 79, 0.25), transparent 58%);
+  box-shadow: inset 0 0 18px rgba(232, 179, 79, 0.08), 0 5px 18px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+.singleplayer-mode-campaign {
+  border-color: rgba(127, 194, 224, 0.58);
+  background:
+    linear-gradient(155deg, rgba(26, 65, 84, 0.84), rgba(11, 26, 38, 0.94)),
+    radial-gradient(circle at 50% 0%, rgba(168, 228, 242, 0.2), transparent 58%);
+  box-shadow: inset 0 0 18px rgba(123, 206, 239, 0.08), 0 5px 18px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+.singleplayer-mode-campaign:hover,
+.singleplayer-mode-campaign:focus-visible {
+  border-color: #d9f5ff;
+  box-shadow: 0 0 18px rgba(117, 214, 251, 0.25), inset 0 0 20px rgba(157, 229, 250, 0.14);
+  outline: none;
+}
+
+.singleplayer-mode-npc:hover,
+.singleplayer-mode-npc:focus-visible {
+  border-color: var(--gold);
+  box-shadow: 0 0 18px rgba(232, 179, 79, 0.22), inset 0 0 20px rgba(232, 179, 79, 0.12);
+  outline: none;
+}
+
+.singleplayer-mode-locked {
+  cursor: not-allowed;
+  opacity: 0.48;
+  filter: grayscale(0.32);
+}
+
+.singleplayer-mode-title,
+.singleplayer-mode-subtitle {
+  display: block;
+}
+
+.campaign-stage-panel {
+  position: relative;
+  padding: 22px;
+  border: 1px solid rgba(129, 210, 239, 0.42);
+  border-radius: 7px;
+  background: linear-gradient(155deg, rgba(15, 52, 70, 0.9), rgba(8, 20, 31, 0.96));
+  box-shadow: inset 0 0 26px rgba(117, 214, 251, 0.08);
+}
+
+.campaign-stage-panel h2 { margin: 5px 42px 8px; color: var(--cream); font-family: "Cinzel", serif; font-size: 22px; }
+.campaign-stage-panel p { margin: 0 auto 18px; max-width: 390px; color: var(--cream-dim); font-size: 13px; line-height: 1.5; }
+.campaign-stage-label { color: #a6eaff; font-family: "Cinzel", serif; font-size: 11px; text-transform: uppercase; }
+.campaign-stage-panel > .btn-link { position: absolute; top: 13px; left: 14px; }
+.campaign-info-button { position: absolute; top: 14px; right: 16px; width: 30px; height: 30px; border: 1px solid rgba(175, 239, 255, 0.7); border-radius: 50%; background: rgba(5, 26, 39, 0.78); color: #d8f7ff; font-family: "Cinzel", serif; font-weight: 700; cursor: pointer; }
+.campaign-info-button:hover, .campaign-info-button:focus-visible { background: rgba(50, 139, 173, 0.72); outline: none; }
+
+.singleplayer-mode-title {
+  color: var(--cream);
+  font-family: "Cinzel", serif;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.singleplayer-mode-subtitle {
+  margin-top: 9px;
+  color: var(--cream-dim);
+  font-size: 11px;
+  line-height: 1.4;
+}
 .lobby-tabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -233,3 +354,14 @@
 .waiting-text { color: var(--cream-dim); font-size: 13px; }
 
 .error-text { color: var(--hp); font-size: 13px; margin-top: 16px; }
+
+@media (max-width: 440px) {
+  .singleplayer-mode-grid { gap: 8px; }
+  .singleplayer-mode { min-height: 126px; padding: 14px 9px; }
+  .singleplayer-mode-title { font-size: 13px; }
+  .singleplayer-mode-subtitle { font-size: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #screen-lobby.lobby-singleplayer::before { animation: none; opacity: 0.78; transform: none; }
+}

@@ -73,6 +73,9 @@ function toPublicPack(pack) {
     size: pack.size,
     art: pack.art,
     cardCount: pack.cards.length,
+    // The client already has the public card catalog. IDs keep this response
+    // compact while precisely describing which cards can come from this pack.
+    cardIds: pack.cards.map((card) => card.id),
   };
 }
 

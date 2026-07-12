@@ -33,7 +33,7 @@ const MAX_LORE_LENGTH = 180;
 // Must exactly mirror the effects implemented in the ABILITY_EFFECTS
 // object in public/engine.js. If you add a new effect there, add it
 // here too (and to the required-parameters list below).
-const VALID_TRIGGERS = ["onPlay", "onDeath", "onTurnStart", "onAnyTurnStart", "onAttackMinion"];
+const VALID_TRIGGERS = ["onPlay", "onDeath", "onTurnStart", "onAnyTurnStart", "onAttack", "onAttackMinion"];
 const VALID_ABILITY_EFFECTS = [
   "drawCards",
   "damageAllEnemyMinions",

@@ -2,7 +2,7 @@ module.exports = {
   name: "Beitsas",
   cost: 2,
   type: "minion",
-  attack: 3,
+  attack: 2,
   health: 2,
   keywords: ["charge"],
   race: "Monster",

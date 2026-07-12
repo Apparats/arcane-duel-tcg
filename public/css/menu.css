@@ -12,14 +12,18 @@
   height: 100%;
   padding: clamp(12px, 3vh, 24px);
   overflow: hidden;
-  background: radial-gradient(circle at center, #21170f 0%, #090705 100%);
+  background:
+    linear-gradient(125deg, rgba(72, 136, 164, 0.16), transparent 34%),
+    linear-gradient(180deg, #102833 0%, #071722 52%, #020910 100%);
 }
 
 #screen-menu::before {
   content: "";
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: radial-gradient(circle at center, transparent 35%, rgba(0, 0, 0, 0.75) 100%);
+  background:
+    linear-gradient(90deg, rgba(1, 7, 12, 0.42), transparent 24%, transparent 76%, rgba(1, 7, 12, 0.56)),
+    radial-gradient(circle at center, transparent 28%, rgba(0, 5, 10, 0.7) 100%);
   z-index: 0;
   pointer-events: none;
 }
@@ -122,31 +126,27 @@
   text-decoration-color: currentColor;
 }
 
-/* ---- Smooth ambient glow (multi-layer to avoid banding/pixelation) ---- */
+/* ---- Cold wind haze ---- */
 
 .menu-glow {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  /* Square container so circle gradients are truly circular */
-  width: 1400px;
-  height: 1400px;
-  transform: translate(-50%, -50%);
-  /* Two stacked passes per blob: tight core + wide soft halo */
+  inset: -18%;
   background:
-    radial-gradient(circle 280px at 38% 42%, rgba(79, 195, 232, 0.20) 0%, transparent 100%),
-    radial-gradient(circle 480px at 38% 42%, rgba(79, 195, 232, 0.08) 0%, transparent 100%),
-    radial-gradient(circle 240px at 63% 58%, rgba(232, 179, 79, 0.18) 0%, transparent 100%),
-    radial-gradient(circle 420px at 63% 58%, rgba(232, 179, 79, 0.07) 0%, transparent 100%),
-    radial-gradient(circle 180px at 50% 50%, rgba(160, 80, 220, 0.09) 0%, transparent 100%),
-    radial-gradient(circle 360px at 50% 50%, rgba(160, 80, 220, 0.04) 0%, transparent 100%);
-  filter: blur(40px);
+    linear-gradient(112deg, transparent 18%, rgba(168, 228, 242, 0.08) 39%, transparent 58%),
+    linear-gradient(112deg, transparent 34%, rgba(79, 162, 192, 0.1) 51%, transparent 68%);
+  filter: blur(24px);
   pointer-events: none;
   z-index: 0;
   opacity: 1;
+  animation: menu-winter-breathe 5.2s ease-in-out infinite;
 }
 
-/* ---- Magical Firefly Particles ---- */
+@keyframes menu-winter-breathe {
+  0%, 100% { opacity: 0.5; transform: scale(0.94); filter: blur(20px) brightness(0.85); }
+  50% { opacity: 1; transform: scale(1.06); filter: blur(30px) brightness(1.24); }
+}
+
+/* ---- Soft falling snow ---- */
 
 .fireflies {
   position: absolute;
@@ -158,61 +158,58 @@
 
 .firefly {
   position: absolute;
-  bottom: -15px;
-  width: 4px;
-  height: 4px;
-  background: var(--gold);
+  top: -15px;
+  width: var(--snow-size, 3px);
+  height: var(--snow-size, 3px);
+  background: rgba(248, 253, 255, 0.96);
   border-radius: 50%;
-  filter: drop-shadow(0 0 5px var(--gold));
+  filter: drop-shadow(0 0 4px rgba(211, 243, 255, 0.72));
   opacity: 0;
-  animation: firefly-fly 14s infinite ease-in-out, firefly-flicker 3s infinite ease-in-out;
+  animation: snow-fall var(--snow-duration, 12s) linear infinite, snow-flicker 2.8s ease-in-out infinite;
+  animation-delay: var(--snow-delay, 0s);
 }
 
-/* Original 12 */
-.firefly:nth-child(1)  { left:  5%; width: 4px; height: 4px; animation-delay:  0.0s,  0.0s; animation-duration: 14s, 3.0s; }
-.firefly:nth-child(2)  { left: 12%; width: 3px; height: 3px; animation-delay:  2.0s,  1.0s; animation-duration: 18s, 2.5s; }
-.firefly:nth-child(3)  { left: 22%; width: 5px; height: 5px; animation-delay:  4.0s,  0.5s; animation-duration: 12s, 3.5s; }
-.firefly:nth-child(4)  { left: 32%; width: 3px; height: 3px; animation-delay:  1.0s,  2.0s; animation-duration: 15s, 4.0s; }
-.firefly:nth-child(5)  { left: 44%; width: 4px; height: 4px; animation-delay:  5.0s,  1.5s; animation-duration: 16s, 3.0s; }
-.firefly:nth-child(6)  { left: 56%; width: 3px; height: 3px; animation-delay:  3.0s,  0.0s; animation-duration: 20s, 2.8s; }
-.firefly:nth-child(7)  { left: 65%; width: 4px; height: 4px; animation-delay:  7.0s,  2.5s; animation-duration: 13s, 3.2s; }
-.firefly:nth-child(8)  { left: 74%; width: 5px; height: 5px; animation-delay:  9.0s,  1.0s; animation-duration: 17s, 4.5s; }
-.firefly:nth-child(9)  { left: 82%; width: 3px; height: 3px; animation-delay:  6.0s,  3.0s; animation-duration: 19s, 2.2s; }
-.firefly:nth-child(10) { left: 89%; width: 4px; height: 4px; animation-delay:  8.0s,  0.8s; animation-duration: 15s, 3.8s; }
-.firefly:nth-child(11) { left: 95%; width: 3px; height: 3px; animation-delay: 11.0s,  2.2s; animation-duration: 14s, 3.1s; }
-.firefly:nth-child(12) { left: 50%; width: 4px; height: 4px; animation-delay: 10.0s,  1.7s; animation-duration: 16s, 2.9s; }
-/* Extended 12 (varied horizontals and slightly warmer blue tone for some) */
-.firefly:nth-child(13) { left:  8%; width: 3px; height: 3px; background: var(--mana); filter: drop-shadow(0 0 5px var(--mana)); animation-delay:  1.5s,  0.3s; animation-duration: 22s, 2.7s; }
-.firefly:nth-child(14) { left: 18%; width: 4px; height: 4px; animation-delay: 13.0s,  1.2s; animation-duration: 11s, 3.6s; }
-.firefly:nth-child(15) { left: 28%; width: 3px; height: 3px; background: var(--mana); filter: drop-shadow(0 0 5px var(--mana)); animation-delay:  3.5s,  2.8s; animation-duration: 17s, 4.2s; }
-.firefly:nth-child(16) { left: 38%; width: 5px; height: 5px; animation-delay:  6.5s,  0.6s; animation-duration: 13s, 3.9s; }
-.firefly:nth-child(17) { left: 47%; width: 3px; height: 3px; animation-delay:  9.5s,  1.9s; animation-duration: 21s, 2.4s; }
-.firefly:nth-child(18) { left: 58%; width: 4px; height: 4px; background: var(--mana); filter: drop-shadow(0 0 5px var(--mana)); animation-delay:  0.5s,  3.2s; animation-duration: 14s, 3.3s; }
-.firefly:nth-child(19) { left: 68%; width: 3px; height: 3px; animation-delay: 12.0s,  0.9s; animation-duration: 18s, 2.6s; }
-.firefly:nth-child(20) { left: 77%; width: 4px; height: 4px; animation-delay:  4.5s,  2.1s; animation-duration: 15s, 4.1s; }
-.firefly:nth-child(21) { left: 85%; width: 3px; height: 3px; background: var(--mana); filter: drop-shadow(0 0 5px var(--mana)); animation-delay:  7.5s,  1.4s; animation-duration: 12s, 3.7s; }
-.firefly:nth-child(22) { left: 92%; width: 5px; height: 5px; animation-delay:  2.5s,  0.2s; animation-duration: 19s, 2.3s; }
-.firefly:nth-child(23) { left: 35%; width: 3px; height: 3px; animation-delay: 14.0s,  2.6s; animation-duration: 16s, 3.4s; }
-.firefly:nth-child(24) { left: 62%; width: 4px; height: 4px; background: var(--mana); filter: drop-shadow(0 0 5px var(--mana)); animation-delay:  5.5s,  1.1s; animation-duration: 23s, 2.8s; }
+.firefly:nth-child(1) { left: 4%; --snow-size: 4px; --snow-delay: -1s; --snow-duration: 12s; }
+.firefly:nth-child(2) { left: 11%; --snow-size: 2px; --snow-delay: -7s; --snow-duration: 16s; }
+.firefly:nth-child(3) { left: 19%; --snow-size: 5px; --snow-delay: -3s; --snow-duration: 10s; }
+.firefly:nth-child(4) { left: 28%; --snow-size: 3px; --snow-delay: -11s; --snow-duration: 14s; }
+.firefly:nth-child(5) { left: 36%; --snow-size: 4px; --snow-delay: -5s; --snow-duration: 13s; }
+.firefly:nth-child(6) { left: 44%; --snow-size: 2px; --snow-delay: -9s; --snow-duration: 17s; }
+.firefly:nth-child(7) { left: 51%; --snow-size: 4px; --snow-delay: -2s; --snow-duration: 11s; }
+.firefly:nth-child(8) { left: 59%; --snow-size: 3px; --snow-delay: -12s; --snow-duration: 15s; }
+.firefly:nth-child(9) { left: 67%; --snow-size: 5px; --snow-delay: -6s; --snow-duration: 12s; }
+.firefly:nth-child(10) { left: 74%; --snow-size: 2px; --snow-delay: -4s; --snow-duration: 18s; }
+.firefly:nth-child(11) { left: 81%; --snow-size: 4px; --snow-delay: -10s; --snow-duration: 14s; }
+.firefly:nth-child(12) { left: 88%; --snow-size: 3px; --snow-delay: -8s; --snow-duration: 11s; }
+.firefly:nth-child(13) { left: 95%; --snow-size: 4px; --snow-delay: -13s; --snow-duration: 16s; }
+.firefly:nth-child(14) { left: 7%; --snow-size: 3px; --snow-delay: -6s; --snow-duration: 15s; }
+.firefly:nth-child(15) { left: 15%; --snow-size: 2px; --snow-delay: -2s; --snow-duration: 12s; }
+.firefly:nth-child(16) { left: 24%; --snow-size: 4px; --snow-delay: -9s; --snow-duration: 18s; }
+.firefly:nth-child(17) { left: 33%; --snow-size: 3px; --snow-delay: -4s; --snow-duration: 10s; }
+.firefly:nth-child(18) { left: 42%; --snow-size: 5px; --snow-delay: -12s; --snow-duration: 17s; }
+.firefly:nth-child(19) { left: 55%; --snow-size: 2px; --snow-delay: -7s; --snow-duration: 13s; }
+.firefly:nth-child(20) { left: 63%; --snow-size: 4px; --snow-delay: -1s; --snow-duration: 15s; }
+.firefly:nth-child(21) { left: 72%; --snow-size: 3px; --snow-delay: -11s; --snow-duration: 12s; }
+.firefly:nth-child(22) { left: 79%; --snow-size: 2px; --snow-delay: -5s; --snow-duration: 16s; }
+.firefly:nth-child(23) { left: 86%; --snow-size: 4px; --snow-delay: -8s; --snow-duration: 11s; }
+.firefly:nth-child(24) { left: 92%; --snow-size: 3px; --snow-delay: -3s; --snow-duration: 14s; }
 
-@keyframes firefly-fly {
-  0% {
-    bottom: -15px;
-    transform: translateX(0);
-  }
-  25% { transform: translateX(22px); }
-  50% { transform: translateX(-18px); }
-  75% { transform: translateX(30px); }
-  100% {
-    bottom: 115%;
-    transform: translateX(-12px);
-  }
+@keyframes snow-fall {
+  0% { top: -15px; transform: translateX(0); }
+  30% { transform: translateX(12px); }
+  65% { transform: translateX(-10px); }
+  100% { top: 112%; transform: translateX(8px); }
 }
 
-@keyframes firefly-flicker {
+@keyframes snow-flicker {
   0%, 100% { opacity: 0; }
-  30%, 70%  { opacity: 0.9; }
-  50%       { opacity: 0.2; }
+  26%, 72% { opacity: 0.9; }
+  52% { opacity: 0.28; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .firefly { animation: none; opacity: 0.46; transform: translateY(44vh); }
+  .menu-glow { animation: none; opacity: 0.78; transform: none; }
 }
 
 .menu-wrap {

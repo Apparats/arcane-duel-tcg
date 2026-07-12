@@ -10,6 +10,7 @@
 const { MongoClient } = require("mongodb");
 const { buildPackOpening, summarizeOpening } = require("./cardRewards");
 const { buildAutoDeck, validateDeck } = require("../public/deckRules");
+const { getCardById } = require("../public/cards");
 const { assertMongoKeySegment, assertPositiveInteger, sanitizeDiscordProfile, toObjectId } = require("./mongoSafety");
 const { withUserLock, withUserLocks } = require("./userLocks");
 
@@ -169,6 +170,45 @@ async function consumePendingRewards(userId) {
     { projection: { pendingRewards: 1 }, returnDocument: "before" }
   );
   return result?.pendingRewards || result?.value?.pendingRewards || [];
+}
+
+async function grantCampaignReward(userId, campaignId, cardIds) {
+  const users = getDB().collection("users");
+  const _id = toObjectId(userId, "user id");
+  const safeCampaignId = assertMongoKeySegment(campaignId, "campaign id");
+  const safeCardIds = Array.isArray(cardIds) ? cardIds.map((cardId) => assertMongoKeySegment(cardId, "card id")) : [];
+  if (safeCardIds.length === 0) throw new Error("Campaign reward has no cards.");
+
+  return withUserLock(String(_id), async () => {
+    const user = await users.findOne({ _id }, { projection: { cardCollection: 1, unlockedCards: 1 } });
+    if (!user) throw new Error("User not found.");
+
+    const rewardPool = safeCardIds.map((id) => getCardById(id));
+    if (rewardPool.some((card) => !card)) throw new Error("Campaign reward contains an unknown card.");
+    // Campaign rewards are repeatable: every victory rolls ten cards from
+    // the configured pool, so duplicates remain useful for trading.
+    const opening = summarizeOpening(buildPackOpening(rewardPool, 10), user.cardCollection || {});
+    const increments = Object.fromEntries(Object.entries(opening.collectionIncrements).map(([cardId, amount]) => [`cardCollection.${cardId}`, amount]));
+    const campaignDrops = Object.fromEntries(Object.entries(opening.collectionIncrements).map(([cardId, amount]) => [`campaignProgress.${safeCampaignId}.cardDrops.${cardId}`, amount]));
+    await users.updateOne(
+      { _id },
+      {
+        $inc: { ...increments, ...campaignDrops },
+        $addToSet: { unlockedCards: { $each: opening.newCardIds } },
+        $set: { updatedAt: new Date() },
+      }
+    );
+    const updated = await users.findOne({ _id }, { projection: { cardCollection: 1, unlockedCards: 1, campaignProgress: 1 } });
+    return { claimed: true, cards: opening.cards, cardCollection: updated.cardCollection || {}, unlockedCards: updated.unlockedCards || [], cardDrops: updated.campaignProgress?.[safeCampaignId]?.cardDrops || {} };
+  });
+}
+
+async function getCampaignProgress(userId) {
+  const user = await getDB().collection("users").findOne(
+    { _id: toObjectId(userId, "user id") },
+    { projection: { campaignProgress: 1 } }
+  );
+  return user?.campaignProgress || {};
 }
 
 const DAILY_REWARD_LIMITS = {
@@ -625,6 +665,8 @@ module.exports = {
   findOrCreateUserFromDiscord,
   findUserById,
   consumePendingRewards,
+  grantCampaignReward,
+  getCampaignProgress,
   getDailyRewardProgress,
   grantDailyLoginReward,
   grantMatchEconomy,

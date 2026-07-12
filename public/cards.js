@@ -15,6 +15,247 @@
 
   const CARDS = [
     {
+      "name": "ArchMoth_Morlet",
+      "cost": 6,
+      "type": "minion",
+      "attack": 5,
+      "health": 6,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "mythic",
+      "country": "Vatican",
+      "lore": "I send moths! When summoned, this card spawns 2 special Moths cards.",
+      "image": "art/ArchMoth_Morlet.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "summonMinion",
+          "cardId": "special:moths",
+          "count": 2
+        }
+      ],
+      "id": "TheGates:archmoth-morlet",
+      "_expansionId": "TheGates"
+    },
+    {
+      "name": "Cardinal Severin",
+      "cost": 9,
+      "type": "minion",
+      "attack": 3,
+      "health": 12,
+      "keywords": [
+        "taunt"
+      ],
+      "race": "Human",
+      "rarity": "mythic",
+      "country": "Thailand",
+      "lore": "On play, silence an enemy minion. A wall of doctrine against any engine.",
+      "image": "art/Cardinal_Severin.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "applyStatus",
+          "target": "enemyMinion",
+          "status": "silenced"
+        }
+      ],
+      "id": "TheGates:cardinal-severin",
+      "_expansionId": "TheGates"
+    },
+    {
+      "name": "Chiorico",
+      "cost": 4,
+      "type": "minion",
+      "attack": 6,
+      "health": 3,
+      "keywords": [
+        "charge"
+      ],
+      "race": "Human",
+      "rarity": "mythic",
+      "country": "Malta",
+      "lore": "On play, mark an enemy minion. The next strike against it hits harder.",
+      "image": "art/chiorico.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "applyStatus",
+          "target": "enemyMinion",
+          "status": "marked",
+          "value": 3,
+          "turns": 2
+        }
+      ],
+      "id": "TheGates:chiorico",
+      "_expansionId": "TheGates"
+    },
+    {
+      "name": "Jacque De Balsac",
+      "cost": 7,
+      "type": "minion",
+      "attack": 4,
+      "health": 8,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "mythic",
+      "country": "Belgium",
+      "lore": "On play, freeze an enemy minion before its next assault.",
+      "image": "art/JacqueDeBalsac.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "applyStatus",
+          "target": "enemyMinion",
+          "status": "frozen",
+          "turns": 1
+        }
+      ],
+      "id": "TheGates:jacquedebalsac",
+      "_expansionId": "TheGates"
+    },
+    {
+      "name": "Kep",
+      "cost": 10,
+      "type": "minion",
+      "attack": 2,
+      "health": 14,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "mythic",
+      "country": "Portugal",
+      "lore": "Uzbekistan sympathizer. This card regenerates two of health on your side every turn.",
+      "image": "art/Keps.webp",
+      "abilities": [
+        {
+          "trigger": "onTurnStart",
+          "effect": "healAllFriendlyMinions",
+          "value": 2
+        }
+      ],
+      "id": "TheGates:kep",
+      "_expansionId": "TheGates"
+    },
+    {
+      "name": "Mamaluteo",
+      "cost": 6,
+      "type": "minion",
+      "attack": 5,
+      "health": 5,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "mythic",
+      "country": "Bolivia",
+      "lore": "On play, poison an enemy minion. The venom keeps working after the clash.",
+      "image": "art/mamaluteo.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "applyStatus",
+          "target": "enemyMinion",
+          "status": "poisoned",
+          "value": 2,
+          "turns": 3
+        }
+      ],
+      "id": "TheGates:mamaluteo",
+      "_expansionId": "TheGates"
+    },
+    {
+      "name": "Overseer",
+      "cost": 6,
+      "type": "minion",
+      "attack": 3,
+      "health": 6,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "mythic",
+      "country": "Oman",
+      "lore": "When this card dies, it deals 20 of damage to ALL cards on the board.",
+      "image": "art/Overseer.webp",
+      "abilities": [
+        {
+          "trigger": "onDeath",
+          "effect": "damageAllMinions",
+          "value": 20
+        }
+      ],
+      "id": "TheGates:overseer",
+      "_expansionId": "TheGates"
+    },
+    {
+      "name": "Toy",
+      "cost": 2,
+      "type": "minion",
+      "attack": 1,
+      "health": 6,
+      "keywords": [
+        "taunt"
+      ],
+      "race": "Human",
+      "rarity": "mythic",
+      "country": "Portugal",
+      "lore": "On play, weaken an enemy minion for two turns.",
+      "image": "art/Toy.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "applyStatus",
+          "target": "enemyMinion",
+          "status": "weakened",
+          "value": 3,
+          "turns": 2
+        }
+      ],
+      "id": "TheGates:toy",
+      "_expansionId": "TheGates"
+    },
+    {
+      "name": "Unwnmas",
+      "cost": 6,
+      "type": "minion",
+      "attack": 3,
+      "health": 6,
+      "keywords": [
+        "charge"
+      ],
+      "race": "Monster",
+      "rarity": "mythic",
+      "country": "Chile",
+      "lore": "Whenever this attacks a minion or the enemy hero, deal 3 damage to the enemy hero. This card can instantly attack when prepared.",
+      "image": "art/Unwnmas.webp",
+      "abilities": [
+        {
+          "trigger": "onAttack",
+          "effect": "damageEnemyHero",
+          "value": 3
+        }
+      ],
+      "id": "TheGates:unwnmas",
+      "_expansionId": "TheGates"
+    },
+    {
+      "name": "Zoblezar",
+      "cost": 10,
+      "type": "minion",
+      "attack": 8,
+      "health": 10,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "mythic",
+      "country": "Uzbekistan",
+      "lore": "When this falls, draw three cards. Its final lesson is never wasted. This card avoids the first hit against him",
+      "image": "art/Zoblezar.webp",
+      "abilities": [
+        {
+          "trigger": "onDeath",
+          "effect": "drawCards",
+          "value": 3
+        }
+      ],
+      "id": "TheGates:zoblezar",
+      "_expansionId": "TheGates"
+    },
+    {
       "name": "Aleex",
       "cost": 2,
       "type": "minion",
@@ -114,7 +355,7 @@
       "name": "Beitsas",
       "cost": 2,
       "type": "minion",
-      "attack": 3,
+      "attack": 2,
       "health": 2,
       "keywords": [
         "charge"
@@ -166,9 +407,9 @@
     },
     {
       "name": "Capybara",
-      "cost": 2,
+      "cost": 3,
       "type": "minion",
-      "attack": 4,
+      "attack": 3,
       "health": 1,
       "keywords": [
         "charge"
@@ -221,9 +462,9 @@
     },
     {
       "name": "DisappointmentPanda",
-      "cost": 4,
+      "cost": 3,
       "type": "minion",
-      "attack": 3,
+      "attack": 4,
       "health": 3,
       "keywords": [
         "taunt"
@@ -238,7 +479,7 @@
     },
     {
       "name": "Dog",
-      "cost": 3,
+      "cost": 5,
       "type": "minion",
       "attack": 3,
       "health": 5,
@@ -436,10 +677,10 @@
     },
     {
       "name": "Kurzemnieks",
-      "cost": 4,
+      "cost": 3,
       "type": "minion",
-      "attack": 5,
-      "health": 4,
+      "attack": 2,
+      "health": 3,
       "keywords": [
         "charge"
       ],
@@ -554,7 +795,7 @@
     },
     {
       "name": "Mostor",
-      "cost": 5,
+      "cost": 6,
       "type": "minion",
       "attack": 3,
       "health": 6,
@@ -831,10 +1072,10 @@
     },
     {
       "name": "StormHazard",
-      "cost": 3,
+      "cost": 6,
       "type": "minion",
-      "attack": 4,
-      "health": 2,
+      "attack": 1,
+      "health": 8,
       "keywords": [
         "charge"
       ],

@@ -1,5 +1,6 @@
 const { Game } = require("../public/engine");
 const { buildFallbackDeck, validateDeck } = require("../public/deckRules");
+const { createCampaignMatch, normalizeCampaignEncounter } = require("../server/campaigns");
 const { discardActiveSingleplayerMatch } = require("../server/singleplayerMatchService");
 
 function assert(condition, message) {
@@ -91,6 +92,53 @@ function main() {
   boardTest.players[0].hand = ["core:recluta-novato"];
   boardTest.players[0].manaCurrent = 10;
   assertThrows(() => boardTest.playCard(0, 0, null), "A full board should reject the fifth minion.");
+
+  const campaignRulesTest = new Game("CAMPAIGN", "Player", "Campaign NPC", {
+    decks: [Array(20).fill("base:aleex"), Array(30).fill("base:aleex")],
+    playerConfigs: [
+      {},
+      {
+        health: 55,
+        maxHealth: 55,
+        startingMana: 7,
+        manaCap: 12,
+        ignoreDeckSizeLimit: true,
+        boardRules: { maxMinions: null, ignoreKeywordLimits: true },
+      },
+    ],
+  });
+  assert(campaignRulesTest.players[1].deck.length === 26, "Campaign NPC decks should keep every configured card.");
+  campaignRulesTest.endTurn(0);
+  assert(campaignRulesTest.players[1].health === 55, "Campaign NPC health should use its configured value.");
+  assert(campaignRulesTest.players[1].manaCurrent === 7, "Campaign NPC should receive its configured starting mana.");
+  campaignRulesTest.players[1].board = Array.from({ length: 8 }, (_, idx) => testMinion(`campaign${idx}`));
+  campaignRulesTest.players[1].hand = ["base:aleex"];
+  campaignRulesTest.playCard(1, 0, null);
+  assert(campaignRulesTest.players[1].board.length === 9, "Campaign board rules should allow unlimited NPC minions.");
+
+  const campaignEncounter = normalizeCampaignEncounter({
+    id: "test-gatekeeper",
+    name: "Test Gate",
+    lore: "A test encounter.",
+    rewards: { cards: ["base:aleex"] },
+    npc: {
+      name: "Gatekeeper",
+      avatarUrl: "art/reverse.webp",
+      health: 45,
+      mana: { starting: 4, cap: 12 },
+      deck: Array(24).fill("base:aleex"),
+      ignoreDeckSizeLimit: true,
+      boardRules: { maxMinions: null, ignoreKeywordLimits: true },
+    },
+  });
+  const campaignMatch = createCampaignMatch(campaignEncounter, {
+    roomCode: "CAMP",
+    playerName: "Player",
+    playerDeck: Array(20).fill("base:aleex"),
+  });
+  assert(campaignMatch.npc.name === "Gatekeeper", "Campaign matches should expose the configured NPC identity.");
+  assert(campaignMatch.npc.avatarUrl === "art/reverse.webp", "Campaign matches should expose the configured NPC avatar.");
+  assert(campaignMatch.game.players[1].maxHealth === 45, "Campaign factory should configure NPC health.");
 
   const tauntTest = new Game("TAUNT", "Taunt1", "Taunt2", {
     decks: [

@@ -1,6 +1,6 @@
 const express = require("express");
 const { getSessionUser } = require("./auth");
-const { activateDeck, autoBuildDeck, getDeckState, saveDeck } = require("./deckService");
+const { activateDeck, autoBuildDeck, deleteDeck, getDeckState, saveDeck } = require("./deckService");
 
 const router = express.Router();
 
@@ -58,6 +58,20 @@ router.post("/:id/activate", async (req, res) => {
     if (err.code === "DECK_NOT_FOUND") return res.status(404).json({ error: err.message });
     console.error("Deck activation failed:", err);
     res.status(500).json({ error: "Could not activate deck." });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  try {
+    res.json(await deleteDeck(user.id, req.params.id));
+  } catch (err) {
+    if (["INVALID_INPUT", "INVALID_ID", "LAST_DECK"].includes(err.code)) return res.status(400).json({ error: err.message });
+    if (err.code === "DECK_NOT_FOUND") return res.status(404).json({ error: err.message });
+    console.error("Deck delete failed:", err);
+    res.status(500).json({ error: "Could not delete deck." });
   }
 });
 

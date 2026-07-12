@@ -149,6 +149,35 @@ async function activateDeck(userId, deckId) {
   });
 }
 
+async function deleteDeck(userId, deckId) {
+  const users = getDB().collection("users");
+  const _id = toObjectId(userId, "user id");
+  const safeDeckId = assertMongoKeySegment(deckId, "deck id");
+
+  return withUserLock(String(_id), async () => {
+    const user = await users.findOne({ _id }, { projection: { decks: 1, activeDeckId: 1 } });
+    const decks = user?.decks || [];
+    if (!user || !decks.some((deck) => deck.id === safeDeckId)) {
+      const err = new Error("Deck not found.");
+      err.code = "DECK_NOT_FOUND";
+      throw err;
+    }
+    if (decks.length <= 1) {
+      const err = new Error("You must keep at least one deck.");
+      err.code = "LAST_DECK";
+      throw err;
+    }
+
+    const remainingDecks = decks.filter((deck) => deck.id !== safeDeckId);
+    const activeDeckId = user.activeDeckId === safeDeckId ? remainingDecks[0].id : user.activeDeckId;
+    await users.updateOne(
+      { _id },
+      { $set: { decks: remainingDecks, activeDeckId, updatedAt: new Date() } }
+    );
+    return getDeckState(userId);
+  });
+}
+
 async function getActiveDeckCardIds(userId) {
   const users = getDB().collection("users");
   const _id = toObjectId(userId, "user id");
@@ -198,5 +227,6 @@ module.exports = {
   saveDeck,
   autoBuildDeck,
   activateDeck,
+  deleteDeck,
   getActiveDeckCardIds,
 };

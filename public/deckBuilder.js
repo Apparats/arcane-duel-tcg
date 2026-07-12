@@ -45,13 +45,20 @@ function blockingDeckErrors(validation) {
 function renderSavedDeckSelect() {
   const select = $("savedDeckSelect");
   select.innerHTML = "";
+  if (!deckBuilderState.currentDeckId) {
+    const unsaved = document.createElement("option");
+    unsaved.value = "";
+    unsaved.textContent = "New unsaved deck";
+    select.appendChild(unsaved);
+  }
   deckBuilderState.decks.forEach((deck) => {
     const opt = document.createElement("option");
     opt.value = deck.id;
     opt.textContent = `${deck.name}${deck.id === deckBuilderState.activeDeckId ? " (active)" : ""}`;
     select.appendChild(opt);
   });
-  if (deckBuilderState.currentDeckId) select.value = deckBuilderState.currentDeckId;
+  select.value = deckBuilderState.currentDeckId || "";
+  $("btnDeleteDeck").disabled = !deckBuilderState.currentDeckId || deckBuilderState.decks.length <= 1;
 }
 
 function loadDeck(deckId) {
@@ -68,6 +75,28 @@ function newDeck() {
   deckBuilderState.cardIds = [];
   $("deckNameInput").value = "New Deck";
   renderDeckBuilder();
+}
+
+function applyDeckState(state) {
+  deckBuilderState.decks = state.decks || [];
+  deckBuilderState.activeDeckId = state.activeDeckId || null;
+}
+
+async function selectSavedDeck(deckId) {
+  if (!deckId) return;
+  const selected = deckBuilderState.decks.find((deck) => deck.id === deckId);
+  if (!selected) return;
+
+  try {
+    const res = await arcaneFetch(`/decks/${encodeURIComponent(deckId)}/activate`, { method: "POST" });
+    const state = await res.json();
+    if (!res.ok) throw new Error(state.error || "Could not select deck.");
+    applyDeckState(state);
+    loadDeck(deckId);
+  } catch (err) {
+    showToast(err.message);
+    renderDeckBuilder();
+  }
 }
 
 function ownedCards() {
@@ -203,8 +232,7 @@ async function openDeckBuilder() {
     try {
       const state = await fetchDeckState();
       deckBuilderState.loaded = true;
-      deckBuilderState.decks = state.decks || [];
-      deckBuilderState.activeDeckId = state.activeDeckId;
+      applyDeckState(state);
       if (deckBuilderState.decks.length > 0) {
         loadDeck(state.activeDeckId || deckBuilderState.decks[0].id);
       }
@@ -231,8 +259,7 @@ async function saveCurrentDeck() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Could not save deck.");
-    deckBuilderState.decks = data.state.decks || [];
-    deckBuilderState.activeDeckId = data.state.activeDeckId;
+    applyDeckState(data.state);
     deckBuilderState.currentDeckId = data.deck.id;
     showToast("Deck saved.");
     renderDeckBuilder();
@@ -253,8 +280,7 @@ async function autoBuildCurrentDeck() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Could not auto build deck.");
-    deckBuilderState.decks = data.state.decks || [];
-    deckBuilderState.activeDeckId = data.state.activeDeckId;
+    applyDeckState(data.state);
     deckBuilderState.currentDeckId = data.deck.id;
     deckBuilderState.cardIds = data.deck.cardIds.slice();
     $("deckNameInput").value = data.deck.name;
@@ -267,10 +293,49 @@ async function autoBuildCurrentDeck() {
 
 $("tabCollection").addEventListener("click", () => setInventoryTab("collection"));
 $("tabDeckBuilder").addEventListener("click", () => setInventoryTab("deck"));
-$("savedDeckSelect").addEventListener("change", (event) => loadDeck(event.target.value));
+$("savedDeckSelect").addEventListener("change", (event) => selectSavedDeck(event.target.value));
 $("btnNewDeck").addEventListener("click", newDeck);
 $("btnAutoDeck").addEventListener("click", autoBuildCurrentDeck);
 $("btnSaveDeck").addEventListener("click", saveCurrentDeck);
+
+function closeDeleteDeckModal() {
+  $("deleteDeckModal").classList.add("hidden");
+}
+
+function openDeleteDeckModal() {
+  const deck = deckBuilderState.decks.find((item) => item.id === deckBuilderState.currentDeckId);
+  if (!deck || deckBuilderState.decks.length <= 1) return showToast("You must keep at least one deck.");
+  $("deleteDeckWarning").textContent = `Delete ${deck.name}? This cannot be undone.`;
+  $("deleteDeckModal").classList.remove("hidden");
+}
+
+async function deleteCurrentDeck() {
+  const deckId = deckBuilderState.currentDeckId;
+  if (!deckId || deckBuilderState.decks.length <= 1) return;
+
+  const confirmButton = $("btnConfirmDeleteDeck");
+  confirmButton.disabled = true;
+  try {
+    const res = await arcaneFetch(`/decks/${encodeURIComponent(deckId)}`, { method: "DELETE" });
+    const state = await res.json();
+    if (!res.ok) throw new Error(state.error || "Could not delete deck.");
+    applyDeckState(state);
+    loadDeck(deckBuilderState.activeDeckId || deckBuilderState.decks[0]?.id);
+    closeDeleteDeckModal();
+    showToast("Deck deleted.");
+  } catch (err) {
+    showToast(err.message);
+  } finally {
+    confirmButton.disabled = false;
+  }
+}
+
+$("btnDeleteDeck").addEventListener("click", openDeleteDeckModal);
+$("btnCancelDeleteDeck").addEventListener("click", closeDeleteDeckModal);
+$("btnConfirmDeleteDeck").addEventListener("click", deleteCurrentDeck);
+$("deleteDeckModal").addEventListener("click", (event) => {
+  if (event.target.id === "deleteDeckModal") closeDeleteDeckModal();
+});
 
 ["deckFilterType", "deckFilterRarity", "deckFilterCountry", "deckFilterKeyword"].forEach((id) => {
   $(id).addEventListener("change", renderDeckPool);

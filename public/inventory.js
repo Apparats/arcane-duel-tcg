@@ -31,6 +31,7 @@ const INV_TRIGGER_LABEL = {
   onDeath: "On Death",
   onTurnStart: "At the start of your turn",
   onAnyTurnStart: "At the start of each turn",
+  onAttack: "After attacking",
   onAttackMinion: "After attacking a card",
 };
 
@@ -97,11 +98,19 @@ function fillSelect(selectEl, values) {
   });
 }
 
-function populateInventoryFilters() {
+async function populateInventoryFilters() {
   if (inventoryFiltersReady) return;
   const cards = getInventoryCards();
   const countries = [...new Set(cards.map((c) => c.country).filter(Boolean))].sort();
   fillSelect($("filterCountry"), countries);
+  const expansionSelect = $("filterExpansion");
+  const expansionIds = [...new Set(cards.map(getCardExpansionId).filter(Boolean))].sort();
+  expansionIds.forEach((expansionId) => {
+    const option = document.createElement("option");
+    option.value = expansionId;
+    option.textContent = expansionId === "TheGates" ? "The Gates" : expansionId;
+    expansionSelect.appendChild(option);
+  });
   inventoryFiltersReady = true;
 }
 
@@ -111,6 +120,7 @@ function currentInventoryFilters() {
     rarity: $("filterRarity").value,
     country: $("filterCountry").value,
     keyword: $("filterKeyword").value,
+    expansion: $("filterExpansion").value,
   };
 }
 
@@ -118,15 +128,16 @@ function cardMatchesFilters(card, filters) {
   if (filters.type !== "all" && card.type !== filters.type) return false;
   if (filters.rarity !== "all" && card.rarity !== filters.rarity) return false;
   if (filters.country !== "all" && card.country !== filters.country) return false;
+  if (filters.expansion !== "all" && getCardExpansionId(card) !== filters.expansion) return false;
   const keywords = Array.isArray(card.keywords) ? card.keywords : [];
   if (filters.keyword === "normal" && (keywords.includes("taunt") || keywords.includes("charge") || keywords.includes("divineShield"))) return false;
   if (filters.keyword !== "all" && filters.keyword !== "normal" && !keywords.includes(filters.keyword)) return false;
   return true;
 }
 
-function openInventory() {
+async function openInventory() {
   if (!requireLoggedInForPlay()) return;
-  populateInventoryFilters();
+  await populateInventoryFilters();
   renderInventoryGrid();
   switchScreen("inventory");
 }
@@ -215,7 +226,7 @@ function lazyLoadInventoryArt() {
   }
 }
 
-["filterType", "filterRarity", "filterCountry", "filterKeyword"].forEach((id) => {
+["filterType", "filterRarity", "filterCountry", "filterKeyword", "filterExpansion"].forEach((id) => {
   $(id).addEventListener("change", renderInventoryGrid);
 });
 
@@ -224,6 +235,7 @@ $("btnClearFilters").addEventListener("click", () => {
   $("filterRarity").value = "all";
   $("filterCountry").value = "all";
   $("filterKeyword").value = "all";
+  $("filterExpansion").value = "all";
   renderInventoryGrid();
 });
 

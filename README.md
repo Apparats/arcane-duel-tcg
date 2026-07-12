@@ -596,3 +596,24 @@ one. `silenced` is permanent and must not set `turns`. A Divine Shield absorbs
 the hit before `marked` is consumed. The board uses a labeled colored badge and
 a matching subtle card treatment for every active status; hover the card to
 read its exact value and remaining duration.
+# Campaign encounters
+
+Campaign NPCs are configured server-side in `server/campaigns/`. The Campaign button remains locked until a campaign is intentionally added to `server/campaigns/index.js`.
+
+An encounter definition supports a custom NPC identity, avatar, health, starting mana, mana cap, and a prebuilt deck. `ignoreDeckSizeLimit: true` permits an NPC deck longer than 20 cards. Board rules can set `maxMinions: null` and `ignoreKeywordLimits: true` for boss encounters that bypass normal board limits.
+
+```js
+{
+  id: "gatekeeper",
+  name: "The First Gate",
+  npc: {
+    name: "Gatekeeper",
+    avatarUrl: "art/gatekeeper.webp",
+    health: 45,
+    mana: { starting: 3, cap: 10 },
+    deck: ["base:aleex", "base:aleex"],
+    ignoreDeckSizeLimit: true,
+    boardRules: { maxMinions: null, ignoreKeywordLimits: true }
+  }
+}
+```

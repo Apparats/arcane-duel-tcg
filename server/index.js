@@ -7,8 +7,7 @@ const cookieParser = require("cookie-parser");
 const { WebSocketServer } = require("ws");
 const { Game } = require("../public/engine");
 const { getCardById } = require("../public/cards");
-const { MAX_BOARD } = require("../public/deckRules");
-const { connectDB, grantMatchEconomy, getQuickplayRanking, isDbEnabled, recordMultiplayerDisconnect, resetConsecutiveDisconnects, submitCardRequest } = require("./db");
+const { connectDB, getCampaignProgress, grantCampaignReward, grantMatchEconomy, getQuickplayRanking, isDbEnabled, recordMultiplayerDisconnect, resetConsecutiveDisconnects, submitCardRequest } = require("./db");
 const { router: authRouter, getSessionUser, isAuthEnabled } = require("./auth");
 const { router: shopRouter } = require("./shop");
 const { router: decksRouter } = require("./decks");
@@ -21,6 +20,7 @@ const { discardActiveSingleplayerMatch } = require("./singleplayerMatchService")
 const { clearTurnTimer, ensureTurnTimer, turnKey } = require("./turnTimerService");
 const { cleanupExpiredWsTickets, consumeWsTicket } = require("./wsTicketService");
 const { secureRandomCode, secureRandomInt } = require("./random");
+const { createCampaignMatch, getCampaignEncounter, listCampaignEncounters } = require("./campaigns");
 
 const PORT = process.env.PORT || 8443;
 const HTTP_JSON_LIMIT = "32kb";
@@ -48,7 +48,6 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const NPC_STEP_DELAY_MS = 1200;
 const EMOTE_COOLDOWN_MS = 1_500;
 const ALLOWED_EMOTES = new Set(["😄", "😭", "😯", "😡", "🫄", "💀"]);
-const BOARD_KEYWORD_LIMITS = { taunt: 2, charge: 3 };
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
 let enabledExpansionsCache = null;
 
@@ -101,6 +100,17 @@ app.use("/auth", createRateLimiter({ max: 120, keyPrefix: "auth" }), authRouter)
 app.use("/shop", createRateLimiter({ max: 40, keyPrefix: "shop" }), shopRouter);
 app.use("/decks", createRateLimiter({ max: 80, keyPrefix: "decks" }), decksRouter);
 app.use("/trades", createRateLimiter({ max: 80, keyPrefix: "trades" }), tradesRouter);
+app.get("/campaigns", createRateLimiter({ max: 30, keyPrefix: "campaigns" }), async (req, res) => {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Login with Discord is required." });
+  const progress = await getCampaignProgress(user.id);
+  res.json({
+    campaigns: listCampaignEncounters().map((campaign) => ({
+      ...campaign,
+      cardDrops: progress[campaign.id]?.cardDrops || {},
+    })),
+  });
+});
 app.get("/ranking/quickplay", createRateLimiter({ max: 30, keyPrefix: "ranking" }), async (req, res) => {
   const user = await getSessionUser(req);
   if (!user) return res.status(401).json({ error: "Login with Discord is required." });
@@ -243,7 +253,11 @@ function broadcastState(room) {
 }
 
 function shouldRunTurnTimer(room) {
-  return room.mode !== "singleplayer" || room.game.turn === 0;
+  return !isNpcMatch(room) || room.game.turn === 0;
+}
+
+function isNpcMatch(room) {
+  return room.mode === "singleplayer" || room.mode === "campaign";
 }
 
 function syncTurnTimer(room) {
@@ -260,7 +274,7 @@ async function expireTurn(room, expectedTurnKey) {
   room.game._addLog(`${room.game.players[playerIdx].name}'s turn expired.`);
   room.game.endTurn(playerIdx);
   broadcastState(room);
-  if (room.mode === "singleplayer") await runNpcTurn(room);
+  if (isNpcMatch(room)) await runNpcTurn(room);
   await settleRewards(room);
 }
 
@@ -273,6 +287,8 @@ function addPlayerVisuals(state, room, viewerIdx) {
     turnDurationMs: room.turnTimer ? 40_000 : null,
     me: { ...state.me, avatarUrl: room.avatars?.[viewerIdx] || null },
     opponent: { ...state.opponent, avatarUrl: room.avatars?.[opponentIdx] || null },
+    campaignTheme: room.mode === "campaign" ? room.campaign?.theme || null : null,
+    campaignBoardMusic: room.mode === "campaign" ? room.campaign?.audio?.boardMusic || null : null,
   };
 }
 
@@ -547,6 +563,14 @@ async function settleRewards(room) {
   room.rewardGranted = true;
   clearTurnTimer(room);
 
+  if (room.mode === "campaign") {
+    if (room.game.winner === 0 && room.userIds[0]) {
+      const reward = await grantCampaignReward(room.userIds[0], room.campaign.id, room.campaign.rewards.cards);
+      send(room.sockets[0], "campaignReward", reward);
+    }
+    return;
+  }
+
   await Promise.all(
     room.userIds.map(async (userId, idx) => {
       if (!userId) return;
@@ -594,27 +618,31 @@ async function resumeMultiplayerMatch(ws) {
 
 function chooseNpcPlayable(game) {
   const npc = game.players[1];
+  const playerBoard = game.players[0].board;
   let best = null;
-  npc.hand.forEach((cardId, handIndex) => {
-    const card = getCardById(cardId);
+  npc.hand.forEach((cardRef, handIndex) => {
+    const card = getCardById(String(cardRef).split("|")[0]);
     if (!card || card.cost > npc.manaCurrent) return;
-    if (!canNpcFitCardOnBoard(npc.board, card)) return;
+    if (game.getBoardLimitError(1, card)) return;
+    const needsEnemyMinion = (card.abilities || []).some((ability) =>
+      ability.trigger === "onPlay" && ability.effect === "applyStatus" && ability.target === "enemyMinion"
+    );
+    if (needsEnemyMinion && playerBoard.length === 0) return;
     if (!best || card.cost > best.card.cost) best = { card, handIndex };
   });
   return best;
 }
 
-function canNpcFitCardOnBoard(board, card) {
-  if (card.type !== "minion") return true;
-  if (board.length >= MAX_BOARD) return false;
-  const keywords = card.keywords || [];
-  return Object.entries(BOARD_KEYWORD_LIMITS).every(([keyword, limit]) => {
-    if (!keywords.includes(keyword)) return true;
-    return board.filter((minion) => minion.keywords.includes(keyword)).length < limit;
-  });
-}
-
 function npcSpellTarget(game, card) {
+  const statusAbility = (card.abilities || []).find((ability) =>
+    ability.trigger === "onPlay" && ability.effect === "applyStatus" && ability.target === "enemyMinion"
+  );
+  if (statusAbility) {
+    const target = game.players[0].board
+      .slice()
+      .sort((a, b) => b.attack - a.attack || b.health - a.health)[0];
+    return target?.instanceId || null;
+  }
   if (card.effect === "damage") return "faceEnemy";
   if (card.effect === "heal") return null;
   return null;
@@ -701,6 +729,29 @@ async function handleMessage(ws, msg) {
       surrenderedBy: null,
       reconnects: [null, null],
       disconnectEvents: [null, null],
+    };
+    rooms.set(code, room);
+    ws.roomCode = code;
+    ws.playerIdx = 0;
+    send(ws, "matchStarted", {});
+    broadcastState(room);
+    return;
+  }
+
+  if (type === "startCampaign") {
+    const user = await requireSessionUser(ws);
+    const campaign = getCampaignEncounter(payload?.campaignId);
+    if (!campaign) return broadcastError(ws, "Campaign not found.");
+    discardActiveSingleplayerMatch(rooms, user.id, { clearTurnTimer, clearAllReconnectGraces });
+    assertUserCanStartMatch(rooms, user.id);
+    detachSocketFromRoom(ws);
+    const playerDeck = await getActiveDeckCardIds(user.id);
+    const code = makeRoomCode();
+    const match = createCampaignMatch(campaign, { roomCode: code, playerName: user.username || "Player", playerDeck, randomInt: secureRandomInt });
+    const room = {
+      game: match.game,
+      sockets: [ws, null], names: [user.username || "Player", match.npc.name], avatars: [user.avatarUrl || null, match.npc.avatarUrl], userIds: [user.id, null],
+      mode: "campaign", campaign, rewardGranted: false, surrenderedBy: null, reconnects: [null, null], disconnectEvents: [null, null],
     };
     rooms.set(code, room);
     ws.roomCode = code;
@@ -809,7 +860,7 @@ async function handleMessage(ws, msg) {
     requireIntent(type, payload);
     game.playCard(idx, payload.handIndex, payload.targetInstanceId || null);
     broadcastState(room);
-    if (room.mode === "singleplayer") await runNpcTurn(room);
+    if (isNpcMatch(room)) await runNpcTurn(room);
     await settleRewards(room);
     return;
   }
@@ -818,7 +869,7 @@ async function handleMessage(ws, msg) {
     requireIntent(type, payload);
     game.attack(idx, payload.attackerInstanceId, payload.targetInstanceId);
     broadcastState(room);
-    if (room.mode === "singleplayer") await runNpcTurn(room);
+    if (isNpcMatch(room)) await runNpcTurn(room);
     await settleRewards(room);
     return;
   }
@@ -826,7 +877,7 @@ async function handleMessage(ws, msg) {
   if (type === "endTurn") {
     game.endTurn(idx);
     broadcastState(room);
-    if (room.mode === "singleplayer") await runNpcTurn(room);
+    if (isNpcMatch(room)) await runNpcTurn(room);
     await settleRewards(room);
     return;
   }

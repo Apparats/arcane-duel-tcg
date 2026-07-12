@@ -96,6 +96,8 @@
   position: fixed;
   z-index: 30;
   width: 220px;
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
   background: linear-gradient(160deg, var(--panel-2), var(--panel));
   border: 1px solid var(--gold);
   border-radius: 6px;
@@ -112,10 +114,12 @@
   margin-bottom: 6px;
 }
 .tooltip-name {
+  min-width: 0;
   font-family: "Cinzel", serif;
   font-size: 14px;
   color: var(--cream);
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 .tooltip-rarity {
   flex-shrink: 0;
@@ -152,10 +156,14 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
+  max-width: 100%;
   font-size: 10.5px;
   padding: 2px 8px;
   border-radius: 10px;
-  white-space: nowrap;
+  line-height: 1.3;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .tooltip-kw.kw-taunt { background: rgba(127, 176, 105, 0.16); color: var(--taunt); border: 1px solid var(--taunt); }
 .tooltip-kw.kw-charge { background: rgba(232, 179, 79, 0.16); color: var(--gold); border: 1px solid var(--gold); }

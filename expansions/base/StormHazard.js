@@ -1,9 +1,9 @@
 module.exports = {
   name: "StormHazard",
-  cost: 3,
+  cost: 6,
   type: "minion",
-  attack: 4,
-  health: 2,
+  attack: 1,
+  health: 8,
   keywords: ["charge"],
   race: "Monster",
   rarity: "common",

@@ -21,7 +21,6 @@
   const START_HAND = 3; // player 2 draws one extra card (compensation for going 2nd)
   const MAX_HAND = 10;
   const MAX_BOARD = 4;
-  const MAX_BOARD_WITH_SUMMON_EXCEPTION = 5;
   const BOARD_KEYWORD_LIMITS = {
     taunt: 2,
     charge: 3,
@@ -57,14 +56,49 @@
     return returnCount > 0 ? `${cardId}${CARD_REF_RETURN_SEPARATOR}${returnCount}` : cardId;
   }
 
-  function makePlayer(name, deckIds = null, randomInt) {
+  function boundedInteger(value, fallback, min, max) {
+    return Number.isInteger(value) && value >= min && value <= max ? value : fallback;
+  }
+
+  function normalizePlayerConfig(config = {}) {
+    const maxHealth = boundedInteger(config.maxHealth, START_HEALTH, 1, 999);
+    const health = boundedInteger(config.health, maxHealth, 1, maxHealth);
+    const manaCap = boundedInteger(config.manaCap, MAX_MANA, 1, 30);
+    const startingMana = boundedInteger(config.startingMana, 1, 1, manaCap);
+    const boardRules = config.boardRules || {};
+    const maxMinions = boardRules.maxMinions === null
+      ? null
+      : boundedInteger(boardRules.maxMinions, MAX_BOARD, 1, 30);
+
+    return {
+      health,
+      maxHealth,
+      manaCap,
+      startingMana,
+      ignoreDeckSizeLimit: config.ignoreDeckSizeLimit === true,
+      boardRules: {
+        maxMinions,
+        allowExtraSummonSlot: boardRules.allowExtraSummonSlot !== false,
+        ignoreKeywordLimits: boardRules.ignoreKeywordLimits === true,
+      },
+    };
+  }
+
+  function makePlayer(name, deckIds = null, randomInt, config = {}) {
+    const settings = normalizePlayerConfig(config);
+    const sourceDeck = deckIds && deckIds.length ? deckIds : fallbackDeck();
+    const deck = settings.ignoreDeckSizeLimit ? sourceDeck.slice() : sourceDeck.slice(0, 20);
     return {
       name,
-      health: START_HEALTH,
-      maxHealth: START_HEALTH,
-      manaMax: 0,
+      health: settings.health,
+      maxHealth: settings.maxHealth,
+      // _startTurn increments mana before the player acts. Store one less so
+      // a campaign can define exactly how much mana a hero starts with.
+      manaMax: settings.startingMana - 1,
       manaCurrent: 0,
-      deck: shuffle(deckIds && deckIds.length ? deckIds.slice(0, 20) : fallbackDeck(), randomInt),
+      manaCap: settings.manaCap,
+      boardRules: settings.boardRules,
+      deck: shuffle(deck, randomInt),
       hand: [],
       board: [], // { instanceId, cardId, attack, health, maxHealth, keywords, canAttack, damaged }
       playedCounts: {},
@@ -107,8 +141,13 @@
     return board.filter((minion) => minion.keywords.includes(keyword)).length;
   }
 
-  function boardLimitError(player, cardDef, boardLimit = MAX_BOARD) {
-    if (player.board.length >= boardLimit) return "Board is full.";
+  function boardLimitError(player, cardDef, { summoned = false } = {}) {
+    const rules = player.boardRules || {};
+    let boardLimit = rules.maxMinions;
+    if (boardLimit === undefined) boardLimit = MAX_BOARD;
+    if (boardLimit !== null && summoned && rules.allowExtraSummonSlot !== false) boardLimit += 1;
+    if (boardLimit !== null && player.board.length >= boardLimit) return "Board is full.";
+    if (rules.ignoreKeywordLimits === true) return null;
     const keywords = cardDef.keywords || [];
     for (const [keyword, limit] of Object.entries(BOARD_KEYWORD_LIMITS)) {
       if (keywords.includes(keyword) && countKeywordOnBoard(player.board, keyword) >= limit) {
@@ -192,7 +231,7 @@
       const p = game.players[ctx.casterIdx];
       let summoned = 0;
       for (let i = 0; i < count; i++) {
-        if (boardLimitError(p, cardDef, MAX_BOARD_WITH_SUMMON_EXCEPTION)) break;
+        if (boardLimitError(p, cardDef, { summoned: true })) break;
         p.board.push(makeMinionInstance(cardDef));
         summoned += 1;
       }
@@ -266,8 +305,8 @@
         ? options.randomInt
         : (maxExclusive) => Math.floor(Math.random() * maxExclusive);
       this.players = [
-        makePlayer(player1Name, options.decks?.[0], this.randomInt),
-        makePlayer(player2Name, options.decks?.[1], this.randomInt),
+        makePlayer(player1Name, options.decks?.[0], this.randomInt, options.playerConfigs?.[0]),
+        makePlayer(player2Name, options.decks?.[1], this.randomInt, options.playerConfigs?.[1]),
       ];
       this.turn = 0; // index of the active player
       this.turnNumber = 1;
@@ -314,7 +353,7 @@
 
     _startTurn(playerIdx) {
       const p = this.players[playerIdx];
-      p.manaMax = Math.min(MAX_MANA, p.manaMax + 1);
+      p.manaMax = Math.min(p.manaCap || MAX_MANA, p.manaMax + 1);
       p.manaCurrent = p.manaMax;
       [...p.board].forEach((m) => this._resolveStartOfTurnStatuses(playerIdx, m));
       p.board.forEach((m) => {
@@ -481,6 +520,12 @@
       return null;
     }
 
+    getBoardLimitError(playerIdx, cardDef, options = {}) {
+      if (!Number.isInteger(playerIdx) || !this.players[playerIdx]) return "Invalid player.";
+      if (!cardDef || cardDef.type !== "minion") return null;
+      return boardLimitError(this.players[playerIdx], cardDef, options);
+    }
+
     _validateAbilityTargets(playerIdx, card, targetInstanceId) {
       const needsEnemyMinion = (card.abilities || []).some((ability) =>
         ability.trigger === "onPlay" && ability.effect === "applyStatus" && ability.target === "enemyMinion"
@@ -602,6 +647,17 @@
         attacker.canAttack = false;
         this._addLog(`${attacker.name} attacks directly for ${attacker.attack}.`);
         this._recordAction({ type: "attack", attackerInstanceId, targetInstanceId: null, isFace: true });
+        const attackerCard = getCardById(attacker.cardId);
+        if (attackerCard) {
+          this._triggerAbilities(attackerCard, "onAttack", {
+            casterIdx: playerIdx,
+            sourceName: attacker.name,
+            instanceId: attacker.instanceId,
+            cardId: attacker.cardId,
+            playedCount: attacker.playedCount || 0,
+            silenced: this._hasStatus(attacker, "silenced"),
+          });
+        }
         this._checkWin();
         return;
       }
@@ -620,6 +676,16 @@
       this._addLog(`${attacker.name} fights ${target.name}.`);
       const attackerCard = getCardById(attacker.cardId);
       if (attackerCard) {
+        this._triggerAbilities(attackerCard, "onAttack", {
+          casterIdx: playerIdx,
+          sourceName: attacker.name,
+          instanceId: attacker.instanceId,
+          cardId: attacker.cardId,
+          playedCount: attacker.playedCount || 0,
+          targetInstanceId: target.instanceId,
+          targetRace: target.race,
+          silenced: this._hasStatus(attacker, "silenced"),
+        });
         this._triggerAbilities(attackerCard, "onAttackMinion", {
           casterIdx: playerIdx,
           sourceName: attacker.name,

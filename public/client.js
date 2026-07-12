@@ -26,7 +26,7 @@ const STATUS_FULL_LABEL = {
 };
 const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", mythic: "Mythic" };
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.2";
+const CHANGELOG_VERSION = "1.3";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const TYPE_ICON = { minion: "⚔", spell: "✦" };
@@ -41,6 +41,7 @@ let isLocalMode = false;     // true = "vs NPC" mode, no network
 let localGame = null;        // TCGEngine.Game instance running in the browser
 let accountState = null;
 let lastEconomyUpdate = null;
+let activeCampaignStage = null;
 let pendingInitialRewards = [];
 const ENTER_GATE_KEY = "arcane_enter_gate_seen";
 const ACTIVE_MULTIPLAYER_MATCH_KEY = "arcane_active_multiplayer_match";
@@ -434,6 +435,17 @@ function handleServerMessage(msg) {
       updateAccountDisplay({ ...(accountState?.user || {}), ...msg.payload });
       if (myState?.winner !== null) updateEndRewardText();
       break;
+    case "campaignReward": {
+      updateAccountDisplay({
+        ...(accountState?.user || {}),
+        cardCollection: msg.payload?.cardCollection || {},
+        unlockedCards: msg.payload?.unlockedCards || [],
+      });
+      const cards = msg.payload?.cards || [];
+      if (activeCampaignStage) activeCampaignStage.cardDrops = msg.payload?.cardDrops || activeCampaignStage.cardDrops;
+      queueCardOpening({ title: "The Gates reward", summary: `${cards.length} cards revealed from The Gates.`, cards });
+      break;
+    }
     case "opponentDisconnected":
       showToast("Your opponent disconnected. Waiting up to one minute to reconnect.");
       break;
@@ -801,11 +813,13 @@ function showEmote(emote, isSelf) {
 
 function openLobby(mode) {
   if (!requireLoggedInForPlay()) return;
+  $("screen-lobby").classList.toggle("lobby-singleplayer", mode === "singleplayer");
+  $("singleplayerSnow").classList.toggle("hidden", mode !== "singleplayer");
   $("singleplayerActions").classList.toggle("hidden", mode !== "singleplayer");
   $("multiplayerActions").classList.toggle("hidden", mode !== "multiplayer");
   $("lobbySubtitle").textContent =
     mode === "singleplayer"
-      ? "Practice against the NPC and earn daily gold"
+      ? "Practice against the NPC or play a Campaign for rewards"
       : "Online 1v1 — create a room or join one with a code";
   $("roomInfo").classList.add("hidden");
   $("lobbyError").classList.add("hidden");
@@ -819,8 +833,7 @@ function openLobby(mode) {
 }
 
 $("tileSingleplayer").addEventListener("click", () => {
-  if (!requireLoggedInForPlay()) return;
-  startServerSingleplayer();
+  openLobby("singleplayer");
 });
 $("tileMultiplayer").addEventListener("click", () => openLobby("multiplayer"));
 $("tileSupport").addEventListener("click", () => window.open("https://ko-fi.com/apparat", "_blank", "noopener,noreferrer"));
@@ -931,6 +944,51 @@ $("btnStartSingle").addEventListener("click", () => {
   startServerSingleplayer();
 });
 
+$("btnStartTheGatesCampaign").addEventListener("click", () => {
+  openCampaignStages();
+});
+
+async function openCampaignStages() {
+  try {
+    const res = await arcaneFetch("/campaigns");
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Could not load campaigns.");
+    activeCampaignStage = (data.campaigns || [])[0] || null;
+    if (!activeCampaignStage) throw new Error("No campaign stages are available.");
+    $("campaignStageLore").textContent = activeCampaignStage.lore;
+    document.querySelector(".singleplayer-mode-grid").classList.add("hidden");
+    $("campaignStagePanel").classList.remove("hidden");
+  } catch (err) {
+    showToast(err.message);
+  }
+}
+
+$("btnCampaignStagesBack").addEventListener("click", () => {
+  $("campaignStagePanel").classList.add("hidden");
+  document.querySelector(".singleplayer-mode-grid").classList.remove("hidden");
+});
+
+$("btnCampaignInfo").addEventListener("click", () => {
+  if (!activeCampaignStage || typeof openExpansionContents !== "function") return;
+  openExpansionContents({
+    expansionName: activeCampaignStage.name,
+    cardIds: activeCampaignStage.rewardCardIds,
+    cardDrops: activeCampaignStage.cardDrops,
+  });
+});
+
+$("btnStartCampaignStage").addEventListener("click", () => {
+  if (!activeCampaignStage || !requireLoggedInForPlay()) return;
+  clearMultiplayerReconnect();
+  forgetMultiplayerMatch();
+  isLocalMode = false;
+  activeMatchMode = "campaign";
+  myState = null;
+  lastEconomyUpdate = null;
+  resetStateQueue();
+  connect(() => send("startCampaign", { campaignId: activeCampaignStage.id }));
+});
+
 // ---------------- RENDER ----------------
 
 function render(state) {
@@ -939,6 +997,10 @@ function render(state) {
   // tooltip first, since its mouseleave will never fire on a node that
   // no longer exists.
   hideCardTooltip();
+  const gameScreen = $("screen-game");
+  if (state.campaignTheme) gameScreen.dataset.campaignTheme = state.campaignTheme;
+  else delete gameScreen.dataset.campaignTheme;
+  if (state.campaignBoardMusic) window.ArcaneAudio?.playMusic(state.campaignBoardMusic);
 
   // Heroes
   $("selfName").textContent = state.me.name;

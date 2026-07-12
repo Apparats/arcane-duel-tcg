@@ -8,6 +8,45 @@
   background: #120904;
 }
 
+/* Campaign themes are applied through a server-provided data attribute.
+   The Gates is an icy field with a pronounced pulse from its center. */
+#screen-game[data-campaign-theme="frost"] {
+  background: #031018;
+}
+
+#screen-game[data-campaign-theme="frost"] .board-frame {
+  background: linear-gradient(90deg, #b9f2ff, #347b9a 14%, #173a58 50%, #347b9a 86%, #b9f2ff);
+  box-shadow: inset 0 0 0 1px rgba(1, 17, 29, 0.96), 0 18px 48px rgba(0, 0, 0, 0.62), 0 0 34px rgba(81, 207, 246, 0.18);
+}
+
+#screen-game[data-campaign-theme="frost"] .board {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(206, 249, 255, 0.2), rgba(76, 181, 220, 0.08) 23%, transparent 48%),
+    radial-gradient(ellipse at 50% 7%, rgba(88, 198, 239, 0.18), transparent 42%),
+    linear-gradient(180deg, #0a2c3c 0%, #061a2b 48%, #031018 100%);
+}
+
+#screen-game[data-campaign-theme="frost"] .board::before {
+  inset: 7% 5%;
+  background: radial-gradient(circle at center, rgba(205, 250, 255, 0.72), rgba(96, 210, 247, 0.34) 25%, rgba(28, 105, 151, 0.08) 53%, transparent 72%);
+  filter: blur(24px);
+  opacity: 0.88;
+  animation: campaign-frost-breathe 2.7s ease-in-out infinite;
+}
+
+#screen-game[data-campaign-theme="frost"] .board::after {
+  background: radial-gradient(ellipse at center, transparent 32%, rgba(0, 9, 18, 0.54) 100%);
+}
+
+@keyframes campaign-frost-breathe {
+  0%, 100% { opacity: 0.48; transform: scale(0.94); }
+  50% { opacity: 0.64; transform: scale(1.04); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #screen-game[data-campaign-theme="frost"] .board::before { animation: none; opacity: 0.74; transform: none; }
+}
+
 .hand-toggle { display: none; }
 
 .board-frame {
@@ -213,9 +252,10 @@
   bottom: -18px;
   width: 47px;
   height: 47px;
-  color: #fff5f1;
+  color: #ffffff;
   font-size: 12px;
-  text-shadow: 0 1px 2px rgba(57, 2, 10, 0.95);
+  text-shadow: 0 1px 2px rgba(57, 2, 10, 0.98), 0 0 1px rgba(57, 2, 10, 0.98);
+  -webkit-text-stroke: 0.3px rgba(57, 2, 10, 0.74);
 }
 
 .hero-stats .hp::before {
@@ -225,8 +265,8 @@
   z-index: -1;
   border: 2px solid #ffb6bd;
   border-radius: 50%;
-  background: radial-gradient(circle at 32% 25%, #ffe8e9, #ff8793 30%, #bf3148 68%, #671124);
-  box-shadow: 0 3px 0 #5d1020, 0 5px 10px rgba(0, 0, 0, 0.65), 0 0 12px rgba(255, 86, 108, 0.62);
+  background: radial-gradient(circle at 32% 25%, #ffb7c0, #ec5f72 32%, #a5223b 70%, #58101f);
+  box-shadow: 0 3px 0 #5d1020, 0 5px 10px rgba(0, 0, 0, 0.65), 0 0 7px rgba(255, 86, 108, 0.36);
 }
 
 .hero-stats .mana {
@@ -234,9 +274,10 @@
   bottom: -15px;
   width: 46px;
   height: 46px;
-  color: #eefcff;
+  color: #ffffff;
   font-size: 9px;
-  text-shadow: 0 1px 2px rgba(3, 21, 52, 0.95);
+  text-shadow: 0 1px 2px rgba(3, 21, 52, 0.98), 0 0 1px rgba(3, 21, 52, 0.98);
+  -webkit-text-stroke: 0.3px rgba(3, 21, 52, 0.78);
 }
 
 .hero-stats .mana::before {
@@ -246,8 +287,8 @@
   z-index: -1;
   border: 2px solid #b9f2ff;
   border-radius: 7px;
-  background: radial-gradient(circle at 32% 25%, #e8fcff, #62d5ff 28%, #257bcc 67%, #142b72);
-  box-shadow: 0 3px 0 #10235c, 0 5px 10px rgba(0, 0, 0, 0.65), 0 0 12px rgba(92, 213, 255, 0.44);
+  background: radial-gradient(circle at 32% 25%, #a5e5ff, #3ea7e1 30%, #1d5ca9 70%, #10255f);
+  box-shadow: 0 3px 0 #10235c, 0 5px 10px rgba(0, 0, 0, 0.65), 0 0 7px rgba(92, 213, 255, 0.3);
   transform: rotate(45deg);
 }
 
@@ -608,9 +649,9 @@
   #screen-game .hero-name { top: calc(100% + 3px); width: calc(100% + 14px); font-size: 9px; }
   #screen-game #selfHero .hero-name { width: calc(100% + 9px); font-size: 8px; }
   #screen-game .hero-stats .hp { left: -12px; bottom: -13px; width: 33px; height: 33px; font-size: 9px; }
-  #screen-game .hero-stats .mana { right: -12px; bottom: -12px; width: 32px; height: 32px; font-size: 7px; }
+  #screen-game .hero-stats .mana { right: -12px; bottom: -12px; width: 32px; height: 32px; font-size: 8px; }
   #screen-game #selfHero .hero-stats .hp { left: -11px; bottom: -12px; width: 31px; height: 31px; font-size: 8px; }
-  #screen-game #selfHero .hero-stats .mana { right: -11px; bottom: -11px; width: 30px; height: 30px; font-size: 7px; }
+  #screen-game #selfHero .hero-stats .mana { right: -11px; bottom: -11px; width: 30px; height: 30px; font-size: 8px; }
 
   #screen-game #oppHandBack {
     top: 4px;

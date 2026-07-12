@@ -7,20 +7,20 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/base.css?v=20260711-mobile-viewport-1" />
-<link rel="stylesheet" href="css/menu.css?v=20260711-changelog-scroll-1" />
-<link rel="stylesheet" href="css/lobby.css?v=20260710-online-count-1" />
+<link rel="stylesheet" href="css/menu.css?v=20260711-falling-snow-1" />
+<link rel="stylesheet" href="css/lobby.css?v=20260711-campaign-stages-1" />
 <link rel="stylesheet" href="css/board.css" />
 <link rel="stylesheet" href="css/cards.css?v=20260711-status-effects-1" />
-<link rel="stylesheet" href="css/board-arena.css?v=20260711-mobile-center-balance-1" />
+<link rel="stylesheet" href="css/board-arena.css?v=20260711-campaign-frost-subtle-1" />
 <link rel="stylesheet" href="css/board-hand.css?v=20260711-mobile-board-layout-1" />
 <link rel="stylesheet" href="css/inventory.css?v=20260709-card-cost-2" />
-<link rel="stylesheet" href="css/deck-builder.css?v=20260710-keyword-filters-1" />
-<link rel="stylesheet" href="css/shop.css?v=20260711-custom-pack-art-1" />
+<link rel="stylesheet" href="css/deck-builder.css?v=20260711-deck-delete-visibility-1" />
+<link rel="stylesheet" href="css/shop.css?v=20260711-expansion-carousel-1" />
 <link rel="stylesheet" href="css/trade.css" />
 <link rel="stylesheet" href="css/pack-opening.css" />
 <link rel="stylesheet" href="css/fx.css?v=20260710-damage-impact-1" />
 <link rel="stylesheet" href="css/board-effects.css?v=20260711-status-effects-1" />
-<link rel="stylesheet" href="css/overlay.css?v=20260711-status-effects-1" />
+<link rel="stylesheet" href="css/overlay.css?v=20260711-tooltip-wrap-1" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -214,7 +214,7 @@
             </svg>
           </span>
           <span class="menu-tile-label">Play Singleplayer</span>
-          <span class="menu-tile-sub">Practice vs NPC and earn daily gold</span>
+          <span class="menu-tile-sub">Fastplay vs NPC or play the campaigns!</span>
           <span class="menu-tile-gold" id="singleplayerGoldProgress">0 / 50 gold today</span>
         </button>
         <button class="menu-tile menu-tile-primary" id="tileMultiplayer">
@@ -349,8 +349,40 @@
     </div>
   </section>
 
+  <!-- ---------- MODAL: EXPANSION CONTENTS ---------- -->
+  <div id="expansionContentsOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="expansionContentsTitle">
+    <div class="overlay-card expansion-contents-panel">
+      <button id="btnCloseExpansionContents" class="changelog-close" type="button" aria-label="Close expansion contents">x</button>
+      <div class="expansion-contents-header">
+        <h2 id="expansionContentsTitle">Expansion contents</h2>
+        <p id="expansionContentsSummary"></p>
+      </div>
+      <div id="expansionContentsGrid" class="expansion-contents-grid"></div>
+    </div>
+  </div>
+
+  <!-- ---------- MODAL: DELETE DECK ---------- -->
+  <div id="deleteDeckModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="deleteDeckTitle">
+    <div class="overlay-card delete-deck-card">
+      <h2 id="deleteDeckTitle">Delete deck?</h2>
+      <p id="deleteDeckWarning">This deck will be permanently removed.</p>
+      <div class="delete-deck-actions">
+        <button id="btnCancelDeleteDeck" class="btn btn-secondary" type="button">Cancel</button>
+        <button id="btnConfirmDeleteDeck" class="btn btn-surrender-confirm" type="button">Delete</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ---------- SCREEN: LOBBY ---------- -->
   <section id="screen-lobby" class="screen hidden">
+    <div id="singleplayerSnow" class="fireflies lobby-snow hidden" aria-hidden="true">
+      <div class="firefly"></div><div class="firefly"></div><div class="firefly"></div><div class="firefly"></div>
+      <div class="firefly"></div><div class="firefly"></div><div class="firefly"></div><div class="firefly"></div>
+      <div class="firefly"></div><div class="firefly"></div><div class="firefly"></div><div class="firefly"></div>
+      <div class="firefly"></div><div class="firefly"></div><div class="firefly"></div><div class="firefly"></div>
+      <div class="firefly"></div><div class="firefly"></div><div class="firefly"></div><div class="firefly"></div>
+      <div class="firefly"></div><div class="firefly"></div><div class="firefly"></div><div class="firefly"></div>
+    </div>
     <div class="lobby-card">
       <button id="btnBackToMenu" class="btn-link back-link">← Back to menu</button>
 
@@ -359,7 +391,24 @@
       <p class="brand-sub" id="lobbySubtitle">Fast TCG</p>
 
       <div id="singleplayerActions" class="lobby-actions hidden">
-        <button id="btnStartSingle" class="btn btn-npc">Start match</button>
+        <div class="singleplayer-mode-grid">
+          <button id="btnStartTheGatesCampaign" class="singleplayer-mode singleplayer-mode-campaign" type="button">
+            <span class="singleplayer-mode-title">Campaign</span>
+            <span class="singleplayer-mode-subtitle">Earn special rewards!</span>
+          </button>
+          <button id="btnStartSingle" class="singleplayer-mode singleplayer-mode-npc" type="button">
+            <span class="singleplayer-mode-title">Random NPC matchup</span>
+            <span class="singleplayer-mode-subtitle">Fastplay</span>
+          </button>
+        </div>
+        <div id="campaignStagePanel" class="campaign-stage-panel hidden">
+          <button id="btnCampaignStagesBack" class="btn-link" type="button">Back</button>
+          <span class="campaign-stage-label">Stage 1</span>
+          <h2>The Gates</h2>
+          <p id="campaignStageLore">Beyond the frozen gates, The Protector awaits.</p>
+          <button id="btnCampaignInfo" class="campaign-info-button" type="button" aria-label="View campaign card progress" title="View card progress">?</button>
+          <button id="btnStartCampaignStage" class="btn btn-primary" type="button">Challenge The Protector</button>
+        </div>
       </div>
 
       <div id="multiplayerActions" class="lobby-actions hidden">
@@ -454,6 +503,12 @@
             <option value="divineShield">Divine Shield</option>
           </select>
         </div>
+        <div class="filter-group">
+          <label for="filterExpansion">Expansion</label>
+          <select id="filterExpansion" class="filter-select">
+            <option value="all">All collectible expansions</option>
+          </select>
+        </div>
         <button id="btnClearFilters" class="btn-link clear-filters-link">Clear filters</button>
       </div>
 
@@ -464,7 +519,12 @@
       <div id="deckBuilderPanel" class="deck-builder-panel hidden">
         <div class="deck-toolbar">
           <input id="deckNameInput" class="text-input deck-name-input" maxlength="32" placeholder="Deck name" />
-          <select id="savedDeckSelect" class="filter-select deck-select"></select>
+          <div class="deck-select-control">
+            <select id="savedDeckSelect" class="filter-select deck-select" aria-label="Saved decks"></select>
+            <button id="btnDeleteDeck" class="deck-delete-button" type="button" aria-label="Delete selected deck" title="Delete selected deck">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M9 7l1-2h4l1 2M6 7l1 13h10l1-13" /></svg>
+            </button>
+          </div>
           <button id="btnNewDeck" class="btn btn-secondary">New deck</button>
           <button id="btnAutoDeck" class="btn btn-secondary">Auto build</button>
           <button id="btnSaveDeck" class="btn btn-primary">Save deck</button>
@@ -661,16 +721,17 @@
       <div class="changelog-content">
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
-          <h3>Version 1.2</h3>
-          <span>Mobile and balance Update</span>
+          <h3>Version 1.3</h3>
+          <span>The Gates Campaign Update</span>
         </div>
-        <p class="changelog-entry-intro">A clearer battlefield and smoother card collection experience.</p>
+        <p class="changelog-entry-intro">The first campaign stage opens beyond the frozen gates.</p>
         <ul class="changelog-list">
-          <li>Reworked the mobile battlefield with more room for both boards, a bottom-positioned hero, and a collapsible hand.</li>
-          <li>Your hand now opens at the start of your turn and can still be inspected whenever you want.</li>
-          <li>Improved trade reliability and card update syncing across the game.</li>
-          <li>Added clearer visual indicators for active card effects and refreshed card balance.</li>
-          <li>Balance updates: Capybara, Dezadin, Eraserhead, Gabibbo Ardito, Galileo Gunplay, Humph, Kurzemnieks, Mr Labubu, Penquin, Radu, StormHazard, V for Vendetta, and Vergil.</li>
+          <li>Added Campaigns, beginning with Stage 1: The Gates and its frost-themed encounter against The Protector.</li>
+          <li>Earn repeatable The Gates reward openings, track your discoveries, and collect ten new mythic cards.</li>
+          <li>Improved deck selection and deletion, while always keeping one deck ready to play.</li>
+          <li>Browse collectible campaign expansions from the Collection and inspect their available cards.</li>
+          <li>Refined card tooltips, expansion previews, battlefield presentation, and the music rotation.</li>
+          <li>Charge card nerfs: Beitsas, Capybara, Dog, Kurzemnieks, Mostor, and StormHazard.</li>
         </ul>
       </article>
       <article class="changelog-entry">
@@ -813,11 +874,11 @@
   <script src="audioManager.js?v=20260710-audio-pool-1"></script>
   <script src="packOpening.js?v=20260709-card-cost-1"></script>
 <script src="legalNotices.js?v=20260710-card-request-1"></script>
-<script src="client.js?v=20260711-changelog-new-1"></script>
+<script src="client.js?v=20260711-release-1-3"></script>
 <script src="boardInteractions.js?v=20260710-responsive-actions-1"></script>
-<script src="inventory.js?v=20260710-keyword-filters-1"></script>
-<script src="deckBuilder.js?v=20260710-keyword-filters-1"></script>
-<script src="shop.js?v=20260711-custom-pack-art-1"></script>
+<script src="inventory.js?v=20260711-collectible-expansion-filter-1"></script>
+<script src="deckBuilder.js?v=20260711-deck-management-1"></script>
+<script src="shop.js?v=20260711-campaign-progress-1"></script>
 <script src="trade.js"></script>
 </body>
 </html>
