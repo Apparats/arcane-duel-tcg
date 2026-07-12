@@ -66,14 +66,16 @@
 
 .card-opening-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(118px, 150px));
+  justify-content: center;
+  justify-items: center;
   gap: 16px;
   margin-bottom: 24px;
 }
 
 .card-opening-card {
   position: relative;
-  width: auto;
+  width: min(100%, 150px);
   min-width: 0;
   opacity: 0;
   transform: translateY(18px) scale(0.92) rotateY(72deg);
@@ -147,7 +149,8 @@
   }
 
   .card-opening-grid {
-    grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(82px, 112px));
+    justify-content: center;
     gap: 8px;
     overflow-y: auto;
     max-height: min(46dvh, 360px);
@@ -156,6 +159,7 @@
   }
 
   .card-opening-card {
+    width: min(100%, 112px);
     border-width: 1px;
     border-radius: 7px;
   }
@@ -195,9 +199,11 @@
 
 @media (max-width: 380px) {
   .card-opening-grid {
-    grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(74px, 100px));
     gap: 6px;
   }
+
+  .card-opening-card { width: min(100%, 100px); }
 
   .card-opening-pack {
     width: 72px;

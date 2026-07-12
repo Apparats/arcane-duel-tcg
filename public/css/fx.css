@@ -52,6 +52,22 @@
     flash-damage 0.65s ease-out;
 }
 
+/* Hero panels can already use transform to stay centered. Animate the
+   independent translate property so impact never replaces that positioning. */
+@keyframes hero-impact-shake {
+  0%, 100% { translate: 0 0; }
+  20% { translate: -4px 0; }
+  40% { translate: 4px 0; }
+  60% { translate: -3px 0; }
+  80% { translate: 3px 0; }
+}
+
+.hero-panel.damage-impact {
+  animation:
+    hero-impact-shake 0.34s cubic-bezier(0.2, 0.75, 0.3, 1),
+    flash-damage 0.65s ease-out;
+}
+
 #screen-game::after {
   content: "";
   position: fixed;
