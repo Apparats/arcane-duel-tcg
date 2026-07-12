@@ -111,6 +111,14 @@ function populateDeckFilters() {
   const cards = getInventoryCards();
   const countries = [...new Set(cards.map((card) => card.country).filter(Boolean))].sort();
   fillSelect($("deckFilterCountry"), countries);
+  const expansionSelect = $("deckFilterExpansion");
+  const expansionIds = [...new Set(cards.map(getCardExpansionId).filter(Boolean))].sort();
+  expansionIds.forEach((expansionId) => {
+    const option = document.createElement("option");
+    option.value = expansionId;
+    option.textContent = expansionId === "TheGates" ? "The Gates" : expansionId;
+    expansionSelect.appendChild(option);
+  });
   deckFiltersReady = true;
 }
 
@@ -120,6 +128,7 @@ function currentDeckFilters() {
     rarity: $("deckFilterRarity").value,
     country: $("deckFilterCountry").value,
     keyword: $("deckFilterKeyword").value,
+    expansion: $("deckFilterExpansion").value,
   };
 }
 
@@ -337,7 +346,7 @@ $("deleteDeckModal").addEventListener("click", (event) => {
   if (event.target.id === "deleteDeckModal") closeDeleteDeckModal();
 });
 
-["deckFilterType", "deckFilterRarity", "deckFilterCountry", "deckFilterKeyword"].forEach((id) => {
+["deckFilterType", "deckFilterRarity", "deckFilterCountry", "deckFilterKeyword", "deckFilterExpansion"].forEach((id) => {
   $(id).addEventListener("change", renderDeckPool);
 });
 
@@ -346,5 +355,6 @@ $("btnClearDeckFilters").addEventListener("click", () => {
   $("deckFilterRarity").value = "all";
   $("deckFilterCountry").value = "all";
   $("deckFilterKeyword").value = "all";
+  $("deckFilterExpansion").value = "all";
   renderDeckPool();
 });

@@ -125,9 +125,8 @@ function currentInventoryFilters() {
 }
 
 function cardMatchesFilters(card, filters) {
-  // The Deck Builder reuses these filters without an expansion selector.
-  // Treat a missing selector exactly like "All" instead of filtering out
-  // every card whose expansion is defined.
+  // This matcher is shared by Collection and Deck Builder. A missing
+  // expansion remains compatible with older callers and means "All".
   const expansion = filters.expansion ?? "all";
   if (filters.type !== "all" && card.type !== filters.type) return false;
   if (filters.rarity !== "all" && card.rarity !== filters.rarity) return false;
