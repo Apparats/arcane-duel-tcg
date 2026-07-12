@@ -275,7 +275,7 @@
       "cost": 4,
       "type": "minion",
       "attack": 1,
-      "health": 8,
+      "health": 6,
       "keywords": [
         "taunt"
       ],

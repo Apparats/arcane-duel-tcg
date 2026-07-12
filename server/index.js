@@ -565,7 +565,12 @@ async function settleRewards(room) {
 
   if (room.mode === "campaign") {
     if (room.game.winner === 0 && room.userIds[0]) {
-      const reward = await grantCampaignReward(room.userIds[0], room.campaign.id, room.campaign.rewards.cards);
+      const reward = await grantCampaignReward(
+        room.userIds[0],
+        room.campaign.id,
+        room.campaign.rewards.cards,
+        room.campaign.rewards.count
+      );
       send(room.sockets[0], "campaignReward", reward);
     }
     return;

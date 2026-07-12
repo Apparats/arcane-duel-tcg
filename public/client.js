@@ -443,7 +443,7 @@ function handleServerMessage(msg) {
       });
       const cards = msg.payload?.cards || [];
       if (activeCampaignStage) activeCampaignStage.cardDrops = msg.payload?.cardDrops || activeCampaignStage.cardDrops;
-      queueCardOpening({ title: "The Gates reward", summary: `${cards.length} cards revealed from The Gates.`, cards });
+      queueCardOpening({ title: "The Gates reward", summary: `${cards.length} random card revealed from The Gates.`, cards });
       break;
     }
     case "opponentDisconnected":

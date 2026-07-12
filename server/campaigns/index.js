@@ -15,7 +15,9 @@ const CAMPAIGN_DEFINITIONS = Object.freeze([{
   lore: "Beyond the frozen gates, The Protector tests every challenger worthy of Arcana's oldest relics.",
   theme: "frost",
   audio: { boardMusic: "board" },
-  rewards: { cards: THE_GATES_MYTHICS },
+  // One random mythic is awarded for each victory. The full list remains
+  // the reward pool and can contain repeat drops across future victories.
+  rewards: { cards: THE_GATES_MYTHICS, count: 1 },
   npc: {
     name: "The Protector",
     avatarUrl: "art/Protector.webp",
@@ -40,7 +42,7 @@ function listCampaignEncounters() {
     name: encounter.name,
     lore: encounter.lore,
     rewardCardIds: encounter.rewards.cards,
-    rewardCount: encounter.rewards.cards.length,
+    rewardCount: encounter.rewards.count,
   }));
 }
 

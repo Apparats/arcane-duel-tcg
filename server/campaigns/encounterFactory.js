@@ -47,6 +47,11 @@ function normalizeCampaignEncounter(definition) {
   if (rewardCards.length === 0 || rewardCards.length > 120 || rewardCards.some((cardId) => !getCardById(cardId))) {
     throw new Error("Campaign rewards are invalid.");
   }
+  const rewardCount = boundedInteger(definition.rewards?.count, "reward count", {
+    min: 1,
+    max: rewardCards.length,
+    fallback: 1,
+  });
 
   return Object.freeze({
     id: requireText(definition.id, "id", 64),
@@ -58,7 +63,7 @@ function normalizeCampaignEncounter(definition) {
       // Future stages can select a dedicated board playlist here.
       boardMusic: requireText(definition.audio?.boardMusic || "board", "board music", 64),
     }),
-    rewards: Object.freeze({ cards: Object.freeze(rewardCards.slice()) }),
+    rewards: Object.freeze({ cards: Object.freeze(rewardCards.slice()), count: rewardCount }),
     npc: Object.freeze({
       name: requireText(npc.name, "NPC name", 48),
       avatarUrl: requireText(npc.avatarUrl, "NPC avatar", 240),

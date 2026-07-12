@@ -172,12 +172,15 @@ async function consumePendingRewards(userId) {
   return result?.pendingRewards || result?.value?.pendingRewards || [];
 }
 
-async function grantCampaignReward(userId, campaignId, cardIds) {
+async function grantCampaignReward(userId, campaignId, cardIds, rewardCount = 1) {
   const users = getDB().collection("users");
   const _id = toObjectId(userId, "user id");
   const safeCampaignId = assertMongoKeySegment(campaignId, "campaign id");
   const safeCardIds = Array.isArray(cardIds) ? cardIds.map((cardId) => assertMongoKeySegment(cardId, "card id")) : [];
   if (safeCardIds.length === 0) throw new Error("Campaign reward has no cards.");
+  if (!Number.isInteger(rewardCount) || rewardCount < 1 || rewardCount > safeCardIds.length) {
+    throw new Error("Campaign reward count is invalid.");
+  }
 
   return withUserLock(String(_id), async () => {
     const user = await users.findOne({ _id }, { projection: { cardCollection: 1, unlockedCards: 1 } });
@@ -185,9 +188,9 @@ async function grantCampaignReward(userId, campaignId, cardIds) {
 
     const rewardPool = safeCardIds.map((id) => getCardById(id));
     if (rewardPool.some((card) => !card)) throw new Error("Campaign reward contains an unknown card.");
-    // Campaign rewards are repeatable: every victory rolls ten cards from
-    // the configured pool, so duplicates remain useful for trading.
-    const opening = summarizeOpening(buildPackOpening(rewardPool, 10), user.cardCollection || {});
+    // Campaign rewards are repeatable: every victory rolls only the configured
+    // amount from its pool, so duplicates remain useful for trading.
+    const opening = summarizeOpening(buildPackOpening(rewardPool, rewardCount), user.cardCollection || {});
     const increments = Object.fromEntries(Object.entries(opening.collectionIncrements).map(([cardId, amount]) => [`cardCollection.${cardId}`, amount]));
     const campaignDrops = Object.fromEntries(Object.entries(opening.collectionIncrements).map(([cardId, amount]) => [`campaignProgress.${safeCampaignId}.cardDrops.${cardId}`, amount]));
     await users.updateOne(
