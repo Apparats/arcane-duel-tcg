@@ -14,10 +14,15 @@
   // (prioritizes getting the most value out of its available mana).
   const MAX_BOARD = 4;
   const BOARD_KEYWORD_LIMITS = { taunt: 2, charge: 3 };
+  const MAX_NPC_MYTHICS_ON_BOARD = 1;
 
   function canFitMinionOnBoard(board, card) {
     if (card.type !== "minion") return true;
     if (board.length >= MAX_BOARD) return false;
+    if (
+      card.rarity === "mythic" &&
+      board.filter((minion) => minion.rarity === "mythic").length >= MAX_NPC_MYTHICS_ON_BOARD
+    ) return false;
     const keywords = card.keywords || [];
     return Object.entries(BOARD_KEYWORD_LIMITS).every(([keyword, limit]) => {
       if (!keywords.includes(keyword)) return true;

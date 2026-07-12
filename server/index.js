@@ -621,13 +621,18 @@ async function resumeMultiplayerMatch(ws) {
   broadcastState(match);
 }
 
-function chooseNpcPlayable(game) {
+function chooseNpcPlayable(game, { limitMythics = false } = {}) {
   const npc = game.players[1];
   const playerBoard = game.players[0].board;
+  const hasMythicInPlay = limitMythics && npc.board.some((minion) => minion.rarity === "mythic");
   let best = null;
   npc.hand.forEach((cardRef, handIndex) => {
     const card = getCardById(String(cardRef).split("|")[0]);
     if (!card || card.cost > npc.manaCurrent) return;
+    // The standard NPC may still use its usual board-rule exceptions, but it
+    // never controls more than one mythic minion at a time. Campaign bosses
+    // deliberately opt out through the caller below.
+    if (hasMythicInPlay && card.type === "minion" && card.rarity === "mythic") return;
     if (game.getBoardLimitError(1, card)) return;
     const needsEnemyMinion = (card.abilities || []).some((ability) =>
       ability.trigger === "onPlay" && ability.effect === "applyStatus" && ability.target === "enemyMinion"
@@ -662,7 +667,7 @@ async function runNpcTurn(room) {
   try {
     await sleep(NPC_STEP_DELAY_MS);
 
-    const play = chooseNpcPlayable(game);
+    const play = chooseNpcPlayable(game, { limitMythics: room.mode === "singleplayer" });
     if (play && game.winner === null && game.turn === 1) {
       try {
         game.playCard(1, play.handIndex, npcSpellTarget(game, play.card));
