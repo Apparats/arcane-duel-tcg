@@ -125,10 +125,14 @@ function currentInventoryFilters() {
 }
 
 function cardMatchesFilters(card, filters) {
+  // The Deck Builder reuses these filters without an expansion selector.
+  // Treat a missing selector exactly like "All" instead of filtering out
+  // every card whose expansion is defined.
+  const expansion = filters.expansion ?? "all";
   if (filters.type !== "all" && card.type !== filters.type) return false;
   if (filters.rarity !== "all" && card.rarity !== filters.rarity) return false;
   if (filters.country !== "all" && card.country !== filters.country) return false;
-  if (filters.expansion !== "all" && getCardExpansionId(card) !== filters.expansion) return false;
+  if (expansion !== "all" && getCardExpansionId(card) !== expansion) return false;
   const keywords = Array.isArray(card.keywords) ? card.keywords : [];
   if (filters.keyword === "normal" && (keywords.includes("taunt") || keywords.includes("charge") || keywords.includes("divineShield"))) return false;
   if (filters.keyword !== "all" && filters.keyword !== "normal" && !keywords.includes(filters.keyword)) return false;
