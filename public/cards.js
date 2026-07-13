@@ -47,6 +47,18 @@
       "_expansionId": "expansion1"
     },
     {
+      "name": "Arcane Reading",
+      "cost": 2,
+      "type": "spell",
+      "effect": "draw",
+      "value": 2,
+      "rarity": "common",
+      "country": "Arcana",
+      "lore": "The Grand Library whispers to anyone willing to listen.",
+      "id": "expansion1:arcanereading",
+      "_expansionId": "expansion1"
+    },
+    {
       "name": "Aslani",
       "cost": 2,
       "type": "minion",
@@ -152,6 +164,30 @@
       "_expansionId": "expansion1"
     },
     {
+      "name": "Devastating Meteor",
+      "cost": 6,
+      "type": "spell",
+      "effect": "damage",
+      "value": 8,
+      "rarity": "legendary",
+      "country": "Arcana",
+      "lore": "It falls from the sky like a judgment nobody asked for.",
+      "id": "expansion1:devastatingmeteor",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Elemental Fury",
+      "cost": 4,
+      "type": "spell",
+      "effect": "damage",
+      "value": 5,
+      "rarity": "rare",
+      "country": "Arcana",
+      "lore": "Fire, lightning, and wind answer in one sharp burst.",
+      "id": "expansion1:elementalfury",
+      "_expansionId": "expansion1"
+    },
+    {
       "name": "Euler",
       "cost": 4,
       "type": "minion",
@@ -164,6 +200,30 @@
       "lore": "Every angle of the duel has already been calculated.",
       "image": "art/Euler.webp",
       "id": "expansion1:euler",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Focused Bolt",
+      "cost": 3,
+      "type": "spell",
+      "effect": "damage",
+      "value": 4,
+      "rarity": "common",
+      "country": "Arcana",
+      "lore": "Turn stored anger into a precise discharge.",
+      "id": "expansion1:focusedbolt",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Greater Blessing",
+      "cost": 3,
+      "type": "spell",
+      "effect": "heal",
+      "value": 6,
+      "rarity": "rare",
+      "country": "Arcana",
+      "lore": "An ancient chant that closes wounds and steadies the spirit.",
+      "id": "expansion1:greaterblessing",
       "_expansionId": "expansion1"
     },
     {
@@ -231,6 +291,30 @@
       "_expansionId": "expansion1"
     },
     {
+      "name": "Minor Fireball",
+      "cost": 2,
+      "type": "spell",
+      "effect": "damage",
+      "value": 3,
+      "rarity": "common",
+      "country": "Arcana",
+      "lore": "Small in size, inconvenient at exactly the wrong moment.",
+      "id": "expansion1:minorfireball",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Minor Spark",
+      "cost": 1,
+      "type": "spell",
+      "effect": "damage",
+      "value": 2,
+      "rarity": "common",
+      "country": "Arcana",
+      "lore": "A small spark is still enough to start a fire.",
+      "id": "expansion1:minorspark",
+      "_expansionId": "expansion1"
+    },
+    {
       "name": "Moonhammer",
       "cost": 10,
       "type": "minion",
@@ -260,6 +344,18 @@
       "lore": "Cases!.",
       "image": "art/Puipui_09.webp",
       "id": "expansion1:puipui-09",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Quick Bandage",
+      "cost": 1,
+      "type": "spell",
+      "effect": "heal",
+      "value": 3,
+      "rarity": "common",
+      "country": "Arcana",
+      "lore": "Cloth and crushed herbs: enough to stay standing.",
+      "id": "expansion1:quickbandage",
       "_expansionId": "expansion1"
     },
     {
