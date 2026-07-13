@@ -6,6 +6,6 @@
   "shop": true,
   "packName": "Expansion 1 Pack",
   "packPriceGold": 35,
-  "packSize": 5,
+  "packSize": 3,
   "packArt": "art/reverse2.webp"
 }

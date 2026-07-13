@@ -91,7 +91,7 @@
       const state = game.getStateFor(npcIdx);
       if (state.winner !== null) return;
 
-      const attacker = state.me.board.find((m) => m.canAttack);
+      const attacker = state.me.board.find((m) => m.canAttack && m.attack > 0);
       if (!attacker) break;
 
       const enemyTaunts = state.opponent.board.filter((m) => m.keywords.includes("taunt"));

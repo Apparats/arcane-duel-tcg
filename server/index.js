@@ -760,7 +760,7 @@ async function runNpcTurn(room) {
 
     let attackGuard = 0;
     while (game.winner === null && game.turn === 1 && attackGuard++ < 12) {
-      const attacker = game.players[1].board.find((minion) => minion.canAttack);
+      const attacker = game.players[1].board.find((minion) => minion.canAttack && minion.attack > 0);
       if (!attacker) break;
       const playerBoard = game.players[0].board;
       const taunt = playerBoard.find((m) => m.keywords.includes("taunt"));
