@@ -1,0 +1,11 @@
+{
+  "id": "expansion1",
+  "name": "Expansion 1",
+  "description": "The first Arcana roster: twenty new contenders with distinct stat lines.",
+  "enabled": true,
+  "shop": true,
+  "packName": "Expansion 1 Pack",
+  "packPriceGold": 35,
+  "packSize": 5,
+  "packArt": "art/reverse2.webp"
+}

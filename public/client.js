@@ -26,7 +26,7 @@ const STATUS_FULL_LABEL = {
 };
 const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", mythic: "Mythic" };
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.3";
+const CHANGELOG_VERSION = "1.4";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const TYPE_ICON = { minion: "⚔", spell: "✦" };
@@ -51,6 +51,8 @@ const DISCORD_ACTIVITY_READY_TIMEOUT_MS = 12000;
 let quickplaySearching = false;
 let enabledExpansionIds = null;
 let activeMatchMode = null;
+let matchIntroTimer = null;
+let matchIntroRoomCode = null;
 let discordActivityLoginRunning = false;
 let discordActivitySdkPromise = null;
 let discordActivityReadyPromise = null;
@@ -247,6 +249,7 @@ function startLocalMatch(playerName) {
   lastAnimatedActionSeq = 0;
   lastRoundBannerKey = null;
   resetStateQueue();
+  resetMatchIntro();
   localGame = new TCGEngine.Game("LOCAL", playerName || "You", "NPC");
   switchScreen("game");
   refreshLocalState();
@@ -316,8 +319,87 @@ function resetStateQueue() {
 }
 
 function applyIncomingState(newState) {
+  showMatchIntro(newState);
   stateQueue.push(newState);
   processStateQueue();
+}
+
+function resetMatchIntro() {
+  clearTimeout(matchIntroTimer);
+  matchIntroTimer = null;
+  matchIntroRoomCode = null;
+  $("matchIntro")?.classList.add("hidden");
+  $("matchIntro")?.classList.remove("is-leaving");
+}
+
+function introInitials(name) {
+  const parts = String(name || "Player").trim().split(/\s+/).filter(Boolean);
+  return (parts.length > 1 ? `${parts[0][0]}${parts[1][0]}` : (parts[0] || "P").slice(0, 2)).toUpperCase();
+}
+
+function introProfile(participant, own) {
+  const account = own ? accountState?.user : null;
+  const profile = participant?.profile || account || {};
+  const selected = profile.selectedTitle;
+  const progress = typeof selected === "string"
+    ? window.ArcaneProfileCatalog?.getProgress(profile.stats, selected, profile.equippedBadgeIds)
+    : null;
+  return {
+    username: profile.username || participant?.name || "Player",
+    avatarUrl: profile.avatarUrl || participant?.avatarUrl || null,
+    title: selected?.name || progress?.selectedTitle?.name || "Arcane Initiate",
+    badges: profile.equippedBadges || progress?.equippedBadges || [],
+  };
+}
+
+function renderIntroContender(element, profile) {
+  if (!element) return;
+  const avatar = document.createElement("span");
+  avatar.className = "match-intro-avatar";
+  avatar.textContent = introInitials(profile.username);
+  if (profile.avatarUrl) {
+    const image = document.createElement("img");
+    image.src = profile.avatarUrl;
+    image.alt = "";
+    image.onerror = () => image.remove();
+    avatar.append(image);
+  }
+  const copy = document.createElement("div");
+  copy.className = "match-intro-copy";
+  const name = document.createElement("div");
+  name.className = "match-intro-name";
+  name.textContent = profile.username;
+  const title = document.createElement("div");
+  title.className = "match-intro-title";
+  title.textContent = profile.title;
+  const badges = document.createElement("div");
+  badges.className = "match-intro-badges";
+  (profile.badges || []).slice(0, 3).forEach((badge) => {
+    const badgeElement = document.createElement("span");
+    badgeElement.className = "match-intro-badge";
+    badgeElement.title = badge.name || "Achievement badge";
+    badgeElement.innerHTML = window.ArcaneProfileBadges?.badgeMarkup(badge.id, true) || "";
+    badges.append(badgeElement);
+  });
+  copy.append(name, title, badges);
+  element.replaceChildren(avatar, copy);
+}
+
+function showMatchIntro(state) {
+  if (!state?.roomCode || matchIntroRoomCode === state.roomCode) return;
+  matchIntroRoomCode = state.roomCode;
+  const intro = $("matchIntro");
+  if (!intro) return;
+  renderIntroContender($("matchIntroOpponent"), introProfile(state.opponent, false));
+  renderIntroContender($("matchIntroSelf"), introProfile(state.me, true));
+  intro.classList.remove("hidden", "is-leaving");
+  clearTimeout(matchIntroTimer);
+  const durationMs = Math.max(700, Number(state.matchIntroRemainingMs) || 4200);
+  const fadeOutMs = 420;
+  matchIntroTimer = setTimeout(() => {
+    intro.classList.add("is-leaving");
+    matchIntroTimer = setTimeout(() => intro.classList.add("hidden"), fadeOutMs);
+  }, Math.max(0, durationMs - fadeOutMs));
 }
 
 async function processStateQueue() {
@@ -414,6 +496,7 @@ function handleServerMessage(msg) {
       lastAnimatedActionSeq = 0;
       lastRoundBannerKey = null;
       resetStateQueue();
+      resetMatchIntro();
       switchScreen("game");
       break;
     case "matchResumed":
@@ -440,12 +523,21 @@ function handleServerMessage(msg) {
         ...(accountState?.user || {}),
         cardCollection: msg.payload?.cardCollection || {},
         unlockedCards: msg.payload?.unlockedCards || [],
+        stats: msg.payload?.stats || accountState?.user?.stats || {},
+        modeStats: msg.payload?.modeStats || accountState?.user?.modeStats || {},
       });
       const cards = msg.payload?.cards || [];
       if (activeCampaignStage) activeCampaignStage.cardDrops = msg.payload?.cardDrops || activeCampaignStage.cardDrops;
       queueCardOpening({ title: "The Gates reward", summary: `${cards.length} random card revealed from The Gates.`, cards });
       break;
     }
+    case "profileStatsUpdate":
+      updateAccountDisplay({
+        ...(accountState?.user || {}),
+        stats: msg.payload?.stats || accountState?.user?.stats || {},
+        modeStats: msg.payload?.modeStats || accountState?.user?.modeStats || {},
+      });
+      break;
     case "opponentDisconnected":
       showToast("Your opponent disconnected. Waiting up to one minute to reconnect.");
       break;
@@ -738,7 +830,7 @@ function showToast(text) {
 
 function switchScreen(name) {
   hideCardTooltip();
-  const screenIds = ["auth", "enter", "menu", "lobby", "inventory", "shop", "trade", "game"];
+  const screenIds = ["auth", "enter", "menu", "lobby", "inventory", "shop", "trade", "profile", "game"];
   const loading = $("loadingScreen");
   if (!loading) {
     screenIds.forEach((screen) => {
@@ -1481,6 +1573,7 @@ function returnToMenuFromMatch() {
   forgetMultiplayerMatch();
   activeMatchMode = null;
   hideRoundBanner();
+  resetMatchIntro();
   $("overlayEnd").classList.add("hidden");
   clearSelection();
   switchScreen("menu");
@@ -1702,10 +1795,6 @@ async function initAccountWidget({ skipActivityAutoLogin = false } = {}) {
     updateAccountDisplay(data.user);
     if (data.dailyLoginReward?.claimed) {
       showToast(`Daily login reward: +${data.dailyLoginReward.goldAwarded} gold`);
-    }
-    if (data.user.avatarUrl) {
-      $("accountAvatar").src = data.user.avatarUrl;
-      $("accountAvatar").classList.remove("hidden");
     }
     pendingInitialRewards = data.rewards || [];
     if (hasSeenEnterGate()) {
@@ -2240,9 +2329,11 @@ function queueInitialRewards(rewards) {
 function updateAccountDisplay(user) {
   if (!user) return;
   if (accountState) accountState.user = { ...(accountState.user || {}), ...user };
-  $("accountName").textContent = user.username || accountState?.user?.username || "Player";
-  $("accountGold").textContent = `${user.gold || 0} gold`;
-  if (user.cardCollection) accountState.user.cardCollection = user.cardCollection;
+  const mergedUser = accountState?.user || user;
+  $("accountName").textContent = mergedUser.username || "Player";
+  $("accountGold").textContent = `${mergedUser.gold || 0} gold`;
+  if (user.cardCollection && accountState?.user) accountState.user.cardCollection = user.cardCollection;
+  window.ArcaneAccountProfile?.syncUser(mergedUser);
   renderMenuGoldProgress();
 }
 
@@ -2298,6 +2389,13 @@ function requireLoggedInForPlay() {
 $("btnLoginDiscord").addEventListener("click", loginWithDiscord);
 
 $("btnAuthLoginDiscord").addEventListener("click", loginWithDiscord);
+
+window.ArcaneAccountProfile?.init({
+  fetcher: apiFetch,
+  getAccountState: () => accountState,
+  showToast,
+  switchScreen,
+});
 
 $("btnOpenTerms").addEventListener("click", () => setLegalNoticeOpen("terms"));
 $("btnOpenPrivacy").addEventListener("click", () => setLegalNoticeOpen("privacy"));

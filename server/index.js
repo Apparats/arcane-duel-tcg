@@ -7,7 +7,7 @@ const cookieParser = require("cookie-parser");
 const { WebSocketServer } = require("ws");
 const { Game } = require("../public/engine");
 const { getCardById } = require("../public/cards");
-const { connectDB, getCampaignProgress, grantCampaignReward, grantMatchEconomy, getQuickplayRanking, isDbEnabled, recordMultiplayerDisconnect, resetConsecutiveDisconnects, submitCardRequest } = require("./db");
+const { connectDB, getCampaignProgress, grantCampaignReward, grantMatchEconomy, getPublicPlayerProfile, getQuickplayRanking, isDbEnabled, recordCampaignResult, recordMultiplayerDisconnect, resetConsecutiveDisconnects, searchPublicPlayers, setEquippedBadges, setSelectedTitle, submitCardRequest } = require("./db");
 const { router: authRouter, getSessionUser, isAuthEnabled } = require("./auth");
 const { router: shopRouter } = require("./shop");
 const { router: decksRouter } = require("./decks");
@@ -46,6 +46,7 @@ const CLIENT_TIMING_FIELDS = new Set([
 ]);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const NPC_STEP_DELAY_MS = 1200;
+const MATCH_INTRO_DURATION_MS = 4200;
 const EMOTE_COOLDOWN_MS = 1_500;
 const ALLOWED_EMOTES = new Set(["😄", "😭", "😯", "😡", "🫄", "💀"]);
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
@@ -119,6 +120,48 @@ app.get("/ranking/quickplay", createRateLimiter({ max: 30, keyPrefix: "ranking" 
   } catch (err) {
     console.error("Quickplay ranking failed:", err.message);
     res.status(500).json({ error: "Could not load the quickplay ranking." });
+  }
+});
+app.get("/players/search", createRateLimiter({ max: 30, keyPrefix: "players-search" }), async (req, res) => {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Login with Discord is required." });
+  try {
+    res.json({ players: await searchPublicPlayers(req.query?.q, 8) });
+  } catch (err) {
+    console.error("Player search failed:", err.message);
+    res.status(500).json({ error: "Could not search players." });
+  }
+});
+app.get("/players/:id/profile", createRateLimiter({ max: 30, keyPrefix: "players-profile" }), async (req, res) => {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Login with Discord is required." });
+  try {
+    const profile = await getPublicPlayerProfile(req.params.id);
+    if (!profile) return res.status(404).json({ error: "Player not found." });
+    res.json({ profile });
+  } catch (err) {
+    console.error("Player profile failed:", err.message);
+    res.status(400).json({ error: "Could not load that player." });
+  }
+});
+app.put("/account/title", createRateLimiter({ max: 20, keyPrefix: "account-title" }), async (req, res) => {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Login with Discord is required." });
+  try {
+    const profile = await setSelectedTitle(user.id, String(req.body?.titleId || ""));
+    res.json({ profile });
+  } catch (err) {
+    console.error("Title selection failed:", err.message);
+    res.status(400).json({ error: err.message || "Could not update title." });
+  }
+});
+app.put("/account/badges", createRateLimiter({ max: 20, keyPrefix: "account-badges" }), async (req, res) => {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Login with Discord is required." });
+  try {
+    res.json({ profile: await setEquippedBadges(user.id, req.body?.achievementIds) });
+  } catch (err) {
+    res.status(400).json({ error: err.message || "Could not update achievement badges." });
   }
 });
 app.post("/card-requests", createRateLimiter({ max: 10, keyPrefix: "card-requests" }), async (req, res) => {
@@ -265,6 +308,17 @@ function syncTurnTimer(room) {
     clearTurnTimer(room);
     return;
   }
+  const introRemainingMs = (room.introEndsAt || 0) - Date.now();
+  if (introRemainingMs > 0) {
+    clearTurnTimer(room);
+    if (!room.introTimer) {
+      room.introTimer = setTimeout(() => {
+        room.introTimer = null;
+        if (rooms.get(room.game?.roomCode) === room) broadcastState(room);
+      }, introRemainingMs);
+    }
+    return;
+  }
   ensureTurnTimer(room, expireTurn);
 }
 
@@ -285,10 +339,21 @@ function addPlayerVisuals(state, room, viewerIdx) {
     serverNow: Date.now(),
     turnDeadline: room.turnTimer?.deadline || null,
     turnDurationMs: room.turnTimer ? 40_000 : null,
-    me: { ...state.me, avatarUrl: room.avatars?.[viewerIdx] || null },
-    opponent: { ...state.opponent, avatarUrl: room.avatars?.[opponentIdx] || null },
+    matchIntroRemainingMs: Math.max(0, (room.introEndsAt || 0) - Date.now()),
+    me: { ...state.me, avatarUrl: room.avatars?.[viewerIdx] || null, profile: matchProfile(room, viewerIdx) },
+    opponent: { ...state.opponent, avatarUrl: room.avatars?.[opponentIdx] || null, profile: matchProfile(room, opponentIdx) },
     campaignTheme: room.mode === "campaign" ? room.campaign?.theme || null : null,
     campaignBoardMusic: room.mode === "campaign" ? room.campaign?.audio?.boardMusic || null : null,
+  };
+}
+
+function matchProfile(room, playerIdx) {
+  const profile = room.profiles?.[playerIdx];
+  return {
+    username: profile?.username || room.names?.[playerIdx] || "Player",
+    avatarUrl: profile?.avatarUrl || room.avatars?.[playerIdx] || null,
+    selectedTitle: profile?.selectedTitle || { name: playerIdx === 1 && isNpcMatch(room) ? "Arena Guardian" : "Arcane Initiate" },
+    equippedBadges: Array.isArray(profile?.equippedBadges) ? profile.equippedBadges : [],
   };
 }
 
@@ -435,13 +500,18 @@ function handleSocketClose(ws) {
 
 async function startMultiplayerMatch(playerA, playerB, { matchType = "quickplay" } = {}) {
   const code = makeRoomCode();
-  const decks = await Promise.all([getActiveDeckCardIds(playerA.user.id), getActiveDeckCardIds(playerB.user.id)]);
+  const [decks, profiles] = await Promise.all([
+    Promise.all([getActiveDeckCardIds(playerA.user.id), getActiveDeckCardIds(playerB.user.id)]),
+    Promise.all([getPublicPlayerProfile(playerA.user.id), getPublicPlayerProfile(playerB.user.id)]),
+  ]);
   const room = {
     game: new Game(code, playerA.name, playerB.name, { decks, randomInt: secureRandomInt }),
     sockets: [playerA.ws, playerB.ws],
     names: [playerA.name, playerB.name],
     avatars: [playerA.user.avatarUrl || null, playerB.user.avatarUrl || null],
     userIds: [playerA.user.id, playerB.user.id],
+    profiles,
+    introEndsAt: Date.now() + MATCH_INTRO_DURATION_MS,
     mode: "multiplayer",
     matchType,
     rewardGranted: false,
@@ -558,20 +628,29 @@ function resultFor(game, idx) {
   return game.winner === idx ? "win" : "loss";
 }
 
+function isJohnny(name) {
+  const configuredName = String(process.env.ARCANA_DEV_USERNAME || "Johnny").trim();
+  return configuredName.length > 0 && String(name || "").trim().toLocaleLowerCase() === configuredName.toLocaleLowerCase();
+}
+
 async function settleRewards(room) {
   if (!room.game || room.game.winner === null || room.rewardGranted) return;
   room.rewardGranted = true;
   clearTurnTimer(room);
 
   if (room.mode === "campaign") {
-    if (room.game.winner === 0 && room.userIds[0]) {
-      const reward = await grantCampaignReward(
-        room.userIds[0],
-        room.campaign.id,
-        room.campaign.rewards.cards,
-        room.campaign.rewards.count
-      );
-      send(room.sockets[0], "campaignReward", reward);
+    const userId = room.userIds[0];
+    if (userId) {
+      const result = resultFor(room.game, 0);
+      const reward = result === "win"
+        ? await grantCampaignReward(userId, room.campaign.id, room.campaign.rewards.cards, room.campaign.rewards.count)
+        : null;
+      const profileStats = await recordCampaignResult(userId, {
+        result,
+        surrendered: room.surrenderedBy === 0,
+      });
+      if (result === "win") send(room.sockets[0], "campaignReward", { ...reward, ...profileStats });
+      else send(room.sockets[0], "profileStatsUpdate", profileStats);
     }
     return;
   }
@@ -584,6 +663,7 @@ async function settleRewards(room) {
         result: resultFor(room.game, idx),
         surrendered: room.surrenderedBy === idx,
         quickplay: room.matchType === "quickplay",
+        johnnyWin: room.mode === "multiplayer" && room.game.winner === idx && isJohnny(room.names[idx === 0 ? 1 : 0]),
       });
       send(room.sockets[idx], "economyUpdate", economy);
     })
@@ -726,6 +806,7 @@ async function handleMessage(ws, msg) {
     assertUserCanStartMatch(rooms, user.id);
     detachSocketFromRoom(ws);
     const playerDeck = await getActiveDeckCardIds(user.id);
+    const profile = await getPublicPlayerProfile(user.id);
     const code = makeRoomCode();
     const name = user.username || "Player";
     const room = {
@@ -734,6 +815,8 @@ async function handleMessage(ws, msg) {
       names: [name, "NPC"],
       avatars: [user.avatarUrl || null, null],
       userIds: [user.id, null],
+      profiles: [profile, null],
+      introEndsAt: Date.now() + MATCH_INTRO_DURATION_MS,
       mode: "singleplayer",
       rewardGranted: false,
       surrenderedBy: null,
@@ -756,11 +839,12 @@ async function handleMessage(ws, msg) {
     assertUserCanStartMatch(rooms, user.id);
     detachSocketFromRoom(ws);
     const playerDeck = await getActiveDeckCardIds(user.id);
+    const profile = await getPublicPlayerProfile(user.id);
     const code = makeRoomCode();
     const match = createCampaignMatch(campaign, { roomCode: code, playerName: user.username || "Player", playerDeck, randomInt: secureRandomInt });
     const room = {
       game: match.game,
-      sockets: [ws, null], names: [user.username || "Player", match.npc.name], avatars: [user.avatarUrl || null, match.npc.avatarUrl], userIds: [user.id, null],
+      sockets: [ws, null], names: [user.username || "Player", match.npc.name], avatars: [user.avatarUrl || null, match.npc.avatarUrl], userIds: [user.id, null], profiles: [profile, null], introEndsAt: Date.now() + MATCH_INTRO_DURATION_MS,
       mode: "campaign", campaign, rewardGranted: false, surrenderedBy: null, reconnects: [null, null], disconnectEvents: [null, null],
     };
     rooms.set(code, room);
@@ -777,12 +861,14 @@ async function handleMessage(ws, msg) {
     detachSocketFromRoom(ws);
     const name = user.username || "Player 1";
     const code = makeRoomCode();
+    const profile = await getPublicPlayerProfile(user.id);
     rooms.set(code, {
       game: null,
       sockets: [ws, null],
       names: [name, null],
       avatars: [user.avatarUrl || null, null],
       userIds: [user.id, null],
+      profiles: [profile, null],
       mode: "multiplayer",
       matchType: "room",
       rewardGranted: false,
@@ -811,6 +897,8 @@ async function handleMessage(ws, msg) {
     room.names[1] = name;
     room.avatars[1] = user.avatarUrl || null;
     room.userIds[1] = user.id;
+    room.profiles[1] = await getPublicPlayerProfile(user.id);
+    room.introEndsAt = Date.now() + MATCH_INTRO_DURATION_MS;
     ws.roomCode = code;
     ws.playerIdx = 1;
 
@@ -853,6 +941,7 @@ async function handleMessage(ws, msg) {
   // Everything past this point requires an active match
   const room = rooms.get(ws.roomCode);
   if (!room || !room.game) return broadcastError(ws, "You're not in an active match.");
+  if (room.introEndsAt && Date.now() < room.introEndsAt) return broadcastError(ws, "The duel is about to begin.");
   const game = room.game;
   const idx = ws.playerIdx;
 

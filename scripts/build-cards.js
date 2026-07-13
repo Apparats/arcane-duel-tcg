@@ -41,7 +41,9 @@ const VALID_ABILITY_EFFECTS = [
   "damageEnemyHero",
   "healAllFriendlyMinions",
   "summonMinion",
+  "summonMinionIfMissing",
   "buffAllFriendlyMinions",
+  "grantDivineShieldToAllFriendlyMinions",
   "healSelf",
   "returnToDeck",
   "returnToDeckIfPlayedLessThan",
@@ -220,12 +222,15 @@ function validateAbilities(card, label) {
       fail(`${abLabel}: unknown effect "${ability.effect}". Valid: ${VALID_ABILITY_EFFECTS.join(", ")}.`);
     }
 
-    if (ability.effect === "summonMinion") {
+    if (["summonMinion", "summonMinionIfMissing"].includes(ability.effect)) {
       if (!ability.cardId || typeof ability.cardId !== "string") {
         fail(`${abLabel}: summonMinion needs "cardId" (the id of the card to summon, e.g. "core:recluta-novato").`);
       }
       if (ability.count !== undefined && !isIntegerInRange(ability.count, 1, 20)) {
         fail(`${abLabel}: "count" must be an integer between 1 and 20 if you include it.`);
+      }
+      if (ability.effect === "summonMinionIfMissing" && ability.trigger !== "onTurnStart") {
+        fail(`${abLabel}: summonMinionIfMissing can only use the "onTurnStart" trigger.`);
       }
     } else if (ability.effect === "buffAllFriendlyMinions") {
       if (ability.attack === undefined && ability.health === undefined) {
@@ -236,6 +241,13 @@ function validateAbilities(card, label) {
       }
       if (ability.health !== undefined && !isIntegerInRange(ability.health, -99, 99)) {
         fail(`${abLabel}: "health" must be an integer between -99 and 99.`);
+      }
+    } else if (ability.effect === "grantDivineShieldToAllFriendlyMinions") {
+      if (ability.trigger !== "onPlay") {
+        fail(`${abLabel}: grantDivineShieldToAllFriendlyMinions can only use the "onPlay" trigger.`);
+      }
+      if (ability.firstPlayOnly !== undefined && typeof ability.firstPlayOnly !== "boolean") {
+        fail(`${abLabel}: "firstPlayOnly" must be true or false when included.`);
       }
     } else if (ability.effect === "applyStatus") {
       const validStatuses = ["weakened", "frozen", "silenced", "poisoned", "marked"];

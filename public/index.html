@@ -8,8 +8,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/base.css?v=20260712-ui-consistency-6" />
 <link rel="stylesheet" href="css/menu.css?v=20260712-how-to-status-1" />
+<link rel="stylesheet" href="css/account-profile.css?v=1.4.0" />
 <link rel="stylesheet" href="css/lobby.css?v=20260712-ui-consistency-6" />
-<link rel="stylesheet" href="css/board.css?v=20260712-ui-consistency-6" />
+<link rel="stylesheet" href="css/board.css?v=1.4.0" />
 <link rel="stylesheet" href="css/cards.css?v=20260712-ui-consistency-6" />
 <link rel="stylesheet" href="css/board-arena.css?v=20260712-ui-consistency-6" />
 <link rel="stylesheet" href="css/board-hand.css?v=20260712-ui-consistency-6" />
@@ -116,7 +117,7 @@
         <button id="btnOpenPrivacyMenu" class="btn menu-option-button" type="button">Privacy Notice</button>
         <div class="menu-option-config">
           <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Config</button>
-          <span class="menu-version">Version 1.2</span>
+          <span class="menu-version">Version 1.4</span>
         </div>
       </div>
     </div>
@@ -157,11 +158,16 @@
         </svg>
         Login with Discord
       </button>
-      <div id="accountProfile" class="account-profile hidden">
+      <button id="accountProfile" class="account-profile hidden" type="button" aria-controls="screen-profile">
         <img id="accountAvatar" class="account-avatar hidden" alt="" />
-        <span id="accountName" class="account-name"></span>
+        <span id="accountAvatarFallback" class="account-avatar account-avatar-fallback" aria-hidden="true">?</span>
+        <span class="account-chip-main">
+          <span id="accountName" class="account-name"></span>
+          <span class="account-chip-label">Player Profile</span>
+        </span>
         <span id="accountGold" class="account-gold">0 gold</span>
-      </div>
+        <span id="accountProfileProgressDot" class="account-profile-progress-dot hidden" aria-label="New profile progression"></span>
+      </button>
     </div>
 
     <div id="audioConfigPanel" class="audio-config-panel hidden" role="dialog" aria-modal="false" aria-labelledby="audioConfigTitle">
@@ -689,6 +695,12 @@
       </div>
     </div>
 
+    <div id="matchIntro" class="match-intro hidden" aria-live="polite">
+      <div id="matchIntroOpponent" class="match-intro-contender match-intro-opponent"></div>
+      <div class="match-intro-versus" aria-hidden="true"><span>VS</span></div>
+      <div id="matchIntroSelf" class="match-intro-contender match-intro-self"></div>
+    </div>
+
     <div id="targetHint" class="target-hint hidden">Choose a target (or click the enemy hero) — <button id="cancelTarget" class="btn-link">cancel</button></div>
   </section>
 
@@ -725,6 +737,25 @@
         <button id="btnCloseChangelog" class="changelog-close" type="button" aria-label="Close changelog">x</button>
       </div>
       <div class="changelog-content">
+      <article class="changelog-entry">
+        <div class="changelog-entry-meta">
+          <h3>Version 1.4</h3>
+          <span>Expansion 1 & Player Profile Update</span>
+        </div>
+        <p class="changelog-entry-intro">A new roster arrives, alongside a more personal way to show your Arcana journey.</p>
+        <ul class="changelog-list">
+          <li>Added Expansion 1: twenty new collectible cards from Arcana, available in its own shop pack.</li>
+          <li>Meet Abdellah, Abo_Amer, Aslani, Baatus, Biertierchen, Dantenie83, DIYslinky, euler, jeraxes, light, makariozzz, meow4glory, moonhammer, puipui_09, Rockseller, taru95, tucuquere, vlad, Red, and Crowley_The_Penguin.</li>
+          <li>Red calls RedWolf to the battlefield at the start of each turn while it is absent. Crowley_The_Penguin grants your board Divine Shield the first time it is played.</li>
+          <li>Rebalanced several existing cards and updated stat lines across the roster.</li>
+          <li>Added player profiles with wins, losses, mode-specific statistics, collection browsing, player search, titles, achievements, and up to three equipped achievement badges.</li>
+          <li>New title and achievement unlocks are announced in-game, and profile notifications mark rewards waiting to be viewed.</li>
+          <li>Before a match begins, both contenders are introduced with their profile title and equipped badges. The introduction now fades in and out before the first turn starts.</li>
+          <li>A match is now a draw when both players have no cards left in hand, deck, or on the battlefield.</li>
+          <li>Discord Activity authentication has been hardened and fixed for the live app, with trusted-origin validation and safer session handling.</li>
+          <li>Improved the main-menu music flow and mobile presentation across the profile and match introduction.</li>
+        </ul>
+      </article>
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
           <h3>Version 1.3</h3>
@@ -877,21 +908,115 @@
     </div>
   </div>
 
+  <!-- ---------- SCREEN: PLAYER PROFILE ---------- -->
+  <section id="screen-profile" class="screen profile-screen hidden" aria-labelledby="profilePageName">
+    <div class="profile-page-shell">
+      <header class="profile-page-header">
+        <div class="profile-search-control">
+          <form id="playerSearchForm" class="player-search-form" role="search">
+            <input id="playerSearchInput" class="player-search-input" type="search" maxlength="40" autocomplete="off" placeholder="Find a player" aria-label="Search players by name" />
+            <button id="btnPlayerSearch" class="player-search-button" type="submit" aria-label="Search players">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg>
+            </button>
+          </form>
+          <div id="playerSearchPopover" class="profile-search-popover hidden">
+            <p id="playerSearchStatus" class="player-search-status">Search by a duelist name.</p>
+            <div id="playerSearchResults" class="player-search-results"></div>
+          </div>
+        </div>
+      </header>
+
+      <main class="profile-page-layout">
+        <section class="profile-overview" aria-label="Duelist overview">
+          <div class="profile-hero">
+            <div class="profile-avatar-frame">
+              <img id="profilePageAvatar" class="profile-page-avatar hidden" alt="" />
+              <span id="profilePageAvatarFallback" class="profile-page-avatar profile-page-avatar-fallback" aria-hidden="true">?</span>
+            </div>
+            <div class="profile-identity">
+              <p id="profilePageSubtitle" class="profile-kicker">Player profile</p>
+              <h1 id="profilePageName">Player</h1>
+              <p id="profilePageTitle" class="profile-title-badge">Arcane Initiate</p>
+              <div id="profileEquippedBadges" class="profile-equipped-badges" aria-label="Equipped achievement badges"></div>
+              <div class="profile-meta-row">
+                <span id="profilePageGold" class="profile-meta-pill">Public profile</span>
+                <span id="profilePageRecord" class="profile-meta-pill">0W / 0L</span>
+              </div>
+            </div>
+          </div>
+          <div class="profile-stat-modes" role="tablist" aria-label="Match statistics mode">
+            <button class="profile-stat-mode is-active" type="button" role="tab" aria-selected="true" data-stat-mode="quickplay">Quickplay</button>
+            <button class="profile-stat-mode" type="button" role="tab" aria-selected="false" data-stat-mode="oneVsOne">1v1</button>
+            <button class="profile-stat-mode" type="button" role="tab" aria-selected="false" data-stat-mode="singleplayer">Singleplayer</button>
+          </div>
+          <div id="profileStatsGrid" class="profile-stats-grid" aria-label="Profile stats"></div>
+          <div class="profile-overview-actions">
+            <button id="btnProfileBack" class="profile-return" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6" /></svg>
+              <span>Return to menu</span>
+            </button>
+            <button id="btnViewOwnProfile" class="profile-own hidden" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c0-3.5 2.8-5.8 7-5.8s7 2.3 7 5.8" /></svg>
+              <span>My profile</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="profile-progression" aria-label="Progression">
+          <div class="profile-section-heading">
+            <div>
+              <p class="profile-kicker">Duelist record</p>
+              <h2>Arcane Progression</h2>
+            </div>
+            <span id="profileUnlockSummary" class="profile-unlock-summary">0 achievements unlocked</span>
+          </div>
+          <div class="profile-tabs" role="tablist" aria-label="Profile progression views">
+            <button class="profile-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="profileAchievementsPanel" data-profile-tab="achievements">Achievements</button>
+            <button class="profile-tab" type="button" role="tab" aria-selected="false" aria-controls="profileTitlesPanel" data-profile-tab="titles">Titles</button>
+          </div>
+          <div id="profileAchievementsPanel" class="profile-tab-panel" role="tabpanel">
+            <div id="profileAchievements" class="profile-achievements"></div>
+          </div>
+          <div id="profileTitlesPanel" class="profile-tab-panel hidden" role="tabpanel">
+            <p id="profileTitlesHint" class="profile-panel-note">Choose an unlocked title to carry into your public profile.</p>
+            <div id="profileTitles" class="profile-titles"></div>
+          </div>
+        </section>
+      </main>
+      <section id="profileCollectionSection" class="profile-collection-section hidden" aria-label="Card collection">
+        <div class="profile-section-heading">
+          <div>
+            <p class="profile-kicker">Personal vault</p>
+            <h2>Card Collection</h2>
+          </div>
+          <span id="profileCardsSummary" class="profile-unlock-summary"></span>
+        </div>
+        <div class="profile-card-list-panel">
+          <div id="profileCards" class="profile-card-list"></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
   <!-- ---------- ERROR TOAST ---------- -->
   <div id="toast" class="toast hidden"></div>
+  <div id="profileUnlockNotifications" class="profile-unlock-notifications" aria-live="polite" aria-atomic="true"></div>
 
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=20260712-card-state-sync-1"></script>
+  <script src="cards.js?v=1.4.0"></script>
   <script src="deckRules.js"></script>
-  <script src="engine.js?v=20260709-global-rounds-1"></script>
+  <script src="engine.js?v=1.4.0"></script>
   <script src="ai.js"></script>
-  <script src="audioConfig.js"></script>
+  <script src="audioConfig.js?v=1.4.0"></script>
   <script src="audioManager.js?v=20260710-audio-pool-1"></script>
   <script src="packOpening.js?v=20260709-card-cost-1"></script>
 <script src="legalNotices.js?v=20260710-card-request-1"></script>
-<script src="client.js?v=20260711-release-1-3"></script>
+<script src="profileCatalog.js?v=1.4.0"></script>
+<script src="profileBadges.js?v=1.4.0"></script>
+<script src="accountProfile.js?v=1.4.0"></script>
+<script src="client.js?v=1.4.0"></script>
 <script src="boardInteractions.js?v=20260710-responsive-actions-1"></script>
 <script src="inventory.js?v=20260712-deck-expansion-filter-1"></script>
 <script src="deckBuilder.js?v=20260711-deck-management-1"></script>

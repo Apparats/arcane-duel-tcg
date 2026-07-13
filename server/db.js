@@ -13,6 +13,7 @@ const { buildAutoDeck, validateDeck } = require("../public/deckRules");
 const { getCardById } = require("../public/cards");
 const { assertMongoKeySegment, assertPositiveInteger, sanitizeDiscordProfile, toObjectId } = require("./mongoSafety");
 const { withUserLock, withUserLocks } = require("./userLocks");
+const { getProgress } = require("../public/profileCatalog");
 
 let client = null;
 let db = null;
@@ -58,6 +59,7 @@ async function connectDB() {
 
     await Promise.all([
       db.collection("users").createIndex({ discordId: 1 }, { unique: true }),
+      db.collection("users").createIndex({ username: 1 }),
       db.collection("users").createIndex({ "stats.quickplayWins": -1, _id: 1 }),
       cardRequests.createIndex({ userId: 1, requestDay: 1 }, { unique: true }),
     ]);
@@ -141,7 +143,10 @@ async function findOrCreateUserFromDiscord(discordProfile, starterOpening = null
         decks: starterDeck ? [starterDeck] : [],
         activeDeckId: starterDeck?.id || null,
         pendingRewards,
-        stats: { wins: 0, losses: 0, surrenders: 0, packsOpened: 0, quickplayWins: 0 },
+        stats: { wins: 0, losses: 0, surrenders: 0, packsOpened: 0, quickplayWins: 0, campaignWins: 0, npcWins: 0, johnnyWins: 0 },
+        modeStats: { singleplayer: { wins: 0, losses: 0, draws: 0, surrenders: 0 }, oneVsOne: { wins: 0, losses: 0, draws: 0, surrenders: 0 }, quickplay: { wins: 0, losses: 0, draws: 0, surrenders: 0 } },
+        selectedTitle: "initiate",
+        equippedBadgeIds: [],
         gold: 0,
         warnings: [],
         economy: {
@@ -183,7 +188,7 @@ async function grantCampaignReward(userId, campaignId, cardIds, rewardCount = 1)
   }
 
   return withUserLock(String(_id), async () => {
-    const user = await users.findOne({ _id }, { projection: { cardCollection: 1, unlockedCards: 1 } });
+    const user = await users.findOne({ _id }, { projection: { cardCollection: 1, unlockedCards: 1, stats: 1 } });
     if (!user) throw new Error("User not found.");
 
     const rewardPool = safeCardIds.map((id) => getCardById(id));
@@ -196,14 +201,43 @@ async function grantCampaignReward(userId, campaignId, cardIds, rewardCount = 1)
     await users.updateOne(
       { _id },
       {
-        $inc: { ...increments, ...campaignDrops },
+        $inc: { ...increments, ...campaignDrops, "stats.campaignWins": 1, [`campaignProgress.${safeCampaignId}.wins`]: 1 },
         $addToSet: { unlockedCards: { $each: opening.newCardIds } },
         $set: { updatedAt: new Date() },
       }
     );
-    const updated = await users.findOne({ _id }, { projection: { cardCollection: 1, unlockedCards: 1, campaignProgress: 1 } });
-    return { claimed: true, cards: opening.cards, cardCollection: updated.cardCollection || {}, unlockedCards: updated.unlockedCards || [], cardDrops: updated.campaignProgress?.[safeCampaignId]?.cardDrops || {} };
+    const updated = await users.findOne({ _id }, { projection: { cardCollection: 1, unlockedCards: 1, campaignProgress: 1, stats: 1 } });
+    return { claimed: true, cards: opening.cards, cardCollection: updated.cardCollection || {}, unlockedCards: updated.unlockedCards || [], cardDrops: updated.campaignProgress?.[safeCampaignId]?.cardDrops || {}, campaignWins: updated.campaignProgress?.[safeCampaignId]?.wins || 0, stats: updated.stats || {} };
   });
+}
+
+async function recordCampaignResult(userId, { result, surrendered = false }) {
+  if (!["win", "loss", "draw"].includes(result)) throw new Error("Invalid campaign result.");
+  const users = getDB().collection("users");
+  const _id = toObjectId(userId, "user id");
+  const update = { $inc: {}, $set: { updatedAt: new Date() } };
+  const modeField = "modeStats.singleplayer";
+
+  if (result === "win") {
+    update.$inc["stats.wins"] = 1;
+    update.$inc[`${modeField}.wins`] = 1;
+  } else if (result === "loss") {
+    update.$inc["stats.losses"] = 1;
+    update.$inc[`${modeField}.losses`] = 1;
+  }
+  if (surrendered) {
+    update.$inc["stats.surrenders"] = 1;
+    update.$inc[`${modeField}.surrenders`] = 1;
+  }
+
+  const resultDoc = await users.findOneAndUpdate(
+    { _id },
+    update,
+    { projection: { stats: 1, modeStats: 1 }, returnDocument: "after" }
+  );
+  const user = resultDoc?.value || resultDoc;
+  if (!user) throw new Error("User not found.");
+  return { stats: user.stats || {}, modeStats: user.modeStats || {} };
 }
 
 async function getCampaignProgress(userId) {
@@ -361,7 +395,7 @@ async function exchangeCardsBetweenUsers({ fromUserId, toUserId, fromCardId, toC
   });
 }
 
-async function grantMatchEconomy(userId, { mode, result, surrendered = false, quickplay = false }) {
+async function grantMatchEconomy(userId, { mode, result, surrendered = false, quickplay = false, johnnyWin = false }) {
   if (!["singleplayer", "multiplayer"].includes(mode)) throw new Error("Invalid economy mode.");
   if (!["win", "loss", "draw"].includes(result)) throw new Error("Invalid match result.");
 
@@ -372,7 +406,7 @@ async function grantMatchEconomy(userId, { mode, result, surrendered = false, qu
   const day = todayKey(now);
   const dailyField = `economy.dailyRewards.${day}.${mode}`;
 
-  const user = await users.findOne({ _id }, { projection: { gold: 1, economy: 1, stats: 1 } });
+  const user = await users.findOne({ _id }, { projection: { gold: 1, economy: 1, stats: 1, modeStats: 1 } });
   if (!user) throw new Error("User not found.");
 
   const earnedToday = user.economy?.dailyRewards?.[day]?.[mode] || 0;
@@ -390,8 +424,17 @@ async function grantMatchEconomy(userId, { mode, result, surrendered = false, qu
     },
   };
 
+  const statMode = mode === "singleplayer" ? "singleplayer" : quickplay ? "quickplay" : "oneVsOne";
+  const modeStatField = `modeStats.${statMode}`;
+  if (result === "win") update.$inc[`${modeStatField}.wins`] = 1;
+  if (result === "loss") update.$inc[`${modeStatField}.losses`] = 1;
+  if (result === "draw") update.$inc[`${modeStatField}.draws`] = 1;
+  if (surrendered) update.$inc[`${modeStatField}.surrenders`] = 1;
+
   if (result === "win") update.$inc["stats.wins"] = 1;
   if (result === "win" && mode === "multiplayer" && quickplay) update.$inc["stats.quickplayWins"] = 1;
+  if (result === "win" && mode === "singleplayer") update.$inc["stats.npcWins"] = 1;
+  if (result === "win" && mode === "multiplayer" && johnnyWin) update.$inc["stats.johnnyWins"] = 1;
   if (result === "loss") update.$inc["stats.losses"] = 1;
   if (surrendered) {
     update.$inc["stats.surrenders"] = 1;
@@ -421,6 +464,7 @@ async function grantMatchEconomy(userId, { mode, result, surrendered = false, qu
     gold: updated.gold || 0,
     warnings: updated.warnings || [],
     stats: updated.stats || { wins: 0, losses: 0, surrenders: 0 },
+    modeStats: updated.modeStats || {},
   };
   });
 }
@@ -433,6 +477,124 @@ function publicRankingPlayer(user, rank) {
     avatarUrl: user.avatar ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png` : null,
     userId: String(user._id),
   };
+}
+
+function normalizedPublicStats(stats = {}) {
+  return {
+    wins: Math.max(0, stats.wins || 0),
+    losses: Math.max(0, stats.losses || 0),
+    surrenders: Math.max(0, stats.surrenders || 0),
+    quickplayWins: Math.max(0, stats.quickplayWins || 0),
+    packsOpened: Math.max(0, stats.packsOpened || 0),
+    campaignWins: Math.max(0, stats.campaignWins || 0),
+    npcWins: Math.max(0, stats.npcWins || 0),
+    johnnyWins: Math.max(0, stats.johnnyWins || 0),
+  };
+}
+
+function normalizedModeStats(modeStats = {}, legacyStats = {}) {
+  const normalize = (stats = {}) => ({
+    wins: Math.max(0, stats.wins || 0),
+    losses: Math.max(0, stats.losses || 0),
+    draws: Math.max(0, stats.draws || 0),
+    surrenders: Math.max(0, stats.surrenders || 0),
+  });
+  const singleplayer = normalize(modeStats.singleplayer);
+  const oneVsOne = normalize(modeStats.oneVsOne);
+  const quickplay = normalize(modeStats.quickplay);
+  const allModes = [singleplayer, oneVsOne, quickplay];
+  const total = (field) => allModes.reduce((sum, stats) => sum + stats[field], 0);
+
+  // Mode-specific stats were added after the global record. Keep those older
+  // matches visible by assigning only the unclassified remainder to Quickplay.
+  quickplay.wins += Math.max(0, (legacyStats.wins || 0) - total("wins"), (legacyStats.quickplayWins || 0) - quickplay.wins);
+  quickplay.losses += Math.max(0, (legacyStats.losses || 0) - total("losses"));
+  quickplay.surrenders += Math.max(0, (legacyStats.surrenders || 0) - total("surrenders"));
+  return { singleplayer, oneVsOne, quickplay };
+}
+
+function publicPlayerProfile(user) {
+  const progress = getProgress(user.stats, user.selectedTitle, user.equippedBadgeIds);
+  return {
+    id: String(user._id),
+    username: user.username || "Player",
+    avatarUrl: user.avatar ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png` : null,
+    stats: normalizedPublicStats(progress.stats),
+    modeStats: normalizedModeStats(user.modeStats, user.stats),
+    selectedTitle: progress.selectedTitle,
+    achievements: progress.achievements,
+    titles: progress.titles,
+    equippedBadges: progress.equippedBadges,
+    cardCollection: user.cardCollection || {},
+    unlockedCards: user.unlockedCards || [],
+    createdAt: user.createdAt || null,
+  };
+}
+
+async function setEquippedBadges(userId, achievementIds) {
+  if (!Array.isArray(achievementIds) || achievementIds.length > 3 || achievementIds.some((id) => typeof id !== "string")) {
+    throw new Error("Choose up to three achievement badges.");
+  }
+  const ids = [...new Set(achievementIds)];
+  const users = getDB().collection("users");
+  const _id = toObjectId(userId, "user id");
+  const user = await users.findOne({ _id });
+  if (!user) throw new Error("User not found.");
+  const progress = getProgress(user.stats, user.selectedTitle, ids);
+  if (progress.equippedBadges.length !== ids.length) throw new Error("Only unlocked achievement badges can be equipped.");
+  await users.updateOne({ _id }, { $set: { equippedBadgeIds: ids } });
+  return publicPlayerProfile({ ...user, equippedBadgeIds: ids });
+}
+
+async function setSelectedTitle(userId, titleId) {
+  const users = getDB().collection("users");
+  const _id = toObjectId(userId, "user id");
+  const user = await users.findOne({ _id });
+  if (!user) throw new Error("User not found.");
+
+  const progress = getProgress(user.stats, titleId);
+  const requested = progress.titles.find((title) => title.id === titleId);
+  if (!requested) throw new Error("Unknown title.");
+  if (!requested.unlocked) throw new Error("That title has not been unlocked yet.");
+
+  await users.updateOne({ _id }, { $set: { selectedTitle: requested.id } });
+  return publicPlayerProfile({ ...user, selectedTitle: requested.id });
+}
+
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizePlayerSearchQuery(query) {
+  if (typeof query !== "string") return "";
+  return query.trim().replace(/\s+/g, " ").slice(0, 40);
+}
+
+async function searchPublicPlayers(query, limit = 8) {
+  const search = normalizePlayerSearchQuery(query);
+  if (search.length < 2) return [];
+
+  const safeLimit = Math.max(1, Math.min(Number.isInteger(limit) ? limit : 8, 12));
+  const regex = new RegExp(escapeRegex(search), "i");
+  const projection = { username: 1, discordUsername: 1, avatar: 1, discordId: 1, stats: 1, modeStats: 1, selectedTitle: 1, equippedBadgeIds: 1, cardCollection: 1, unlockedCards: 1, createdAt: 1 };
+  const users = await getDB()
+    .collection("users")
+    .find({ $or: [{ username: regex }, { discordUsername: regex }] }, { projection })
+    .sort({ "stats.quickplayWins": -1, username: 1, _id: 1 })
+    .limit(safeLimit)
+    .toArray();
+
+  return users.map(publicPlayerProfile);
+}
+
+async function getPublicPlayerProfile(userId) {
+  const user = await getDB()
+    .collection("users")
+    .findOne(
+      { _id: toObjectId(userId, "user id") },
+      { projection: { username: 1, avatar: 1, discordId: 1, stats: 1, modeStats: 1, selectedTitle: 1, equippedBadgeIds: 1, cardCollection: 1, unlockedCards: 1, createdAt: 1 } }
+    );
+  return user ? publicPlayerProfile(user) : null;
 }
 
 function rankQuickplayPlayers(users, userId, limit = 50) {
@@ -669,13 +831,18 @@ module.exports = {
   findUserById,
   consumePendingRewards,
   grantCampaignReward,
+  recordCampaignResult,
   getCampaignProgress,
   getDailyRewardProgress,
   grantDailyLoginReward,
   grantMatchEconomy,
   getQuickplayRanking,
+  getPublicPlayerProfile,
+  setSelectedTitle,
+  setEquippedBadges,
   rankQuickplayPlayers,
   recordMultiplayerDisconnect,
+  searchPublicPlayers,
   resetConsecutiveDisconnects,
   exchangeCardsBetweenUsers,
   DAILY_REWARD_LIMITS,

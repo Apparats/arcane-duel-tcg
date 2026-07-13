@@ -240,6 +240,16 @@
       }
     },
 
+    summonMinionIfMissing(game, ctx, ability) {
+      const cardDef = getCardById(ability.cardId);
+      if (!cardDef || cardDef.type !== "minion") return;
+      const player = game.players[ctx.casterIdx];
+      if (player.board.some((minion) => minion.cardId === cardDef.id)) return;
+      if (boardLimitError(player, cardDef, { summoned: true })) return;
+      player.board.push(makeMinionInstance(cardDef));
+      game._addLog(`${ctx.sourceName} summons ${cardDef.name}.`);
+    },
+
     // Buffs (+attack/+health) all friendly minions.
     buffAllFriendlyMinions(game, ctx, ability) {
       const atk = ability.attack || 0;
@@ -250,6 +260,15 @@
         m.maxHealth += hp;
       });
       game._addLog(`${ctx.sourceName} buffs your minions (+${atk}/+${hp}).`);
+    },
+
+    grantDivineShieldToAllFriendlyMinions(game, ctx, ability) {
+      if (ability.firstPlayOnly && ctx.playedCount !== 1) return;
+      game.players[ctx.casterIdx].board.forEach((minion) => {
+        if (!minion.keywords.includes("divineShield")) minion.keywords.push("divineShield");
+        minion.divineShield = true;
+      });
+      game._addLog(`${ctx.sourceName} grants Divine Shield to all friendly minions.`);
     },
 
     healSelf(game, ctx, ability) {
@@ -394,15 +413,20 @@
           }
         });
       });
+      this._checkWin();
     }
 
     _checkWin() {
+      if (this.winner !== null) return;
       if (this.players[0].health <= 0 && this.players[1].health <= 0) {
         this.winner = "draw";
       } else if (this.players[0].health <= 0) {
         this.winner = 1;
       } else if (this.players[1].health <= 0) {
         this.winner = 0;
+      } else if (this.players.every((player) => player.hand.length === 0 && player.deck.length === 0 && player.board.length === 0)) {
+        this.winner = "draw";
+        this._addLog("Both duelists have exhausted every card. The match ends in a draw.");
       }
     }
 

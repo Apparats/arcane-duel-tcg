@@ -70,6 +70,15 @@ function main() {
   state0 = game.getStateFor(0);
   assert(state0.winner === 0, "Player 0 should win when Player 1 surrenders.");
 
+  const exhaustedGame = new Game("EXHAUSTED", "Empty A", "Empty B");
+  exhaustedGame.players.forEach((player) => {
+    player.hand = [];
+    player.deck = [];
+    player.board = [];
+  });
+  exhaustedGame._checkWin();
+  assert(exhaustedGame.winner === "draw", "A match should draw when both players have no hand, deck, or board.");
+
   const turnSummonTest = new Game("TURN-SUMMONS", "Summoner", "Opponent", {
     decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
   });
@@ -206,6 +215,51 @@ function main() {
   mostorTest._damageMinion(0, mostorTest.players[0].board[0], 99);
   assert(mostorTest.players[0].board.length === 0, "Mostor should leave the board after its second death.");
   assert(mostorTest.players[0].deck.length === 0, "Mostor should disappear after its second death.");
+
+  const crowleyTest = new Game("CROWLEY", "Crowley1", "Crowley2", {
+    decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
+  });
+  const shieldedAlly = testMinion("crowley-ally");
+  const enemyMinion = testMinion("crowley-enemy");
+  crowleyTest.players[0].board = [shieldedAlly];
+  crowleyTest.players[1].board = [enemyMinion];
+  crowleyTest.players[0].hand = ["expansion1:crowley-the-penguin"];
+  crowleyTest.players[0].manaCurrent = 10;
+  crowleyTest.playCard(0, 0, null);
+  assert(shieldedAlly.divineShield, "Crowley's first play should shield existing friendly minions.");
+  assert(crowleyTest.players[0].board[1].divineShield, "Crowley should shield itself on first play.");
+  assert(!enemyMinion.divineShield, "Crowley should never shield enemy minions.");
+  crowleyTest._damageMinion(0, shieldedAlly, 1);
+  assert(shieldedAlly.health === 1 && !shieldedAlly.divineShield, "Divine Shield should absorb the first hit.");
+
+  crowleyTest.players[0].board.forEach((minion) => {
+    minion.divineShield = false;
+    minion.keywords = minion.keywords.filter((keyword) => keyword !== "divineShield");
+  });
+  crowleyTest.players[0].hand = ["expansion1:crowley-the-penguin"];
+  crowleyTest.players[0].manaCurrent = 10;
+  crowleyTest.playCard(0, 0, null);
+  assert(!shieldedAlly.divineShield, "Crowley's effect should not repeat on a later play.");
+  assert(!crowleyTest.players[0].board[2].divineShield, "Later Crowleys should not gain the first-play shield.");
+
+  const redTest = new Game("RED", "Red1", "Red2", {
+    decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
+  });
+  redTest.players[0].board = [testMinion("red", "expansion1:red")];
+  redTest.endTurn(0);
+  redTest.endTurn(1);
+  let redWolf = redTest.players[0].board.find((minion) => minion.cardId === "special:redwolf");
+  assert(redWolf && redWolf.attack === 5 && redWolf.health === 6, "Red should summon a 5/6 RedWolf on its owner's turn.");
+  assert(redWolf.keywords.includes("taunt"), "RedWolf should have Taunt.");
+  redTest.endTurn(0);
+  redTest.endTurn(1);
+  assert(redTest.players[0].board.filter((minion) => minion.cardId === "special:redwolf").length === 1, "Red should not summon a second RedWolf while one remains.");
+  redTest._damageMinion(0, redWolf, 99);
+  assert(!redTest.players[0].board.some((minion) => minion.cardId === "special:redwolf"), "RedWolf should be removable.");
+  redTest.endTurn(0);
+  redTest.endTurn(1);
+  redWolf = redTest.players[0].board.find((minion) => minion.cardId === "special:redwolf");
+  assert(redWolf, "Red should summon a replacement RedWolf after the previous one dies.");
 
   const staleSocket = { roomCode: "NPC1", playerIdx: 0 };
   const staleSingleplayerRoom = {

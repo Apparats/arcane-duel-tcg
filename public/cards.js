@@ -15,8 +15,342 @@
 
   const CARDS = [
     {
-      "name": "ArchMoth_Morlet",
+      "name": "Abdellah",
+      "cost": 0,
+      "type": "minion",
+      "attack": 0,
+      "health": 2,
+      "keywords": [
+        "taunt"
+      ],
+      "race": "Human",
+      "rarity": "common",
+      "country": "Morocco",
+      "lore": "A quick learner who finds a route through every opening.",
+      "image": "art/Abdellah.webp",
+      "id": "expansion1:abdellah",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Abo_Amer",
+      "cost": 1,
+      "type": "minion",
+      "attack": 3,
+      "health": 1,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "rare",
+      "country": "Egypt",
+      "lore": "A daring opener who turns the first mana into immediate pressure.",
+      "image": "art/Abo_Amer.webp",
+      "id": "expansion1:abo-amer",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Aslani",
+      "cost": 2,
+      "type": "minion",
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "charge"
+      ],
+      "race": "Monster",
+      "rarity": "common",
+      "country": "Belgium",
+      "lore": "A bright flash, a decisive strike, then silence.",
+      "image": "art/Aslani.webp",
+      "id": "expansion1:aslani",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Baatus",
+      "cost": 2,
+      "type": "minion",
+      "attack": 0,
+      "health": 6,
+      "keywords": [
+        "taunt"
+      ],
+      "race": "Monster",
+      "rarity": "rare",
+      "country": "Netherlands",
+      "lore": "Allround Incapabel.",
+      "image": "art/Baatus.webp",
+      "id": "expansion1:baatus",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Biertierchen",
       "cost": 6,
+      "type": "minion",
+      "attack": 5,
+      "health": 2,
+      "keywords": [
+        "charge"
+      ],
+      "race": "Human",
+      "rarity": "rare",
+      "country": "Germany",
+      "lore": "Good boy!.",
+      "image": "art/Biertierchen.webp",
+      "id": "expansion1:biertierchen",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Crowley_The_Penguin",
+      "cost": 10,
+      "type": "minion",
+      "attack": 2,
+      "health": 13,
+      "keywords": [
+        "taunt"
+      ],
+      "race": "Monster",
+      "rarity": "mythic",
+      "country": "Vatican",
+      "lore": "On its first play, Crowley shields every friendly minion from the next hit.",
+      "image": "art/Crowley_THE_Penguin.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "grantDivineShieldToAllFriendlyMinions",
+          "firstPlayOnly": true
+        }
+      ],
+      "id": "expansion1:crowley-the-penguin",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "DIYslinky",
+      "cost": 4,
+      "type": "minion",
+      "attack": 5,
+      "health": 3,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "common",
+      "country": "Sweden",
+      "lore": "The Great Angel of Sweden.",
+      "image": "art/DIYSlinky.webp",
+      "id": "expansion1:diyslinky",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Dantenie83",
+      "cost": 4,
+      "type": "minion",
+      "attack": 2,
+      "health": 6,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "rare",
+      "country": "Romania",
+      "lore": "Meme all or meme none!",
+      "image": "art/Dantenie83.webp",
+      "id": "expansion1:dantenie83",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Euler",
+      "cost": 4,
+      "type": "minion",
+      "attack": 3,
+      "health": 5,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "common",
+      "country": "Argentina",
+      "lore": "Every angle of the duel has already been calculated.",
+      "image": "art/Euler.webp",
+      "id": "expansion1:euler",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Jeraxes",
+      "cost": 7,
+      "type": "minion",
+      "attack": 0,
+      "health": 9,
+      "keywords": [
+        "taunt"
+      ],
+      "race": "Human",
+      "rarity": "rare",
+      "country": "EEUU",
+      "lore": "Spreader of Democracy.",
+      "image": "art/Jeraxes.webp",
+      "id": "expansion1:jeraxes",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Light",
+      "cost": 8,
+      "type": "minion",
+      "attack": 7,
+      "health": 1,
+      "keywords": [
+        "charge"
+      ],
+      "race": "Monster",
+      "rarity": "rare",
+      "country": "Luxemburg",
+      "lore": "Light moves first, leaving the board to catch up.",
+      "image": "art/Light.webp",
+      "id": "expansion1:light",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Makariozzz",
+      "cost": 5,
+      "type": "minion",
+      "attack": 6,
+      "health": 4,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "common",
+      "country": "Egypt",
+      "lore": "Rise and rise , till lambs turn lions.",
+      "image": "art/Makariozzz.webp",
+      "id": "expansion1:makariozzz",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Meow4glory",
+      "cost": 4,
+      "type": "minion",
+      "attack": 2,
+      "health": 7,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "rare",
+      "country": "Ukraine",
+      "lore": "Полковий писар Війська Запорізького.",
+      "image": "art/Meow4Glory.webp",
+      "id": "expansion1:meow4glory",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Moonhammer",
+      "cost": 10,
+      "type": "minion",
+      "attack": 3,
+      "health": 9,
+      "keywords": [
+        "charge"
+      ],
+      "race": "Monster",
+      "rarity": "legendary",
+      "country": "Croatia",
+      "lore": "Where the Moon rises, the Hammer falls.",
+      "image": "art/Moonhammer.webp",
+      "id": "expansion1:moonhammer",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Puipui_09",
+      "cost": 7,
+      "type": "minion",
+      "attack": 6,
+      "health": 6,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "common",
+      "country": "France",
+      "lore": "Cases!.",
+      "image": "art/Puipui_09.webp",
+      "id": "expansion1:puipui-09",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Red",
+      "cost": 8,
+      "type": "minion",
+      "attack": 0,
+      "health": 8,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "mythic",
+      "country": "Vatican",
+      "lore": "At the start of each of your turns, Red calls RedWolf if the pack is gone.",
+      "image": "art/Red.webp",
+      "abilities": [
+        {
+          "trigger": "onTurnStart",
+          "effect": "summonMinionIfMissing",
+          "cardId": "special:redwolf"
+        }
+      ],
+      "id": "expansion1:red",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Rockseller",
+      "cost": 8,
+      "type": "minion",
+      "attack": 4,
+      "health": 7,
+      "keywords": [
+        "taunt"
+      ],
+      "race": "Monster",
+      "rarity": "rare",
+      "country": "Arcana",
+      "lore": "Chad is chad.",
+      "image": "art/Rock.webp",
+      "id": "expansion1:rock",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "Taru95",
+      "cost": 8,
+      "type": "minion",
+      "attack": 10,
+      "health": 1,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "rare",
+      "country": "Germany",
+      "lore": "Ich will pöbeln!",
+      "image": "art/Taru95.webp",
+      "id": "expansion1:taru95",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "tucuquere",
+      "cost": 5,
+      "type": "minion",
+      "attack": 5,
+      "health": 4,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "common",
+      "country": "Chile",
+      "lore": "Its watch lasts through the longest night in Arcana.",
+      "image": "art/Tucuquere.webp",
+      "id": "expansion1:tucuquere",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "vlad",
+      "cost": 10,
+      "type": "minion",
+      "attack": 8,
+      "health": 4,
+      "keywords": [
+        "charge"
+      ],
+      "race": "Human",
+      "rarity": "legendary",
+      "country": "Cyprus",
+      "lore": "𝕳𝖔𝖓𝖔𝖗𝖆𝖇𝖑𝖊.",
+      "image": "art/Vlad.webp",
+      "id": "expansion1:vlad",
+      "_expansionId": "expansion1"
+    },
+    {
+      "name": "ArchMoth_Morlet",
+      "cost": 7,
       "type": "minion",
       "attack": 5,
       "health": 6,
@@ -184,10 +518,10 @@
     },
     {
       "name": "Toy",
-      "cost": 2,
+      "cost": 4,
       "type": "minion",
-      "attack": 1,
-      "health": 6,
+      "attack": 2,
+      "health": 8,
       "keywords": [
         "taunt"
       ],
@@ -439,7 +773,7 @@
     },
     {
       "name": "Dezadin",
-      "cost": 7,
+      "cost": 9,
       "type": "minion",
       "attack": 3,
       "health": 5,
@@ -694,7 +1028,7 @@
     },
     {
       "name": "Kysely",
-      "cost": 8,
+      "cost": 5,
       "type": "minion",
       "attack": 2,
       "health": 8,
@@ -819,7 +1153,7 @@
     },
     {
       "name": "Mr Labubu",
-      "cost": 4,
+      "cost": 5,
       "type": "minion",
       "attack": 7,
       "health": 2,
@@ -1209,20 +1543,20 @@
       "name": "Moths",
       "cost": 5,
       "type": "minion",
-      "attack": 1,
-      "health": 4,
+      "attack": 0,
+      "health": 3,
       "keywords": [],
       "race": "Monster",
       "rarity": "mythic",
       "country": "Arcana",
-      "lore": "A moth! Every turn this card heals your board by 1!",
+      "lore": "A moth! Every turn this card heals your board by 2!",
       "image": "art/Moths.webp",
       "showInInventory": false,
       "abilities": [
         {
           "trigger": "onTurnStart",
           "effect": "buffAllFriendlyMinions",
-          "health": 1
+          "health": 2
         }
       ],
       "id": "special:moths",
@@ -1242,6 +1576,24 @@
       "image": "art/Multi.webp",
       "showInInventory": false,
       "id": "special:multi",
+      "_expansionId": "special"
+    },
+    {
+      "name": "RedWolf",
+      "cost": 5,
+      "type": "minion",
+      "attack": 5,
+      "health": 6,
+      "keywords": [
+        "taunt"
+      ],
+      "race": "Monster",
+      "rarity": "rare",
+      "country": "Arcana",
+      "lore": "Red's loyal guardian holds the line until the next call.",
+      "image": "art/RedWolf.webp",
+      "showInInventory": false,
+      "id": "special:redwolf",
       "_expansionId": "special"
     }
   ];

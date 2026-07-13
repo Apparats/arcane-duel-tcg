@@ -197,6 +197,7 @@ function toPublicUser(user) {
     username: user.username,
     avatarUrl: user.avatar ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png` : null,
     stats: user.stats || { wins: 0, losses: 0, surrenders: 0, quickplayWins: 0 },
+    modeStats: user.modeStats || {},
     gold: user.gold || 0,
     economy: {
       dailyRewards: getDailyRewardProgress(user),
@@ -204,6 +205,8 @@ function toPublicUser(user) {
     warnings: user.warnings || [],
     unlockedCards: user.unlockedCards || [],
     cardCollection: user.cardCollection || {},
+    selectedTitle: user.selectedTitle || "initiate",
+    equippedBadgeIds: user.equippedBadgeIds || [],
   };
 }
 
