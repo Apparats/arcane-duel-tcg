@@ -25,6 +25,7 @@ const {
   isDbEnabled,
 } = require("./db");
 const { getStarterCardPool } = require("./shopCatalog");
+const { isDiscordActivityRequest } = require("./security");
 const { issueWsTicket } = require("./wsTicketService");
 
 const DISCORD_API = "https://discord.com/api/v10";
@@ -68,12 +69,14 @@ function cookieSecure() {
 
 function setSessionCookie(res, token, { embedded = false } = {}) {
   const secure = cookieSecure();
+  const partitioned = embedded && secure;
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
     secure,
     // Discord Activities run in a cross-site iframe. Lax cookies are not
     // reliably returned for later API calls from that context.
-    sameSite: embedded && secure ? "none" : "lax",
+    sameSite: partitioned ? "none" : "lax",
+    partitioned,
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days, mirrors SESSION_DURATION
   });
 }
@@ -306,9 +309,11 @@ router.post("/ws-ticket", async (req, res) => {
 
 router.post("/logout", (req, res) => {
   const secure = cookieSecure();
+  const partitioned = secure && isDiscordActivityRequest(req);
   res.clearCookie(COOKIE_NAME, {
     secure,
-    sameSite: secure ? "none" : "lax",
+    sameSite: partitioned ? "none" : "lax",
+    partitioned,
   });
   res.json({ ok: true });
 });

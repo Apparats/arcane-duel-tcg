@@ -1,30 +1,32 @@
 const WINDOW_MS = 60 * 1000;
 
-function sameOrigin(req) {
-  const origin = req.get("origin");
-  if (!origin) return true;
+function normalizeOrigin(value) {
+  if (!value) return null;
 
   try {
-    const parsed = new URL(origin);
-    return parsed.host === req.get("host");
+    return new URL(String(value)).origin;
   } catch {
-    return false;
+    return null;
   }
 }
 
-function configuredOrigins() {
-  return [process.env.PUBLIC_APP_ORIGIN, process.env.WS_ALLOWED_ORIGINS]
+function requestOrigin(req) {
+  const origin = typeof req.get === "function" ? req.get("origin") : req.headers?.origin;
+  return normalizeOrigin(origin);
+}
+
+function configuredOrigins(...values) {
+  return values
     .filter(Boolean)
     .flatMap((value) => String(value).split(","))
     .map((value) => value.trim())
     .filter(Boolean)
-    .flatMap((value) => {
-      try {
-        return [new URL(value).origin];
-      } catch {
-        return [];
-      }
-    });
+    .map(normalizeOrigin)
+    .filter(Boolean);
+}
+
+function hasConfiguredOrigin(...values) {
+  return values.some((value) => String(value || "").trim().length > 0);
 }
 
 function discordActivityOrigin() {
@@ -32,28 +34,42 @@ function discordActivityOrigin() {
   return /^\d{5,32}$/.test(clientId) ? `https://${clientId}.discordsays.com` : null;
 }
 
-// A Discord Activity runs in an iframe, but its document origin remains this
-// game's public URL. discord.com itself must not be allowed here.
+function isDiscordActivityOrigin(origin) {
+  const expectedOrigin = discordActivityOrigin();
+  return Boolean(expectedOrigin && origin === expectedOrigin);
+}
+
+function isDiscordActivityRequest(req) {
+  return isDiscordActivityOrigin(requestOrigin(req));
+}
+
+function requestMatchesHost(origin, req) {
+  const host = String(req.headers?.host || (typeof req.get === "function" ? req.get("host") : "")).toLowerCase();
+  return Boolean(host && new URL(origin).host.toLowerCase() === host);
+}
+
+// Discord Activities are served through a per-application proxy origin. Allow
+// only that exact origin, never discord.com or a wildcard subdomain.
+function isTrustedHttpOrigin(req) {
+  const origin = requestOrigin(req);
+  if (!origin) return true;
+  if (isDiscordActivityOrigin(origin)) return true;
+
+  const publicOrigins = new Set(configuredOrigins(process.env.PUBLIC_APP_ORIGIN));
+  if (hasConfiguredOrigin(process.env.PUBLIC_APP_ORIGIN)) return publicOrigins.has(origin);
+  return requestMatchesHost(origin, req);
+}
+
 function isTrustedWebSocketOrigin(req) {
-  const origin = String(req.headers?.origin || "");
+  const origin = requestOrigin(req);
   if (!origin) return false;
+  if (isDiscordActivityOrigin(origin)) return true;
 
-  let normalizedOrigin;
-  try {
-    normalizedOrigin = new URL(origin).origin;
-  } catch {
-    return false;
+  const configured = new Set(configuredOrigins(process.env.PUBLIC_APP_ORIGIN, process.env.WS_ALLOWED_ORIGINS));
+  if (hasConfiguredOrigin(process.env.PUBLIC_APP_ORIGIN, process.env.WS_ALLOWED_ORIGINS)) {
+    return configured.has(origin);
   }
-
-  const configured = new Set(configuredOrigins());
-  const hasConfiguredAppOrigins = configured.size > 0;
-  const discordOrigin = discordActivityOrigin();
-  if (discordOrigin) configured.add(discordOrigin);
-  if (hasConfiguredAppOrigins) return configured.has(normalizedOrigin);
-  if (discordOrigin && normalizedOrigin === discordOrigin) return true;
-
-  const host = String(req.headers?.host || "").toLowerCase();
-  return new URL(normalizedOrigin).host.toLowerCase() === host;
+  return requestMatchesHost(origin, req);
 }
 
 function setSecurityHeaders(req, res, next) {
@@ -85,9 +101,7 @@ function setSecurityHeaders(req, res, next) {
 
 function requireSameOrigin(req, res, next) {
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) return next();
-  if (req.path === "/auth/discord/activity" || req.path === "/discord/activity") return next();
-  if (req.path === "/client-log") return next();
-  if (sameOrigin(req)) return next();
+  if (isTrustedHttpOrigin(req)) return next();
   return res.status(403).json({ error: "Cross-origin requests are not allowed." });
 }
 
@@ -123,7 +137,10 @@ function createRateLimiter({ windowMs = WINDOW_MS, max = 60, keyPrefix = "global
 
 module.exports = {
   createRateLimiter,
+  isDiscordActivityRequest,
+  isTrustedHttpOrigin,
   isTrustedWebSocketOrigin,
   requireSameOrigin,
   setSecurityHeaders,
 };
+
