@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/base.css?v=1.5.0" />
-<link rel="stylesheet" href="css/menu.css?v=1.5.0" />
+<link rel="stylesheet" href="css/menu.css?v=1.5.0-tile-fix-2" />
 <link rel="stylesheet" href="css/account-profile.css?v=1.5.0" />
 <link rel="stylesheet" href="css/lobby.css?v=1.5.0" />
 <link rel="stylesheet" href="css/board.css?v=1.5.0" />
@@ -223,8 +223,9 @@
           <span class="menu-tile-sub">Fastplay vs NPC or play the campaigns!</span>
           <span class="menu-tile-gold" id="singleplayerGoldProgress">0 / 50 gold today</span>
         </button>
-        <button class="menu-tile menu-tile-primary" id="tileMultiplayer">
+        <div class="menu-tile-wrap">
           <span id="tournamentIncoming" class="tournament-incoming hidden" aria-live="polite"><span aria-hidden="true"></span>Tournament incoming</span>
+          <button class="menu-tile menu-tile-primary" id="tileMultiplayer">
           <span class="menu-tile-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
               <circle cx="8.5" cy="8" r="3" />
@@ -236,7 +237,8 @@
           <span class="menu-tile-label">Play Multiplayer</span>
           <span class="menu-tile-sub">Online 1v1</span>
           <span class="menu-tile-gold" id="multiplayerGoldProgress">0 / 100 gold today</span>
-        </button>
+          </button>
+        </div>
       </div>
 
       <div class="menu-grid menu-grid-secondary">
@@ -750,6 +752,12 @@
         </div>
         <p class="changelog-entry-intro">A competitive Arcana bracket is ready to open.</p>
         <ul class="changelog-list">
+          <li>Added Fanex and Manuchiliz to Expansion 1. Fanex returns a chosen enemy minion to its owner's deck, while Manuchiliz damages every minion when played.</li>
+          <li>Completed the Expansion 1 spell presentation with illustrated spell cards, exact effect descriptions, heal overflow, and a three-spell deck limit.</li>
+          <li>Spell casts and Mythic summons now receive their own battlefield reveal, making important plays easier to follow for both players.</li>
+          <li>Fastplay's NPC now builds a different legal minion deck each match, avoids spells, and never attacks with zero Attack.</li>
+          <li>Refined card frames across the game: mana remains in the upper corner, while Attack, Health, damage, and healing use clearer lower stat circles. Mobile card inspection now supports press-and-hold.</li>
+          <li>Added the More than Honorable supporter title and achievement for players who support Arcana's development.</li>
           <li>Added Tournaments to Multiplayer: pre-register, follow the live bracket, and play your assigned match when both contenders are ready.</li>
           <li>Brackets scale to the number of registered players, with automatic byes, a final, and a third-place match when the bracket allows it.</li>
           <li>Podium prizes award 500 gold for first place, 250 for second, and 100 for third. Arcana Open #1 also announces Grimdark and Eco Pack rewards in Warera.</li>

@@ -515,7 +515,8 @@
   aspect-ratio: 16 / 10;
 }
 
-#tileMultiplayer { overflow: visible; }
+.menu-tile-wrap { position: relative; min-width: 0; }
+.menu-tile-wrap > .menu-tile { box-sizing: border-box; width: 100%; }
 .tournament-incoming {
   position: absolute;
   z-index: 4;
