@@ -24,49 +24,6 @@ function getCardQuantity(card) {
   return unlocked.includes(card.id) ? 1 : 0;
 }
 
-// ---- Human-readable ability descriptions ----
-
-const INV_TRIGGER_LABEL = {
-  onPlay: "On Play",
-  onDeath: "On Death",
-  onTurnStart: "At the start of your turn",
-  onAnyTurnStart: "At the start of each turn",
-  onAttack: "After attacking",
-  onAttackMinion: "After attacking a card",
-};
-
-const INV_EFFECT_DESCRIBER = {
-  drawCards: (a) => `Draw ${a.value} card${a.value === 1 ? "" : "s"}.`,
-  damageAllEnemyMinions: (a) => `Deal ${a.value} damage to all enemy minions.`,
-  damageAllMinions: (a) => `Deal ${a.value} damage to all minions in play.`,
-  damageEnemyHero: (a) => `Deal ${a.value} damage to the enemy hero.`,
-  healAllFriendlyMinions: (a) => `Heal your minions for ${a.value}.`,
-  healSelf: (a) => `Heal itself for ${a.value}.`,
-  returnToDeck: () => "Return this card to your deck.",
-  returnToDeckIfPlayedLessThan: (a) => `Return this card to your deck if it has been played fewer than ${a.value} times.`,
-  destroySelf: () => "Destroy itself.",
-  destroySelfIfPlayedAtLeast: (a) => `Destroy itself if it has been played at least ${a.value} times.`,
-  summonMinion: (a) => {
-    const def = typeof TCGCards !== "undefined" ? TCGCards.getCardById(a.cardId) : null;
-    const name = def ? def.name : a.cardId;
-    const count = a.count || 1;
-    return `Summon ${count} ${name}${count === 1 ? "" : "s"}.`;
-  },
-  buffAllFriendlyMinions: (a) => {
-    const parts = [];
-    if (a.attack) parts.push(`+${a.attack} Attack`);
-    if (a.health) parts.push(`+${a.health} Health`);
-    return `Give your minions ${parts.join(" and ") || "a buff"}.`;
-  },
-};
-
-function describeAbility(ability) {
-  const trigger = INV_TRIGGER_LABEL[ability.trigger] || ability.trigger;
-  const describer = INV_EFFECT_DESCRIBER[ability.effect];
-  const body = describer ? describer(ability) : ability.effect;
-  return `${trigger}: ${body}`;
-}
-
 // ---- Card list + filters ----
 
 let inventoryAllCards = [];
@@ -154,7 +111,7 @@ function inventoryCardFaceHTML(card, lazy = false) {
       ${
         card.type === "minion"
           ? `<span class="card-stat atk">${card.attack}</span><span class="card-name">${escapeHtml(card.name)}</span><span class="card-stat hp">${card.health}</span>`
-          : `<span class="card-name">${escapeHtml(card.name)}</span>${spellManaHTML(card)}`
+          : `<span class="card-name">${escapeHtml(card.name)}</span>${spellEffectValueHTML(card)}`
       }
     </div>
   `;
@@ -270,9 +227,6 @@ function openCardZoom(card) {
   $("zoomKeywords").innerHTML = keywords
     .map((k) => `<span class="tooltip-kw kw-${k}">${KEYWORD_LABEL[k] || ""} ${KEYWORD_FULL_LABEL[k] || k}</span>`)
     .join("");
-
-  const abilities = card.abilities || [];
-  $("zoomAbilities").innerHTML = abilities.map((a) => `<p class="zoom-ability">${escapeHtml(describeAbility(a))}</p>`).join("");
 
   $("zoomLore").textContent = card.lore || "";
 

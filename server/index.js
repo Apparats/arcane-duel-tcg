@@ -7,7 +7,10 @@ const cookieParser = require("cookie-parser");
 const { WebSocketServer } = require("ws");
 const { Game } = require("../public/engine");
 const { getCardById } = require("../public/cards");
+const { buildRandomLegalDeck } = require("../public/deckRules");
 const { connectDB, getCampaignProgress, grantCampaignReward, grantMatchEconomy, getPublicPlayerProfile, getQuickplayRanking, isDbEnabled, recordCampaignResult, recordMultiplayerDisconnect, resetConsecutiveDisconnects, searchPublicPlayers, setEquippedBadges, setSelectedTitle, submitCardRequest } = require("./db");
+const { listTournaments, registerForTournament, unregisterFromTournament, getReadyMatch, recordTournamentResult } = require("./tournaments/service");
+const { TOURNAMENT_TURN_DURATION_MS, TOURNAMENT_RECONNECT_GRACE_MS } = require("./tournaments/rules");
 const { router: authRouter, getSessionUser, isAuthEnabled } = require("./auth");
 const { router: shopRouter } = require("./shop");
 const { router: decksRouter } = require("./decks");
@@ -123,6 +126,34 @@ app.get("/ranking/quickplay", createRateLimiter({ max: 30, keyPrefix: "ranking" 
     res.status(500).json({ error: "Could not load the quickplay ranking." });
   }
 });
+app.get("/tournaments", createRateLimiter({ max: 30, keyPrefix: "tournaments" }), async (req, res) => {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Login with Discord is required." });
+  try {
+    res.json({ tournaments: await listTournaments(user.id) });
+  } catch (err) {
+    console.error("Tournament list failed:", err.message);
+    res.status(500).json({ error: "Could not load tournaments." });
+  }
+});
+app.post("/tournaments/:id/register", createRateLimiter({ max: 20, keyPrefix: "tournament-register" }), async (req, res) => {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Login with Discord is required." });
+  try {
+    res.json({ tournament: await registerForTournament(req.params.id, user) });
+  } catch (err) {
+    res.status(400).json({ error: err.message || "Could not register for this tournament." });
+  }
+});
+app.delete("/tournaments/:id/register", createRateLimiter({ max: 20, keyPrefix: "tournament-unregister" }), async (req, res) => {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Login with Discord is required." });
+  try {
+    res.json({ tournament: await unregisterFromTournament(req.params.id, user.id) });
+  } catch (err) {
+    res.status(400).json({ error: err.message || "Could not cancel tournament registration." });
+  }
+});
 app.get("/players/search", createRateLimiter({ max: 30, keyPrefix: "players-search" }), async (req, res) => {
   const user = await getSessionUser(req);
   if (!user) return res.status(401).json({ error: "Login with Discord is required." });
@@ -202,7 +233,10 @@ const server = app.listen(PORT, () => {
   console.log(`TCG server listening on http://localhost:${PORT}`);
   if (isDbEnabled()) {
     connectDB()
-      .then(() => console.log("Player accounts: enabled (MongoDB connected)."))
+      .then(() => {
+        console.log("Player accounts: enabled (MongoDB connected). ");
+        setInterval(() => listTournaments(null).catch((err) => console.error("Tournament scheduler failed:", err.message)), 30_000).unref();
+      })
       .catch((err) => console.error("MongoDB connection failed — accounts will be unavailable:", err.message));
   } else {
     console.log("Player accounts: disabled (no MONGODB_URI set). The game itself works fine without it.");
@@ -217,6 +251,7 @@ const wss = new WebSocketServer({ noServer: true, maxPayload: WS_MAX_PAYLOAD_BYT
 // roomCode -> { game, sockets, names, avatars, userIds, mode, rewardGranted, surrenderedBy, reconnects }
 const rooms = new Map();
 const quickplayQueue = [];
+const tournamentQueues = new Map();
 const socketsByUserId = new Map();
 const socketsByIp = new Map();
 
@@ -302,11 +337,20 @@ function broadcastSpellCast(room, playerIdx, card) {
   });
 }
 
+function broadcastMythicSummon(room, playerIdx, card) {
+  room.sockets.forEach((ws, viewerIdx) => {
+    if (ws) send(ws, "mythicSummon", { cardId: card.id, isSelf: viewerIdx === playerIdx });
+  });
+}
+
 async function playCardWithReveal(room, playerIdx, handIndex, targetInstanceId) {
   const cardRef = room.game.players[playerIdx]?.hand[handIndex];
   const card = getCardById(String(cardRef || "").split("|")[0]);
   if (card?.type === "spell") {
     broadcastSpellCast(room, playerIdx, card);
+    await sleep(SPELL_REVEAL_MS);
+  } else if (card?.type === "minion" && card.rarity === "mythic") {
+    broadcastMythicSummon(room, playerIdx, card);
     await sleep(SPELL_REVEAL_MS);
   }
   room.game.playCard(playerIdx, handIndex, targetInstanceId || null);
@@ -336,7 +380,7 @@ function syncTurnTimer(room) {
     }
     return;
   }
-  ensureTurnTimer(room, expireTurn);
+  ensureTurnTimer(room, expireTurn, { durationMs: room.tournament ? TOURNAMENT_TURN_DURATION_MS : 40_000 });
 }
 
 async function expireTurn(room, expectedTurnKey) {
@@ -355,12 +399,13 @@ function addPlayerVisuals(state, room, viewerIdx) {
     ...state,
     serverNow: Date.now(),
     turnDeadline: room.turnTimer?.deadline || null,
-    turnDurationMs: room.turnTimer ? 40_000 : null,
+    turnDurationMs: room.turnTimer?.durationMs || null,
     matchIntroRemainingMs: Math.max(0, (room.introEndsAt || 0) - Date.now()),
     me: { ...state.me, avatarUrl: room.avatars?.[viewerIdx] || null, profile: matchProfile(room, viewerIdx) },
     opponent: { ...state.opponent, avatarUrl: room.avatars?.[opponentIdx] || null, profile: matchProfile(room, opponentIdx) },
     campaignTheme: room.mode === "campaign" ? room.campaign?.theme || null : null,
     campaignBoardMusic: room.mode === "campaign" ? room.campaign?.audio?.boardMusic || null : null,
+    tournament: room.tournament ? { id: room.tournament.id, matchId: room.tournament.matchId } : null,
   };
 }
 
@@ -435,10 +480,27 @@ function removeFromQuickplayQueue(ws) {
   if (index >= 0) quickplayQueue.splice(index, 1);
 }
 
+function removeFromTournamentQueues(ws) {
+  for (const [key, entry] of tournamentQueues) {
+    if (entry.ws === ws) tournamentQueues.delete(key);
+  }
+}
+
 function cancelDisconnectedMatch(room, disconnectedIdx) {
   if (!room.game || room.sockets[disconnectedIdx] !== null || !room.reconnects?.[disconnectedIdx]) return;
   const roomCode = room.game.roomCode;
   if (rooms.get(roomCode) !== room) return;
+
+  const opponentIdx = disconnectedIdx === 0 ? 1 : 0;
+  if (room.tournament && room.game.winner === null && room.sockets[opponentIdx]) {
+    clearReconnectGrace(room, disconnectedIdx);
+    room.game._addLog(`${room.names[disconnectedIdx]} forfeited the tournament match after disconnecting.`);
+    room.game.surrender(disconnectedIdx);
+    send(room.sockets[opponentIdx], "tournamentForfeitWin", {});
+    broadcastState(room);
+    settleRewards(room).catch((err) => console.error("Tournament disconnect forfeit failed:", err.message));
+    return;
+  }
 
   clearAllReconnectGraces(room);
   clearTurnTimer(room);
@@ -452,12 +514,17 @@ function cancelDisconnectedMatch(room, disconnectedIdx) {
 }
 
 function markMultiplayerDisconnected(room, playerIdx) {
+  const graceMs = room.tournament ? TOURNAMENT_RECONNECT_GRACE_MS : DEFAULT_RECONNECT_GRACE_MS;
   const reconnect = startReconnectGrace(room, playerIdx, {
-    graceMs: DEFAULT_RECONNECT_GRACE_MS,
+    graceMs,
     onExpired: cancelDisconnectedMatch,
   });
   const opponentIdx = playerIdx === 0 ? 1 : 0;
-  send(room.sockets[opponentIdx], "opponentDisconnected", { reconnectDeadline: reconnect.deadline });
+  send(room.sockets[opponentIdx], "opponentDisconnected", {
+    reconnectDeadline: reconnect.deadline,
+    reconnectGraceMs: graceMs,
+    isTournament: Boolean(room.tournament),
+  });
 
   const userId = room.userIds[playerIdx];
   if (userId) {
@@ -476,6 +543,7 @@ function markMultiplayerDisconnected(room, playerIdx) {
 
 function detachSocketFromRoom(ws, { notifyOpponent = false } = {}) {
   removeFromQuickplayQueue(ws);
+  removeFromTournamentQueues(ws);
   if (!ws.roomCode || !rooms.has(ws.roomCode)) return;
 
   const room = rooms.get(ws.roomCode);
@@ -499,6 +567,7 @@ function detachSocketFromRoom(ws, { notifyOpponent = false } = {}) {
 
 function handleSocketClose(ws) {
   removeFromQuickplayQueue(ws);
+  removeFromTournamentQueues(ws);
   if (!ws.roomCode || !rooms.has(ws.roomCode)) return;
 
   const room = rooms.get(ws.roomCode);
@@ -515,7 +584,7 @@ function handleSocketClose(ws) {
   detachSocketFromRoom(ws, { notifyOpponent: true });
 }
 
-async function startMultiplayerMatch(playerA, playerB, { matchType = "quickplay" } = {}) {
+async function startMultiplayerMatch(playerA, playerB, { matchType = "quickplay", tournament = null } = {}) {
   const code = makeRoomCode();
   const [decks, profiles] = await Promise.all([
     Promise.all([getActiveDeckCardIds(playerA.user.id), getActiveDeckCardIds(playerB.user.id)]),
@@ -531,6 +600,7 @@ async function startMultiplayerMatch(playerA, playerB, { matchType = "quickplay"
     introEndsAt: Date.now() + MATCH_INTRO_DURATION_MS,
     mode: "multiplayer",
     matchType,
+    tournament,
     rewardGranted: false,
     surrenderedBy: null,
     reconnects: [null, null],
@@ -690,6 +760,20 @@ async function settleRewards(room) {
     clearAllReconnectGraces(room);
     await Promise.all(room.userIds.filter(Boolean).map((userId) => resetConsecutiveDisconnects(userId)));
   }
+
+  if (room.tournament && room.game.winner !== "draw") {
+    const winnerId = room.userIds[room.game.winner];
+    const result = await recordTournamentResult(room.tournament.id, room.tournament.matchId, winnerId);
+    room.sockets.forEach((socket, idx) => {
+      const prize = result.awards.find((award) => String(award.userId) === String(room.userIds[idx]) && award.awarded);
+      if (prize) send(socket, "tournamentPrize", {
+        place: prize.place,
+        gold: room.tournament.prizes[prize.place],
+        balance: prize.gold,
+      });
+      send(socket, "tournamentUpdated", {});
+    });
+  }
 }
 
 async function resumeMultiplayerMatch(ws) {
@@ -732,20 +816,22 @@ function chooseNpcPlayable(game, { limitMythics = false } = {}) {
     // deliberately opt out through the caller below.
     if (hasMythicInPlay && card.type === "minion" && card.rarity === "mythic") return;
     if (game.getBoardLimitError(1, card)) return;
-    const needsEnemyMinion = (card.abilities || []).some((ability) =>
-      ability.trigger === "onPlay" && ability.effect === "applyStatus" && ability.target === "enemyMinion"
-    );
+    const needsEnemyMinion = cardRequiresEnemyMinionTarget(card);
     if (needsEnemyMinion && playerBoard.length === 0) return;
     if (!best || card.cost > best.card.cost) best = { card, handIndex };
   });
   return best;
 }
 
-function npcSpellTarget(game, card) {
-  const statusAbility = (card.abilities || []).find((ability) =>
-    ability.trigger === "onPlay" && ability.effect === "applyStatus" && ability.target === "enemyMinion"
+function cardRequiresEnemyMinionTarget(card) {
+  return (card.abilities || []).some((ability) =>
+    ability.trigger === "onPlay" && ability.target === "enemyMinion" &&
+    ["applyStatus", "returnEnemyMinionToDeck"].includes(ability.effect)
   );
-  if (statusAbility) {
+}
+
+function npcCardTarget(game, card) {
+  if (cardRequiresEnemyMinionTarget(card)) {
     const target = game.players[0].board
       .slice()
       .sort((a, b) => b.attack - a.attack || b.health - a.health)[0];
@@ -768,7 +854,7 @@ async function runNpcTurn(room) {
     const play = chooseNpcPlayable(game, { limitMythics: room.mode === "singleplayer" });
     if (play && game.winner === null && game.turn === 1) {
       try {
-        await playCardWithReveal(room, 1, play.handIndex, npcSpellTarget(game, play.card));
+        await playCardWithReveal(room, 1, play.handIndex, npcCardTarget(game, play.card));
         broadcastState(room);
         await sleep(NPC_STEP_DELAY_MS);
       } catch (err) {
@@ -827,8 +913,14 @@ async function handleMessage(ws, msg) {
     const profile = await getPublicPlayerProfile(user.id);
     const code = makeRoomCode();
     const name = user.username || "Player";
+    const npcDeck = buildRandomLegalDeck({
+      randomInt: secureRandomInt,
+      // The NPC deliberately does not cast spells, so keep its random deck
+      // to playable minions while applying every normal deck-building limit.
+      includeCard: (card) => card.type === "minion",
+    });
     const room = {
-      game: new Game(code, name, "NPC", { decks: [playerDeck], randomInt: secureRandomInt }),
+      game: new Game(code, name, "NPC", { decks: [playerDeck, npcDeck], randomInt: secureRandomInt }),
       sockets: [ws, null],
       names: [name, "NPC"],
       avatars: [user.avatarUrl || null, null],
@@ -951,8 +1043,46 @@ async function handleMessage(ws, msg) {
     return;
   }
 
+  if (type === "tournamentJoinMatch") {
+    const user = await requireSessionUser(ws);
+    assertUserCanStartMatch(rooms, user.id);
+    const tournamentId = typeof payload?.tournamentId === "string" ? payload.tournamentId : "";
+    const matchId = typeof payload?.matchId === "string" ? payload.matchId : "";
+    const ready = await getReadyMatch(tournamentId, user.id);
+    if (ready.match.id !== matchId) return broadcastError(ws, "That tournament match is no longer ready.");
+
+    const queueKey = `${tournamentId}:${matchId}`;
+    const opponentId = ready.match.playerIds.find((id) => String(id) !== String(user.id));
+    const waiting = tournamentQueues.get(queueKey);
+    const entry = { ws, user, name: user.username || "Player", tournament: ready.config, matchId };
+    if (!waiting || waiting.ws.readyState !== waiting.ws.OPEN || String(waiting.user.id) === String(user.id)) {
+      detachSocketFromRoom(ws);
+      tournamentQueues.set(queueKey, entry);
+      send(ws, "tournamentMatchQueued", {});
+      return;
+    }
+    if (String(waiting.user.id) !== String(opponentId)) {
+      tournamentQueues.delete(queueKey);
+      return broadcastError(ws, "Your tournament opponent changed. Refresh the bracket and try again.");
+    }
+
+    tournamentQueues.delete(queueKey);
+    detachSocketFromRoom(waiting.ws);
+    detachSocketFromRoom(ws);
+    await startMultiplayerMatch(waiting, entry, {
+      matchType: "tournament",
+      tournament: { id: ready.config.id, matchId, prizes: ready.config.prizes },
+    });
+    return;
+  }
+
   if (type === "cancelQuickplay") {
     removeFromQuickplayQueue(ws);
+    return;
+  }
+
+  if (type === "cancelTournamentMatch") {
+    removeFromTournamentQueues(ws);
     return;
   }
 

@@ -160,6 +160,51 @@
     return deck;
   }
 
+  function buildRandomLegalDeck({ randomInt = (maxExclusive) => Math.floor(Math.random() * maxExclusive), includeCard = () => true } = {}) {
+    if (typeof randomInt !== "function" || typeof includeCard !== "function") {
+      throw new Error("Random deck generation requires valid options.");
+    }
+
+    const candidates = CARDS.filter((card) => card.showInInventory !== false && includeCard(card));
+    const collection = {
+      cardCollection: Object.fromEntries(candidates.map((card) => [
+        card.id,
+        CARD_COPY_LIMITS[card.rarity || "common"] || 2,
+      ])),
+    };
+    const deck = [];
+    const counts = {};
+    const rarityTotals = {};
+    let spellTotal = 0;
+
+    function canAdd(card) {
+      const rarity = card.rarity || "common";
+      const copyLimit = CARD_COPY_LIMITS[rarity] || 2;
+      const rarityLimit = RARITY_TOTAL_LIMITS[rarity] || Infinity;
+      return (
+        (counts[card.id] || 0) < copyLimit &&
+        (rarityTotals[rarity] || 0) < rarityLimit &&
+        (card.type !== "spell" || spellTotal < MAX_SPELLS)
+      );
+    }
+
+    while (deck.length < DECK_SIZE) {
+      const eligible = candidates.filter(canAdd);
+      if (eligible.length === 0) throw new Error("Not enough eligible cards to build a legal random deck.");
+      const card = eligible[randomInt(eligible.length)];
+      if (!card) throw new Error("Random deck generator returned an invalid card index.");
+      const rarity = card.rarity || "common";
+      deck.push(card.id);
+      counts[card.id] = (counts[card.id] || 0) + 1;
+      rarityTotals[rarity] = (rarityTotals[rarity] || 0) + 1;
+      if (card.type === "spell") spellTotal += 1;
+    }
+
+    const validation = validateDeck(deck, collection);
+    if (!validation.ok) throw new Error(`Generated deck is invalid: ${validation.errors.join(" ")}`);
+    return deck;
+  }
+
   return {
     DECK_SIZE,
     MAX_BOARD,
@@ -171,6 +216,7 @@
     getOwnedCount,
     validateDeck,
     buildAutoDeck,
+    buildRandomLegalDeck,
     buildFallbackDeck,
     CARDS,
   };

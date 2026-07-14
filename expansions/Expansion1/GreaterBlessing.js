@@ -6,5 +6,6 @@ module.exports = {
   value: 6,
   rarity: "rare",
   country: "Arcana",
-  lore: "An ancient chant that closes wounds and steadies the spirit.",
+  lore: "Heal a chosen minion or your hero for 6. Healing can exceed maximum Health.",
+  image: "art/GreaterBlessing.webp",
 };

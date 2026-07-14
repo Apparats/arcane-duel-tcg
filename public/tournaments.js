@@ -1,0 +1,127 @@
+// Tournament lobby UI. The server remains the source of truth for entry,
+// bracket progression, and rewards; this module only renders that state.
+(() => {
+  let tournaments = [];
+  let loading = false;
+
+  const el = (id) => document.getElementById(id);
+  const text = (value) => escapeHtml(String(value || ""));
+  const dateTime = (value, timeZone) => new Intl.DateTimeFormat(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZoneName: "short",
+    timeZone: timeZone || "UTC",
+  }).format(new Date(value));
+  const phaseLabel = (phase) => ({ upcoming: "Upcoming", registration: "Registration", locked: "Check-in closed", active: "In progress", completed: "Completed", cancelled: "Cancelled" }[phase] || phase);
+
+  function playerHTML(player, winnerId) {
+    if (!player) return '<span class="tournament-player">Waiting</span>';
+    return `<span class="tournament-player${String(player.userId) === String(winnerId) ? " winner" : ""}">${text(player.username)}</span>`;
+  }
+
+  function matchHTML(match, extraClass = "") {
+    if (!match) return "";
+    return `<div class="tournament-match ${text(match.status)} ${extraClass}">${match.players.map((player) => playerHTML(player, match.winnerId)).join("")}</div>`;
+  }
+
+  function bracketHTML(tournament) {
+    if (!tournament.bracket) return "";
+    const rounds = tournament.bracket.rounds.map((round, index) => `
+      <section class="tournament-round">
+        <span class="tournament-round-label">${index === tournament.bracket.rounds.length - 1 ? "Final" : `Round ${index + 1}`}</span>
+        ${round.map((match) => matchHTML(match)).join("")}
+      </section>
+    `).join("");
+    const third = tournament.bracket.thirdPlace ? `<section class="tournament-round"><span class="tournament-round-label">Third place</span>${matchHTML(tournament.bracket.thirdPlace, "tournament-match-third")}</section>` : "";
+    const podium = Object.entries(tournament.bracket.placements || {}).filter(([, player]) => player).map(([place, player]) => `<span><strong>${place}:</strong> ${text(player.username)}</span>`).join("");
+    return `<div class="tournament-bracket"><span class="tournament-bracket-title">Bracket</span><div class="tournament-rounds">${rounds}${third}</div>${podium ? `<div class="tournament-meta">${podium}</div>` : ""}</div>`;
+  }
+
+  function actionHTML(tournament) {
+    if (tournament.phase === "registration") {
+      return tournament.registered
+        ? '<div class="tournament-actions"><span class="tournament-registered">Registered</span><button class="btn btn-secondary" type="button" data-tournament-action="unregister">Leave</button></div>'
+        : '<div class="tournament-actions"><button class="btn btn-primary" type="button" data-tournament-action="register">Pre-register</button></div>';
+    }
+    if (tournament.phase === "active" && tournament.myMatchId) {
+      return `<div class="tournament-actions"><button class="btn btn-primary" type="button" data-tournament-action="join" data-match-id="${text(tournament.myMatchId)}">Play match</button></div>`;
+    }
+    if (tournament.phase === "active" && tournament.registered) return '<span class="tournament-registered">Waiting for your next match</span>';
+    return "";
+  }
+
+  function tournamentHTML(tournament) {
+    const prize = tournament.prizes || {};
+    const registrationTime = tournament.phase === "upcoming" ? `Registration opens ${dateTime(tournament.registrationOpensAt, tournament.timeZone)}`
+      : tournament.phase === "registration" ? `Registration closes ${dateTime(tournament.registrationClosesAt, tournament.timeZone)}`
+        : null;
+    return `<article class="tournament-card" data-tournament-id="${text(tournament.id)}">
+      <header class="tournament-card-header"><h2>${text(tournament.name)}</h2><span class="tournament-phase phase-${text(tournament.phase)}">${text(phaseLabel(tournament.phase))}</span></header>
+      <div class="tournament-card-body">
+        <p class="tournament-description">${text(tournament.description)}</p>
+        ${registrationTime ? `<p class="tournament-timing">${text(registrationTime)}</p>` : ""}
+        <p class="tournament-timing">${tournament.phase === "active" || tournament.phase === "completed" ? "Started" : "Starts"} ${text(dateTime(tournament.startsAt, tournament.timeZone))}</p>
+        <div class="tournament-meta"><span>${tournament.participantCount}/${tournament.maxPlayers} players</span><span><strong>1st</strong> ${prize.first || 0} gold</span><span><strong>2nd</strong> ${prize.second || 0} gold</span><span><strong>3rd</strong> ${prize.third || 0} gold</span></div>
+        ${actionHTML(tournament)}
+        ${bracketHTML(tournament)}
+      </div>
+    </article>`;
+  }
+
+  function render() {
+    const list = el("tournamentList");
+    if (!list) return;
+    if (loading) {
+      list.innerHTML = '<p class="tournament-empty">Loading tournaments...</p>';
+      return;
+    }
+    list.innerHTML = tournaments.length ? tournaments.map(tournamentHTML).join("") : '<p class="tournament-empty">No tournaments are scheduled right now.</p>';
+  }
+
+  async function load() {
+    if (loading) return;
+    loading = true;
+    render();
+    try {
+      const response = await arcaneFetch("/tournaments");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not load tournaments.");
+      tournaments = Array.isArray(data.tournaments) ? data.tournaments : [];
+    } catch (error) {
+      tournaments = [];
+      showToast(error.message || "Could not load tournaments.");
+    } finally {
+      loading = false;
+      render();
+    }
+  }
+
+  async function registration(tournamentId, method) {
+    const response = await arcaneFetch(`/tournaments/${encodeURIComponent(tournamentId)}/register`, { method });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not update tournament registration.");
+    await load();
+  }
+
+  el("tournamentList")?.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-tournament-action]");
+    if (!button) return;
+    const card = button.closest("[data-tournament-id]");
+    const tournamentId = card?.dataset.tournamentId;
+    if (!tournamentId) return;
+    try {
+      if (button.dataset.tournamentAction === "register") await registration(tournamentId, "POST");
+      if (button.dataset.tournamentAction === "unregister") await registration(tournamentId, "DELETE");
+      if (button.dataset.tournamentAction === "join") {
+        connect(() => send("tournamentJoinMatch", { tournamentId, matchId: button.dataset.matchId }));
+      }
+    } catch (error) {
+      showToast(error.message || "Could not update tournament registration.");
+    }
+  });
+
+  window.ArcaneTournaments = { load };
+})();

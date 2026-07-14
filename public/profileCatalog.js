@@ -16,6 +16,7 @@
     { id: "relic-keeper", name: "Relic Keeper", description: "Complete campaigns 10 times.", metric: "campaignWins", target: 10 },
     { id: "machine-breaker", name: "Machine Breaker", description: "Defeat the NPC 10 times.", metric: "npcWins", target: 10 },
     { id: "johnnys-bane", name: "Johnny's Bane", description: "Defeat Johnny in a multiplayer match.", metric: "johnnyWins", target: 1 },
+    { id: "more-than-honorable", name: "More than honorable", description: "You helped the developer with the game.", supporterOnly: true },
   ];
 
   const ACHIEVEMENT_DEFINITIONS = [
@@ -35,6 +36,7 @@
     { id: "campaign-veteran", name: "Campaign Veteran", description: "Complete campaigns 3 times.", metric: "campaignWins", target: 3 },
     { id: "bot-bane", name: "Bot Bane", description: "Defeat the NPC 3 times.", metric: "npcWins", target: 3 },
     { id: "collectors-sigil", name: "Collector's Sigil", description: "Open 25 card packs.", metric: "packsOpened", target: 25 },
+    { id: "more-than-honorable", name: "More than honorable", description: "You helped the developer with the game.", supporterOnly: true },
   ];
 
   function value(value) {
@@ -61,22 +63,25 @@
     return normalizeStats(stats)[metric] || 0;
   }
 
-  function withProgress(definition, stats) {
-    const current = metricValue(stats, definition.metric);
+  function withProgress(definition, stats, options = {}) {
+    const current = definition.supporterOnly
+      ? (options.supporter === true ? 1 : 0)
+      : metricValue(stats, definition.metric);
+    const target = definition.supporterOnly ? 1 : definition.target;
     return {
       id: definition.id,
       name: definition.name,
       description: definition.description,
       current,
-      target: definition.target,
-      unlocked: current >= definition.target,
+      target,
+      unlocked: current >= target,
     };
   }
 
-  function getProgress(stats, selectedTitleId, equippedBadgeIds = []) {
+  function getProgress(stats, selectedTitleId, equippedBadgeIds = [], options = {}) {
     const normalizedStats = normalizeStats(stats);
-    const achievements = ACHIEVEMENT_DEFINITIONS.map((item) => withProgress(item, normalizedStats));
-    const titles = TITLE_DEFINITIONS.map((item) => withProgress(item, normalizedStats));
+    const achievements = ACHIEVEMENT_DEFINITIONS.map((item) => withProgress(item, normalizedStats, options));
+    const titles = TITLE_DEFINITIONS.map((item) => withProgress(item, normalizedStats, options));
     const selectedTitle = titles.find((item) => item.id === selectedTitleId && item.unlocked)
       || titles[0];
     const equippedBadgeIdsSafe = Array.isArray(equippedBadgeIds)

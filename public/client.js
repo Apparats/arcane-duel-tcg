@@ -26,7 +26,7 @@ const STATUS_FULL_LABEL = {
 };
 const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", mythic: "Mythic" };
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.4";
+const CHANGELOG_VERSION = "1.5";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const TYPE_ICON = { minion: "⚔", spell: "✦" };
@@ -65,6 +65,7 @@ let reconnectingMultiplayer = false;
 let reconnectDeadline = 0;
 let reconnectTimer = null;
 let resumeAckTimer = null;
+let matchStatusTimer = null;
 
 let lastAnimatedActionSeq = 0; // avoids replaying the same attack's animation
 let lastRoundBannerKey = null;
@@ -194,6 +195,37 @@ function clearMultiplayerReconnect() {
   clearTimeout(resumeAckTimer);
   reconnectTimer = null;
   resumeAckTimer = null;
+}
+
+function clearMatchStatus() {
+  clearInterval(matchStatusTimer);
+  matchStatusTimer = null;
+  $("matchStatus")?.classList.add("hidden");
+}
+
+function setMatchStatus(message, { warning = false } = {}) {
+  const status = $("matchStatus");
+  if (!status) return;
+  status.textContent = message;
+  status.classList.toggle("warning", warning);
+  status.classList.remove("hidden");
+}
+
+function showOpponentDisconnectStatus(payload = {}) {
+  clearInterval(matchStatusTimer);
+  const deadline = Number(payload.reconnectDeadline);
+  const isTournament = payload.isTournament === true;
+  const update = () => {
+    const seconds = Number.isFinite(deadline) ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000)) : null;
+    const suffix = seconds == null ? "" : ` ${seconds}s`;
+    setMatchStatus(isTournament ? `Tournament opponent disconnected. Forfeit in${suffix}.` : `Opponent disconnected. Reconnect window:${suffix}`, { warning: true });
+    if (seconds === 0) {
+      clearInterval(matchStatusTimer);
+      matchStatusTimer = null;
+    }
+  };
+  update();
+  if (Number.isFinite(deadline)) matchStatusTimer = setInterval(update, 250);
 }
 
 function beginMultiplayerReconnect() {
@@ -347,7 +379,7 @@ function introProfile(participant, own) {
   const profile = participant?.profile || account || {};
   const selected = profile.selectedTitle;
   const progress = typeof selected === "string"
-    ? window.ArcaneProfileCatalog?.getProgress(profile.stats, selected, profile.equippedBadgeIds)
+    ? window.ArcaneProfileCatalog?.getProgress(profile.stats, selected, profile.equippedBadgeIds, { supporter: profile.supporter === true })
     : null;
   return {
     username: profile.username || participant?.name || "Player",
@@ -492,6 +524,16 @@ function handleServerMessage(msg) {
     case "quickplayQueued":
       setQuickplaySearching(true);
       break;
+    case "tournamentMatchQueued":
+      showToast("Waiting for your tournament opponent to enter the match.");
+      break;
+    case "tournamentUpdated":
+      void window.ArcaneTournaments?.load();
+      break;
+    case "tournamentPrize":
+      updateAccountDisplay({ ...(accountState?.user || {}), gold: msg.payload?.balance });
+      showToast(`Tournament ${msg.payload?.place || "prize"}: +${msg.payload?.gold || 0} gold`);
+      break;
     case "matchStarted":
       setQuickplaySearching(false);
       activeMatchMode = activeMatchMode || "multiplayer";
@@ -516,6 +558,9 @@ function handleServerMessage(msg) {
       break;
     case "spellCast":
       void showSpellCastReveal(msg.payload?.cardId);
+      break;
+    case "mythicSummon":
+      void showMythicSummonReveal(msg.payload?.cardId);
       break;
     case "emote":
       showEmote(msg.payload?.emote, Boolean(msg.payload?.isSelf));
@@ -547,12 +592,22 @@ function handleServerMessage(msg) {
       });
       break;
     case "opponentDisconnected":
-      showToast("Your opponent disconnected. Waiting up to one minute to reconnect.");
+      showOpponentDisconnectStatus(msg.payload);
+      showToast(msg.payload?.isTournament ? "Opponent disconnected. Tournament forfeit begins in 30 seconds." : "Your opponent disconnected. Waiting for them to reconnect.");
       break;
     case "opponentReconnected":
+      clearMatchStatus();
+      if (myState?.tournament) setMatchStatus("Tournament match · 30 seconds per turn");
       showToast("Your opponent reconnected.");
       break;
+    case "tournamentForfeitWin":
+      clearInterval(matchStatusTimer);
+      matchStatusTimer = null;
+      setMatchStatus("Opponent did not return. Tournament victory by forfeit.");
+      showToast("Your opponent did not return. You win this tournament match by forfeit.");
+      break;
     case "matchCancelled":
+      clearMatchStatus();
       clearMultiplayerReconnect();
       forgetMultiplayerMatch();
       myState = null;
@@ -785,7 +840,27 @@ function showSpellCastReveal(cardId) {
     <div class="minion-card spell-cast-card ${rarityClass(card)}">
       ${cardArtHTML(card)}
       ${cardCostHTML(card)}
-      <div class="card-footer"><span class="card-name">${escapeHtml(card.name)}</span>${spellManaHTML(card)}</div>
+    <div class="card-footer"><span class="card-name">${escapeHtml(card.name)}</span>${spellEffectValueHTML(card)}</div>
+    </div>
+  `;
+  document.body.append(reveal);
+  requestAnimationFrame(() => reveal.classList.add("is-visible"));
+  window.ArcaneAudio?.playSfx("cardPlay");
+
+  return sleep(SPELL_REVEAL_MS).then(() => reveal.remove());
+}
+
+function showMythicSummonReveal(cardId) {
+  const card = TCGCards.getCardById(cardId);
+  if (!card || card.type !== "minion" || card.rarity !== "mythic") return Promise.resolve();
+
+  document.querySelector(".spell-cast-reveal")?.remove();
+  const reveal = document.createElement("div");
+  reveal.className = "spell-cast-reveal mythic-summon-reveal";
+  reveal.setAttribute("aria-hidden", "true");
+  reveal.innerHTML = `
+    <div class="minion-card spell-cast-card mythic-summon-card ${rarityClass(card)}">
+      ${boardCardMarkup(card)}
     </div>
   `;
   document.body.append(reveal);
@@ -950,6 +1025,7 @@ function openLobby(mode) {
     $("lobbySubtitle").textContent = "Online 1v1 - find a match or use a room code";
     setLobbyTab("quickplay");
     loadOnlinePlayerCount();
+    void window.ArcaneTournaments?.load();
   }
   switchScreen("lobby");
 }
@@ -969,6 +1045,7 @@ document.querySelectorAll(".menu-tile-locked").forEach((tile) => {
 $("btnBackToMenu").addEventListener("click", () => {
   setQuickplaySearching(false);
   send("cancelQuickplay", {});
+  send("cancelTournamentMatch", {});
   switchScreen("menu");
 });
 
@@ -978,13 +1055,17 @@ function setLobbyTab(tab) {
   const isQuickplay = tab === "quickplay";
   const isRoomCode = tab === "room";
   const isRanking = tab === "ranking";
+  const isTournaments = tab === "tournaments";
   $("tabRoomCode").classList.toggle("active", isRoomCode);
   $("tabQuickplay").classList.toggle("active", isQuickplay);
   $("tabRanking").classList.toggle("active", isRanking);
+  $("tabTournaments").classList.toggle("active", isTournaments);
   $("roomCodePanel").classList.toggle("hidden", !isRoomCode);
   $("quickplayPanel").classList.toggle("hidden", !isQuickplay);
   $("rankingPanel").classList.toggle("hidden", !isRanking);
+  $("tournamentPanel").classList.toggle("hidden", !isTournaments);
   $("roomInfo").classList.add("hidden");
+  if (isTournaments) void window.ArcaneTournaments?.load();
 }
 
 function rankingRowHTML(player) {
@@ -1031,6 +1112,7 @@ function setQuickplaySearching(searching) {
 
 $("tabRoomCode").addEventListener("click", () => setLobbyTab("room"));
 $("tabQuickplay").addEventListener("click", () => setLobbyTab("quickplay"));
+$("tabTournaments").addEventListener("click", () => setLobbyTab("tournaments"));
 $("tabRanking").addEventListener("click", () => {
   setLobbyTab("ranking");
   loadQuickplayRanking();
@@ -1123,6 +1205,10 @@ function render(state) {
   if (state.campaignTheme) gameScreen.dataset.campaignTheme = state.campaignTheme;
   else delete gameScreen.dataset.campaignTheme;
   if (state.campaignBoardMusic) window.ArcaneAudio?.playMusic(state.campaignBoardMusic);
+  if (state.tournament && state.winner === null && $("matchStatus")?.classList.contains("hidden")) {
+    setMatchStatus("Tournament match · 30 seconds per turn");
+  }
+  if (!state.tournament) clearMatchStatus();
 
   // Heroes
   $("selfName").textContent = state.me.name;
@@ -1185,7 +1271,7 @@ function renderTurnTimer(state) {
   turnClockOffsetMs = Number.isFinite(state.serverNow) ? state.serverNow - Date.now() : 0;
 
   if (!Number.isFinite(state.turnDeadline)) {
-    timer.textContent = state.opponent?.name === "NPC" && !state.isYourTurn ? "NPC is thinking" : "40s per turn";
+    timer.textContent = state.opponent?.name === "NPC" && !state.isYourTurn ? "NPC is thinking" : state.tournament ? "30s per turn" : "40s per turn";
     timer.classList.remove("turn-timer-warning");
     return;
   }
@@ -1311,7 +1397,7 @@ function renderHand(state) {
         ${
           card.type === "minion"
             ? `<span class="card-stat atk">${card.attack}</span><span class="card-name">${escapeHtml(card.name)}</span><span class="card-stat hp">${card.health}</span>`
-            : `<span class="card-name">${escapeHtml(card.name)}</span>${spellManaHTML(card)}`
+            : `<span class="card-name">${escapeHtml(card.name)}</span>${spellEffectValueHTML(card)}`
         }
       </div>
     `;
@@ -1600,6 +1686,7 @@ $("roundBanner").addEventListener("click", () => {
 
 function returnToMenuFromMatch() {
   clearMultiplayerReconnect();
+  clearMatchStatus();
   forgetMultiplayerMatch();
   activeMatchMode = null;
   hideRoundBanner();
@@ -1658,7 +1745,7 @@ function statusDescription(status) {
 
 function cardRequiresEnemyMinionTarget(card) {
   return Boolean(card?.abilities?.some((ability) =>
-    ability.effect === "applyStatus" && ability.target === "enemyMinion"
+    ["applyStatus", "returnEnemyMinionToDeck"].includes(ability.effect) && ability.target === "enemyMinion"
   ));
 }
 
@@ -1674,16 +1761,17 @@ function cardCostHTML(card) {
     : Number.isFinite(instanceCost)
       ? instanceCost
       : 0;
-  const isEffectSpell = card?.type === "spell" && ["damage", "heal"].includes(card.effect) && Number.isFinite(Number(card.value));
-  if (isEffectSpell) {
-    const label = card.effect === "damage" ? `${card.value} damage` : `${card.value} healing`;
-    return `<span class="card-cost spell-effect-${card.effect}" aria-label="${label}">${card.value}</span>`;
-  }
   return `<span class="card-cost" aria-label="${cost} mana">${cost}</span>`;
 }
 
-function spellManaHTML(card) {
-  return `<span class="card-stat mana-cost" aria-label="${card.cost} mana">${card.cost}</span>`;
+function spellEffectValueHTML(card) {
+  const value = Number(card?.value);
+  if (card?.type !== "spell" || !["damage", "heal"].includes(card.effect) || !Number.isFinite(value)) {
+    return "";
+  }
+
+  const label = card.effect === "damage" ? `${value} damage` : `${value} healing`;
+  return `<span class="card-stat val spell-effect-${card.effect}" aria-label="${label}">${value}</span>`;
 }
 
 function rarityClass(card) {
@@ -1926,6 +2014,7 @@ async function initAccountWidget({ skipActivityAutoLogin = false } = {}) {
     $("btnLoginDiscord").classList.add("hidden");
     $("accountProfile").classList.remove("hidden");
     updateAccountDisplay(data.user);
+    void loadTournamentIncoming();
     if (data.dailyLoginReward?.claimed) {
       showToast(`Daily login reward: +${data.dailyLoginReward.goldAwarded} gold`);
     }
@@ -2422,6 +2511,23 @@ async function loadEnabledExpansions() {
     enabledExpansionIds = new Set((data.expansions || []).map((expansion) => expansion.id));
   } catch (err) {
     enabledExpansionIds = null;
+  }
+}
+
+async function loadTournamentIncoming() {
+  const notice = $("tournamentIncoming");
+  if (!notice) return;
+  notice.classList.add("hidden");
+  try {
+    const response = await apiFetch("/tournaments");
+    const data = await response.json();
+    if (!response.ok) return;
+    const hasScheduledTournament = (data.tournaments || []).some((tournament) =>
+      !["completed", "cancelled"].includes(tournament?.phase)
+    );
+    notice.classList.toggle("hidden", !hasScheduledTournament);
+  } catch (err) {
+    // A tournament alert is optional; never block the main menu on it.
   }
 }
 

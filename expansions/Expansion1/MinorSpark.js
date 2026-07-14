@@ -6,5 +6,6 @@ module.exports = {
   value: 2,
   rarity: "common",
   country: "Arcana",
-  lore: "A small spark is still enough to start a fire.",
+  lore: "Deal 2 damage to a chosen target.",
+  image: "art/MinorSpark.webp",
 };

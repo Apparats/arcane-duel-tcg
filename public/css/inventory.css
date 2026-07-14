@@ -256,18 +256,6 @@
   justify-content: center;
 }
 
-.zoom-abilities { margin-bottom: 14px; width: 100%; }
-.zoom-ability {
-  font-size: 13px;
-  color: var(--cream);
-  background: rgba(8, 6, 15, 0.56);
-  border-left: 2px solid var(--gold);
-  padding: 6px 10px;
-  margin: 0 0 6px;
-  border-radius: 3px;
-  text-align: left;
-}
-
 .zoom-lore {
   font-size: 13px;
   font-style: italic;

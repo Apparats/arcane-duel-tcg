@@ -46,6 +46,7 @@ const VALID_ABILITY_EFFECTS = [
   "grantDivineShieldToAllFriendlyMinions",
   "healSelf",
   "returnToDeck",
+  "returnEnemyMinionToDeck",
   "returnToDeckIfPlayedLessThan",
   "destroySelf",
   "destroySelfIfPlayedAtLeast",
@@ -268,6 +269,10 @@ function validateAbilities(card, label) {
       }
       if (ability.status === "silenced" && ability.turns !== undefined) {
         fail(`${abLabel}: silenced is permanent, so do not set "turns".`);
+      }
+    } else if (ability.effect === "returnEnemyMinionToDeck") {
+      if (ability.trigger !== "onPlay" || ability.target !== "enemyMinion") {
+        fail(`${abLabel}: returnEnemyMinionToDeck needs trigger: "onPlay" and target: "enemyMinion".`);
       }
     } else if (["returnToDeck", "destroySelf"].includes(ability.effect)) {
       // No extra params required.

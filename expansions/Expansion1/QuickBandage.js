@@ -6,5 +6,6 @@ module.exports = {
   value: 3,
   rarity: "common",
   country: "Arcana",
-  lore: "Cloth and crushed herbs: enough to stay standing.",
+  lore: "Heal a chosen minion or your hero for 3. Healing can exceed maximum Health.",
+  image: "art/QuickBandage.webp",
 };

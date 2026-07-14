@@ -291,6 +291,16 @@
       game._addLog(`${ctx.sourceName} returns to the deck.`);
     },
 
+    returnEnemyMinionToDeck(game, ctx) {
+      const target = game._findMinion(ctx.targetInstanceId);
+      if (!target || target.playerIdx === ctx.casterIdx) throw new Error("Choose an enemy minion.");
+      const owner = game.players[target.playerIdx];
+      owner.board = owner.board.filter((minion) => minion.instanceId !== target.minion.instanceId);
+      owner.deck.push(cardRefWithReturnCount(target.minion.cardId, target.minion.returnCount || 0));
+      owner.deck = shuffle(owner.deck, game.randomInt);
+      game._addLog(`${ctx.sourceName} returns ${target.minion.name} to the enemy deck.`);
+    },
+
     returnToDeckIfPlayedLessThan(game, ctx, ability) {
       const limit = ability.value || 2;
       const returnCount = ctx.returnCount || 0;
@@ -556,7 +566,8 @@
 
     _validateAbilityTargets(playerIdx, card, targetInstanceId) {
       const needsEnemyMinion = (card.abilities || []).some((ability) =>
-        ability.trigger === "onPlay" && ability.effect === "applyStatus" && ability.target === "enemyMinion"
+        ability.trigger === "onPlay" && ability.target === "enemyMinion" &&
+        ["applyStatus", "returnEnemyMinionToDeck"].includes(ability.effect)
       );
       if (!needsEnemyMinion) return;
       const target = this._findMinion(targetInstanceId);

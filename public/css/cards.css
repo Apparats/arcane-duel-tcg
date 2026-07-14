@@ -47,9 +47,9 @@
 
 .card-badges {
   position: absolute;
-  top: 35px;
-  left: 3px;
-  z-index: 7;
+  top: 34px;
+  left: -3px;
+  z-index: 12;
   display: flex;
   width: 24px;
   flex-direction: column;
@@ -59,25 +59,24 @@
 
 .card-cost {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  z-index: 7;
+  top: -8px;
+  left: -8px;
+  z-index: 12;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 28px;
-  border: 1px solid #b8efff;
-  border-radius: 7px 7px 10px 10px;
-  clip-path: polygon(50% 0%, 88% 23%, 82% 77%, 50% 100%, 18% 77%, 12% 23%);
-  background: radial-gradient(circle at 33% 22%, #e7fbff 0%, #74dcff 20%, #2788d0 56%, #142f78 100%);
+  width: 25px;
+  height: 27px;
+  border: 1px solid #c8f6ff;
+  border-radius: 50%;
+  background: radial-gradient(circle at 33% 22%, #4bb9e1 0%, #2b82bd 42%, #142f78 100%);
   color: #f8feff;
   font-family: "Cinzel", serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1;
   text-shadow: 0 1px 2px rgba(3, 18, 50, 0.9);
-  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.58), 0 0 9px rgba(90, 206, 255, 0.42);
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.62), 0 0 9px rgba(90, 206, 255, 0.42);
 }
 
 .keyword-badge {
@@ -142,12 +141,12 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 2;
+  z-index: 8;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-  padding: 3px 5px 4px;
+  justify-content: center;
+  min-height: 27px;
+  padding: 4px 22px 5px;
   background: linear-gradient(to top, rgba(8, 6, 12, 0.92), rgba(8, 6, 12, 0.55) 65%, transparent);
 }
 
@@ -164,28 +163,52 @@
 }
 
 .card-stat {
-  flex-shrink: 0;
+  position: absolute;
+  bottom: -9px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
   font-family: "Cinzel", serif;
   font-weight: 700;
-  font-size: 15px;
-  min-width: 16px;
+  font-size: 13px;
+  line-height: 1;
   text-align: center;
+  text-shadow: 0 2px 2px rgba(0, 0, 0, 0.88);
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.62);
 }
-.card-stat.atk { color: var(--gold); }
-.card-stat.hp { color: var(--hp); }
-.card-stat.val { color: var(--mana); }
-.card-stat.mana-cost { color: var(--mana); }
+.card-stat.atk {
+  left: -9px;
+  border-color: #fff1ad;
+  background: radial-gradient(circle at 34% 23%, #e7b94a 0%, #b57514 58%, #51300a 100%);
+  color: #fff9db;
+}
+.card-stat.hp {
+  right: -9px;
+  border-color: #ffd0c4;
+  background: radial-gradient(circle at 34% 23%, #dc584b 0%, #9e2d34 58%, #4f121d 100%);
+  color: #fff4ed;
+}
+.card-stat.val {
+  left: -9px;
+}
 
-.card-cost.spell-effect-damage {
+.card-stat.val.spell-effect-damage {
   border-color: #ff9b91;
-  background: radial-gradient(circle at 33% 22%, #ffe2d9 0%, #ff8a72 20%, #ce3e3a 56%, #6d1e2a 100%);
+  background: radial-gradient(circle at 33% 22%, #df604f 0%, #bd3638 58%, #6d1e2a 100%);
   box-shadow: 0 3px 7px rgba(0, 0, 0, 0.58), 0 0 9px rgba(245, 76, 66, 0.5);
+  color: #fff4ed;
 }
 
-.card-cost.spell-effect-heal {
+.card-stat.val.spell-effect-heal {
   border-color: #b8f4a8;
-  background: radial-gradient(circle at 33% 22%, #ecffe5 0%, #a7e77f 20%, #4eaa5c 56%, #1f5f45 100%);
+  background: radial-gradient(circle at 33% 22%, #8ace71 0%, #469753 58%, #1f5f45 100%);
   box-shadow: 0 3px 7px rgba(0, 0, 0, 0.58), 0 0 9px rgba(111, 213, 109, 0.5);
+  color: #f4fff0;
 }
 
 /* ---- Rarity: border color + glow ---- */
@@ -252,12 +275,16 @@
   .minion-card { width: clamp(78px, 20vw, 104px); }
   .hand-card { width: clamp(88px, 22vw, 112px); }
   .card-name { font-size: clamp(8px, 2.25vw, 9.5px); }
-  .card-stat { font-size: clamp(12px, 3vw, 14px); }
+  .card-footer { min-height: 23px; padding: 3px 18px 4px; }
+  .card-stat { width: 20px; height: 20px; bottom: -6px; font-size: clamp(10px, 2.8vw, 12px); }
+  .card-stat.atk,
+  .card-stat.val { left: -7px; }
+  .card-stat.hp { right: -7px; }
   .card-art-icon { font-size: 24px; }
   .keyword-badge { width: 16px; height: 16px; font-size: 8px; }
   .status-badge { width: 16px; height: 16px; font-size: 8px; }
-  .card-cost { width: 22px; height: 25px; font-size: 10px; }
-  .card-badges { top: 31px; left: 2px; width: 22px; }
+  .card-cost { width: 25px; height: 27px; top: -7px; left: -7px; font-size: 12px; }
+  .card-badges { top: 28px; left: -3px; width: 22px; }
   .keyword-icon { width: 11px; height: 11px; }
   .hand-area {
     min-height: 122px;

@@ -6,5 +6,6 @@ module.exports = {
   value: 3,
   rarity: "common",
   country: "Arcana",
-  lore: "Small in size, inconvenient at exactly the wrong moment.",
+  lore: "Deal 3 damage to a chosen target.",
+  image: "art/MinorFireball.webp",
 };

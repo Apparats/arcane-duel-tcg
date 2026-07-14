@@ -49,6 +49,7 @@ async function connectDB() {
 
     // Indexes are idempotent — safe to run every time the server boots.
     const cardRequests = db.collection("card_requests");
+    const tournamentRewards = db.collection("tournament_rewards");
     // Migrate the early single-request index if this feature was deployed
     // before daily requests were introduced.
     try {
@@ -62,6 +63,8 @@ async function connectDB() {
       db.collection("users").createIndex({ username: 1 }),
       db.collection("users").createIndex({ "stats.quickplayWins": -1, _id: 1 }),
       cardRequests.createIndex({ userId: 1, requestDay: 1 }, { unique: true }),
+      db.collection("tournaments").createIndex({ status: 1, updatedAt: -1 }),
+      tournamentRewards.createIndex({ tournamentId: 1, place: 1 }, { unique: true }),
     ]);
 
     console.log("MongoDB connected.");
@@ -147,6 +150,7 @@ async function findOrCreateUserFromDiscord(discordProfile, starterOpening = null
         modeStats: { singleplayer: { wins: 0, losses: 0, draws: 0, surrenders: 0 }, oneVsOne: { wins: 0, losses: 0, draws: 0, surrenders: 0 }, quickplay: { wins: 0, losses: 0, draws: 0, surrenders: 0 } },
         selectedTitle: "initiate",
         equippedBadgeIds: [],
+        supporter: false,
         gold: 0,
         warnings: [],
         economy: {
@@ -469,6 +473,28 @@ async function grantMatchEconomy(userId, { mode, result, surrendered = false, qu
   });
 }
 
+async function grantTournamentPrize(userId, { tournamentId, place, gold }) {
+  if (typeof tournamentId !== "string" || !/^[a-z0-9-]{3,80}$/i.test(tournamentId)) throw new Error("Invalid tournament.");
+  if (!["first", "second", "third"].includes(place)) throw new Error("Invalid tournament placing.");
+  const amount = Math.max(0, Math.floor(Number(gold) || 0));
+  if (amount <= 0) throw new Error("Invalid tournament prize.");
+
+  const users = getDB().collection("users");
+  const rewards = getDB().collection("tournament_rewards");
+  const _id = toObjectId(userId, "user id");
+  try {
+    await rewards.insertOne({ tournamentId, place, userId: _id, gold: amount, createdAt: new Date() });
+  } catch (err) {
+    if (err?.code !== 11000) throw err;
+    const user = await users.findOne({ _id }, { projection: { gold: 1 } });
+    return { awarded: false, gold: user?.gold || 0 };
+  }
+
+  await users.updateOne({ _id }, { $inc: { gold: amount }, $set: { updatedAt: new Date() } });
+  const user = await users.findOne({ _id }, { projection: { gold: 1 } });
+  return { awarded: true, gold: user?.gold || 0 };
+}
+
 function publicRankingPlayer(user, rank) {
   return {
     rank,
@@ -514,7 +540,8 @@ function normalizedModeStats(modeStats = {}, legacyStats = {}) {
 }
 
 function publicPlayerProfile(user) {
-  const progress = getProgress(user.stats, user.selectedTitle, user.equippedBadgeIds);
+  const supporter = user.supporter === true;
+  const progress = getProgress(user.stats, user.selectedTitle, user.equippedBadgeIds, { supporter });
   return {
     id: String(user._id),
     username: user.username || "Player",
@@ -527,6 +554,7 @@ function publicPlayerProfile(user) {
     equippedBadges: progress.equippedBadges,
     cardCollection: user.cardCollection || {},
     unlockedCards: user.unlockedCards || [],
+    supporter,
     createdAt: user.createdAt || null,
   };
 }
@@ -540,7 +568,7 @@ async function setEquippedBadges(userId, achievementIds) {
   const _id = toObjectId(userId, "user id");
   const user = await users.findOne({ _id });
   if (!user) throw new Error("User not found.");
-  const progress = getProgress(user.stats, user.selectedTitle, ids);
+  const progress = getProgress(user.stats, user.selectedTitle, ids, { supporter: user.supporter === true });
   if (progress.equippedBadges.length !== ids.length) throw new Error("Only unlocked achievement badges can be equipped.");
   await users.updateOne({ _id }, { $set: { equippedBadgeIds: ids } });
   return publicPlayerProfile({ ...user, equippedBadgeIds: ids });
@@ -552,7 +580,7 @@ async function setSelectedTitle(userId, titleId) {
   const user = await users.findOne({ _id });
   if (!user) throw new Error("User not found.");
 
-  const progress = getProgress(user.stats, titleId);
+  const progress = getProgress(user.stats, titleId, user.equippedBadgeIds, { supporter: user.supporter === true });
   const requested = progress.titles.find((title) => title.id === titleId);
   if (!requested) throw new Error("Unknown title.");
   if (!requested.unlocked) throw new Error("That title has not been unlocked yet.");
@@ -576,7 +604,7 @@ async function searchPublicPlayers(query, limit = 8) {
 
   const safeLimit = Math.max(1, Math.min(Number.isInteger(limit) ? limit : 8, 12));
   const regex = new RegExp(escapeRegex(search), "i");
-  const projection = { username: 1, discordUsername: 1, avatar: 1, discordId: 1, stats: 1, modeStats: 1, selectedTitle: 1, equippedBadgeIds: 1, cardCollection: 1, unlockedCards: 1, createdAt: 1 };
+  const projection = { username: 1, discordUsername: 1, avatar: 1, discordId: 1, stats: 1, modeStats: 1, selectedTitle: 1, equippedBadgeIds: 1, supporter: 1, cardCollection: 1, unlockedCards: 1, createdAt: 1 };
   const users = await getDB()
     .collection("users")
     .find({ $or: [{ username: regex }, { discordUsername: regex }] }, { projection })
@@ -592,7 +620,7 @@ async function getPublicPlayerProfile(userId) {
     .collection("users")
     .findOne(
       { _id: toObjectId(userId, "user id") },
-      { projection: { username: 1, avatar: 1, discordId: 1, stats: 1, modeStats: 1, selectedTitle: 1, equippedBadgeIds: 1, cardCollection: 1, unlockedCards: 1, createdAt: 1 } }
+      { projection: { username: 1, avatar: 1, discordId: 1, stats: 1, modeStats: 1, selectedTitle: 1, equippedBadgeIds: 1, supporter: 1, cardCollection: 1, unlockedCards: 1, createdAt: 1 } }
     );
   return user ? publicPlayerProfile(user) : null;
 }
@@ -836,6 +864,7 @@ module.exports = {
   getDailyRewardProgress,
   grantDailyLoginReward,
   grantMatchEconomy,
+  grantTournamentPrize,
   getQuickplayRanking,
   getPublicPlayerProfile,
   setSelectedTitle,

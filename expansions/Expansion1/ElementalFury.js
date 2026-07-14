@@ -6,5 +6,6 @@ module.exports = {
   value: 5,
   rarity: "rare",
   country: "Arcana",
-  lore: "Fire, lightning, and wind answer in one sharp burst.",
+  lore: "Deal 5 damage to a chosen target.",
+  image: "art/ElementalFury.webp",
 };

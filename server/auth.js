@@ -207,6 +207,7 @@ function toPublicUser(user) {
     cardCollection: user.cardCollection || {},
     selectedTitle: user.selectedTitle || "initiate",
     equippedBadgeIds: user.equippedBadgeIds || [],
+    supporter: user.supporter === true,
   };
 }
 

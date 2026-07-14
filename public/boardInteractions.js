@@ -127,6 +127,18 @@
     const target = targetFromPoint(clientX, clientY);
     const overSelfBoard = Boolean(closest(elementAtDrop, "#selfBoard"));
 
+    const needsEnemyMinionTarget = typeof cardRequiresEnemyMinionTarget === "function" && cardRequiresEnemyMinionTarget(card);
+    if (needsEnemyMinionTarget) {
+      const isEnemyMinion = target?.minion?.parentElement?.id === "oppBoard";
+      if (!isEnemyMinion) return false;
+      window.ArcaneAudio?.playSfx("cardPlay");
+      predictCardPlay(drag.source);
+      send("playCard", { handIndex, targetInstanceId: target.id });
+      selectedHandIndex = null;
+      hideTargetHint();
+      return true;
+    }
+
     if (card.type === "minion") {
       if (!overSelfBoard) return false;
       window.ArcaneAudio?.playSfx("cardPlay");
@@ -163,8 +175,9 @@
       const handIndex = Number(handCard.dataset.handIndex);
       const card = myState?.me?.hand?.[handIndex];
       if (!myState?.isYourTurn || !card || card.cost > myState.me.manaCurrent) return;
-      const targetedSpell = card.type === "spell" && card.effect && card.effect !== "draw";
-      startDrag(event, handCard, targetedSpell ? "targeted-spell" : "hand", { card, handIndex });
+      const needsEnemyMinionTarget = typeof cardRequiresEnemyMinionTarget === "function" && cardRequiresEnemyMinionTarget(card);
+      const targetedCard = needsEnemyMinionTarget || (card.type === "spell" && card.effect && card.effect !== "draw");
+      startDrag(event, handCard, targetedCard ? "targeted-spell" : "hand", { card, handIndex });
       return;
     }
 

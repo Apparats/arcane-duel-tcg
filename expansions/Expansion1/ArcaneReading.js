@@ -6,5 +6,6 @@ module.exports = {
   value: 2,
   rarity: "common",
   country: "Arcana",
-  lore: "The Grand Library whispers to anyone willing to listen.",
+  lore: "Draw 2 cards.",
+  image: "art/ArcaneReading.webp",
 };

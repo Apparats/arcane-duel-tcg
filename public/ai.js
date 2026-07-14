@@ -30,13 +30,21 @@
     });
   }
 
-  function pickBestAffordable(hand, manaCurrent, board) {
+  function cardRequiresEnemyMinionTarget(card) {
+    return (card.abilities || []).some((ability) =>
+      ability.trigger === "onPlay" && ability.target === "enemyMinion" &&
+      ["applyStatus", "returnEnemyMinionToDeck"].includes(ability.effect)
+    );
+  }
+
+  function pickBestAffordable(hand, manaCurrent, board, enemyBoard) {
     let bestIdx = -1;
     let bestCost = -1;
     hand.forEach((card, idx) => {
       if (card.type !== "minion") return;
       if (card.cost > manaCurrent) return;
       if (!canFitMinionOnBoard(board, card)) return;
+      if (cardRequiresEnemyMinionTarget(card) && enemyBoard.length === 0) return;
       if (card.cost > bestCost) {
         bestCost = card.cost;
         bestIdx = idx;
@@ -57,13 +65,16 @@
       const state = game.getStateFor(npcIdx);
       if (state.winner !== null) return;
 
-      const idx = pickBestAffordable(state.me.hand, state.me.manaCurrent, state.me.board);
+      const idx = pickBestAffordable(state.me.hand, state.me.manaCurrent, state.me.board, state.opponent.board);
       if (idx !== -1) {
         const card = state.me.hand[idx];
         let played = true;
         try {
           if (card.type === "minion") {
-            game.playCard(npcIdx, idx, null);
+            const target = cardRequiresEnemyMinionTarget(card)
+              ? state.opponent.board.slice().sort((a, b) => b.attack - a.attack || b.health - a.health)[0]?.instanceId
+              : null;
+            game.playCard(npcIdx, idx, target);
           } else if (card.effect === "draw") {
             game.playCard(npcIdx, idx, null);
           } else if (card.effect === "heal") {

@@ -63,7 +63,7 @@ function showNextCardOpening() {
         ${
           card.type === "minion"
             ? `<span class="card-stat atk">${card.attack}</span><span class="card-name">${escapeHtml(card.name)}</span><span class="card-stat hp">${card.health}</span>`
-            : `<span class="card-name">${escapeHtml(card.name)}</span>${card.value !== undefined ? `<span class="card-stat val">${card.value}</span>` : ""}`
+            : `<span class="card-name">${escapeHtml(card.name)}</span>${spellEffectValueHTML(card)}`
         }
       </div>
       ${card.isNew ? `<span class="card-opening-badge">New</span>` : ""}

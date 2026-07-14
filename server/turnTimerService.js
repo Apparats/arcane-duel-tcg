@@ -27,7 +27,7 @@ function ensureTurnTimer(room, onExpired, { durationMs = DEFAULT_TURN_DURATION_M
       console.error("Turn timeout handler failed:", err.message);
     });
   }, durationMs);
-  room.turnTimer = { key, deadline, timer };
+  room.turnTimer = { key, deadline, timer, durationMs };
   return room.turnTimer;
 }
 

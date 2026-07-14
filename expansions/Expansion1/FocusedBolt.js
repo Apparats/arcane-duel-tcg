@@ -6,5 +6,6 @@ module.exports = {
   value: 4,
   rarity: "common",
   country: "Arcana",
-  lore: "Turn stored anger into a precise discharge.",
+  lore: "Deal 4 damage to a chosen target.",
+  image: "art/FocusedBolt.webp",
 };

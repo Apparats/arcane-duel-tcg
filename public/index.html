@@ -6,22 +6,22 @@
 <title>Arcana TCG</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css?v=20260712-ui-consistency-6" />
-<link rel="stylesheet" href="css/menu.css?v=20260712-how-to-status-1" />
-<link rel="stylesheet" href="css/account-profile.css?v=1.4.0" />
-<link rel="stylesheet" href="css/lobby.css?v=20260712-ui-consistency-6" />
-<link rel="stylesheet" href="css/board.css?v=1.4.0" />
-<link rel="stylesheet" href="css/cards.css?v=1.4.1-spell-values-1" />
-<link rel="stylesheet" href="css/board-arena.css?v=20260712-ui-consistency-6" />
-<link rel="stylesheet" href="css/board-hand.css?v=20260712-ui-consistency-6" />
-<link rel="stylesheet" href="css/inventory.css?v=20260712-ui-consistency-6" />
-<link rel="stylesheet" href="css/deck-builder.css?v=20260712-ui-consistency-6" />
-<link rel="stylesheet" href="css/shop.css?v=20260712-ui-consistency-6" />
-<link rel="stylesheet" href="css/trade.css?v=20260712-ui-consistency-6" />
-<link rel="stylesheet" href="css/pack-opening.css?v=20260712-ui-consistency-6" />
-<link rel="stylesheet" href="css/fx.css?v=20260712-ui-consistency-6" />
-<link rel="stylesheet" href="css/board-effects.css?v=1.4.1-spell-cast-2" />
-<link rel="stylesheet" href="css/overlay.css?v=20260712-ui-consistency-6" />
+<link rel="stylesheet" href="css/base.css?v=1.5.0" />
+<link rel="stylesheet" href="css/menu.css?v=1.5.0" />
+<link rel="stylesheet" href="css/account-profile.css?v=1.5.0" />
+<link rel="stylesheet" href="css/lobby.css?v=1.5.0" />
+<link rel="stylesheet" href="css/board.css?v=1.5.0" />
+<link rel="stylesheet" href="css/cards.css?v=1.5.0" />
+<link rel="stylesheet" href="css/board-arena.css?v=1.5.0" />
+<link rel="stylesheet" href="css/board-hand.css?v=1.5.0" />
+<link rel="stylesheet" href="css/inventory.css?v=1.5.0" />
+<link rel="stylesheet" href="css/deck-builder.css?v=1.5.0" />
+<link rel="stylesheet" href="css/shop.css?v=1.5.0" />
+<link rel="stylesheet" href="css/trade.css?v=1.5.0" />
+<link rel="stylesheet" href="css/pack-opening.css?v=1.5.0" />
+<link rel="stylesheet" href="css/fx.css?v=1.5.0" />
+<link rel="stylesheet" href="css/board-effects.css?v=1.5.0" />
+<link rel="stylesheet" href="css/overlay.css?v=1.5.0" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -117,7 +117,7 @@
         <button id="btnOpenPrivacyMenu" class="btn menu-option-button" type="button">Privacy Notice</button>
         <div class="menu-option-config">
           <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Config</button>
-          <span class="menu-version">Version 1.4</span>
+          <span class="menu-version">Version 1.5</span>
         </div>
       </div>
     </div>
@@ -224,6 +224,7 @@
           <span class="menu-tile-gold" id="singleplayerGoldProgress">0 / 50 gold today</span>
         </button>
         <button class="menu-tile menu-tile-primary" id="tileMultiplayer">
+          <span id="tournamentIncoming" class="tournament-incoming hidden" aria-live="polite"><span aria-hidden="true"></span>Tournament incoming</span>
           <span class="menu-tile-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
               <circle cx="8.5" cy="8" r="3" />
@@ -421,6 +422,7 @@
         <div class="lobby-tabs" role="tablist" aria-label="Multiplayer modes">
           <button id="tabRoomCode" class="lobby-tab" type="button">Room Code</button>
           <button id="tabQuickplay" class="lobby-tab active" type="button">Quickplay</button>
+          <button id="tabTournaments" class="lobby-tab" type="button">Tournaments</button>
           <button id="tabRanking" class="lobby-tab" type="button">Ranking</button>
         </div>
 
@@ -437,6 +439,10 @@
           <button id="btnQuickplay" class="btn btn-primary">Find opponent</button>
           <button id="btnCancelQuickplay" class="btn btn-secondary hidden">Cancel search</button>
           <p id="quickplayStatus" class="quickplay-status">Queue for a basic online 1v1 match.</p>
+        </div>
+
+        <div id="tournamentPanel" class="lobby-tab-panel tournament-panel hidden" aria-live="polite">
+          <div id="tournamentList" class="tournament-list"></div>
         </div>
 
         <div id="rankingPanel" class="lobby-tab-panel ranking-panel hidden">
@@ -610,7 +616,6 @@
           <h2 id="zoomName" class="zoom-name">—</h2>
           <div id="zoomMeta" class="zoom-meta"></div>
           <div id="zoomKeywords" class="zoom-keywords"></div>
-          <div id="zoomAbilities" class="zoom-abilities"></div>
           <p id="zoomLore" class="zoom-lore"></p>
         </div>
       </div>
@@ -619,6 +624,7 @@
 
   <!-- ---------- SCREEN: GAME ---------- -->
   <section id="screen-game" class="screen hidden">
+    <div id="matchStatus" class="match-status hidden" aria-live="polite"></div>
     <div class="board-frame">
       <span class="corner corner-tl"></span>
       <span class="corner corner-tr"></span>
@@ -737,6 +743,21 @@
         <button id="btnCloseChangelog" class="changelog-close" type="button" aria-label="Close changelog">x</button>
       </div>
       <div class="changelog-content">
+      <article class="changelog-entry">
+        <div class="changelog-entry-meta">
+          <h3>Version 1.5</h3>
+          <span>Tournament Update</span>
+        </div>
+        <p class="changelog-entry-intro">A competitive Arcana bracket is ready to open.</p>
+        <ul class="changelog-list">
+          <li>Added Tournaments to Multiplayer: pre-register, follow the live bracket, and play your assigned match when both contenders are ready.</li>
+          <li>Brackets scale to the number of registered players, with automatic byes, a final, and a third-place match when the bracket allows it.</li>
+          <li>Podium prizes award 500 gold for first place, 250 for second, and 100 for third. Arcana Open #1 also announces Grimdark and Eco Pack rewards in Warera.</li>
+          <li>Tournament turns last 30 seconds. A player who does not return within 30 seconds after disconnecting forfeits the match.</li>
+          <li>Important tournament states are visible in the lobby and during the duel, including start time, bracket status, turn time, reconnection countdowns, and forfeits.</li>
+          <li>Multiplayer now shows a tournament alert whenever an event is scheduled.</li>
+        </ul>
+      </article>
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
           <h3>Version 1.4</h3>
@@ -1011,22 +1032,23 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.4.1"></script>
-  <script src="deckRules.js?v=1.4.1-spell-limit-1"></script>
-  <script src="engine.js?v=1.4.1-heal-overflow-1"></script>
-  <script src="ai.js?v=1.4.1-npc-spells-1"></script>
-  <script src="audioConfig.js?v=1.4.0"></script>
-  <script src="audioManager.js?v=20260710-audio-pool-1"></script>
-  <script src="packOpening.js?v=20260709-card-cost-1"></script>
-<script src="legalNotices.js?v=20260710-card-request-1"></script>
-<script src="profileCatalog.js?v=1.4.0"></script>
-<script src="profileBadges.js?v=1.4.0"></script>
-<script src="accountProfile.js?v=1.4.0"></script>
-<script src="client.js?v=1.4.1-spell-values-1"></script>
-<script src="boardInteractions.js?v=20260710-responsive-actions-1"></script>
-<script src="inventory.js?v=1.4.1-spell-values-1"></script>
-<script src="deckBuilder.js?v=1.4.1-spell-limit-1"></script>
-<script src="shop.js?v=20260711-campaign-progress-1"></script>
-<script src="trade.js"></script>
+  <script src="cards.js?v=1.5.0"></script>
+  <script src="deckRules.js?v=1.5.0"></script>
+  <script src="engine.js?v=1.5.0"></script>
+  <script src="ai.js?v=1.5.0"></script>
+  <script src="audioConfig.js?v=1.5.0"></script>
+  <script src="audioManager.js?v=1.5.0"></script>
+  <script src="packOpening.js?v=1.5.0"></script>
+<script src="legalNotices.js?v=1.5.0"></script>
+<script src="profileCatalog.js?v=1.5.0"></script>
+<script src="profileBadges.js?v=1.5.0"></script>
+<script src="accountProfile.js?v=1.5.0"></script>
+<script src="client.js?v=1.5.0"></script>
+<script src="boardInteractions.js?v=1.5.0"></script>
+<script src="inventory.js?v=1.5.0"></script>
+<script src="deckBuilder.js?v=1.5.0"></script>
+<script src="shop.js?v=1.5.0"></script>
+<script src="trade.js?v=1.5.0"></script>
+<script src="tournaments.js?v=1.5.0"></script>
 </body>
 </html>

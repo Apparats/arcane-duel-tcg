@@ -54,7 +54,8 @@
       "value": 2,
       "rarity": "common",
       "country": "Arcana",
-      "lore": "The Grand Library whispers to anyone willing to listen.",
+      "lore": "Draw 2 cards.",
+      "image": "art/ArcaneReading.webp",
       "id": "expansion1:arcanereading",
       "_expansionId": "expansion1"
     },
@@ -171,7 +172,8 @@
       "value": 8,
       "rarity": "legendary",
       "country": "Arcana",
-      "lore": "It falls from the sky like a judgment nobody asked for.",
+      "lore": "Deal 8 damage to a chosen target.",
+      "image": "art/DevastatingMeteor.webp",
       "id": "expansion1:devastatingmeteor",
       "_expansionId": "expansion1"
     },
@@ -183,7 +185,8 @@
       "value": 5,
       "rarity": "rare",
       "country": "Arcana",
-      "lore": "Fire, lightning, and wind answer in one sharp burst.",
+      "lore": "Deal 5 damage to a chosen target.",
+      "image": "art/ElementalFury.webp",
       "id": "expansion1:elementalfury",
       "_expansionId": "expansion1"
     },
@@ -203,6 +206,28 @@
       "_expansionId": "expansion1"
     },
     {
+      "name": "Fanex",
+      "cost": 4,
+      "type": "minion",
+      "attack": 6,
+      "health": 4,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "rare",
+      "country": "Rwanda",
+      "lore": "A single heavy strike sends an enemy back into the unknown.",
+      "image": "art/Fanex.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "returnEnemyMinionToDeck",
+          "target": "enemyMinion"
+        }
+      ],
+      "id": "expansion1:fanex",
+      "_expansionId": "expansion1"
+    },
+    {
       "name": "Focused Bolt",
       "cost": 3,
       "type": "spell",
@@ -210,7 +235,8 @@
       "value": 4,
       "rarity": "common",
       "country": "Arcana",
-      "lore": "Turn stored anger into a precise discharge.",
+      "lore": "Deal 4 damage to a chosen target.",
+      "image": "art/FocusedBolt.webp",
       "id": "expansion1:focusedbolt",
       "_expansionId": "expansion1"
     },
@@ -222,7 +248,8 @@
       "value": 6,
       "rarity": "rare",
       "country": "Arcana",
-      "lore": "An ancient chant that closes wounds and steadies the spirit.",
+      "lore": "Heal a chosen minion or your hero for 6. Healing can exceed maximum Health.",
+      "image": "art/GreaterBlessing.webp",
       "id": "expansion1:greaterblessing",
       "_expansionId": "expansion1"
     },
@@ -276,6 +303,28 @@
       "_expansionId": "expansion1"
     },
     {
+      "name": "Manuchiliz",
+      "cost": 6,
+      "type": "minion",
+      "attack": 5,
+      "health": 9,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "legendary",
+      "country": "Argentina",
+      "lore": "Its arrival shakes every creature on the field, ally and enemy alike.",
+      "image": "art/Manuchiliz.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "damageAllMinions",
+          "value": 3
+        }
+      ],
+      "id": "expansion1:manuchiliz",
+      "_expansionId": "expansion1"
+    },
+    {
       "name": "Meow4glory",
       "cost": 4,
       "type": "minion",
@@ -298,7 +347,8 @@
       "value": 3,
       "rarity": "common",
       "country": "Arcana",
-      "lore": "Small in size, inconvenient at exactly the wrong moment.",
+      "lore": "Deal 3 damage to a chosen target.",
+      "image": "art/MinorFireball.webp",
       "id": "expansion1:minorfireball",
       "_expansionId": "expansion1"
     },
@@ -310,7 +360,8 @@
       "value": 2,
       "rarity": "common",
       "country": "Arcana",
-      "lore": "A small spark is still enough to start a fire.",
+      "lore": "Deal 2 damage to a chosen target.",
+      "image": "art/MinorSpark.webp",
       "id": "expansion1:minorspark",
       "_expansionId": "expansion1"
     },
@@ -354,7 +405,8 @@
       "value": 3,
       "rarity": "common",
       "country": "Arcana",
-      "lore": "Cloth and crushed herbs: enough to stay standing.",
+      "lore": "Heal a chosen minion or your hero for 3. Healing can exceed maximum Health.",
+      "image": "art/QuickBandage.webp",
       "id": "expansion1:quickbandage",
       "_expansionId": "expansion1"
     },

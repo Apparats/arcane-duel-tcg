@@ -28,6 +28,7 @@
     "campaign-veteran": '<path d="M16 50V21l16-10 16 10v29"/><path d="M22 50V26l10-6 10 6v24M27 35h10M32 20v30"/>',
     "bot-bane": '<path d="M18 24h28v22H18z"/><path d="M24 24v-6h16v6M24 35h1M39 35h1M28 42h8"/><path d="M12 30h6M46 30h6"/>',
     "collectors-sigil": '<path d="M18 18h28v28H18z"/><path d="m18 18 14 10 14-10M32 28v18"/><circle cx="32" cy="18" r="5"/>',
+    "more-than-honorable": '<path d="M20 13h24v17c0 11-5 18-12 24-7-6-12-13-12-24z"/><path d="m23 19 9 6 9-6v13l-9 6-9-6z"/><path d="m25 40 7 7 7-7"/><circle cx="32" cy="30" r="4"/><path d="M17 17 11 11M47 17l6-6M15 47l-5 5M49 47l5 5"/>',
   };
 
   const PALETTES = {
@@ -41,6 +42,7 @@
     "developer-down": ["#ff8b83", "#bc3f4e"],
     "machine-breaker": ["#dfe7ed", "#71839b"],
     "npc-slayer": ["#dfe7ed", "#71839b"],
+    "more-than-honorable": ["#ffe6a3", "#cd8052"],
   };
 
   function badgeMarkup(id, unlocked) {

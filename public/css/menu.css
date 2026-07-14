@@ -515,6 +515,30 @@
   aspect-ratio: 16 / 10;
 }
 
+#tileMultiplayer { overflow: visible; }
+.tournament-incoming {
+  position: absolute;
+  z-index: 4;
+  top: -11px;
+  right: -10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 7px;
+  border: 1px solid #ff8f8f;
+  border-radius: 4px;
+  background: #8f222b;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  color: #fff7f2;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.tournament-incoming > span { width: 6px; height: 6px; border-radius: 50%; background: #ffcdc7; box-shadow: 0 0 7px rgba(255, 211, 204, 0.75); }
+
 .menu-tile-primary:hover::after,
 .menu-tile-primary:focus-visible::after,
 .menu-tile-secondary-active:hover::after,
@@ -940,6 +964,8 @@
     margin-top: 10px;
   }
   .menu-tile-primary { aspect-ratio: 16 / 8; padding: 24px 12px; }
+  .tournament-incoming { top: -8px; right: -6px; padding: 3px 5px; font-size: 7px; }
+  .tournament-incoming > span { width: 5px; height: 5px; }
   .menu-tile-icon { width: 40px; height: 40px; }
   .menu-tile-secondary-active {
     aspect-ratio: auto;

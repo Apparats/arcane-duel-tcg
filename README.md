@@ -54,6 +54,12 @@ lobby use "Create room" / "Join" instead of the NPC button.
 
 Optional environment variable: `PORT` (default 8443).
 
+## Tournament configuration
+
+Create and schedule tournaments in [server/tournaments/catalog.js](server/tournaments/catalog.js). Each object contains the public name, description, registration window, start time, player cap, and podium prizes. All dates are ISO 8601 UTC. Set `enabled: false` to hide an event without deleting it.
+
+Once registration closes, the server locks the player list. At the configured start time it creates a single-elimination bracket sized to the actual number of entrants, automatically giving byes where needed. The final pays 500 gold to first place and 250 gold to second; a third-place match pays 100 gold whenever two semifinal losers exist. Tournament prizes are recorded once server-side, independently of the normal match reward limits. Tournament turns last 30 seconds; a player who disconnects has 30 seconds to return, otherwise their opponent advances by forfeit. Draws leave that bracket match ready for a replay.
+
 ## Production deployment (Oracle Cloud + Cloudflare + MongoDB + Discord)
 
 This is the setup for running the game as a real, persistent site
@@ -521,6 +527,7 @@ abilities: [
 | `summonMinion` | `cardId`, `count` (optional, default 1) | summons copies of another card (by id) onto your board |
 | `buffAllFriendlyMinions` | `attack` and/or `health` | adds stats to all your minions |
 | `applyStatus` | `target: "enemyMinion"`, `status`, `value`/`turns` (optional) | applies a targeted debuff to an enemy minion when the card is played |
+| `returnEnemyMinionToDeck` | `target: "enemyMinion"` | returns a chosen enemy minion to its owner's deck when the card is played |
 
 A spell can be "classic" (with a single-target `effect`/`value`, as
 usual) **or** work entirely through `abilities` — in that case just

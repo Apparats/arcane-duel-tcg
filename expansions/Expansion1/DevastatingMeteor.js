@@ -6,5 +6,6 @@ module.exports = {
   value: 8,
   rarity: "legendary",
   country: "Arcana",
-  lore: "It falls from the sky like a judgment nobody asked for.",
+  lore: "Deal 8 damage to a chosen target.",
+  image: "art/DevastatingMeteor.webp",
 };
