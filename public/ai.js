@@ -34,6 +34,7 @@
     let bestIdx = -1;
     let bestCost = -1;
     hand.forEach((card, idx) => {
+      if (card.type !== "minion") return;
       if (card.cost > manaCurrent) return;
       if (!canFitMinionOnBoard(board, card)) return;
       if (card.cost > bestCost) {

@@ -1,6 +1,7 @@
 const assert = require("assert");
 const { CARDS } = require("../public/cards");
 const { Game } = require("../public/engine");
+const { validateDeck } = require("../public/deckRules");
 
 const SPELL_IDS = [
   "expansion1:minorspark",
@@ -26,16 +27,29 @@ game.players[0].manaCurrent = 10;
 game.playCard(0, 0, "faceEnemy");
 assert.strictEqual(game.players[1].health, 28, "Minor Spark should deal two damage to the enemy hero.");
 
-game.players[0].health = 18;
+game.players[0].health = 28;
 game.players[0].hand = ["expansion1:greaterblessing"];
 game.players[0].manaCurrent = 10;
 game.playCard(0, 0, null);
-assert.strictEqual(game.players[0].health, 24, "Greater Blessing should heal the caster for six.");
+assert.strictEqual(game.players[0].health, 34, "Greater Blessing should preserve healing overflow.");
 
 game.players[0].hand = ["expansion1:arcanereading"];
 game.players[0].deck = ["expansion1:minorspark", "expansion1:quickbandage"];
 game.players[0].manaCurrent = 10;
 game.playCard(0, 0, null);
 assert.strictEqual(game.players[0].hand.length, 2, "Arcane Reading should draw two cards.");
+
+const fillerIds = CARDS.filter((card) => card.type === "minion" && card.rarity === "common").slice(0, 9).map((card) => card.id);
+const validDeck = [...fillerIds.slice(0, 8), ...fillerIds.slice(0, 8), fillerIds[8], ...SPELL_IDS.slice(0, 3)];
+const invalidDeck = [...fillerIds.slice(0, 8), ...fillerIds.slice(0, 8), ...SPELL_IDS.slice(0, 4)];
+const collection = [...new Set([...validDeck, ...invalidDeck])].reduce((counts, cardId) => {
+  counts[cardId] = 2;
+  return counts;
+}, {});
+assert(validateDeck(validDeck, { cardCollection: collection }).ok, "A deck with three spells should be valid.");
+assert(
+  validateDeck(invalidDeck, { cardCollection: collection }).errors.includes("Spell cards: max 3 total."),
+  "A deck with four spells should be rejected."
+);
 
 console.log("--- EXPANSION 1 SPELLS TEST OK ---");

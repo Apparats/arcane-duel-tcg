@@ -174,6 +174,19 @@
 .card-stat.atk { color: var(--gold); }
 .card-stat.hp { color: var(--hp); }
 .card-stat.val { color: var(--mana); }
+.card-stat.mana-cost { color: var(--mana); }
+
+.card-cost.spell-effect-damage {
+  border-color: #ff9b91;
+  background: radial-gradient(circle at 33% 22%, #ffe2d9 0%, #ff8a72 20%, #ce3e3a 56%, #6d1e2a 100%);
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.58), 0 0 9px rgba(245, 76, 66, 0.5);
+}
+
+.card-cost.spell-effect-heal {
+  border-color: #b8f4a8;
+  background: radial-gradient(circle at 33% 22%, #ecffe5 0%, #a7e77f 20%, #4eaa5c 56%, #1f5f45 100%);
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.58), 0 0 9px rgba(111, 213, 109, 0.5);
+}
 
 /* ---- Rarity: border color + glow ---- */
 

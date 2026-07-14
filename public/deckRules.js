@@ -9,6 +9,7 @@
 
   const DECK_SIZE = 20;
   const MAX_BOARD = 4;
+  const MAX_SPELLS = 3;
   const RARITY_TOTAL_LIMITS = {
     legendary: 3,
     mythic: 1,
@@ -25,6 +26,10 @@
       counts[cardId] = (counts[cardId] || 0) + 1;
       return counts;
     }, {});
+  }
+
+  function countSpellCards(cardIds) {
+    return cardIds.reduce((total, cardId) => total + (getCardById(cardId)?.type === "spell" ? 1 : 0), 0);
   }
 
   function getCardRarity(cardId) {
@@ -45,6 +50,10 @@
 
     const counts = countCards(cardIds);
     const rarityTotals = {};
+
+    if (countSpellCards(cardIds) > MAX_SPELLS) {
+      errors.push(`Spell cards: max ${MAX_SPELLS} total.`);
+    }
 
     Object.entries(counts).forEach(([cardId, amount]) => {
       const card = getCardById(cardId);
@@ -76,6 +85,7 @@
     const deck = [];
     const counts = {};
     const rarityTotals = {};
+    let spellTotal = 0;
     const candidates = buildStarterDeck()
       .map((cardId) => getCardById(cardId))
       .filter(Boolean)
@@ -88,7 +98,11 @@
       const rarity = card.rarity || "common";
       const copyLimit = CARD_COPY_LIMITS[rarity] || 2;
       const totalLimit = RARITY_TOTAL_LIMITS[rarity] || Infinity;
-      return (counts[card.id] || 0) < copyLimit && (rarityTotals[rarity] || 0) < totalLimit;
+      return (
+        (counts[card.id] || 0) < copyLimit &&
+        (rarityTotals[rarity] || 0) < totalLimit &&
+        (card.type !== "spell" || spellTotal < MAX_SPELLS)
+      );
     }
 
     while (deck.length < DECK_SIZE) {
@@ -98,6 +112,7 @@
       deck.push(next.id);
       counts[next.id] = (counts[next.id] || 0) + 1;
       rarityTotals[rarity] = (rarityTotals[rarity] || 0) + 1;
+      if (next.type === "spell") spellTotal += 1;
     }
 
     return deck;
@@ -107,6 +122,7 @@
     const deck = [];
     const counts = {};
     const rarityTotals = {};
+    let spellTotal = 0;
     const rarityOrder = { mythic: 0, legendary: 1, rare: 2, common: 3 };
     const candidates = CARDS
       .map((card) => ({ card, owned: getOwnedCount(collection, card.id) }))
@@ -124,6 +140,7 @@
       return (
         (counts[card.id] || 0) < Math.min(entry.owned, copyLimit) &&
         (rarityTotals[rarity] || 0) < totalLimit &&
+        (card.type !== "spell" || spellTotal < MAX_SPELLS) &&
         deck.length < DECK_SIZE
       );
     }
@@ -136,6 +153,7 @@
         deck.push(entry.card.id);
         counts[entry.card.id] = (counts[entry.card.id] || 0) + 1;
         rarityTotals[rarity] = (rarityTotals[rarity] || 0) + 1;
+        if (entry.card.type === "spell") spellTotal += 1;
       });
     }
 
@@ -145,9 +163,11 @@
   return {
     DECK_SIZE,
     MAX_BOARD,
+    MAX_SPELLS,
     RARITY_TOTAL_LIMITS,
     CARD_COPY_LIMITS,
     countCards,
+    countSpellCards,
     getOwnedCount,
     validateDeck,
     buildAutoDeck,

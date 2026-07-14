@@ -11,6 +11,7 @@ const STARTER_RARITY_LIMITS = { legendary: 3, mythic: 1 };
 const STARTER_MAX_COPIES_PER_CARD = 2;
 const STARTER_CARD_COPY_LIMITS = { legendary: 1, mythic: 1 };
 const { secureRandomFrom, secureRandomInt } = require("./random");
+const { MAX_SPELLS } = require("../public/deckRules");
 
 function assertDrawCount(count, label = "card count") {
   if (!Number.isInteger(count) || count < 1 || count > 20) {
@@ -37,10 +38,10 @@ function cardsByRarity(cards, rarity) {
   return cards.filter((card) => (card.rarity || "common") === rarity);
 }
 
-function availableStarterCards(cards, counts) {
+function availableStarterCards(cards, counts, spellCount = 0) {
   return cards.filter((card) => {
     const copyLimit = STARTER_CARD_COPY_LIMITS[card.rarity || "common"] || STARTER_MAX_COPIES_PER_CARD;
-    return (counts[card.id] || 0) < copyLimit;
+    return (counts[card.id] || 0) < copyLimit && (card.type !== "spell" || spellCount < MAX_SPELLS);
   });
 }
 
@@ -83,6 +84,7 @@ function drawStarterCards(cards) {
 
   const opening = [addDrawnCard(randomFrom(mythicCandidates), counts)];
   rarityCounts[STARTER_GUARANTEED_RARITY] = 1;
+  let spellCount = opening[0].type === "spell" ? 1 : 0;
   const nonMythicRarities = Object.entries(PACK_RARITY_WEIGHTS)
     .filter(([rarity]) => rarity !== STARTER_GUARANTEED_RARITY)
     .map(([value, weight]) => ({ value, weight }));
@@ -91,16 +93,18 @@ function drawStarterCards(cards) {
     const eligibleRarities = nonMythicRarities.filter(({ value }) => {
       const rarityLimit = STARTER_RARITY_LIMITS[value] ?? Infinity;
       if ((rarityCounts[value] || 0) >= rarityLimit) return false;
-      return availableStarterCards(cardsByRarity(cards, value), counts).length > 0;
+      return availableStarterCards(cardsByRarity(cards, value), counts, spellCount).length > 0;
     });
     if (eligibleRarities.length === 0) {
       throw new Error("Starter card pool does not have enough cards for a legal starter deck.");
     }
 
     const rarity = weightedPick(eligibleRarities);
-    const candidates = availableStarterCards(cardsByRarity(cards, rarity), counts);
-    opening.push(addDrawnCard(randomFrom(candidates), counts));
+    const candidates = availableStarterCards(cardsByRarity(cards, rarity), counts, spellCount);
+    const card = addDrawnCard(randomFrom(candidates), counts);
+    opening.push(card);
     rarityCounts[rarity] = (rarityCounts[rarity] || 0) + 1;
+    if (card.type === "spell") spellCount += 1;
   }
 
   return opening;
@@ -145,6 +149,7 @@ function buildStarterOpening(cards) {
   if (
     opening.length !== STARTER_CARD_COUNT ||
     maxCopies > STARTER_MAX_COPIES_PER_CARD ||
+    opening.filter((card) => card.type === "spell").length > MAX_SPELLS ||
     rarityCounts.mythic !== 1 ||
     (rarityCounts.legendary || 0) > STARTER_RARITY_LIMITS.legendary
   ) {

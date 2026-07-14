@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="css/account-profile.css?v=1.4.0" />
 <link rel="stylesheet" href="css/lobby.css?v=20260712-ui-consistency-6" />
 <link rel="stylesheet" href="css/board.css?v=1.4.0" />
-<link rel="stylesheet" href="css/cards.css?v=20260712-ui-consistency-6" />
+<link rel="stylesheet" href="css/cards.css?v=1.4.1-spell-values-1" />
 <link rel="stylesheet" href="css/board-arena.css?v=20260712-ui-consistency-6" />
 <link rel="stylesheet" href="css/board-hand.css?v=20260712-ui-consistency-6" />
 <link rel="stylesheet" href="css/inventory.css?v=20260712-ui-consistency-6" />
@@ -20,7 +20,7 @@
 <link rel="stylesheet" href="css/trade.css?v=20260712-ui-consistency-6" />
 <link rel="stylesheet" href="css/pack-opening.css?v=20260712-ui-consistency-6" />
 <link rel="stylesheet" href="css/fx.css?v=20260712-ui-consistency-6" />
-<link rel="stylesheet" href="css/board-effects.css?v=20260712-ui-consistency-6" />
+<link rel="stylesheet" href="css/board-effects.css?v=1.4.1-spell-cast-2" />
 <link rel="stylesheet" href="css/overlay.css?v=20260712-ui-consistency-6" />
 </head>
 <body>
@@ -748,6 +748,11 @@
           <li>Meet Abdellah, Abo_Amer, Aslani, Baatus, Biertierchen, Dantenie83, DIYslinky, euler, jeraxes, light, makariozzz, meow4glory, moonhammer, puipui_09, Rockseller, taru95, tucuquere, vlad, Red, and Crowley_The_Penguin.</li>
           <li>Red calls RedWolf to the battlefield at the start of each turn while it is absent. Crowley_The_Penguin grants your board Divine Shield the first time it is played.</li>
           <li>Expansion 1 also adds eight English spell cards: Minor Spark, Minor Fireball, Greater Blessing, Quick Bandage, Elemental Fury, Focused Bolt, Devastating Meteor, and Arcane Reading.</li>
+          <li>Spells now appear in a full casting reveal before their effect resolves, so both duelists can clearly see what was played.</li>
+          <li>Damage spells show their power in red, healing spells show it in green, and healing can overflow beyond normal Health.</li>
+          <li>Decks can include up to three spells. Starter openings and auto-built decks now follow the same limit.</li>
+          <li>NPCs focus on minions and no longer cast spells or waste attacks with zero Attack.</li>
+          <li>On touch devices, hold a card still to inspect its details; releasing it closes the tip without playing the card.</li>
           <li>Rebalanced several existing cards and updated stat lines across the roster.</li>
           <li>Added player profiles with wins, losses, mode-specific statistics, collection browsing, player search, titles, achievements, and up to three equipped achievement badges.</li>
           <li>New title and achievement unlocks are announced in-game, and profile notifications mark rewards waiting to be viewed.</li>
@@ -1007,9 +1012,9 @@
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
   <script src="cards.js?v=1.4.1"></script>
-  <script src="deckRules.js"></script>
-  <script src="engine.js?v=1.4.0"></script>
-  <script src="ai.js"></script>
+  <script src="deckRules.js?v=1.4.1-spell-limit-1"></script>
+  <script src="engine.js?v=1.4.1-heal-overflow-1"></script>
+  <script src="ai.js?v=1.4.1-npc-spells-1"></script>
   <script src="audioConfig.js?v=1.4.0"></script>
   <script src="audioManager.js?v=20260710-audio-pool-1"></script>
   <script src="packOpening.js?v=20260709-card-cost-1"></script>
@@ -1017,10 +1022,10 @@
 <script src="profileCatalog.js?v=1.4.0"></script>
 <script src="profileBadges.js?v=1.4.0"></script>
 <script src="accountProfile.js?v=1.4.0"></script>
-<script src="client.js?v=1.4.0"></script>
+<script src="client.js?v=1.4.1-spell-values-1"></script>
 <script src="boardInteractions.js?v=20260710-responsive-actions-1"></script>
-<script src="inventory.js?v=20260712-deck-expansion-filter-1"></script>
-<script src="deckBuilder.js?v=20260711-deck-management-1"></script>
+<script src="inventory.js?v=1.4.1-spell-values-1"></script>
+<script src="deckBuilder.js?v=1.4.1-spell-limit-1"></script>
 <script src="shop.js?v=20260711-campaign-progress-1"></script>
 <script src="trade.js"></script>
 </body>

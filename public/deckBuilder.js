@@ -156,6 +156,7 @@ function removeDeckCard(cardId) {
 
 function renderDeckPool() {
   const counts = currentDeckCounts();
+  const spellLimitReached = TCGDeckRules.countSpellCards(deckBuilderState.cardIds) >= TCGDeckRules.MAX_SPELLS;
   const pool = $("deckCardPool");
   const cards = ownedCards().filter((card) => cardMatchesFilters(card, currentDeckFilters()));
   pool.innerHTML = "";
@@ -164,7 +165,7 @@ function renderDeckPool() {
   cards.forEach((card) => {
     const owned = getCardQuantity(card);
     const used = counts[card.id] || 0;
-    const full = used >= owned || deckBuilderState.cardIds.length >= TCGDeckRules.DECK_SIZE;
+    const full = used >= owned || deckBuilderState.cardIds.length >= TCGDeckRules.DECK_SIZE || (card.type === "spell" && spellLimitReached);
     const el = document.createElement("button");
     el.className = `deck-pool-card${full ? " deck-pool-card-disabled" : ""}`;
     el.disabled = full;

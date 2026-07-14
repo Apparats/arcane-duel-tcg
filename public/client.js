@@ -48,6 +48,9 @@ const ACTIVE_MULTIPLAYER_MATCH_KEY = "arcane_active_multiplayer_match";
 const RECONNECT_RETRY_MS = 3_000;
 const RECONNECT_WINDOW_MS = 60_000;
 const DISCORD_ACTIVITY_READY_TIMEOUT_MS = 12000;
+const SPELL_REVEAL_MS = 800;
+const TOUCH_TOOLTIP_HOLD_MS = 500;
+const TOUCH_TOOLTIP_MOVE_TOLERANCE = 10;
 let quickplaySearching = false;
 let enabledExpansionIds = null;
 let activeMatchMode = null;
@@ -230,7 +233,7 @@ function resumeSavedMultiplayerMatch() {
 
 function send(type, payload = {}) {
   if (isLocalMode) {
-    handleLocalAction(type, payload);
+    void handleLocalAction(type, payload);
     return;
   }
   if (ws && ws.readyState === WebSocket.OPEN) {
@@ -268,12 +271,14 @@ function startServerSingleplayer() {
   connect(() => send("startSingleplayer", {}));
 }
 
-function handleLocalAction(type, payload) {
+async function handleLocalAction(type, payload) {
   try {
     if (type === "emote") {
       showEmote(payload?.emote, true);
       return;
     } else if (type === "playCard") {
+      const card = localGame.getStateFor(0).me.hand[payload.handIndex];
+      if (card?.type === "spell") await showSpellCastReveal(card.id);
       localGame.playCard(0, payload.handIndex, payload.targetInstanceId || null);
     } else if (type === "attack") {
       localGame.attack(0, payload.attackerInstanceId, payload.targetInstanceId);
@@ -508,6 +513,9 @@ function handleServerMessage(msg) {
       break;
     case "state":
       applyIncomingState(msg.payload);
+      break;
+    case "spellCast":
+      void showSpellCastReveal(msg.payload?.cardId);
       break;
     case "emote":
       showEmote(msg.payload?.emote, Boolean(msg.payload?.isSelf));
@@ -763,6 +771,28 @@ function predictCardPlay(cardEl) {
   if (!cardEl) return;
   cardEl.classList.add("action-pending");
   setTimeout(() => cardEl.classList.remove("action-pending"), 1_500);
+}
+
+function showSpellCastReveal(cardId) {
+  const card = TCGCards.getCardById(cardId);
+  if (!card || card.type !== "spell") return Promise.resolve();
+
+  document.querySelector(".spell-cast-reveal")?.remove();
+  const reveal = document.createElement("div");
+  reveal.className = "spell-cast-reveal";
+  reveal.setAttribute("aria-hidden", "true");
+  reveal.innerHTML = `
+    <div class="minion-card spell-cast-card ${rarityClass(card)}">
+      ${cardArtHTML(card)}
+      ${cardCostHTML(card)}
+      <div class="card-footer"><span class="card-name">${escapeHtml(card.name)}</span>${spellManaHTML(card)}</div>
+    </div>
+  `;
+  document.body.append(reveal);
+  requestAnimationFrame(() => reveal.classList.add("is-visible"));
+  window.ArcaneAudio?.playSfx("cardPlay");
+
+  return sleep(SPELL_REVEAL_MS).then(() => reveal.remove());
 }
 
 // Runs BEFORE replacing the DOM with the new state: while the old
@@ -1281,7 +1311,7 @@ function renderHand(state) {
         ${
           card.type === "minion"
             ? `<span class="card-stat atk">${card.attack}</span><span class="card-name">${escapeHtml(card.name)}</span><span class="card-stat hp">${card.health}</span>`
-            : `<span class="card-name">${escapeHtml(card.name)}</span>${card.value !== undefined ? `<span class="card-stat val">${card.value}</span>` : ""}`
+            : `<span class="card-name">${escapeHtml(card.name)}</span>${spellManaHTML(card)}`
         }
       </div>
     `;
@@ -1644,7 +1674,16 @@ function cardCostHTML(card) {
     : Number.isFinite(instanceCost)
       ? instanceCost
       : 0;
+  const isEffectSpell = card?.type === "spell" && ["damage", "heal"].includes(card.effect) && Number.isFinite(Number(card.value));
+  if (isEffectSpell) {
+    const label = card.effect === "damage" ? `${card.value} damage` : `${card.value} healing`;
+    return `<span class="card-cost spell-effect-${card.effect}" aria-label="${label}">${card.value}</span>`;
+  }
   return `<span class="card-cost" aria-label="${cost} mana">${cost}</span>`;
+}
+
+function spellManaHTML(card) {
+  return `<span class="card-stat mana-cost" aria-label="${card.cost} mana">${card.cost}</span>`;
 }
 
 function rarityClass(card) {
@@ -1672,8 +1711,13 @@ function escapeHtmlAttr(str) {
 
 function attachCardTooltip(el, card) {
   const getCard = typeof card === "function" ? card : () => card;
-  el.addEventListener("pointerdown", () => {
-    if (!canUseHoverTooltips()) hideCardTooltip();
+  el.addEventListener("pointerdown", (event) => {
+    if (canUseHoverTooltips()) return;
+    hideCardTooltip();
+    if (event.pointerType === "touch") startTouchCardTooltip(event, el, getCard);
+  });
+  el.addEventListener("contextmenu", (event) => {
+    if (!canUseHoverTooltips()) event.preventDefault();
   });
   if (!canUseHoverTooltips()) return;
 
@@ -1684,6 +1728,11 @@ function attachCardTooltip(el, card) {
 
 function showCardTooltip(card, e) {
   if (!canUseHoverTooltips()) return;
+  populateCardTooltip(card);
+  positionCardTooltip(e);
+}
+
+function populateCardTooltip(card) {
   const t = $("cardTooltip");
   const rarity = card.rarity || "common";
 
@@ -1714,7 +1763,6 @@ function showCardTooltip(card, e) {
     ${card.lore ? `<div class="tooltip-lore">${escapeHtml(card.lore)}</div>` : ""}
   `;
   t.classList.remove("hidden");
-  positionCardTooltip(e);
 }
 
 function positionCardTooltip(e) {
@@ -1739,15 +1787,100 @@ function hideCardTooltip() {
   tooltip.style.top = "";
 }
 
+let touchTooltipPress = null;
+let suppressTouchTooltipClick = null;
+let suppressTouchTooltipClickTimer = null;
+
+function clearTouchCardTooltip({ hide = false } = {}) {
+  if (!touchTooltipPress) return;
+  clearTimeout(touchTooltipPress.timer);
+  if (hide && touchTooltipPress.revealed) hideCardTooltip();
+  touchTooltipPress = null;
+}
+
+function showTouchCardTooltip(card, element) {
+  populateCardTooltip(card);
+  const tooltip = $("cardTooltip");
+  const cardRect = element.getBoundingClientRect();
+  const tooltipRect = tooltip.getBoundingClientRect();
+  const edge = 8;
+  const gap = 12;
+  const x = Math.max(edge, Math.min(window.innerWidth - tooltipRect.width - edge, cardRect.left + (cardRect.width - tooltipRect.width) / 2));
+  const above = cardRect.top - tooltipRect.height - gap;
+  const below = cardRect.bottom + gap;
+  const y = above >= edge ? above : Math.min(window.innerHeight - tooltipRect.height - edge, below);
+  tooltip.style.left = `${x}px`;
+  tooltip.style.top = `${Math.max(edge, y)}px`;
+}
+
+function startTouchCardTooltip(event, element, getCard) {
+  clearTouchCardTooltip({ hide: true });
+  const press = {
+    element,
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    revealed: false,
+    timer: null,
+  };
+  press.timer = setTimeout(() => {
+    if (touchTooltipPress !== press) return;
+    press.revealed = true;
+    showTouchCardTooltip(getCard(), element);
+  }, TOUCH_TOOLTIP_HOLD_MS);
+  touchTooltipPress = press;
+}
+
+document.addEventListener("pointermove", (event) => {
+  const press = touchTooltipPress;
+  if (!press || event.pointerId !== press.pointerId) return;
+  if (Math.hypot(event.clientX - press.startX, event.clientY - press.startY) <= TOUCH_TOOLTIP_MOVE_TOLERANCE) return;
+  clearTouchCardTooltip({ hide: press.revealed });
+}, { passive: true });
+
+function finishTouchCardTooltip(event) {
+  const press = touchTooltipPress;
+  if (!press || event.pointerId !== press.pointerId) return;
+  if (press.revealed) {
+    suppressTouchTooltipClick = press.element;
+    clearTimeout(suppressTouchTooltipClickTimer);
+    suppressTouchTooltipClickTimer = setTimeout(() => {
+      suppressTouchTooltipClick = null;
+    }, 500);
+  }
+  clearTouchCardTooltip({ hide: press.revealed });
+}
+
+document.addEventListener("pointerup", finishTouchCardTooltip, true);
+document.addEventListener("pointercancel", () => clearTouchCardTooltip({ hide: true }), true);
+document.addEventListener("click", (event) => {
+  if (!suppressTouchTooltipClick) return;
+  const suppress = suppressTouchTooltipClick.contains(event.target);
+  suppressTouchTooltipClick = null;
+  clearTimeout(suppressTouchTooltipClickTimer);
+  if (!suppress) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+}, true);
+
 // Touch devices have no real "mouseleave" — the only way a tooltip
 // closes there is by tapping somewhere else. This covers that case
 // (and is harmless on desktop too).
 document.addEventListener("pointerdown", (e) => {
   if (!canUseHoverTooltips() || !closestElement(e.target, ".minion-card, .hand-card")) hideCardTooltip();
 });
-document.addEventListener("scroll", hideCardTooltip, { capture: true, passive: true });
-window.addEventListener("resize", hideCardTooltip);
-window.addEventListener("blur", hideCardTooltip);
+document.addEventListener("scroll", () => {
+  clearTouchCardTooltip({ hide: true });
+  hideCardTooltip();
+}, { capture: true, passive: true });
+window.addEventListener("resize", () => {
+  clearTouchCardTooltip({ hide: true });
+  hideCardTooltip();
+});
+window.addEventListener("blur", () => {
+  clearTouchCardTooltip({ hide: true });
+  hideCardTooltip();
+});
 hoverTooltipQuery?.addEventListener?.("change", hideCardTooltip);
 
 function escapeHtml(str) {

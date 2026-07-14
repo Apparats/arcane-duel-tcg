@@ -56,6 +56,10 @@
     return returnCount > 0 ? `${cardId}${CARD_REF_RETURN_SEPARATOR}${returnCount}` : cardId;
   }
 
+  function applyOverflowHeal(target, amount) {
+    target.health += amount;
+  }
+
   function boundedInteger(value, fallback, min, max) {
     return Number.isInteger(value) && value >= min && value <= max ? value : fallback;
   }
@@ -512,12 +516,12 @@
       if (card.effect === "heal") {
         // No target -> heals the caster's own hero
         if (!targetInstanceId) {
-          caster.health = Math.min(caster.maxHealth, caster.health + card.value);
+          applyOverflowHeal(caster, card.value);
           return;
         }
         const target = this._findMinion(targetInstanceId);
         if (target) {
-          target.minion.health = Math.min(target.minion.maxHealth, target.minion.health + card.value);
+          applyOverflowHeal(target.minion, card.value);
         }
         return;
       }

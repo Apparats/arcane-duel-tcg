@@ -1,4 +1,4 @@
-const { buildAutoDeck, validateDeck, DECK_SIZE, CARD_COPY_LIMITS, RARITY_TOTAL_LIMITS } = require("../public/deckRules");
+const { buildAutoDeck, validateDeck, DECK_SIZE, MAX_SPELLS, CARD_COPY_LIMITS, RARITY_TOTAL_LIMITS } = require("../public/deckRules");
 const { getDB } = require("./db");
 const { assertMongoKeySegment, sanitizeString, toObjectId } = require("./mongoSafety");
 const { withUserLock } = require("./userLocks");
@@ -50,7 +50,7 @@ async function getDeckState(userId) {
   return {
     decks: (user.decks || []).map(publicDeck),
     activeDeckId: user.activeDeckId || null,
-    rules: { deckSize: DECK_SIZE, copyLimits: CARD_COPY_LIMITS, rarityTotalLimits: RARITY_TOTAL_LIMITS },
+    rules: { deckSize: DECK_SIZE, spellLimit: MAX_SPELLS, copyLimits: CARD_COPY_LIMITS, rarityTotalLimits: RARITY_TOTAL_LIMITS },
   };
 }
 

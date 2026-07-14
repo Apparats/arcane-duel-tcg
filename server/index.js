@@ -46,6 +46,7 @@ const CLIENT_TIMING_FIELDS = new Set([
 ]);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const NPC_STEP_DELAY_MS = 1200;
+const SPELL_REVEAL_MS = 800;
 const MATCH_INTRO_DURATION_MS = 4200;
 const EMOTE_COOLDOWN_MS = 1_500;
 const ALLOWED_EMOTES = new Set(["😄", "😭", "😯", "😡", "🫄", "💀"]);
@@ -293,6 +294,22 @@ function broadcastState(room) {
   room.sockets.forEach((ws, idx) => {
     if (ws) send(ws, "state", addPlayerVisuals(room.game.getStateFor(idx), room, idx));
   });
+}
+
+function broadcastSpellCast(room, playerIdx, card) {
+  room.sockets.forEach((ws, viewerIdx) => {
+    if (ws) send(ws, "spellCast", { cardId: card.id, isSelf: viewerIdx === playerIdx });
+  });
+}
+
+async function playCardWithReveal(room, playerIdx, handIndex, targetInstanceId) {
+  const cardRef = room.game.players[playerIdx]?.hand[handIndex];
+  const card = getCardById(String(cardRef || "").split("|")[0]);
+  if (card?.type === "spell") {
+    broadcastSpellCast(room, playerIdx, card);
+    await sleep(SPELL_REVEAL_MS);
+  }
+  room.game.playCard(playerIdx, handIndex, targetInstanceId || null);
 }
 
 function shouldRunTurnTimer(room) {
@@ -709,6 +726,7 @@ function chooseNpcPlayable(game, { limitMythics = false } = {}) {
   npc.hand.forEach((cardRef, handIndex) => {
     const card = getCardById(String(cardRef).split("|")[0]);
     if (!card || card.cost > npc.manaCurrent) return;
+    if (card.type !== "minion") return;
     // The standard NPC may still use its usual board-rule exceptions, but it
     // never controls more than one mythic minion at a time. Campaign bosses
     // deliberately opt out through the caller below.
@@ -750,7 +768,7 @@ async function runNpcTurn(room) {
     const play = chooseNpcPlayable(game, { limitMythics: room.mode === "singleplayer" });
     if (play && game.winner === null && game.turn === 1) {
       try {
-        game.playCard(1, play.handIndex, npcSpellTarget(game, play.card));
+        await playCardWithReveal(room, 1, play.handIndex, npcSpellTarget(game, play.card));
         broadcastState(room);
         await sleep(NPC_STEP_DELAY_MS);
       } catch (err) {
@@ -957,7 +975,7 @@ async function handleMessage(ws, msg) {
 
   if (type === "playCard") {
     requireIntent(type, payload);
-    game.playCard(idx, payload.handIndex, payload.targetInstanceId || null);
+    await playCardWithReveal(room, idx, payload.handIndex, payload.targetInstanceId || null);
     broadcastState(room);
     if (isNpcMatch(room)) await runNpcTurn(room);
     await settleRewards(room);
