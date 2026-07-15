@@ -770,6 +770,7 @@ async function settleRewards(room) {
         place: prize.place,
         gold: room.tournament.prizes[prize.place],
         balance: prize.gold,
+        stats: prize.stats,
       });
       send(socket, "tournamentUpdated", {});
     });

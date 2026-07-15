@@ -3,6 +3,7 @@
 (() => {
   let tournaments = [];
   let loading = false;
+  let countdownTimer = null;
 
   const el = (id) => document.getElementById(id);
   const text = (value) => escapeHtml(String(value || ""));
@@ -15,7 +16,56 @@
     timeZoneName: "short",
     timeZone: timeZone || "UTC",
   }).format(new Date(value));
+  const localDateTime = (value) => new Intl.DateTimeFormat(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }).format(new Date(value));
   const phaseLabel = (phase) => ({ upcoming: "Upcoming", registration: "Registration", locked: "Check-in closed", active: "In progress", completed: "Completed", cancelled: "Cancelled" }[phase] || phase);
+
+  function clearCountdownTimer() {
+    if (!countdownTimer) return;
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+
+  function countdownText(startsAt) {
+    const remainingMs = Date.parse(startsAt) - Date.now();
+    if (!Number.isFinite(remainingMs) || remainingMs <= 0) return "Starting now";
+    const remainingSeconds = Math.ceil(remainingMs / 1000);
+    const days = Math.floor(remainingSeconds / 86400);
+    const hours = Math.floor((remainingSeconds % 86400) / 3600);
+    const minutes = Math.floor((remainingSeconds % 3600) / 60);
+    const seconds = remainingSeconds % 60;
+    const parts = [];
+    if (days) parts.push(`${days}d`);
+    if (days || hours) parts.push(`${hours}h`);
+    if (days || hours || minutes) parts.push(`${minutes}m`);
+    parts.push(`${seconds}s`);
+    return `Starts in ${parts.join(" ")}`;
+  }
+
+  function syncCountdowns() {
+    const countdowns = [...document.querySelectorAll("[data-tournament-countdown]")];
+    let hasFutureStart = false;
+    countdowns.forEach((countdown) => {
+      const startsAt = countdown.dataset.tournamentCountdown;
+      countdown.textContent = countdownText(startsAt);
+      if (Date.parse(startsAt) > Date.now()) hasFutureStart = true;
+    });
+    if (!hasFutureStart) clearCountdownTimer();
+  }
+
+  function startCountdowns() {
+    clearCountdownTimer();
+    syncCountdowns();
+    if (document.querySelector("[data-tournament-countdown]")) {
+      countdownTimer = setInterval(syncCountdowns, 1000);
+    }
+  }
 
   function playerHTML(player, winnerId) {
     if (!player) return '<span class="tournament-player">Waiting</span>';
@@ -55,6 +105,7 @@
 
   function tournamentHTML(tournament) {
     const prize = tournament.prizes || {};
+    const startInFuture = Date.parse(tournament.startsAt) > Date.now();
     const registrationTime = tournament.phase === "upcoming" ? `Registration opens ${dateTime(tournament.registrationOpensAt, tournament.timeZone)}`
       : tournament.phase === "registration" ? `Registration closes ${dateTime(tournament.registrationClosesAt, tournament.timeZone)}`
         : null;
@@ -64,6 +115,8 @@
         <p class="tournament-description">${text(tournament.description)}</p>
         ${registrationTime ? `<p class="tournament-timing">${text(registrationTime)}</p>` : ""}
         <p class="tournament-timing">${tournament.phase === "active" || tournament.phase === "completed" ? "Started" : "Starts"} ${text(dateTime(tournament.startsAt, tournament.timeZone))}</p>
+        <p class="tournament-timing tournament-local-start">Your local start: ${text(localDateTime(tournament.startsAt))}</p>
+        ${startInFuture ? `<p class="tournament-countdown" data-tournament-countdown="${text(tournament.startsAt)}">Starts in --</p>` : ""}
         <div class="tournament-meta"><span>${tournament.participantCount}/${tournament.maxPlayers} players</span><span><strong>1st</strong> ${prize.first || 0} gold</span><span><strong>2nd</strong> ${prize.second || 0} gold</span><span><strong>3rd</strong> ${prize.third || 0} gold</span></div>
         ${actionHTML(tournament)}
         ${bracketHTML(tournament)}
@@ -74,11 +127,13 @@
   function render() {
     const list = el("tournamentList");
     if (!list) return;
+    clearCountdownTimer();
     if (loading) {
       list.innerHTML = '<p class="tournament-empty">Loading tournaments...</p>';
       return;
     }
     list.innerHTML = tournaments.length ? tournaments.map(tournamentHTML).join("") : '<p class="tournament-empty">No tournaments are scheduled right now.</p>';
+    startCountdowns();
   }
 
   async function load() {

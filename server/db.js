@@ -146,7 +146,7 @@ async function findOrCreateUserFromDiscord(discordProfile, starterOpening = null
         decks: starterDeck ? [starterDeck] : [],
         activeDeckId: starterDeck?.id || null,
         pendingRewards,
-        stats: { wins: 0, losses: 0, surrenders: 0, packsOpened: 0, quickplayWins: 0, campaignWins: 0, npcWins: 0, johnnyWins: 0 },
+        stats: { wins: 0, losses: 0, surrenders: 0, packsOpened: 0, quickplayWins: 0, campaignWins: 0, npcWins: 0, johnnyWins: 0, tournamentWins: 0 },
         modeStats: { singleplayer: { wins: 0, losses: 0, draws: 0, surrenders: 0 }, oneVsOne: { wins: 0, losses: 0, draws: 0, surrenders: 0 }, quickplay: { wins: 0, losses: 0, draws: 0, surrenders: 0 } },
         selectedTitle: "initiate",
         equippedBadgeIds: [],
@@ -486,13 +486,15 @@ async function grantTournamentPrize(userId, { tournamentId, place, gold }) {
     await rewards.insertOne({ tournamentId, place, userId: _id, gold: amount, createdAt: new Date() });
   } catch (err) {
     if (err?.code !== 11000) throw err;
-    const user = await users.findOne({ _id }, { projection: { gold: 1 } });
-    return { awarded: false, gold: user?.gold || 0 };
+    const user = await users.findOne({ _id }, { projection: { gold: 1, stats: 1 } });
+    return { awarded: false, gold: user?.gold || 0, stats: user?.stats || {} };
   }
 
-  await users.updateOne({ _id }, { $inc: { gold: amount }, $set: { updatedAt: new Date() } });
-  const user = await users.findOne({ _id }, { projection: { gold: 1 } });
-  return { awarded: true, gold: user?.gold || 0 };
+  const increments = { gold: amount };
+  if (place === "first") increments["stats.tournamentWins"] = 1;
+  await users.updateOne({ _id }, { $inc: increments, $set: { updatedAt: new Date() } });
+  const user = await users.findOne({ _id }, { projection: { gold: 1, stats: 1 } });
+  return { awarded: true, gold: user?.gold || 0, stats: user?.stats || {} };
 }
 
 function publicRankingPlayer(user, rank) {
@@ -515,6 +517,7 @@ function normalizedPublicStats(stats = {}) {
     campaignWins: Math.max(0, stats.campaignWins || 0),
     npcWins: Math.max(0, stats.npcWins || 0),
     johnnyWins: Math.max(0, stats.johnnyWins || 0),
+    tournamentWins: Math.max(0, stats.tournamentWins || 0),
   };
 }
 
@@ -541,7 +544,8 @@ function normalizedModeStats(modeStats = {}, legacyStats = {}) {
 
 function publicPlayerProfile(user) {
   const supporter = user.supporter === true;
-  const progress = getProgress(user.stats, user.selectedTitle, user.equippedBadgeIds, { supporter });
+  const progressOptions = { supporter, cardCollection: user.cardCollection, unlockedCards: user.unlockedCards };
+  const progress = getProgress(user.stats, user.selectedTitle, user.equippedBadgeIds, progressOptions);
   return {
     id: String(user._id),
     username: user.username || "Player",
@@ -568,7 +572,11 @@ async function setEquippedBadges(userId, achievementIds) {
   const _id = toObjectId(userId, "user id");
   const user = await users.findOne({ _id });
   if (!user) throw new Error("User not found.");
-  const progress = getProgress(user.stats, user.selectedTitle, ids, { supporter: user.supporter === true });
+  const progress = getProgress(user.stats, user.selectedTitle, ids, {
+    supporter: user.supporter === true,
+    cardCollection: user.cardCollection,
+    unlockedCards: user.unlockedCards,
+  });
   if (progress.equippedBadges.length !== ids.length) throw new Error("Only unlocked achievement badges can be equipped.");
   await users.updateOne({ _id }, { $set: { equippedBadgeIds: ids } });
   return publicPlayerProfile({ ...user, equippedBadgeIds: ids });
@@ -580,7 +588,11 @@ async function setSelectedTitle(userId, titleId) {
   const user = await users.findOne({ _id });
   if (!user) throw new Error("User not found.");
 
-  const progress = getProgress(user.stats, titleId, user.equippedBadgeIds, { supporter: user.supporter === true });
+  const progress = getProgress(user.stats, titleId, user.equippedBadgeIds, {
+    supporter: user.supporter === true,
+    cardCollection: user.cardCollection,
+    unlockedCards: user.unlockedCards,
+  });
   const requested = progress.titles.find((title) => title.id === titleId);
   if (!requested) throw new Error("Unknown title.");
   if (!requested.unlocked) throw new Error("That title has not been unlocked yet.");

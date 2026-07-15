@@ -1,9 +1,12 @@
 // Shared by the browser and server: a small, stat-driven progression catalog.
 (function (root, factory) {
-  const catalog = factory();
+  const cards = typeof module === "object" && module.exports
+    ? require("./cards")
+    : root?.TCGCards;
+  const catalog = factory(cards);
   if (typeof module === "object" && module.exports) module.exports = catalog;
   if (root) root.ArcaneProfileCatalog = catalog;
-})(typeof window !== "undefined" ? window : globalThis, function () {
+})(typeof window !== "undefined" ? window : globalThis, function (cards) {
   const TITLE_DEFINITIONS = [
     { id: "initiate", name: "Arcane Initiate", description: "The first mark of a duelist.", metric: "wins", target: 0 },
     { id: "first-blood", name: "First Blood", description: "Win your first duel.", metric: "wins", target: 1 },
@@ -16,6 +19,7 @@
     { id: "relic-keeper", name: "Relic Keeper", description: "Complete campaigns 10 times.", metric: "campaignWins", target: 10 },
     { id: "machine-breaker", name: "Machine Breaker", description: "Defeat the NPC 10 times.", metric: "npcWins", target: 10 },
     { id: "johnnys-bane", name: "Johnny's Bane", description: "Defeat Johnny in a multiplayer match.", metric: "johnnyWins", target: 1 },
+    { id: "tournament-sovereign", name: "Tournament Sovereign", description: "Claim first place in an Arcana tournament.", metric: "tournamentWins", target: 1 },
     { id: "more-than-honorable", name: "More than honorable", description: "You helped the developer with the game.", supporterOnly: true },
   ];
 
@@ -30,12 +34,14 @@
     { id: "endless-winter", name: "Endless Winter", description: "Complete campaigns 10 times.", metric: "campaignWins", target: 10 },
     { id: "npc-slayer", name: "NPC Slayer", description: "Defeat the NPC 10 times.", metric: "npcWins", target: 10 },
     { id: "developer-down", name: "Developer Down", description: "Defeat Johnny in multiplayer.", metric: "johnnyWins", target: 1 },
+    { id: "crown-of-arcana", name: "Crown of Arcana", description: "Win an official Arcana tournament.", metric: "tournamentWins", target: 1 },
     { id: "pack-apprentice", name: "Pack Apprentice", description: "Open 3 card packs.", metric: "packsOpened", target: 3 },
     { id: "thirty-triumphs", name: "Thirty Triumphs", description: "Win 30 duels.", metric: "wins", target: 30 },
     { id: "quickplay-regular", name: "Quickplay Regular", description: "Win 15 quickplay matches.", metric: "quickplayWins", target: 15 },
     { id: "campaign-veteran", name: "Campaign Veteran", description: "Complete campaigns 3 times.", metric: "campaignWins", target: 3 },
     { id: "bot-bane", name: "Bot Bane", description: "Defeat the NPC 3 times.", metric: "npcWins", target: 3 },
     { id: "collectors-sigil", name: "Collector's Sigil", description: "Open 25 card packs.", metric: "packsOpened", target: 25 },
+    { id: "mythic-constellation", name: "Mythic Constellation", description: "Collect 10 different Mythic cards.", metric: "mythicCards", target: 10 },
     { id: "more-than-honorable", name: "More than honorable", description: "You helped the developer with the game.", supporterOnly: true },
   ];
 
@@ -55,6 +61,7 @@
       campaignWins: value(stats.campaignWins),
       npcWins: value(stats.npcWins),
       johnnyWins: value(stats.johnnyWins),
+      tournamentWins: value(stats.tournamentWins),
       decided: wins + losses,
     };
   }
@@ -63,9 +70,25 @@
     return normalizeStats(stats)[metric] || 0;
   }
 
+  function mythicCollectionCount(options = {}) {
+    const collection = options.cardCollection && typeof options.cardCollection === "object"
+      ? options.cardCollection
+      : {};
+    const unlockedCards = Array.isArray(options.unlockedCards) ? options.unlockedCards : [];
+    const ownedIds = new Set([
+      ...Object.entries(collection)
+        .filter(([, quantity]) => value(quantity) > 0)
+        .map(([cardId]) => cardId),
+      ...unlockedCards.filter((cardId) => typeof cardId === "string"),
+    ]);
+    return [...ownedIds].filter((cardId) => cards?.getCardById?.(cardId)?.rarity === "mythic").length;
+  }
+
   function withProgress(definition, stats, options = {}) {
     const current = definition.supporterOnly
       ? (options.supporter === true ? 1 : 0)
+      : definition.metric === "mythicCards"
+        ? mythicCollectionCount(options)
       : metricValue(stats, definition.metric);
     const target = definition.supporterOnly ? 1 : definition.target;
     return {
@@ -93,5 +116,5 @@
     return { stats: normalizedStats, achievements, titles, selectedTitle, equippedBadges };
   }
 
-  return { getProgress, normalizeStats, TITLE_DEFINITIONS, ACHIEVEMENT_DEFINITIONS };
+  return { getProgress, normalizeStats, mythicCollectionCount, TITLE_DEFINITIONS, ACHIEVEMENT_DEFINITIONS };
 });

@@ -83,7 +83,11 @@
   function enrichProfile(profile) {
     if (!profile) return null;
     const catalog = window.ArcaneProfileCatalog;
-    const progress = catalog?.getProgress(profile.stats, profile.selectedTitle?.id || profile.selectedTitle, profile.equippedBadgeIds, { supporter: profile.supporter === true });
+    const progress = catalog?.getProgress(profile.stats, profile.selectedTitle?.id || profile.selectedTitle, profile.equippedBadgeIds, {
+      supporter: profile.supporter === true,
+      cardCollection: profile.cardCollection,
+      unlockedCards: profile.unlockedCards,
+    });
     return {
       ...profile,
       stats: progress?.stats || normalizedStats(profile),
@@ -295,7 +299,11 @@
   }
 
   function unlockedProgressIds(user) {
-    const progress = window.ArcaneProfileCatalog?.getProgress(user?.stats, user?.selectedTitle?.id || user?.selectedTitle, user?.equippedBadgeIds, { supporter: user?.supporter === true });
+    const progress = window.ArcaneProfileCatalog?.getProgress(user?.stats, user?.selectedTitle?.id || user?.selectedTitle, user?.equippedBadgeIds, {
+      supporter: user?.supporter === true,
+      cardCollection: user?.cardCollection,
+      unlockedCards: user?.unlockedCards,
+    });
     if (!progress) return [];
     return [...progress.achievements, ...progress.titles]
       .filter((item) => item.unlocked && item.id !== "initiate")
@@ -347,7 +355,11 @@
   }
 
   function detectNewProgress(user) {
-    const progress = window.ArcaneProfileCatalog?.getProgress(user?.stats, user?.selectedTitle?.id || user?.selectedTitle, user?.equippedBadgeIds, { supporter: user?.supporter === true });
+    const progress = window.ArcaneProfileCatalog?.getProgress(user?.stats, user?.selectedTitle?.id || user?.selectedTitle, user?.equippedBadgeIds, {
+      supporter: user?.supporter === true,
+      cardCollection: user?.cardCollection,
+      unlockedCards: user?.unlockedCards,
+    });
     if (!progress || !user?.id) return;
     const unlocked = [
       ...progress.achievements.filter((item) => item.unlocked).map((item) => ({ id: `achievement:${item.id}`, kind: "Achievement unlocked", item })),

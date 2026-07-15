@@ -379,7 +379,11 @@ function introProfile(participant, own) {
   const profile = participant?.profile || account || {};
   const selected = profile.selectedTitle;
   const progress = typeof selected === "string"
-    ? window.ArcaneProfileCatalog?.getProgress(profile.stats, selected, profile.equippedBadgeIds, { supporter: profile.supporter === true })
+    ? window.ArcaneProfileCatalog?.getProgress(profile.stats, selected, profile.equippedBadgeIds, {
+      supporter: profile.supporter === true,
+      cardCollection: profile.cardCollection,
+      unlockedCards: profile.unlockedCards,
+    })
     : null;
   return {
     username: profile.username || participant?.name || "Player",
@@ -531,7 +535,7 @@ function handleServerMessage(msg) {
       void window.ArcaneTournaments?.load();
       break;
     case "tournamentPrize":
-      updateAccountDisplay({ ...(accountState?.user || {}), gold: msg.payload?.balance });
+      updateAccountDisplay({ ...(accountState?.user || {}), gold: msg.payload?.balance, stats: msg.payload?.stats || accountState?.user?.stats || {} });
       showToast(`Tournament ${msg.payload?.place || "prize"}: +${msg.payload?.gold || 0} gold`);
       break;
     case "matchStarted":
@@ -1415,6 +1419,14 @@ function onHandCardClick(idx, card, state, cardEl = null) {
   if (card.cost > state.me.manaCurrent) return showToast("Not enough mana.");
 
   selectedAttackerId = null;
+
+  // Targeted spells remain in hand until a target is chosen. Clicking the
+  // selected card again is the quickest, touch-friendly way to cancel it.
+  if (selectedHandIndex === idx) {
+    clearSelection();
+    render(state);
+    return;
+  }
 
   const needsEnemyMinionTarget = cardRequiresEnemyMinionTarget(card);
 

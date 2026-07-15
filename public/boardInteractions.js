@@ -123,7 +123,15 @@
     // Returning a dragged card to the hand is always a cancellation. It must
     // happen before board targeting, because a released pointer also emits a
     // click and the normal click-to-play path would otherwise fire.
-    if (closest(elementAtDrop, "#handArea")) return false;
+    if (closest(elementAtDrop, "#handArea")) {
+      // Returning a selected spell to the hand is also a cancellation. This
+      // matters on touch devices, where the cancel link is easy to miss.
+      if (selectedHandIndex === handIndex) {
+        clearSelection();
+        render(myState);
+      }
+      return false;
+    }
     const target = targetFromPoint(clientX, clientY);
     const overSelfBoard = Boolean(closest(elementAtDrop, "#selfBoard"));
 
