@@ -1,9 +1,9 @@
 module.exports = {
   name: "Mamaluteo",
-  cost: 6,
+  cost: 7,
   type: "minion",
   attack: 5,
-  health: 5,
+  health: 7,
   keywords: [],
   race: "Monster",
   rarity: "mythic",

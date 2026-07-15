@@ -6,11 +6,11 @@ module.exports = {
   health: 4,
   keywords: [],
   race: "Monster",
-  rarity: "rare",
+  rarity: "mythic",
   country: "Rwanda",
-  lore: "A single heavy strike sends an enemy back into the unknown.",
+  lore: "On play, steal a random non-Mythic card from the enemy deck and add it to your hand. Cannot be played with a full hand.",
   image: "art/Fanex.webp",
   abilities: [
-    { trigger: "onPlay", effect: "returnEnemyMinionToDeck", target: "enemyMinion" },
+    { trigger: "onPlay", effect: "stealRandomEnemyDeckCardToHand" },
   ],
 };

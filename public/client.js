@@ -26,7 +26,7 @@ const STATUS_FULL_LABEL = {
 };
 const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", mythic: "Mythic" };
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.5";
+const CHANGELOG_VERSION = "1.5.1";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const TYPE_ICON = { minion: "⚔", spell: "✦" };
@@ -1649,6 +1649,9 @@ function showEndOverlay(state) {
     title = "Victory";
     resultSfx = "victory";
   }
+  // The result banner remains in the game screen, so it must explicitly
+  // stop the board track instead of waiting for a later screen transition.
+  window.ArcaneAudio?.stopMusic({ immediate: true });
   updateEndRewardText();
   $("overlayEnd").classList.add("hidden");
   if (resultSfx) window.ArcaneAudio?.playSfx(resultSfx);

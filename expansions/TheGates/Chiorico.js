@@ -1,10 +1,10 @@
 module.exports = {
   name: "Chiorico",
-  cost: 4,
+  cost: 5,
   type: "minion",
   attack: 6,
-  health: 3,
-  keywords: ["charge"],
+  health: 7,
+  keywords: [],
   race: "Human",
   rarity: "mythic",
   country: "Malta",

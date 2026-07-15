@@ -1,8 +1,8 @@
 module.exports = {
   name: "Juniiya",
-  cost: 8,
+  cost: 7,
   type: "minion",
-  attack: 7,
+  attack: 6,
   health: 5,
   keywords: [],
   race: "Human",

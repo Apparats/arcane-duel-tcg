@@ -8,9 +8,9 @@ module.exports = {
   race: "Human",
   rarity: "mythic",
   country: "Uzbekistan",
-  lore: "When this falls, draw three cards. Its final lesson is never wasted. This card avoids the first hit against him",
+  lore: "The first time this card dies, revive it with half of its maximum Health.",
   image: "art/Zoblezar.webp",
   abilities: [
-    { trigger: "onDeath", effect: "drawCards", value: 3 },
+    { trigger: "onDeath", effect: "rebirthWithHalfHealth" },
   ],
 };

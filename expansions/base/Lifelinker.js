@@ -1,6 +1,6 @@
 module.exports = {
   name: "Lifelinker",
-  cost: 10,
+  cost: 9,
   type: "minion",
   attack: 8,
   health: 7,

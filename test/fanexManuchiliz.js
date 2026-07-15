@@ -40,15 +40,20 @@ function main() {
   const fanexGame = gameWithDecks();
   fanexGame.players[0].hand = ["expansion1:fanex"];
   fanexGame.players[0].manaCurrent = 6;
-  fanexGame.players[0].board = [minion("ally", "base:aleex")];
-  fanexGame.players[1].board = [minion("enemy", "base:babu")];
-  fanexGame.players[1].deck = [];
+  fanexGame.players[1].deck = ["base:babu", "base:humph"];
 
-  assertThrows(() => fanexGame.playCard(0, 0, "ally"), "Fanex must reject friendly targets.");
-  fanexGame.playCard(0, 0, "enemy");
+  fanexGame.playCard(0, 0, null);
   assert(fanexGame.players[0].board.some((card) => card.cardId === "expansion1:fanex"), "Fanex should enter its controller's board.");
-  assert(fanexGame.players[1].board.length === 0, "Fanex should remove the selected enemy minion from the board.");
-  assert(fanexGame.players[1].deck.includes("base:babu"), "Fanex should return the selected minion to the enemy deck.");
+  assert(fanexGame.players[0].hand.includes("base:babu"), "Fanex should steal a non-Mythic card into its controller's hand.");
+  assert(!fanexGame.players[1].deck.includes("base:babu"), "Fanex should remove the stolen card from the enemy deck.");
+  assert(fanexGame.players[1].deck.includes("base:humph"), "Fanex must not steal Mythic cards.");
+  assert(getCardById("expansion1:fanex").rarity === "mythic", "Fanex should be Mythic.");
+
+  const fullHandGame = gameWithDecks();
+  fullHandGame.players[0].hand = [...Array(9).fill("base:aleex"), "expansion1:fanex"];
+  fullHandGame.players[0].manaCurrent = 6;
+  fullHandGame.players[1].deck = ["base:babu"];
+  assertThrows(() => fullHandGame.playCard(0, 9, null), "Fanex must not be playable with a full hand.");
 
   const manuchilizGame = gameWithDecks();
   manuchilizGame.players[0].hand = ["expansion1:manuchiliz"];

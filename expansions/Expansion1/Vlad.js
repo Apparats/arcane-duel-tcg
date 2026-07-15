@@ -1,5 +1,5 @@
 module.exports = {
-  name: "vlad",
+  name: "Vlad",
   cost: 10,
   type: "minion",
   attack: 8,

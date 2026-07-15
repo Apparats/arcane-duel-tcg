@@ -1,13 +1,16 @@
 module.exports = {
   name: "Humph",
-  cost: 6,
+  cost: 7,
   type: "minion",
   attack: 8,
-  health: 3,
-  keywords: ["divineShield"], 
+  health: 10,
+  keywords: [],
   race: "Human",
   rarity: "mythic",
   country: "Ireland",
-  lore: "Cork bai. This card avoids the first attack against it.",
+  lore: "When this card dies, return every remaining minion on both boards to its owner's deck.",
   image: "art/Humph.webp",
+  abilities: [
+    { trigger: "onDeath", effect: "returnAllMinionsToDeck" },
+  ],
 };

@@ -1,9 +1,9 @@
 module.exports = {
   name: "Rin",
-  cost: 9,
+  cost: 7,
   type: "minion",
-  attack: 7,
-  health: 5,
+  attack: 5,
+  health: 6,
   keywords: [],
   race: "Human",
   rarity: "rare",

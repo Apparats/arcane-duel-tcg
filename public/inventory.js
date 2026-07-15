@@ -95,6 +95,28 @@ function cardMatchesFilters(card, filters) {
   return true;
 }
 
+function cardStatValue(card, stat) {
+  const value = Number(card?.[stat]);
+  return Number.isFinite(value) ? value : null;
+}
+
+// Collection and Deck Builder share this so their stat ordering stays identical.
+function sortCardsForDisplay(cards, sortBy = "default") {
+  if (sortBy === "default") return cards.slice();
+
+  const [stat, direction] = sortBy.split("-");
+  const multiplier = direction === "desc" ? -1 : 1;
+  return cards.slice().sort((left, right) => {
+    const leftValue = cardStatValue(left, stat);
+    const rightValue = cardStatValue(right, stat);
+    if (leftValue === null && rightValue !== null) return 1;
+    if (rightValue === null && leftValue !== null) return -1;
+    const difference = (leftValue - rightValue) * multiplier;
+    if (difference !== 0) return difference;
+    return left.name.localeCompare(right.name) || String(left.id).localeCompare(String(right.id));
+  });
+}
+
 async function openInventory() {
   if (!requireLoggedInForPlay()) return;
   await populateInventoryFilters();
@@ -137,7 +159,7 @@ function renderInventoryGrid() {
 
   const cards = getInventoryCards();
   const filters = currentInventoryFilters();
-  const filtered = cards.filter((c) => cardMatchesFilters(c, filters));
+  const filtered = sortCardsForDisplay(cards.filter((c) => cardMatchesFilters(c, filters)), $("filterSort").value);
 
   const unlockedCount = cards.filter(isCardUnlocked).length;
   $("inventoryCount").textContent = `${unlockedCount} / ${cards.length} unlocked`;
@@ -186,7 +208,7 @@ function lazyLoadInventoryArt() {
   }
 }
 
-["filterType", "filterRarity", "filterCountry", "filterKeyword", "filterExpansion"].forEach((id) => {
+["filterType", "filterRarity", "filterCountry", "filterKeyword", "filterExpansion", "filterSort"].forEach((id) => {
   $(id).addEventListener("change", renderInventoryGrid);
 });
 
@@ -196,6 +218,7 @@ $("btnClearFilters").addEventListener("click", () => {
   $("filterCountry").value = "all";
   $("filterKeyword").value = "all";
   $("filterExpansion").value = "all";
+  $("filterSort").value = "default";
   renderInventoryGrid();
 });
 

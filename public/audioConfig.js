@@ -46,6 +46,12 @@ window.ArcaneAudioConfig = {
     tradeConfirm: "",
   },
 
+  // Slight pitch movement keeps repeated impacts from sounding identical.
+  // Playback-rate changes reuse the same preloaded audio voices.
+  sfxPlaybackRates: {
+    hit: [0.92, 1.08],
+  },
+
   musicByScreen: {
     menu: "mainMenu",
     lobby: "mainMenu",

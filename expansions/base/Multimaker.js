@@ -1,9 +1,9 @@
 module.exports = {
   name: "Multimaker",
-  cost: 8,
+  cost: 7,
   type: "minion",
   attack: 1,
-  health: 7,
+  health: 6,
   keywords: [],
   race: "Human",
   rarity: "legendary",

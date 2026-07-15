@@ -138,6 +138,7 @@
       image: cardDef.image || null,
       playedCount: extra.playedCount || 0,
       returnCount: extra.returnCount || 0,
+      rebirthUsed: extra.rebirthUsed === true,
     };
   }
 
@@ -186,6 +187,39 @@
       const amount = ability.value || 1;
       game._draw(ctx.casterIdx, amount);
       game._addLog(`${ctx.sourceName}: ${game.players[ctx.casterIdx].name} draws ${amount} card(s).`);
+    },
+
+    addCardToHand(game, ctx, ability) {
+      const cardDef = getCardById(ability.cardId);
+      const player = game.players[ctx.casterIdx];
+      if (!cardDef || player.hand.length >= MAX_HAND) {
+        if (player.hand.length >= MAX_HAND) game._addLog(`${ctx.sourceName} cannot add a card: hand is full.`);
+        return;
+      }
+      player.hand.push(cardDef.id);
+      game._addLog(`${ctx.sourceName} adds ${cardDef.name} to ${player.name}'s hand.`);
+    },
+
+    stealRandomEnemyDeckCardToHand(game, ctx) {
+      const player = game.players[ctx.casterIdx];
+      const opponent = game.players[game._opponentIdx(ctx.casterIdx)];
+      if (player.hand.length >= MAX_HAND) return;
+
+      const eligibleIndexes = opponent.deck.reduce((indexes, cardRef, index) => {
+        const card = getCardById(cardIdFromRef(cardRef));
+        if (card && card.rarity !== "mythic") indexes.push(index);
+        return indexes;
+      }, []);
+      if (eligibleIndexes.length === 0) {
+        game._addLog(`${ctx.sourceName} finds no non-Mythic cards to steal.`);
+        return;
+      }
+
+      const index = eligibleIndexes[game.randomInt(eligibleIndexes.length)];
+      const [stolenCard] = opponent.deck.splice(index, 1);
+      const card = getCardById(cardIdFromRef(stolenCard));
+      player.hand.push(stolenCard);
+      game._addLog(`${ctx.sourceName} steals ${card.name} from the enemy deck.`);
     },
 
     // AoE damage to ALL enemy minions. E.g. "damages more cards at once".
@@ -299,6 +333,50 @@
       owner.deck.push(cardRefWithReturnCount(target.minion.cardId, target.minion.returnCount || 0));
       owner.deck = shuffle(owner.deck, game.randomInt);
       game._addLog(`${ctx.sourceName} returns ${target.minion.name} to the enemy deck.`);
+    },
+
+    returnAllMinionsToDeck(game, ctx) {
+      let returned = 0;
+      [0, 1].forEach((playerIdx) => {
+        const owner = game.players[playerIdx];
+        const minions = owner.board.slice();
+        if (minions.length === 0) return;
+
+        owner.board = [];
+        minions.forEach((minion) => {
+          owner.deck.push(cardRefWithReturnCount(minion.cardId, minion.returnCount || 0));
+        });
+        owner.deck = shuffle(owner.deck, game.randomInt);
+        returned += minions.length;
+      });
+      if (returned > 0) game._addLog(`${ctx.sourceName} returns ${returned} minion(s) to their owners' decks.`);
+    },
+
+    rebirthWithHalfHealth(game, ctx) {
+      if (ctx.rebirthUsed) return;
+      const cardDef = getCardById(ctx.cardId);
+      const player = game.players[ctx.casterIdx];
+      if (!cardDef || cardDef.type !== "minion" || boardLimitError(player, cardDef)) return;
+
+      const revived = makeMinionInstance(cardDef, {
+        playedCount: ctx.playedCount,
+        returnCount: ctx.returnCount,
+        rebirthUsed: true,
+      });
+      revived.health = Math.ceil(revived.maxHealth / 2);
+      player.board.push(revived);
+      game._addLog(`${ctx.sourceName} returns with ${revived.health} Health.`);
+    },
+
+    transformIntoMinion(game, ctx, ability) {
+      const cardDef = getCardById(ability.cardId);
+      const player = game.players[ctx.casterIdx];
+      if (!cardDef || cardDef.type !== "minion" || boardLimitError(player, cardDef)) return;
+
+      const replacement = makeMinionInstance(cardDef);
+      const boardIndex = Number.isInteger(ctx.boardIndex) ? ctx.boardIndex : player.board.length;
+      player.board.splice(Math.min(Math.max(boardIndex, 0), player.board.length), 0, replacement);
+      game._addLog(`${ctx.sourceName} transforms into ${cardDef.name}.`);
     },
 
     returnToDeckIfPlayedLessThan(game, ctx, ability) {
@@ -565,6 +643,10 @@
     }
 
     _validateAbilityTargets(playerIdx, card, targetInstanceId) {
+      const needsHandSpace = (card.abilities || []).some((ability) => ability.effect === "stealRandomEnemyDeckCardToHand");
+      if (needsHandSpace && this.players[playerIdx].hand.length >= MAX_HAND) {
+        throw new Error("Your hand is full.");
+      }
       const needsEnemyMinion = (card.abilities || []).some((ability) =>
         ability.trigger === "onPlay" && ability.target === "enemyMinion" &&
         ["applyStatus", "returnEnemyMinionToDeck"].includes(ability.effect)
@@ -591,8 +673,9 @@
 
     _destroyMinion(ownerIdx, minion) {
       const p = this.players[ownerIdx];
-      if (!p.board.some((m) => m.instanceId === minion.instanceId)) return;
-      p.board = p.board.filter((m) => m.instanceId !== minion.instanceId);
+      const boardIndex = p.board.findIndex((card) => card.instanceId === minion.instanceId);
+      if (boardIndex < 0) return;
+      p.board.splice(boardIndex, 1);
       this._addLog(`${minion.name} dies.`);
       const cardDef = getCardById(minion.cardId);
       if (cardDef) {
@@ -603,6 +686,8 @@
           cardId: minion.cardId,
           playedCount: minion.playedCount || 0,
           returnCount: minion.returnCount || 0,
+          rebirthUsed: minion.rebirthUsed === true,
+          boardIndex,
           silenced: this._hasStatus(minion, "silenced"),
         });
       }

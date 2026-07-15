@@ -8,9 +8,9 @@ module.exports = {
   race: "Monster",
   rarity: "mythic",
   country: "Arcana",
-  lore: "Golden Warerita! After dying, it turns into a normal warerita.",
+  lore: "When this card dies, transform it into a normal Warerita on the board.",
   image: "art/GoldenWarerita.webp",
   abilities: [
-    { trigger: "onDeath", effect: "summonMinion", cardId: "base:warerita", count: 1 },
+    { trigger: "onDeath", effect: "transformIntoMinion", cardId: "base:warerita" },
   ],
 };

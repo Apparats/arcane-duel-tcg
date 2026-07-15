@@ -213,15 +213,14 @@
       "health": 4,
       "keywords": [],
       "race": "Monster",
-      "rarity": "rare",
+      "rarity": "mythic",
       "country": "Rwanda",
-      "lore": "A single heavy strike sends an enemy back into the unknown.",
+      "lore": "On play, steal a random non-Mythic card from the enemy deck and add it to your hand. Cannot be played with a full hand.",
       "image": "art/Fanex.webp",
       "abilities": [
         {
           "trigger": "onPlay",
-          "effect": "returnEnemyMinionToDeck",
-          "target": "enemyMinion"
+          "effect": "stealRandomEnemyDeckCardToHand"
         }
       ],
       "id": "expansion1:fanex",
@@ -304,13 +303,13 @@
     },
     {
       "name": "Manuchiliz",
-      "cost": 6,
+      "cost": 7,
       "type": "minion",
       "attack": 5,
       "health": 9,
       "keywords": [],
       "race": "Monster",
-      "rarity": "legendary",
+      "rarity": "mythic",
       "country": "Argentina",
       "lore": "Its arrival shakes every creature on the field, ally and enemy alike.",
       "image": "art/Manuchiliz.webp",
@@ -369,8 +368,8 @@
       "name": "Moonhammer",
       "cost": 10,
       "type": "minion",
-      "attack": 3,
-      "health": 9,
+      "attack": 4,
+      "health": 8,
       "keywords": [
         "charge"
       ],
@@ -415,7 +414,7 @@
       "cost": 8,
       "type": "minion",
       "attack": 0,
-      "health": 8,
+      "health": 9,
       "keywords": [],
       "race": "Human",
       "rarity": "mythic",
@@ -465,11 +464,11 @@
       "_expansionId": "expansion1"
     },
     {
-      "name": "tucuquere",
+      "name": "Tucuquere",
       "cost": 5,
       "type": "minion",
-      "attack": 5,
-      "health": 4,
+      "attack": 7,
+      "health": 3,
       "keywords": [],
       "race": "Human",
       "rarity": "common",
@@ -480,7 +479,7 @@
       "_expansionId": "expansion1"
     },
     {
-      "name": "vlad",
+      "name": "Vlad",
       "cost": 10,
       "type": "minion",
       "attack": 8,
@@ -546,13 +545,11 @@
     },
     {
       "name": "Chiorico",
-      "cost": 4,
+      "cost": 5,
       "type": "minion",
       "attack": 6,
-      "health": 3,
-      "keywords": [
-        "charge"
-      ],
+      "health": 7,
+      "keywords": [],
       "race": "Human",
       "rarity": "mythic",
       "country": "Malta",
@@ -619,10 +616,10 @@
     },
     {
       "name": "Mamaluteo",
-      "cost": 6,
+      "cost": 7,
       "type": "minion",
       "attack": 5,
-      "health": 5,
+      "health": 7,
       "keywords": [],
       "race": "Monster",
       "rarity": "mythic",
@@ -725,13 +722,12 @@
       "race": "Human",
       "rarity": "mythic",
       "country": "Uzbekistan",
-      "lore": "When this falls, draw three cards. Its final lesson is never wasted. This card avoids the first hit against him",
+      "lore": "The first time this card dies, revive it with half of its maximum Health.",
       "image": "art/Zoblezar.webp",
       "abilities": [
         {
           "trigger": "onDeath",
-          "effect": "drawCards",
-          "value": 3
+          "effect": "rebirthWithHalfHealth"
         }
       ],
       "id": "TheGates:zoblezar",
@@ -921,7 +917,7 @@
     },
     {
       "name": "Dezadin",
-      "cost": 9,
+      "cost": 8,
       "type": "minion",
       "attack": 3,
       "health": 5,
@@ -1058,14 +1054,13 @@
       "race": "Monster",
       "rarity": "mythic",
       "country": "Arcana",
-      "lore": "Golden Warerita! After dying, it turns into a normal warerita.",
+      "lore": "When this card dies, transform it into a normal Warerita on the board.",
       "image": "art/GoldenWarerita.webp",
       "abilities": [
         {
           "trigger": "onDeath",
-          "effect": "summonMinion",
-          "cardId": "base:warerita",
-          "count": 1
+          "effect": "transformIntoMinion",
+          "cardId": "base:warerita"
         }
       ],
       "id": "base:goldenwarerita",
@@ -1090,18 +1085,22 @@
     },
     {
       "name": "Humph",
-      "cost": 6,
+      "cost": 7,
       "type": "minion",
       "attack": 8,
-      "health": 3,
-      "keywords": [
-        "divineShield"
-      ],
+      "health": 10,
+      "keywords": [],
       "race": "Human",
       "rarity": "mythic",
       "country": "Ireland",
-      "lore": "Cork bai. This card avoids the first attack against it.",
+      "lore": "When this card dies, return every remaining minion on both boards to its owner's deck.",
       "image": "art/Humph.webp",
+      "abilities": [
+        {
+          "trigger": "onDeath",
+          "effect": "returnAllMinionsToDeck"
+        }
+      ],
       "id": "base:humph",
       "_expansionId": "base"
     },
@@ -1129,9 +1128,9 @@
     },
     {
       "name": "Juniiya",
-      "cost": 8,
+      "cost": 7,
       "type": "minion",
-      "attack": 7,
+      "attack": 6,
       "health": 5,
       "keywords": [],
       "race": "Human",
@@ -1206,7 +1205,7 @@
     },
     {
       "name": "Lifelinker",
-      "cost": 10,
+      "cost": 9,
       "type": "minion",
       "attack": 8,
       "health": 7,
@@ -1238,10 +1237,10 @@
     },
     {
       "name": "Lolflame",
-      "cost": 5,
+      "cost": 3,
       "type": "minion",
       "attack": 3,
-      "health": 6,
+      "health": 7,
       "keywords": [
         "charge"
       ],
@@ -1316,10 +1315,10 @@
     },
     {
       "name": "Multimaker",
-      "cost": 8,
+      "cost": 7,
       "type": "minion",
       "attack": 1,
-      "health": 7,
+      "health": 6,
       "keywords": [],
       "race": "Human",
       "rarity": "legendary",
@@ -1424,7 +1423,7 @@
       "name": "PrinceMVC",
       "cost": 10,
       "type": "minion",
-      "attack": 4,
+      "attack": 3,
       "health": 10,
       "keywords": [
         "taunt"
@@ -1460,7 +1459,7 @@
     },
     {
       "name": "Ranger",
-      "cost": 10,
+      "cost": 9,
       "type": "minion",
       "attack": 7,
       "health": 8,
@@ -1475,10 +1474,10 @@
     },
     {
       "name": "Rin",
-      "cost": 9,
+      "cost": 7,
       "type": "minion",
-      "attack": 7,
-      "health": 5,
+      "attack": 5,
+      "health": 6,
       "keywords": [],
       "race": "Human",
       "rarity": "rare",
@@ -1667,21 +1666,21 @@
       "name": "Zugzwang",
       "cost": 9,
       "type": "minion",
-      "attack": 10,
-      "health": 5,
+      "attack": 8,
+      "health": 7,
       "keywords": [
         "charge"
       ],
       "race": "Human",
       "rarity": "mythic",
       "country": "Bolivia",
-      "lore": "I'm too sick for a pill! This card can instantly attack when prepared. This card also draws 3 more cards when played.",
+      "lore": "At the start of each of your turns, add a Minor Spark to your hand. This card can instantly attack when prepared.",
       "image": "art/Zugzwang.webp",
       "abilities": [
         {
-          "trigger": "onPlay",
-          "effect": "drawCards",
-          "value": 3
+          "trigger": "onTurnStart",
+          "effect": "addCardToHand",
+          "cardId": "expansion1:minorspark"
         }
       ],
       "id": "base:zugzwang",

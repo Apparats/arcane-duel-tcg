@@ -214,8 +214,16 @@
     }
   }
 
-  function stopMusic() {
+  function stopMusic({ immediate = false } = {}) {
     if (!currentMusic) return;
+    if (immediate) {
+      cancelFade(currentMusic);
+      currentMusic.pause();
+      currentMusic.currentTime = 0;
+      currentMusic = null;
+      currentMusicId = null;
+      return;
+    }
     fadeAudio(currentMusic, 0, { pauseAtEnd: true, resetAtEnd: true });
     currentMusic = null;
     currentMusicId = null;
@@ -256,6 +264,16 @@
     return pool[0];
   }
 
+  function playbackRateFor(id) {
+    const configuredRange = config.sfxPlaybackRates?.[id];
+    const [minimum, maximum] = Array.isArray(configuredRange) ? configuredRange : [0.98, 1.02];
+    const low = Number.isFinite(Number(minimum)) ? Number(minimum) : 0.98;
+    const high = Number.isFinite(Number(maximum)) ? Number(maximum) : 1.02;
+    const start = Math.max(0.5, Math.min(low, high));
+    const end = Math.min(2, Math.max(low, high));
+    return start + Math.random() * (end - start);
+  }
+
   function playSfx(id) {
     if (!isEnabled() || !unlocked) return;
     const sound = getSfxVoice(id);
@@ -263,7 +281,7 @@
     sound.pause();
     sound.currentTime = 0;
     sound.volume = effectiveVolume("sfx");
-    sound.playbackRate = 0.98 + Math.random() * 0.04;
+    sound.playbackRate = playbackRateFor(id);
     sound.play().catch(() => {});
   }
 

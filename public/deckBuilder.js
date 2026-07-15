@@ -101,8 +101,7 @@ async function selectSavedDeck(deckId) {
 
 function ownedCards() {
   return getInventoryCards()
-    .filter((card) => getCardQuantity(card) > 0)
-    .sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name));
+    .filter((card) => getCardQuantity(card) > 0);
 }
 
 function populateDeckFilters() {
@@ -158,7 +157,10 @@ function renderDeckPool() {
   const counts = currentDeckCounts();
   const spellLimitReached = TCGDeckRules.countSpellCards(deckBuilderState.cardIds) >= TCGDeckRules.MAX_SPELLS;
   const pool = $("deckCardPool");
-  const cards = ownedCards().filter((card) => cardMatchesFilters(card, currentDeckFilters()));
+  const cards = sortCardsForDisplay(
+    ownedCards().filter((card) => cardMatchesFilters(card, currentDeckFilters())),
+    $("deckFilterSort").value
+  );
   pool.innerHTML = "";
   $("deckPoolEmpty").classList.toggle("hidden", cards.length > 0);
 
@@ -347,7 +349,7 @@ $("deleteDeckModal").addEventListener("click", (event) => {
   if (event.target.id === "deleteDeckModal") closeDeleteDeckModal();
 });
 
-["deckFilterType", "deckFilterRarity", "deckFilterCountry", "deckFilterKeyword", "deckFilterExpansion"].forEach((id) => {
+["deckFilterType", "deckFilterRarity", "deckFilterCountry", "deckFilterKeyword", "deckFilterExpansion", "deckFilterSort"].forEach((id) => {
   $(id).addEventListener("change", renderDeckPool);
 });
 
@@ -357,5 +359,6 @@ $("btnClearDeckFilters").addEventListener("click", () => {
   $("deckFilterCountry").value = "all";
   $("deckFilterKeyword").value = "all";
   $("deckFilterExpansion").value = "all";
+  $("deckFilterSort").value = "cost-asc";
   renderDeckPool();
 });

@@ -36,6 +36,8 @@ const MAX_LORE_LENGTH = 180;
 const VALID_TRIGGERS = ["onPlay", "onDeath", "onTurnStart", "onAnyTurnStart", "onAttack", "onAttackMinion"];
 const VALID_ABILITY_EFFECTS = [
   "drawCards",
+  "addCardToHand",
+  "stealRandomEnemyDeckCardToHand",
   "damageAllEnemyMinions",
   "damageAllMinions",
   "damageEnemyHero",
@@ -47,6 +49,9 @@ const VALID_ABILITY_EFFECTS = [
   "healSelf",
   "returnToDeck",
   "returnEnemyMinionToDeck",
+  "returnAllMinionsToDeck",
+  "rebirthWithHalfHealth",
+  "transformIntoMinion",
   "returnToDeckIfPlayedLessThan",
   "destroySelf",
   "destroySelfIfPlayedAtLeast",
@@ -223,15 +228,25 @@ function validateAbilities(card, label) {
       fail(`${abLabel}: unknown effect "${ability.effect}". Valid: ${VALID_ABILITY_EFFECTS.join(", ")}.`);
     }
 
-    if (["summonMinion", "summonMinionIfMissing"].includes(ability.effect)) {
+    if (["summonMinion", "summonMinionIfMissing", "transformIntoMinion"].includes(ability.effect)) {
       if (!ability.cardId || typeof ability.cardId !== "string") {
-        fail(`${abLabel}: summonMinion needs "cardId" (the id of the card to summon, e.g. "core:recluta-novato").`);
+        fail(`${abLabel}: ${ability.effect} needs "cardId" (the id of the minion card to use).`);
       }
-      if (ability.count !== undefined && !isIntegerInRange(ability.count, 1, 20)) {
+      if (ability.effect === "summonMinion" && ability.count !== undefined && !isIntegerInRange(ability.count, 1, 20)) {
         fail(`${abLabel}: "count" must be an integer between 1 and 20 if you include it.`);
       }
       if (ability.effect === "summonMinionIfMissing" && ability.trigger !== "onTurnStart") {
         fail(`${abLabel}: summonMinionIfMissing can only use the "onTurnStart" trigger.`);
+      }
+      if (ability.effect === "transformIntoMinion" && ability.trigger !== "onDeath") {
+        fail(`${abLabel}: transformIntoMinion can only use the "onDeath" trigger.`);
+      }
+    } else if (ability.effect === "addCardToHand") {
+      if (!ability.cardId || typeof ability.cardId !== "string") {
+        fail(`${abLabel}: addCardToHand needs "cardId" (the id of the card to add).`);
+      }
+      if (ability.trigger !== "onTurnStart") {
+        fail(`${abLabel}: addCardToHand can only use the "onTurnStart" trigger.`);
       }
     } else if (ability.effect === "buffAllFriendlyMinions") {
       if (ability.attack === undefined && ability.health === undefined) {
@@ -274,7 +289,7 @@ function validateAbilities(card, label) {
       if (ability.trigger !== "onPlay" || ability.target !== "enemyMinion") {
         fail(`${abLabel}: returnEnemyMinionToDeck needs trigger: "onPlay" and target: "enemyMinion".`);
       }
-    } else if (["returnToDeck", "destroySelf"].includes(ability.effect)) {
+    } else if (["returnToDeck", "returnAllMinionsToDeck", "rebirthWithHalfHealth", "stealRandomEnemyDeckCardToHand", "destroySelf"].includes(ability.effect)) {
       // No extra params required.
     } else {
       // drawCards, damageAllEnemyMinions, damageAllMinions, damageEnemyHero,
@@ -350,7 +365,7 @@ function collectCards({ excludedExpansionIds = new Set() } = {}) {
   // expansion — that's why this is only checked here, at the end).
   allCards.forEach((card) => {
     (card.abilities || []).forEach((ability) => {
-      if (ability.effect === "summonMinion" && !seenIds.has(ability.cardId)) {
+      if (["summonMinion", "transformIntoMinion"].includes(ability.effect) && !seenIds.has(ability.cardId)) {
         fail(
           `Card "${card.id}" has a summonMinion ability referencing "${ability.cardId}", ` +
             `but that card doesn't exist in any enabled expansion.`

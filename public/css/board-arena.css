@@ -259,8 +259,8 @@
 }
 #selfHero .hero-avatar { top: 7px; width: 52px; height: 52px; }
 #selfHero .hero-name { width: calc(100% + 16px); font-size: 10px; }
-#selfHero .hero-stats .hp { left: -16px; bottom: -16px; width: 42px; height: 42px; font-size: 10px; }
-#selfHero .hero-stats .mana { right: -16px; bottom: -14px; width: 41px; height: 41px; font-size: 8px; }
+#selfHero .hero-stats .hp { left: -16px; bottom: -16px; width: 42px; height: 42px; font-size: 12px; }
+#selfHero .hero-stats .mana { right: -16px; bottom: -14px; width: 41px; height: 41px; font-size: 12px; }
 #selfHero .hero-stats .deck { top: 6px; right: 7px; font-size: 7px; }
 #oppBoard,
 #selfBoard { grid-area: board; min-width: 0; align-self: stretch; }
@@ -361,6 +361,7 @@
   z-index: 3;
   font-family: "Cinzel", serif;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
@@ -371,8 +372,7 @@
   height: 47px;
   color: #ffffff;
   font-size: 12px;
-  text-shadow: 0 1px 2px rgba(57, 2, 10, 0.98), 0 0 1px rgba(57, 2, 10, 0.98);
-  -webkit-text-stroke: 0.3px rgba(57, 2, 10, 0.74);
+  text-shadow: 0 1px 0 #29050d;
 }
 
 .hero-stats .hp::before {
@@ -380,10 +380,10 @@
   position: absolute;
   inset: 4px;
   z-index: -1;
-  border: 2px solid #ffb6bd;
+  border: 2px solid #bd5a68;
   border-radius: 50%;
-  background: radial-gradient(circle at 32% 25%, #ffb7c0, #ec5f72 32%, #a5223b 70%, #58101f);
-  box-shadow: 0 3px 0 #5d1020, 0 5px 10px rgba(0, 0, 0, 0.65), 0 0 7px rgba(255, 86, 108, 0.36);
+  background: radial-gradient(circle at 32% 25%, #b64b5d, #8d1f35 32%, #571021 70%, #29050d);
+  box-shadow: 0 3px 0 #350713, 0 5px 10px rgba(0, 0, 0, 0.68);
 }
 
 .hero-stats .mana {
@@ -392,9 +392,8 @@
   width: 46px;
   height: 46px;
   color: #ffffff;
-  font-size: 9px;
-  text-shadow: 0 1px 2px rgba(3, 21, 52, 0.98), 0 0 1px rgba(3, 21, 52, 0.98);
-  -webkit-text-stroke: 0.3px rgba(3, 21, 52, 0.78);
+  font-size: 12px;
+  text-shadow: 0 1px 0 #071333;
 }
 
 .hero-stats .mana::before {
@@ -402,10 +401,10 @@
   position: absolute;
   inset: 5px;
   z-index: -1;
-  border: 2px solid #b9f2ff;
+  border: 2px solid #4a9bc2;
   border-radius: 7px;
-  background: radial-gradient(circle at 32% 25%, #a5e5ff, #3ea7e1 30%, #1d5ca9 70%, #10255f);
-  box-shadow: 0 3px 0 #10235c, 0 5px 10px rgba(0, 0, 0, 0.65), 0 0 7px rgba(92, 213, 255, 0.3);
+  background: radial-gradient(circle at 32% 25%, #36799c, #1c4f7f 30%, #102e5c 70%, #071333);
+  box-shadow: 0 3px 0 #071631, 0 5px 10px rgba(0, 0, 0, 0.68);
   transform: rotate(45deg);
 }
 
@@ -545,15 +544,15 @@
   #selfHero { width: 80px; min-width: 80px; min-height: 61px; margin-bottom: 11px; }
   #selfHero .hero-avatar { top: 5px; width: 36px; height: 36px; }
   #selfHero .hero-name { width: calc(100% + 10px); font-size: 7px; }
-  #selfHero .hero-stats .hp { left: -12px; bottom: -13px; width: 32px; height: 32px; font-size: 8px; }
-  #selfHero .hero-stats .mana { right: -12px; bottom: -12px; width: 31px; height: 31px; font-size: 6px; }
+  #selfHero .hero-stats .hp { left: -12px; bottom: -13px; width: 32px; height: 32px; font-size: 12px; }
+  #selfHero .hero-stats .mana { right: -12px; bottom: -12px; width: 31px; height: 31px; font-size: 12px; }
   .hero-panel { padding: 0; }
   .hero-avatar { top: 5px; width: 40px; height: 40px; border-width: 1px; box-shadow: 0 0 0 2px rgba(52, 23, 4, 0.96), 0 4px 8px rgba(0, 0, 0, 0.52); }
   .hero-name { top: calc(100% + 3px); width: calc(100% + 12px); font-size: 8px; letter-spacing: 0.35px; }
   .hero-stats .stat { min-height: 0; padding: 0; }
-  .hero-stats .hp { left: -14px; bottom: -15px; width: 36px; height: 36px; font-size: 9px; }
+  .hero-stats .hp { left: -14px; bottom: -15px; width: 36px; height: 36px; font-size: 10px; }
   .hero-stats .hp::before { inset: 4px; }
-  .hero-stats .mana { right: -14px; bottom: -13px; width: 35px; height: 35px; font-size: 7px; }
+  .hero-stats .mana { right: -14px; bottom: -13px; width: 35px; height: 35px; font-size: 9px; }
   .hero-stats .mana::before { inset: 4px; border-width: 1px; }
   .hero-stats .deck { top: 5px; right: 6px; font-size: 6px; }
   #oppHandBack { top: 0; left: 2px; transform: scale(0.78); transform-origin: top left; }
@@ -666,10 +665,10 @@
   #screen-game #selfHero .hero-avatar { top: 4px; width: 34px; height: 34px; }
   #screen-game .hero-name { top: calc(100% + 3px); width: calc(100% + 14px); font-size: 9px; }
   #screen-game #selfHero .hero-name { width: calc(100% + 9px); font-size: 8px; }
-  #screen-game .hero-stats .hp { left: -12px; bottom: -13px; width: 33px; height: 33px; font-size: 9px; }
-  #screen-game .hero-stats .mana { right: -12px; bottom: -12px; width: 32px; height: 32px; font-size: 8px; }
-  #screen-game #selfHero .hero-stats .hp { left: -11px; bottom: -12px; width: 31px; height: 31px; font-size: 8px; }
-  #screen-game #selfHero .hero-stats .mana { right: -11px; bottom: -11px; width: 30px; height: 30px; font-size: 8px; }
+  #screen-game .hero-stats .hp { left: -12px; bottom: -13px; width: 33px; height: 33px; font-size: 10px; }
+  #screen-game .hero-stats .mana { right: -12px; bottom: -12px; width: 32px; height: 32px; font-size: 9px; }
+  #screen-game #selfHero .hero-stats .hp { left: -11px; bottom: -12px; width: 31px; height: 31px; font-size: 12px; }
+  #screen-game #selfHero .hero-stats .mana { right: -11px; bottom: -11px; width: 30px; height: 30px; font-size: 12px; }
 
   #screen-game #oppHandBack {
     top: 4px;

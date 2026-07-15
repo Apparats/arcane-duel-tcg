@@ -1,9 +1,9 @@
 module.exports = {
-  name: "tucuquere",
+  name: "Tucuquere",
   cost: 5,
   type: "minion",
-  attack: 5,
-  health: 4,
+  attack: 7,
+  health: 3,
   keywords: [],
   race: "Human",
   rarity: "common",

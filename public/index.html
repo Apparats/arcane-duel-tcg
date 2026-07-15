@@ -6,22 +6,22 @@
 <title>Arcana TCG</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css?v=1.5.0" />
-<link rel="stylesheet" href="css/menu.css?v=1.5.0-tile-fix-2" />
-<link rel="stylesheet" href="css/account-profile.css?v=1.5.0" />
-<link rel="stylesheet" href="css/lobby.css?v=1.5.0" />
-<link rel="stylesheet" href="css/board.css?v=1.5.0" />
-<link rel="stylesheet" href="css/cards.css?v=1.5.0" />
-<link rel="stylesheet" href="css/board-arena.css?v=1.5.0" />
-<link rel="stylesheet" href="css/board-hand.css?v=1.5.0" />
-<link rel="stylesheet" href="css/inventory.css?v=1.5.0" />
-<link rel="stylesheet" href="css/deck-builder.css?v=1.5.0" />
-<link rel="stylesheet" href="css/shop.css?v=1.5.0" />
-<link rel="stylesheet" href="css/trade.css?v=1.5.0" />
-<link rel="stylesheet" href="css/pack-opening.css?v=1.5.0" />
-<link rel="stylesheet" href="css/fx.css?v=1.5.0" />
-<link rel="stylesheet" href="css/board-effects.css?v=1.5.0" />
-<link rel="stylesheet" href="css/overlay.css?v=1.5.0" />
+<link rel="stylesheet" href="css/base.css?v=1.5.1" />
+<link rel="stylesheet" href="css/menu.css?v=1.5.1" />
+<link rel="stylesheet" href="css/account-profile.css?v=1.5.1" />
+<link rel="stylesheet" href="css/lobby.css?v=1.5.1" />
+<link rel="stylesheet" href="css/board.css?v=1.5.1" />
+<link rel="stylesheet" href="css/cards.css?v=1.5.1" />
+<link rel="stylesheet" href="css/board-arena.css?v=1.5.1" />
+<link rel="stylesheet" href="css/board-hand.css?v=1.5.1" />
+<link rel="stylesheet" href="css/inventory.css?v=1.5.1" />
+<link rel="stylesheet" href="css/deck-builder.css?v=1.5.1" />
+<link rel="stylesheet" href="css/shop.css?v=1.5.1" />
+<link rel="stylesheet" href="css/trade.css?v=1.5.1" />
+<link rel="stylesheet" href="css/pack-opening.css?v=1.5.1" />
+<link rel="stylesheet" href="css/fx.css?v=1.5.1" />
+<link rel="stylesheet" href="css/board-effects.css?v=1.5.1" />
+<link rel="stylesheet" href="css/overlay.css?v=1.5.1" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -117,7 +117,7 @@
         <button id="btnOpenPrivacyMenu" class="btn menu-option-button" type="button">Privacy Notice</button>
         <div class="menu-option-config">
           <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Config</button>
-          <span class="menu-version">Version 1.5</span>
+          <span class="menu-version">Version 1.5.1</span>
         </div>
       </div>
     </div>
@@ -293,7 +293,7 @@
   <section id="screen-trade" class="screen hidden">
     <div class="trade-wrap">
       <div class="trade-header">
-        <button id="btnTradeBack" class="btn-link back-link-inline">← Back to menu</button>
+        <button id="btnTradeBack" class="btn-link back-link-inline">â† Back to menu</button>
         <h1 class="brand trade-brand">TRADE</h1>
         <p class="brand-sub">Exchange one card directly with another player</p>
       </div>
@@ -339,7 +339,7 @@
   <section id="screen-shop" class="screen hidden">
     <div class="shop-wrap">
       <div class="shop-header">
-        <button id="btnShopBack" class="btn-link back-link-inline">← Back to menu</button>
+        <button id="btnShopBack" class="btn-link back-link-inline">â† Back to menu</button>
         <h1 class="brand shop-brand">SHOP</h1>
         <p class="brand-sub" id="shopGold">0 gold</p>
       </div>
@@ -393,7 +393,7 @@
       <div class="firefly"></div><div class="firefly"></div><div class="firefly"></div><div class="firefly"></div>
     </div>
     <div class="lobby-card">
-      <button id="btnBackToMenu" class="btn-link back-link">← Back to menu</button>
+      <button id="btnBackToMenu" class="btn-link back-link">â† Back to menu</button>
 
       <span id="onlinePlayerCount" class="online-player-count hidden" aria-live="polite"></span>
       <h1 class="brand">ARCANA TCG</h1>
@@ -460,7 +460,7 @@
       <div id="roomInfo" class="room-info hidden">
         <p>Room code:</p>
         <div id="roomCode" class="room-code"></div>
-        <p class="waiting-text">Share this code with your opponent. Waiting for them to join…</p>
+        <p class="waiting-text">Share this code with your opponent. Waiting for them to joinâ€¦</p>
       </div>
 
       <p id="lobbyError" class="error-text hidden"></p>
@@ -471,9 +471,9 @@
   <section id="screen-inventory" class="screen hidden">
     <div class="inventory-wrap">
       <div class="inventory-header">
-        <button id="btnInventoryBack" class="btn-link back-link-inline">← Back to menu</button>
+        <button id="btnInventoryBack" class="btn-link back-link-inline">â† Back to menu</button>
         <h1 class="brand inventory-brand">INVENTORY</h1>
-        <p class="brand-sub" id="inventoryCount">—</p>
+        <p class="brand-sub" id="inventoryCount">â€”</p>
       </div>
 
       <div class="inventory-tabs">
@@ -521,6 +521,18 @@
           <label for="filterExpansion">Expansion</label>
           <select id="filterExpansion" class="filter-select">
             <option value="all">All collectible expansions</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filterSort">Sort cards</label>
+          <select id="filterSort" class="filter-select">
+            <option value="default">Collection order</option>
+            <option value="cost-asc">Mana: low to high</option>
+            <option value="cost-desc">Mana: high to low</option>
+            <option value="attack-desc">Attack: high to low</option>
+            <option value="attack-asc">Attack: low to high</option>
+            <option value="health-desc">Health: high to low</option>
+            <option value="health-asc">Health: low to high</option>
           </select>
         </div>
         <button id="btnClearFilters" class="btn-link clear-filters-link">Clear filters</button>
@@ -591,6 +603,17 @@
                   <option value="all">All collectible expansions</option>
                 </select>
               </div>
+              <div class="filter-group">
+                <label for="deckFilterSort">Sort cards</label>
+                <select id="deckFilterSort" class="filter-select">
+                  <option value="cost-asc">Mana: low to high</option>
+                  <option value="cost-desc">Mana: high to low</option>
+                  <option value="attack-desc">Attack: high to low</option>
+                  <option value="attack-asc">Attack: low to high</option>
+                  <option value="health-desc">Health: high to low</option>
+                  <option value="health-asc">Health: low to high</option>
+                </select>
+              </div>
               <button id="btnClearDeckFilters" class="btn-link clear-filters-link">Clear filters</button>
             </div>
             <div id="deckCardPool" class="deck-card-pool"></div>
@@ -611,11 +634,11 @@
   <!-- ---------- OVERLAY: CARD ZOOM ---------- -->
   <div id="cardZoomOverlay" class="overlay hidden">
     <div class="card-zoom-panel">
-      <button id="btnCloseZoom" class="btn-link close-zoom">✕ Close</button>
+      <button id="btnCloseZoom" class="btn-link close-zoom">âœ• Close</button>
       <div class="card-zoom-content">
         <div id="cardZoomArt" class="minion-card card-zoom-art"></div>
         <div class="card-zoom-details">
-          <h2 id="zoomName" class="zoom-name">—</h2>
+          <h2 id="zoomName" class="zoom-name">â€”</h2>
           <div id="zoomMeta" class="zoom-meta"></div>
           <div id="zoomKeywords" class="zoom-keywords"></div>
           <p id="zoomLore" class="zoom-lore"></p>
@@ -659,22 +682,22 @@
 
       <!-- Center: turn seal + manuscript rule + log, with turn/surrender pinned to the right edge -->
       <div class="center-strip">
-        <div id="turnSeal" class="turn-seal">—</div>
-        <div id="turnLabel" class="turn-label">—</div>
+        <div id="turnSeal" class="turn-seal">â€”</div>
+        <div id="turnLabel" class="turn-label">â€”</div>
         <div id="turnTimer" class="turn-timer" aria-live="polite">40s per turn</div>
-        <div class="manuscript-rule"><span>◆</span></div>
+        <div class="manuscript-rule"><span>â—†</span></div>
         <div id="gameLog" class="game-log"></div>
 
         <div class="turn-actions">
           <div class="emote-control">
-            <button id="btnEmotes" class="btn-emotes" type="button" aria-label="Open emotes" aria-expanded="false">☺</button>
+            <button id="btnEmotes" class="btn-emotes" type="button" aria-label="Open emotes" aria-expanded="false">â˜º</button>
             <div id="emotePanel" class="emote-panel hidden" role="menu" aria-label="Emotes">
-              <button type="button" class="emote-choice" data-emote="😄" aria-label="Happy">😄</button>
-              <button type="button" class="emote-choice" data-emote="😭" aria-label="Crying">😭</button>
-              <button type="button" class="emote-choice" data-emote="😯" aria-label="Surprised">😯</button>
-              <button type="button" class="emote-choice" data-emote="😡" aria-label="Angry">😡</button>
-              <button type="button" class="emote-choice" data-emote="🫄" aria-label="Pregnant">🫄</button>
-              <button type="button" class="emote-choice" data-emote="💀" aria-label="Skull">💀</button>
+              <button type="button" class="emote-choice" data-emote="ðŸ˜„" aria-label="Happy">ðŸ˜„</button>
+              <button type="button" class="emote-choice" data-emote="ðŸ˜­" aria-label="Crying">ðŸ˜­</button>
+              <button type="button" class="emote-choice" data-emote="ðŸ˜¯" aria-label="Surprised">ðŸ˜¯</button>
+              <button type="button" class="emote-choice" data-emote="ðŸ˜¡" aria-label="Angry">ðŸ˜¡</button>
+              <button type="button" class="emote-choice" data-emote="ðŸ«„" aria-label="Pregnant">ðŸ«„</button>
+              <button type="button" class="emote-choice" data-emote="ðŸ’€" aria-label="Skull">ðŸ’€</button>
             </div>
           </div>
           <button id="btnEndTurn" class="btn btn-end-turn">End turn</button>
@@ -709,7 +732,7 @@
       <div id="matchIntroSelf" class="match-intro-contender match-intro-self"></div>
     </div>
 
-    <div id="targetHint" class="target-hint hidden">Choose a target (or click the enemy hero) — <button id="cancelTarget" class="btn-link">cancel</button></div>
+    <div id="targetHint" class="target-hint hidden">Choose a target (or click the enemy hero) â€” <button id="cancelTarget" class="btn-link">cancel</button></div>
   </section>
 
     <div id="roundBanner" class="round-banner hidden" aria-live="polite">
@@ -719,7 +742,7 @@
   <!-- ---------- OVERLAY: END OF MATCH ---------- -->
   <div id="overlayEnd" class="overlay hidden">
     <div class="overlay-card">
-      <h2 id="endTitle">—</h2>
+      <h2 id="endTitle">â€”</h2>
       <p id="endReward" class="end-reward"></p>
       <button id="btnRestart" class="btn btn-primary">Back to menu</button>
     </div>
@@ -745,6 +768,27 @@
         <button id="btnCloseChangelog" class="changelog-close" type="button" aria-label="Close changelog">x</button>
       </div>
       <div class="changelog-content">
+      <article class="changelog-entry">
+        <div class="changelog-entry-meta">
+          <h3>Version 1.5.1</h3>
+          <span>Card Rework & Balance Update</span>
+        </div>
+        <p class="changelog-entry-intro">A focused pass on card identity, counterplay, and battlefield clarity.</p>
+        <ul class="changelog-list">
+          <li>Added new reusable card mechanics: revival at half Health, in-place transformations, adding a named card to hand each turn, stealing a non-Mythic card from an enemy deck, and returning both boards to their owners' decks.</li>
+          <li>Fanex is now a Mythic 4 Mana 6/4. On play, it steals a random non-Mythic card from the enemy deck and adds it to your hand. Fanex cannot be played while your hand is full.</li>
+          <li>Manuchiliz is now a 7 Mana 5/9 Mythic. Its arrival still deals 3 damage to every minion on both sides of the board.</li>
+          <li>Zoblezar no longer has Divine Shield or draws cards on death. The first time it dies, it revives as a 5/10.</li>
+          <li>Zugzwang is now an 8/7 Charge minion. Its former three-card draw is replaced with a Minor Spark added to your hand at the start of every one of your turns while it survives.</li>
+          <li>Humph is now a 7 Mana 8/10 without Divine Shield. When it dies, every remaining minion on both boards returns to its owner's deck.</li>
+          <li>Golden Warerita now transforms directly into a normal 1/5 Warerita when it dies, preserving its position on the board instead of creating a separate summon.</li>
+          <li>Moonhammer changed from 3/9 to 4/8. Red gained 1 Health, becoming 0/9. Tucuquere is now 7/3, and its display name is capitalized.</li>
+          <li>Chiorico is now a 5 Mana 6/7 without Charge. Mamaluteo is now a 7 Mana 5/7. These changes give their disruptive effects more appropriate timing and survivability.</li>
+          <li>Base-card balance: Dezadin costs 8; Juniiya is 7 Mana 6/5; Lifelinker costs 9; Lolflame is 3 Mana 3/7; Multimaker is 7 Mana 1/6; PrinceMVC is 3/10; Ranger costs 9; and Rin is 7 Mana 5/6.</li>
+          <li>Collection and Deck Builder can now sort cards by Mana, Attack, or Health in either direction.</li>
+          <li>Hero Health and Mana values have sharper, higher-contrast presentation across desktop and mobile. Impact sounds now vary slightly in pitch, and board music stops immediately when a match result appears.</li>
+        </ul>
+      </article>
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
           <h3>Version 1.5</h3>
@@ -898,8 +942,8 @@
             <div><span class="how-to-token how-to-attack">4</span><span><strong>Attack</strong> - damage dealt by a minion.</span></div>
             <div><span class="how-to-token how-to-health">5</span><span><strong>Health</strong> - a minion is destroyed at 0.</span></div>
             <div><span class="how-to-badge how-to-taunt" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 4.4 2.9 7.4 7 9 4.1-1.6 7-4.6 7-9V6l-7-3Z" fill="currentColor"/></svg></span><span><strong>Taunt</strong> - enemies must attack this before other targets.</span></div>
-            <div><span class="how-to-badge how-to-charge">ϟ</span><span><strong>Charge</strong> - can attack on the turn it is played.</span></div>
-            <div><span class="how-to-badge how-to-shield">✦</span><span><strong>Divine Shield</strong> - prevents the first damage it would take, then breaks.</span></div>
+            <div><span class="how-to-badge how-to-charge">ÏŸ</span><span><strong>Charge</strong> - can attack on the turn it is played.</span></div>
+            <div><span class="how-to-badge how-to-shield">âœ¦</span><span><strong>Divine Shield</strong> - prevents the first damage it would take, then breaks.</span></div>
           </div>
           <p class="how-to-note">Card borders indicate rarity: Common, Rare, Legendary, and Mythic. Rarity does not change combat rules by itself.</p>
         </section>
@@ -1040,23 +1084,23 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.5.0"></script>
-  <script src="deckRules.js?v=1.5.0"></script>
-  <script src="engine.js?v=1.5.0"></script>
-  <script src="ai.js?v=1.5.0"></script>
-  <script src="audioConfig.js?v=1.5.0"></script>
-  <script src="audioManager.js?v=1.5.0"></script>
-  <script src="packOpening.js?v=1.5.0"></script>
-<script src="legalNotices.js?v=1.5.0"></script>
-<script src="profileCatalog.js?v=1.5.0"></script>
-<script src="profileBadges.js?v=1.5.0"></script>
-<script src="accountProfile.js?v=1.5.0"></script>
-<script src="client.js?v=1.5.0"></script>
-<script src="boardInteractions.js?v=1.5.0"></script>
-<script src="inventory.js?v=1.5.0"></script>
-<script src="deckBuilder.js?v=1.5.0"></script>
-<script src="shop.js?v=1.5.0"></script>
-<script src="trade.js?v=1.5.0"></script>
-<script src="tournaments.js?v=1.5.0"></script>
+  <script src="cards.js?v=1.5.1"></script>
+  <script src="deckRules.js?v=1.5.1"></script>
+  <script src="engine.js?v=1.5.1"></script>
+  <script src="ai.js?v=1.5.1"></script>
+  <script src="audioConfig.js?v=1.5.1"></script>
+  <script src="audioManager.js?v=1.5.1"></script>
+  <script src="packOpening.js?v=1.5.1"></script>
+<script src="legalNotices.js?v=1.5.1"></script>
+<script src="profileCatalog.js?v=1.5.1"></script>
+<script src="profileBadges.js?v=1.5.1"></script>
+<script src="accountProfile.js?v=1.5.1"></script>
+<script src="client.js?v=1.5.1"></script>
+<script src="boardInteractions.js?v=1.5.1"></script>
+<script src="inventory.js?v=1.5.1"></script>
+<script src="deckBuilder.js?v=1.5.1"></script>
+<script src="shop.js?v=1.5.1"></script>
+<script src="trade.js?v=1.5.1"></script>
+<script src="tournaments.js?v=1.5.1"></script>
 </body>
 </html>

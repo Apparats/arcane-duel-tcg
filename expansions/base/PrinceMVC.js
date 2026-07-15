@@ -2,7 +2,7 @@ module.exports = {
   name: "PrinceMVC",
   cost: 10,
   type: "minion",
-  attack: 4,
+  attack: 3,
   health: 10,
   keywords: ["taunt"],
   race: "Human",
