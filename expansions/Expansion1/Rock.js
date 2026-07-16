@@ -1,6 +1,6 @@
 module.exports = {
   name: "Rockseller",
-  cost: 8,
+  cost: 7,
   type: "minion",
   attack: 4,
   health: 7,

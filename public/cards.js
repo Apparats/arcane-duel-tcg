@@ -254,7 +254,7 @@
     },
     {
       "name": "Jeraxes",
-      "cost": 6,
+      "cost": 5,
       "type": "minion",
       "attack": 0,
       "health": 8,
@@ -433,7 +433,7 @@
     },
     {
       "name": "Rockseller",
-      "cost": 8,
+      "cost": 7,
       "type": "minion",
       "attack": 4,
       "health": 7,
@@ -1519,7 +1519,7 @@
     },
     {
       "name": "Saaaru",
-      "cost": 9,
+      "cost": 7,
       "type": "minion",
       "attack": 5,
       "health": 6,
@@ -1615,7 +1615,7 @@
     },
     {
       "name": "V for Vendetta",
-      "cost": 3,
+      "cost": 4,
       "type": "minion",
       "attack": 3,
       "health": 4,

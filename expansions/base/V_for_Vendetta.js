@@ -1,6 +1,6 @@
 module.exports = {
   name: "V for Vendetta",
-  cost: 3,
+  cost: 4,
   type: "minion",
   attack: 3,
   health: 4,
