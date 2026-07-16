@@ -66,6 +66,7 @@ let reconnectDeadline = 0;
 let reconnectTimer = null;
 let resumeAckTimer = null;
 let matchStatusTimer = null;
+let forfeitResultMessage = "";
 
 let lastAnimatedActionSeq = 0; // avoids replaying the same attack's animation
 let lastRoundBannerKey = null;
@@ -203,6 +204,10 @@ function clearMatchStatus() {
   $("matchStatus")?.classList.add("hidden");
 }
 
+function setOpponentReconnectPaused(paused) {
+  $("screen-game")?.classList.toggle("opponent-reconnecting", paused);
+}
+
 function setMatchStatus(message, { warning = false } = {}) {
   const status = $("matchStatus");
   if (!status) return;
@@ -213,12 +218,13 @@ function setMatchStatus(message, { warning = false } = {}) {
 
 function showOpponentDisconnectStatus(payload = {}) {
   clearInterval(matchStatusTimer);
+  setOpponentReconnectPaused(true);
   const deadline = Number(payload.reconnectDeadline);
   const isTournament = payload.isTournament === true;
   const update = () => {
     const seconds = Number.isFinite(deadline) ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000)) : null;
     const suffix = seconds == null ? "" : ` ${seconds}s`;
-    setMatchStatus(isTournament ? `Tournament opponent disconnected. Forfeit in${suffix}.` : `Opponent disconnected. Reconnect window:${suffix}`, { warning: true });
+    setMatchStatus(isTournament ? `Opponent disconnected. Tournament victory by forfeit in${suffix}.` : `Opponent disconnected. Victory by forfeit in${suffix}.`, { warning: true });
     if (seconds === 0) {
       clearInterval(matchStatusTimer);
       matchStatusTimer = null;
@@ -539,6 +545,7 @@ function handleServerMessage(msg) {
       setQuickplaySearching(true);
       break;
     case "tournamentMatchQueued":
+      window.ArcaneTournaments?.setQueuedMatch(msg.payload);
       showToast("Waiting for your tournament opponent to enter the match.");
       break;
     case "tournamentUpdated":
@@ -549,6 +556,9 @@ function handleServerMessage(msg) {
       showToast(`Tournament ${msg.payload?.place || "prize"}: +${msg.payload?.gold || 0} gold`);
       break;
     case "matchStarted":
+      window.ArcaneTournaments?.clearQueuedMatch();
+      forfeitResultMessage = "";
+      setOpponentReconnectPaused(false);
       setQuickplaySearching(false);
       activeMatchMode = activeMatchMode || "multiplayer";
       if (activeMatchMode === "multiplayer") rememberMultiplayerMatch();
@@ -575,6 +585,14 @@ function handleServerMessage(msg) {
       break;
     case "mythicSummon":
       void showMythicSummonReveal(msg.payload?.cardId);
+      break;
+    case "shieldChallengeStart":
+      window.ArcaneShieldChallenge?.start(msg.payload, (challengeId, direction) => {
+        send("shieldChallengeInput", { challengeId, direction });
+      });
+      break;
+    case "shieldChallengeResult":
+      window.ArcaneShieldChallenge?.finish(msg.payload);
       break;
     case "emote":
       showEmote(msg.payload?.emote, Boolean(msg.payload?.isSelf));
@@ -607,9 +625,10 @@ function handleServerMessage(msg) {
       break;
     case "opponentDisconnected":
       showOpponentDisconnectStatus(msg.payload);
-      showToast(msg.payload?.isTournament ? "Opponent disconnected. Tournament forfeit begins in 30 seconds." : "Your opponent disconnected. Waiting for them to reconnect.");
+      showToast(msg.payload?.isTournament ? "Opponent disconnected. Tournament forfeit begins in 30 seconds." : "Opponent disconnected. The match is paused while they reconnect.");
       break;
     case "opponentReconnected":
+      setOpponentReconnectPaused(false);
       clearMatchStatus();
       if (myState?.tournament) setMatchStatus("Tournament match · 30 seconds per turn");
       showToast("Your opponent reconnected.");
@@ -617,10 +636,21 @@ function handleServerMessage(msg) {
     case "tournamentForfeitWin":
       clearInterval(matchStatusTimer);
       matchStatusTimer = null;
+      setOpponentReconnectPaused(false);
+      forfeitResultMessage = "Tournament victory by forfeit";
       setMatchStatus("Opponent did not return. Tournament victory by forfeit.");
       showToast("Your opponent did not return. You win this tournament match by forfeit.");
       break;
+    case "opponentForfeitWin":
+      clearInterval(matchStatusTimer);
+      matchStatusTimer = null;
+      setOpponentReconnectPaused(false);
+      forfeitResultMessage = "Victory by forfeit";
+      setMatchStatus("Opponent did not return. Victory by forfeit.");
+      showToast("Your opponent did not return. You win by forfeit.");
+      break;
     case "matchCancelled":
+      setOpponentReconnectPaused(false);
       clearMatchStatus();
       clearMultiplayerReconnect();
       forgetMultiplayerMatch();
@@ -1171,14 +1201,41 @@ async function openCampaignStages() {
     const res = await arcaneFetch("/campaigns");
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Could not load campaigns.");
-    activeCampaignStage = (data.campaigns || [])[0] || null;
+    const campaigns = data.campaigns || [];
+    activeCampaignStage = campaigns[0] || null;
     if (!activeCampaignStage) throw new Error("No campaign stages are available.");
-    $("campaignStageLore").textContent = activeCampaignStage.lore;
+    renderCampaignStageList(campaigns);
+    selectCampaignStage(activeCampaignStage, 0);
     document.querySelector(".singleplayer-mode-grid").classList.add("hidden");
     $("campaignStagePanel").classList.remove("hidden");
   } catch (err) {
     showToast(err.message);
   }
+}
+
+function selectCampaignStage(campaign, index) {
+  activeCampaignStage = campaign;
+  $("campaignStageLabel").textContent = `Stage ${index + 1}`;
+  $("campaignStageName").textContent = campaign.name;
+  $("campaignStageLore").textContent = campaign.lore;
+  $("btnStartCampaignStage").textContent = `Challenge ${campaign.npcName || campaign.name}`;
+  document.querySelectorAll(".campaign-stage-choice").forEach((button) => {
+    button.classList.toggle("active", button.dataset.campaignId === campaign.id);
+  });
+}
+
+function renderCampaignStageList(campaigns) {
+  const list = $("campaignStageList");
+  list.innerHTML = "";
+  campaigns.forEach((campaign, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "campaign-stage-choice";
+    button.dataset.campaignId = campaign.id;
+    button.textContent = `Stage ${index + 1}: ${campaign.name}`;
+    button.addEventListener("click", () => selectCampaignStage(campaign, index));
+    list.appendChild(button);
+  });
 }
 
 $("btnCampaignStagesBack").addEventListener("click", () => {
@@ -1518,6 +1575,9 @@ function onHeroClick(isSelf) {
     if (cardRequiresEnemyMinionTarget(selectedCard)) {
       return showToast("Choose an enemy minion.");
     }
+    if (selectedCard?.effect === "heal" && !isSelf) {
+      return showToast("Choose your own hero or a minion to heal.");
+    }
     const target = isSelf ? "faceSelf" : "faceEnemy";
     predictCardPlay(document.querySelector(`.hand-card[data-hand-index="${selectedHandIndex}"]`));
     window.ArcaneAudio?.playSfx("cardPlay");
@@ -1647,8 +1707,9 @@ function updateTargetableHighlights(state) {
   const targetingAttack = selectedAttackerId !== null;
   const selectedCard = targetingSpell ? state.me.hand[selectedHandIndex] : null;
   const enemyMinionOnly = cardRequiresEnemyMinionTarget(selectedCard);
+  const healingSpell = selectedCard?.effect === "heal";
 
-  $("oppHero").classList.toggle("targetable", targetingAttack || (targetingSpell && !enemyMinionOnly));
+  $("oppHero").classList.toggle("targetable", targetingAttack || (targetingSpell && !enemyMinionOnly && !healingSpell));
   $("selfHero").classList.toggle("targetable", targetingSpell && !enemyMinionOnly);
 
   document.querySelectorAll("#oppBoard .minion-card").forEach((el) => {
@@ -1684,7 +1745,8 @@ function showEndOverlay(state) {
 }
 
 function resultBannerSubtitle(rewardText = "") {
-  return rewardText ? `${rewardText} - Press anywhere to return to menu` : "Press anywhere to return to menu";
+  const details = [forfeitResultMessage, rewardText].filter(Boolean).join(" - ");
+  return details ? `${details} - Press anywhere to return to menu` : "Press anywhere to return to menu";
 }
 
 function updateEndRewardText() {
@@ -1714,6 +1776,8 @@ function returnToMenuFromMatch() {
   clearMatchStatus();
   forgetMultiplayerMatch();
   activeMatchMode = null;
+  forfeitResultMessage = "";
+  setOpponentReconnectPaused(false);
   hideRoundBanner();
   resetMatchIntro();
   $("overlayEnd").classList.add("hidden");

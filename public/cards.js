@@ -1685,6 +1685,23 @@
       "_expansionId": "base"
     },
     {
+      "name": "Iron Sentinel",
+      "cost": 6,
+      "attack": 4,
+      "health": 10,
+      "type": "minion",
+      "rarity": "mythic",
+      "country": "Arcana",
+      "race": "Construct",
+      "keywords": [
+        "taunt"
+      ],
+      "image": "art/Protector.webp",
+      "lore": "An encounter-only guardian. Its presence calls the shield trial.",
+      "id": "campaign2:iron-sentinel",
+      "_expansionId": "campaign2"
+    },
+    {
       "name": "Moths",
       "cost": 5,
       "type": "minion",

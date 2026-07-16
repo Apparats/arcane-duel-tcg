@@ -16,9 +16,20 @@ function createMatch(round, slot, playerA = null, playerB = null) {
   };
 }
 
-function createBracket(players) {
+function shufflePlayers(playerIds, randomInt) {
+  if (typeof randomInt !== "function") return [...playerIds];
+  const shuffled = [...playerIds];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const choice = randomInt(index + 1);
+    if (!Number.isInteger(choice) || choice < 0 || choice > index) throw new Error("Tournament randomizer returned an invalid seed.");
+    [shuffled[index], shuffled[choice]] = [shuffled[choice], shuffled[index]];
+  }
+  return shuffled;
+}
+
+function createBracket(players, { randomInt } = {}) {
   if (!Array.isArray(players) || players.length < 2) throw new Error("A tournament needs at least two players.");
-  const playerIds = players.map((player) => String(player.userId || player.id || player));
+  const playerIds = shufflePlayers(players.map((player) => String(player.userId || player.id || player)), randomInt);
   if (new Set(playerIds).size !== playerIds.length) throw new Error("Tournament players must be unique.");
 
   const size = nextPowerOfTwo(playerIds.length);
@@ -27,8 +38,17 @@ function createBracket(players) {
     Array.from({ length: size / (2 ** (round + 1)) }, (_, slot) => createMatch(round, slot))
   );
 
-  playerIds.forEach((id, index) => {
-    rounds[0][Math.floor(index / 2)].playerIds[index % 2] = id;
+  // Allocate every first-round slot as either a real match or a one-player
+  // bye. This prevents empty matches from blocking the next round.
+  const firstRound = rounds[0];
+  const byeCount = size - playerIds.length;
+  const playedMatches = firstRound.length - byeCount;
+  let cursor = 0;
+  firstRound.forEach((match, slot) => {
+    const entrants = slot < playedMatches ? 2 : 1;
+    for (let index = 0; index < entrants; index += 1) {
+      match.playerIds[index] = playerIds[cursor++] || null;
+    }
   });
 
   const bracket = {
@@ -40,6 +60,10 @@ function createBracket(players) {
   };
   resolveByes(bracket);
   return bracket;
+}
+
+function matchIsSettled(match) {
+  return ["complete", "bye", "void"].includes(match.status);
 }
 
 function findMatch(bracket, matchId) {
@@ -93,12 +117,16 @@ function resolveByes(bracket) {
         if (match.status !== "waiting") continue;
         const active = match.playerIds.filter(Boolean);
         const previousRound = typeof match.round === "number" ? bracket.rounds[match.round - 1] : null;
-        const feedersSettled = !previousRound || previousRound.every((entry) => entry.status === "complete" || entry.status === "bye");
+        const feedersSettled = !previousRound || previousRound.every(matchIsSettled);
         if (active.length === 2) {
           match.status = "ready";
           changed = true;
         } else if (active.length === 1 && feedersSettled) {
           completeMatch(bracket, match, active[0], { bye: true });
+          changed = true;
+        } else if (active.length === 0 && feedersSettled) {
+          // Supports old brackets that already contain empty matches.
+          match.status = "void";
           changed = true;
         }
       }
@@ -129,4 +157,29 @@ function playerMatch(bracket, playerId) {
   return bracket.thirdPlace?.status === "ready" && bracket.thirdPlace.playerIds.includes(id) ? bracket.thirdPlace : null;
 }
 
-module.exports = { createBracket, reportMatchResult, playerMatch, findMatch };
+function playerTournamentStatus(bracket, playerId) {
+  const id = String(playerId);
+  const readyMatch = playerMatch(bracket, id);
+  if (readyMatch) return { kind: "match-ready", matchId: readyMatch.id, message: "Your match is ready. Enter when you are prepared." };
+
+  const matches = [...bracket.rounds.flat(), ...(bracket.thirdPlace ? [bracket.thirdPlace] : [])];
+  const pendingMatch = matches.find((match) => match.status === "waiting" && match.playerIds.includes(id));
+  const hasWonMatch = matches.some((match) => match.status === "complete" && match.winnerId === id);
+  const receivedBye = matches.some((match) => match.status === "bye" && match.winnerId === id);
+
+  if (pendingMatch) {
+    if (hasWonMatch) return { kind: "waiting-next-match", message: "You won your last match. Waiting for your next opponent." };
+    if (receivedBye) return { kind: "bye-waiting", message: "You received a bye. Waiting for your next match to be ready." };
+    return { kind: "waiting-round", message: "Your next match is being prepared. Waiting for the current round to finish." };
+  }
+
+  const placement = Object.entries(bracket.placements).find(([, placedId]) => String(placedId || "") === id)?.[0];
+  if (placement) return { kind: `placed-${placement}`, message: `Tournament complete: ${placement} place.` };
+
+  if (matches.some((match) => match.status === "complete" && match.loserId === id)) {
+    return { kind: "eliminated", message: "Your tournament run has ended." };
+  }
+  return { kind: "waiting-bracket", message: "The bracket is being prepared." };
+}
+
+module.exports = { createBracket, reportMatchResult, playerMatch, playerTournamentStatus, findMatch, resolveByes };

@@ -4,6 +4,7 @@
   let tournaments = [];
   let loading = false;
   let countdownTimer = null;
+  const queuedMatchIds = new Set();
 
   const el = (id) => document.getElementById(id);
   const text = (value) => escapeHtml(String(value || ""));
@@ -74,7 +75,8 @@
 
   function matchHTML(match, extraClass = "") {
     if (!match) return "";
-    return `<div class="tournament-match ${text(match.status)} ${extraClass}">${match.players.map((player) => playerHTML(player, match.winnerId)).join("")}</div>`;
+    const status = match.status === "bye" ? "Bye" : match.status === "void" ? "No contest" : "";
+    return `<div class="tournament-match ${text(match.status)} ${extraClass}">${match.players.map((player) => playerHTML(player, match.winnerId)).join("")}${status ? `<span class="tournament-match-status">${status}</span>` : ""}</div>`;
   }
 
   function bracketHTML(tournament) {
@@ -91,15 +93,22 @@
   }
 
   function actionHTML(tournament) {
+    const status = tournament.myStatus?.message
+      ? `<span class="tournament-player-state status-${text(tournament.myStatus.kind)}">${text(tournament.myStatus.message)}</span>`
+      : "";
     if (tournament.phase === "registration") {
       return tournament.registered
         ? '<div class="tournament-actions"><span class="tournament-registered">Registered</span><button class="btn btn-secondary" type="button" data-tournament-action="unregister">Leave</button></div>'
         : '<div class="tournament-actions"><button class="btn btn-primary" type="button" data-tournament-action="register">Pre-register</button></div>';
     }
     if (tournament.phase === "active" && tournament.myMatchId) {
-      return `<div class="tournament-actions"><button class="btn btn-primary" type="button" data-tournament-action="join" data-match-id="${text(tournament.myMatchId)}">Play match</button></div>`;
+      const queueKey = `${tournament.id}:${tournament.myMatchId}`;
+      if (queuedMatchIds.has(queueKey)) {
+        return '<div class="tournament-actions"><span class="tournament-player-state status-waiting-round">Waiting for your opponent to enter this match.</span><button class="btn btn-secondary" type="button" data-tournament-action="cancel-match">Cancel</button></div>';
+      }
+      return `<div class="tournament-actions">${status}<button class="btn btn-primary" type="button" data-tournament-action="join" data-match-id="${text(tournament.myMatchId)}">Play match</button></div>`;
     }
-    if (tournament.phase === "active" && tournament.registered) return '<span class="tournament-registered">Waiting for your next match</span>';
+    if (tournament.phase === "active" && tournament.registered) return `<div class="tournament-actions">${status || '<span class="tournament-player-state">Waiting for the bracket to update.</span>'}</div>`;
     return "";
   }
 
@@ -173,10 +182,25 @@
       if (button.dataset.tournamentAction === "join") {
         connect(() => send("tournamentJoinMatch", { tournamentId, matchId: button.dataset.matchId }));
       }
+      if (button.dataset.tournamentAction === "cancel-match") {
+        send("cancelTournamentMatch", {});
+        queuedMatchIds.delete(`${tournamentId}:${tournament.myMatchId}`);
+        render();
+      }
     } catch (error) {
       showToast(error.message || "Could not update tournament registration.");
     }
   });
 
-  window.ArcaneTournaments = { load };
+  window.ArcaneTournaments = {
+    load,
+    setQueuedMatch(payload) {
+      if (!payload?.tournamentId || !payload?.matchId) return;
+      queuedMatchIds.add(`${payload.tournamentId}:${payload.matchId}`);
+      render();
+    },
+    clearQueuedMatch() {
+      queuedMatchIds.clear();
+    },
+  };
 })();

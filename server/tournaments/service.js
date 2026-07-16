@@ -1,6 +1,7 @@
 const tournamentCatalog = require("./catalog");
-const { createBracket, reportMatchResult, playerMatch } = require("./bracket");
+const { createBracket, reportMatchResult, playerMatch, playerTournamentStatus, resolveByes } = require("./bracket");
 const { getDB, grantTournamentPrize } = require("../db");
+const { secureRandomInt } = require("../random");
 
 const locks = new Map();
 
@@ -59,6 +60,7 @@ function publicBracket(state) {
 function publicTournament(config, state, userId) {
   const id = userId == null ? null : String(userId);
   const myMatch = id && state?.bracket ? playerMatch(state.bracket, id) : null;
+  const myStatus = id && state?.bracket ? playerTournamentStatus(state.bracket, id) : null;
   return {
     id: config.id,
     name: config.name,
@@ -73,6 +75,7 @@ function publicTournament(config, state, userId) {
     participantCount: state?.participants?.length || 0,
     registered: Boolean(id && state?.participants?.some((participant) => String(participant.userId) === id)),
     myMatchId: myMatch?.id || null,
+    myStatus,
     bracket: publicBracket(state),
   };
 }
@@ -86,17 +89,31 @@ async function getState(config) {
 async function activateIfDue(config) {
   return withTournamentLock(config.id, async () => {
     const state = await getState(config);
-    if (state.status !== "registration" || tournamentPhase(config) !== "active") return state;
-    if ((state.participants || []).length < 2) {
-      await getDB().collection("tournaments").updateOne({ _id: config.id }, { $set: { status: "cancelled", updatedAt: new Date() } });
+    const phase = tournamentPhase(config);
+    if (state.status === "registration" && phase === "active") {
+      if ((state.participants || []).length < 2) {
+        await getDB().collection("tournaments").updateOne({ _id: config.id }, { $set: { status: "cancelled", updatedAt: new Date() } });
+        return getState(config);
+      }
+      const bracket = createBracket(state.participants, { randomInt: secureRandomInt });
+      await getDB().collection("tournaments").updateOne(
+        { _id: config.id, status: "registration" },
+        { $set: { status: "active", bracket, updatedAt: new Date() } }
+      );
       return getState(config);
     }
-    const bracket = createBracket(state.participants);
-    await getDB().collection("tournaments").updateOne(
-      { _id: config.id, status: "registration" },
-      { $set: { status: "active", bracket, updatedAt: new Date() } }
-    );
-    return getState(config);
+
+    if (state.status === "active" && state.bracket) {
+      const before = JSON.stringify(state.bracket);
+      resolveByes(state.bracket);
+      if (JSON.stringify(state.bracket) !== before) {
+        await getDB().collection("tournaments").updateOne(
+          { _id: config.id, status: "active" },
+          { $set: { bracket: state.bracket, updatedAt: new Date() } }
+        );
+      }
+    }
+    return state;
   });
 }
 

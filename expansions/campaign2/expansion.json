@@ -1,0 +1,7 @@
+{
+  "id": "campaign2",
+  "name": "Iron Watch",
+  "description": "Encounter-only cards for the second campaign test.",
+  "enabled": true,
+  "shop": false
+}

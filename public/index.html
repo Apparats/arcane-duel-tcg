@@ -9,8 +9,8 @@
 <link rel="stylesheet" href="css/base.css?v=1.5.2" />
 <link rel="stylesheet" href="css/menu.css?v=1.5.2" />
 <link rel="stylesheet" href="css/account-profile.css?v=1.5.2" />
-<link rel="stylesheet" href="css/lobby.css?v=1.5.2" />
-<link rel="stylesheet" href="css/board.css?v=1.5.2-pvp-healing" />
+<link rel="stylesheet" href="css/lobby.css?v=1.5.2-shield-trial-local" />
+<link rel="stylesheet" href="css/board.css?v=1.5.2-shield-trial-local" />
 <link rel="stylesheet" href="css/cards.css?v=1.5.2" />
 <link rel="stylesheet" href="css/board-arena.css?v=1.5.2" />
 <link rel="stylesheet" href="css/board-hand.css?v=1.5.2" />
@@ -412,8 +412,9 @@
         </div>
         <div id="campaignStagePanel" class="campaign-stage-panel hidden">
           <button id="btnCampaignStagesBack" class="btn-link" type="button">Back</button>
-          <span class="campaign-stage-label">Stage 1</span>
-          <h2>The Gates</h2>
+          <div id="campaignStageList" class="campaign-stage-list" role="list"></div>
+          <span id="campaignStageLabel" class="campaign-stage-label">Stage 1</span>
+          <h2 id="campaignStageName">The Gates</h2>
           <p id="campaignStageLore">Beyond the frozen gates, The Protector awaits.</p>
           <button id="btnCampaignInfo" class="campaign-info-button" type="button" aria-label="View campaign card progress" title="View card progress">?</button>
           <button id="btnStartCampaignStage" class="btn btn-primary" type="button">Challenge The Protector</button>
@@ -734,6 +735,22 @@
 
     <div id="targetHint" class="target-hint hidden">Choose a target (or click the enemy hero) &#x2014; <button id="cancelTarget" class="btn-link">cancel</button></div>
   </section>
+
+  <div id="shieldChallenge" class="shield-challenge hidden" aria-live="polite">
+    <div class="shield-challenge-panel">
+      <div class="shield-challenge-title">Iron Sentinel's Shield Trial</div>
+      <div id="shieldChallengeArena" class="shield-challenge-arena">
+        <div id="shieldChallengeShield" class="shield-challenge-shield" data-direction="down" aria-hidden="true"><span></span></div>
+      </div>
+      <div class="shield-challenge-controls" aria-label="Shield direction">
+        <button type="button" data-shield-direction="up" aria-label="Shield up">&#x2191;</button>
+        <button type="button" data-shield-direction="left" aria-label="Shield left">&#x2190;</button>
+        <button type="button" data-shield-direction="down" aria-label="Shield down">&#x2193;</button>
+        <button type="button" data-shield-direction="right" aria-label="Shield right">&#x2192;</button>
+      </div>
+      <div id="shieldChallengeResult" class="shield-challenge-result"></div>
+    </div>
+  </div>
 
     <div id="roundBanner" class="round-banner hidden" aria-live="polite">
       <div class="round-banner-title" id="roundBannerTitle">Round 1</div>
@@ -1102,9 +1119,9 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.5.2-pvp-healing"></script>
+  <script src="cards.js?v=1.5.2-shield-trial-local"></script>
   <script src="deckRules.js?v=1.5.2"></script>
-  <script src="engine.js?v=1.5.2-pvp-healing"></script>
+  <script src="engine.js?v=1.5.2-shield-trial-local"></script>
   <script src="ai.js?v=1.5.2"></script>
   <script src="audioConfig.js?v=1.5.2"></script>
   <script src="audioManager.js?v=1.5.2"></script>
@@ -1113,12 +1130,13 @@
 <script src="profileCatalog.js?v=1.5.2"></script>
 <script src="profileBadges.js?v=1.5.2"></script>
 <script src="accountProfile.js?v=1.5.2"></script>
-<script src="client.js?v=1.5.2-pvp-healing"></script>
-<script src="boardInteractions.js?v=1.5.2"></script>
+<script src="client.js?v=1.5.2-shield-trial-local"></script>
+<script src="shieldChallenge.js?v=1.5.2-shield-trial-local"></script>
+<script src="boardInteractions.js?v=1.5.2-spell-hero-targets-local"></script>
 <script src="inventory.js?v=1.5.2"></script>
 <script src="deckBuilder.js?v=1.5.2"></script>
 <script src="shop.js?v=1.5.2"></script>
 <script src="trade.js?v=1.5.2"></script>
-<script src="tournaments.js?v=1.5.2"></script>
+<script src="tournaments.js?v=1.5.2-tournament-bracket-local"></script>
 </body>
 </html>

@@ -24,6 +24,7 @@ const { clearTurnTimer, ensureTurnTimer, turnKey } = require("./turnTimerService
 const { cleanupExpiredWsTickets, consumeWsTicket } = require("./wsTicketService");
 const { secureRandomCode, secureRandomInt } = require("./random");
 const { createCampaignMatch, getCampaignEncounter, listCampaignEncounters } = require("./campaigns");
+const { createShieldChallenge, recordShieldInput, resolveShieldChallenge } = require("./campaigns/shieldChallenge");
 
 const PORT = process.env.PORT || 8443;
 const HTTP_JSON_LIMIT = "32kb";
@@ -357,7 +358,7 @@ async function playCardWithReveal(room, playerIdx, handIndex, targetInstanceId) 
 }
 
 function shouldRunTurnTimer(room) {
-  return !isNpcMatch(room) || room.game.turn === 0;
+  return (!isNpcMatch(room) || room.game.turn === 0) && !room.reconnects?.some(Boolean);
 }
 
 function isNpcMatch(room) {
@@ -380,7 +381,12 @@ function syncTurnTimer(room) {
     }
     return;
   }
-  ensureTurnTimer(room, expireTurn, { durationMs: room.tournament ? TOURNAMENT_TURN_DURATION_MS : 40_000 });
+  const defaultDurationMs = room.tournament ? TOURNAMENT_TURN_DURATION_MS : 40_000;
+  const pausedDurationMs = Number.isFinite(room.pausedTurnRemainingMs)
+    ? Math.max(250, room.pausedTurnRemainingMs)
+    : defaultDurationMs;
+  room.pausedTurnRemainingMs = null;
+  ensureTurnTimer(room, expireTurn, { durationMs: pausedDurationMs });
 }
 
 async function expireTurn(room, expectedTurnKey) {
@@ -502,13 +508,14 @@ function cancelDisconnectedMatch(room, disconnectedIdx) {
   if (rooms.get(roomCode) !== room) return;
 
   const opponentIdx = disconnectedIdx === 0 ? 1 : 0;
-  if (room.tournament && room.game.winner === null && room.sockets[opponentIdx]) {
+  if (room.game.winner === null && room.sockets[opponentIdx]) {
     clearReconnectGrace(room, disconnectedIdx);
-    room.game._addLog(`${room.names[disconnectedIdx]} forfeited the tournament match after disconnecting.`);
+    room.surrenderedBy = disconnectedIdx;
+    room.game._addLog(`${room.names[disconnectedIdx]} forfeited after disconnecting.`);
     room.game.surrender(disconnectedIdx);
-    send(room.sockets[opponentIdx], "tournamentForfeitWin", {});
+    send(room.sockets[opponentIdx], room.tournament ? "tournamentForfeitWin" : "opponentForfeitWin", {});
     broadcastState(room);
-    settleRewards(room).catch((err) => console.error("Tournament disconnect forfeit failed:", err.message));
+    settleRewards(room).catch((err) => console.error("Disconnect forfeit failed:", err.message));
     return;
   }
 
@@ -523,12 +530,20 @@ function cancelDisconnectedMatch(room, disconnectedIdx) {
   rooms.delete(roomCode);
 }
 
+function pauseTurnTimerForReconnect(room) {
+  if (room.turnTimer?.deadline) {
+    room.pausedTurnRemainingMs = Math.max(0, room.turnTimer.deadline - Date.now());
+  }
+  clearTurnTimer(room);
+}
+
 function markMultiplayerDisconnected(room, playerIdx) {
   const graceMs = room.tournament ? TOURNAMENT_RECONNECT_GRACE_MS : DEFAULT_RECONNECT_GRACE_MS;
   const reconnect = startReconnectGrace(room, playerIdx, {
     graceMs,
     onExpired: cancelDisconnectedMatch,
   });
+  pauseTurnTimerForReconnect(room);
   const opponentIdx = playerIdx === 0 ? 1 : 0;
   send(room.sockets[opponentIdx], "opponentDisconnected", {
     reconnectDeadline: reconnect.deadline,
@@ -857,6 +872,42 @@ function npcCardTarget(game, card) {
   return null;
 }
 
+async function runCampaignShieldChallenge(room) {
+  const config = room.campaign?.shieldChallenge;
+  const game = room.game;
+  const turnKey = `${game.turnNumber}:${game.turn}`;
+  if (!config || game.winner !== null || game.turn !== 1 || room.shieldChallenge || room.campaignShieldTurnKey === turnKey) {
+    return false;
+  }
+  if (!game.players[1].board.some((minion) => minion.cardId === config.cardId)) return false;
+
+  room.campaignShieldTurnKey = turnKey;
+  const challenge = createShieldChallenge(config, { randomInt: secureRandomInt });
+  room.shieldChallenge = challenge;
+  const sentAt = Date.now();
+  send(room.sockets[0], "shieldChallengeStart", {
+    challengeId: challenge.id,
+    startInMs: Math.max(0, challenge.startsAt - sentAt),
+    durationMs: challenge.endsAt - challenge.startsAt,
+    travelMs: config.travelMs,
+    arrows: challenge.arrows.map((arrow) => ({
+      direction: arrow.direction,
+      impactOffsetMs: arrow.impactAt - challenge.startsAt,
+    })),
+  });
+
+  await sleep(Math.max(0, challenge.endsAt - Date.now()) + 80);
+  if (room.shieldChallenge !== challenge) return true;
+
+  const result = resolveShieldChallenge(challenge);
+  room.shieldChallenge = null;
+  if (result.damage > 0) game.applyHeroDamage(0, result.damage, "Iron Sentinel's shield trial");
+  else game._addLog("Iron Sentinel's shield trial is fully blocked.");
+  send(room.sockets[0], "shieldChallengeResult", result);
+  broadcastState(room);
+  return true;
+}
+
 async function runNpcTurn(room) {
   const game = room.game;
   if (game.winner !== null || game.turn !== 1) return;
@@ -864,6 +915,8 @@ async function runNpcTurn(room) {
   room.npcTurnRunning = true;
 
   try {
+    await runCampaignShieldChallenge(room);
+    if (game.winner !== null || game.turn !== 1) return;
     await sleep(NPC_STEP_DELAY_MS);
 
     const play = chooseNpcPlayable(game, { limitMythics: room.mode === "singleplayer" });
@@ -871,6 +924,8 @@ async function runNpcTurn(room) {
       try {
         await playCardWithReveal(room, 1, play.handIndex, npcCardTarget(game, play.card));
         broadcastState(room);
+        await runCampaignShieldChallenge(room);
+        if (game.winner !== null || game.turn !== 1) return;
         await sleep(NPC_STEP_DELAY_MS);
       } catch (err) {
         // Skip illegal NPC plays; the game state remains authoritative.
@@ -1077,7 +1132,7 @@ async function handleMessage(ws, msg) {
     if (!waiting || waiting.ws.readyState !== waiting.ws.OPEN || String(waiting.user.id) === String(user.id)) {
       detachSocketFromRoom(ws);
       tournamentQueues.set(queueKey, entry);
-      send(ws, "tournamentMatchQueued", {});
+      send(ws, "tournamentMatchQueued", { tournamentId, matchId });
       return;
     }
     if (String(waiting.user.id) !== String(opponentId)) {
@@ -1120,6 +1175,19 @@ async function handleMessage(ws, msg) {
     ws.lastEmoteAt = now;
     room.sockets.forEach((socket, recipientIdx) => send(socket, "emote", { emote, isSelf: recipientIdx === idx }));
     return;
+  }
+
+  if (type === "shieldChallengeInput") {
+    const challenge = room.shieldChallenge;
+    const challengeId = typeof payload?.challengeId === "string" ? payload.challengeId : "";
+    const direction = typeof payload?.direction === "string" ? payload.direction : "";
+    if (idx !== 0 || !challenge || challenge.id !== challengeId) return;
+    recordShieldInput(challenge, direction);
+    return;
+  }
+
+  if (room.reconnects?.some(Boolean) && type !== "surrender") {
+    return broadcastError(ws, "Your opponent is reconnecting. Please wait for the match to resume or forfeit.");
   }
 
   if (type === "playCard") {

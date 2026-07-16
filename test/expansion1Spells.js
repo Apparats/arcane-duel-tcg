@@ -27,11 +27,23 @@ game.players[0].manaCurrent = 10;
 game.playCard(0, 0, "faceEnemy");
 assert.strictEqual(game.players[1].health, 28, "Minor Spark should deal two damage to the enemy hero.");
 
+game.players[0].hand = ["expansion1:minorspark"];
+game.players[0].manaCurrent = 10;
+assert.throws(() => game.playCard(0, 0, "missing-minion"), /Invalid target/, "Damage spells should reject missing minion targets.");
+assert.strictEqual(game.players[0].hand.length, 1, "Rejecting an invalid damage target must not consume the spell.");
+assert.strictEqual(game.players[0].manaCurrent, 10, "Rejecting an invalid damage target must not spend mana.");
+
 game.players[0].health = 28;
 game.players[0].hand = ["expansion1:greaterblessing"];
 game.players[0].manaCurrent = 10;
 game.playCard(0, 0, null);
 assert.strictEqual(game.players[0].health, 30, "Greater Blessing should not heal a hero above maximum Health.");
+
+game.players[0].health = 12;
+game.players[0].hand = ["expansion1:greaterblessing"];
+game.players[0].manaCurrent = 10;
+game.playCard(0, 0, "faceSelf");
+assert.strictEqual(game.players[0].health, 18, "Greater Blessing should heal the selected friendly hero.");
 
 const healedMinion = {
   instanceId: "healable-minion",
@@ -56,6 +68,12 @@ game.players[0].hand = ["expansion1:quickbandage"];
 game.players[0].manaCurrent = 10;
 game.playCard(0, 0, "faceSelf");
 assert.strictEqual(game.players[0].health, 28, "Quick Bandage should heal the hero when it is selected as the target.");
+
+game.players[0].hand = ["expansion1:quickbandage"];
+game.players[0].manaCurrent = 10;
+assert.throws(() => game.playCard(0, 0, "faceEnemy"), /Choose your own hero/, "Healing spells should reject the enemy hero.");
+assert.strictEqual(game.players[0].hand.length, 1, "Rejecting an invalid healing target must not consume the spell.");
+assert.strictEqual(game.players[0].manaCurrent, 10, "Rejecting an invalid healing target must not spend mana.");
 
 game.players[0].hand = ["expansion1:arcanereading"];
 game.players[0].deck = ["expansion1:minorspark", "expansion1:quickbandage"];

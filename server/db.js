@@ -294,7 +294,7 @@ function maxDeckUsage(decks = [], cardId) {
   }, 0);
 }
 
-function assertCardCanBeTraded(user, cardId) {
+function assertCardCanBeTraded(user, cardId, incomingCardId = null) {
   assertMongoKeySegment(cardId, "card id");
   const owned = user?.cardCollection?.[cardId] || 0;
   if (owned <= 0) {
@@ -304,7 +304,11 @@ function assertCardCanBeTraded(user, cardId) {
   }
 
   const requiredByDeck = maxDeckUsage(user.decks || [], cardId);
-  if (owned - 1 < requiredByDeck) {
+  // Validate the collection after the atomic exchange, not after removing the
+  // offered copy alone. Swapping identical cards leaves the available count
+  // unchanged, so a legal saved deck must remain usable.
+  const projectedOwned = owned - 1 + (incomingCardId === cardId ? 1 : 0);
+  if (projectedOwned < requiredByDeck) {
     const err = new Error("That copy is needed by one of your saved decks.");
     err.code = "CARD_LOCKED_BY_DECK";
     throw err;
@@ -343,8 +347,8 @@ async function exchangeCardsBetweenUsers({ fromUserId, toUserId, fromCardId, toC
         );
         if (!fromUser || !toUser) throw new Error("Trade user not found.");
 
-        assertCardCanBeTraded(fromUser, safeFromCardId);
-        assertCardCanBeTraded(toUser, safeToCardId);
+        assertCardCanBeTraded(fromUser, safeFromCardId, safeToCardId);
+        assertCardCanBeTraded(toUser, safeToCardId, safeFromCardId);
 
         await users.updateOne(
           { _id: fromId },
@@ -886,6 +890,7 @@ module.exports = {
   searchPublicPlayers,
   resetConsecutiveDisconnects,
   exchangeCardsBetweenUsers,
+  assertCardCanBeTraded,
   DAILY_REWARD_LIMITS,
   MATCH_REWARDS,
   DAILY_LOGIN_GOLD,

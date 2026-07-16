@@ -107,6 +107,14 @@
     return null;
   }
 
+  function spellTargetId(target) {
+    // Drag targeting uses compact board-local ids for attacks. Spell intents
+    // use the authoritative engine ids for hero targets instead.
+    if (target.id === "self") return "faceSelf";
+    if (target.id === "face") return "faceEnemy";
+    return target.id;
+  }
+
   function finishAttack(clientX, clientY) {
     const target = targetFromPoint(clientX, clientY);
     if (!target || target.id === "self") return false;
@@ -169,7 +177,7 @@
     if (card.effect === "heal" ? !healTarget : healTarget) return false;
     window.ArcaneAudio?.playSfx("cardPlay");
     predictCardPlay(drag.source);
-    send("playCard", { handIndex, targetInstanceId: target.id });
+    send("playCard", { handIndex, targetInstanceId: spellTargetId(target) });
     selectedHandIndex = null;
     hideTargetHint();
     return true;

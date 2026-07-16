@@ -1,5 +1,6 @@
 const { Game } = require("../../public/engine");
 const { getCardById } = require("../../public/cards");
+const { normalizeShieldChallenge } = require("./shieldChallenge");
 
 function requireText(value, label, maxLength) {
   if (typeof value !== "string" || !value.trim() || value.trim().length > maxLength) {
@@ -52,6 +53,15 @@ function normalizeCampaignEncounter(definition) {
     max: rewardCards.length,
     fallback: 1,
   });
+  const openingCardId = npc.openingCardId === undefined
+    ? null
+    : requireText(npc.openingCardId, "NPC opening card id", 120);
+  if (openingCardId && !getCardById(openingCardId)) throw new Error("Campaign NPC opening card is unknown.");
+  if (openingCardId && !npc.deck.includes(openingCardId)) throw new Error("Campaign NPC opening card is not in its deck.");
+  const shieldChallenge = definition.shieldChallenge ? normalizeShieldChallenge(definition.shieldChallenge) : null;
+  if (shieldChallenge && !npc.deck.includes(shieldChallenge.cardId)) {
+    throw new Error("Campaign shield challenge card is not in the NPC deck.");
+  }
 
   return Object.freeze({
     id: requireText(definition.id, "id", 64),
@@ -63,6 +73,7 @@ function normalizeCampaignEncounter(definition) {
       // Future stages can select a dedicated board playlist here.
       boardMusic: requireText(definition.audio?.boardMusic || "board", "board music", 64),
     }),
+    shieldChallenge,
     rewards: Object.freeze({ cards: Object.freeze(rewardCards.slice()), count: rewardCount }),
     npc: Object.freeze({
       name: requireText(npc.name, "NPC name", 48),
@@ -71,6 +82,7 @@ function normalizeCampaignEncounter(definition) {
       manaCap,
       startingMana: boundedInteger(mana.starting, "NPC starting mana", { min: 1, max: manaCap, fallback: 1 }),
       deck: Object.freeze(normalizeDeck(npc.deck)),
+      openingCardId,
       ignoreDeckSizeLimit: npc.ignoreDeckSizeLimit === true,
       boardRules: Object.freeze(normalizeBoardRules(npc.boardRules)),
     }),
@@ -94,6 +106,16 @@ function createCampaignMatch(encounter, { roomCode, playerName, playerDeck, rand
       },
     ],
   });
+
+  if (npc.openingCardId && !game.players[1].hand.some((ref) => ref === npc.openingCardId)) {
+    const deckIndex = game.players[1].deck.indexOf(npc.openingCardId);
+    if (deckIndex >= 0) {
+      const [openingCard] = game.players[1].deck.splice(deckIndex, 1);
+      const replacedCard = game.players[1].hand.pop();
+      if (replacedCard) game.players[1].deck.push(replacedCard);
+      game.players[1].hand.push(openingCard);
+    }
+  }
 
   return {
     game,

@@ -527,6 +527,14 @@
       }
     }
 
+    applyHeroDamage(playerIdx, amount, sourceName = "") {
+      if (!Number.isInteger(playerIdx) || !this.players[playerIdx]) throw new Error("Invalid player.");
+      if (!Number.isInteger(amount) || amount < 1) throw new Error("Invalid damage.");
+      this.players[playerIdx].health -= amount;
+      if (sourceName) this._addLog(`${sourceName} deals ${amount} damage to ${this.players[playerIdx].name}.`);
+      this._checkWin();
+    }
+
     _opponentIdx(playerIdx) {
       return playerIdx === 0 ? 1 : 0;
     }
@@ -613,10 +621,12 @@
           applyHeroHeal(caster, card.value);
           return;
         }
-        const target = this._findMinion(targetInstanceId);
-        if (target) {
-          applyOverflowHeal(target.minion, card.value);
+        if (targetInstanceId === "faceEnemy") {
+          throw new Error("Choose your own hero or a minion to heal.");
         }
+        const target = this._findMinion(targetInstanceId);
+        if (!target) throw new Error("Invalid target.");
+        applyOverflowHeal(target.minion, card.value);
         return;
       }
       if (card.effect === "damage") {
@@ -652,6 +662,15 @@
       const needsHandSpace = (card.abilities || []).some((ability) => ability.effect === "stealRandomEnemyDeckCardToHand");
       if (needsHandSpace && this.players[playerIdx].hand.length >= MAX_HAND) {
         throw new Error("Your hand is full.");
+      }
+      if (card.type === "spell" && ["damage", "heal"].includes(card.effect)) {
+        if (card.effect === "heal" && targetInstanceId === "faceEnemy") {
+          throw new Error("Choose your own hero or a minion to heal.");
+        }
+        const isHeroTarget = targetInstanceId === "faceSelf" || targetInstanceId === "faceEnemy";
+        if (targetInstanceId && !isHeroTarget && !this._findMinion(targetInstanceId)) {
+          throw new Error("Invalid target.");
+        }
       }
       const needsEnemyMinion = (card.abilities || []).some((ability) =>
         ability.trigger === "onPlay" && ability.target === "enemyMinion" &&
