@@ -34,6 +34,7 @@ const CAMPAIGN_DEFINITIONS = Object.freeze([{
 }, {
   id: "iron-watch",
   name: "Iron Watch",
+  available: false,
   lore: "A prototype encounter. The sentinel's shield trial begins whenever it takes the field or survives to its next turn.",
   theme: "frost",
   audio: { boardMusic: "board" },
@@ -69,6 +70,7 @@ function listCampaignEncounters() {
     id: encounter.id,
     name: encounter.name,
     lore: encounter.lore,
+    available: encounter.available,
     npcName: encounter.npc.name,
     rewardCardIds: encounter.rewards.cards,
     rewardCount: encounter.rewards.count,

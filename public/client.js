@@ -1218,7 +1218,10 @@ function selectCampaignStage(campaign, index) {
   $("campaignStageLabel").textContent = `Stage ${index + 1}`;
   $("campaignStageName").textContent = campaign.name;
   $("campaignStageLore").textContent = campaign.lore;
-  $("btnStartCampaignStage").textContent = `Challenge ${campaign.npcName || campaign.name}`;
+  $("btnStartCampaignStage").disabled = campaign.available === false;
+  $("btnStartCampaignStage").textContent = campaign.available === false
+    ? "Coming soon"
+    : `Challenge ${campaign.npcName || campaign.name}`;
   document.querySelectorAll(".campaign-stage-choice").forEach((button) => {
     button.classList.toggle("active", button.dataset.campaignId === campaign.id);
   });
@@ -1233,7 +1236,13 @@ function renderCampaignStageList(campaigns) {
     button.className = "campaign-stage-choice";
     button.dataset.campaignId = campaign.id;
     button.textContent = `Stage ${index + 1}: ${campaign.name}`;
-    button.addEventListener("click", () => selectCampaignStage(campaign, index));
+    if (campaign.available === false) {
+      button.disabled = true;
+      button.classList.add("locked");
+      button.textContent += " (Coming soon)";
+    } else {
+      button.addEventListener("click", () => selectCampaignStage(campaign, index));
+    }
     list.appendChild(button);
   });
 }

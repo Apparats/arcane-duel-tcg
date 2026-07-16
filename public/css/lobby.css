@@ -204,6 +204,7 @@
 .campaign-stage-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 25px 42px 14px; }
 .campaign-stage-choice { min-height: 30px; padding: 6px 9px; border: 1px solid rgba(166, 234, 255, 0.34); border-radius: 4px; background: rgba(7, 28, 42, 0.72); color: var(--cream-dim); font: 10px "Cinzel", serif; cursor: pointer; }
 .campaign-stage-choice:hover, .campaign-stage-choice:focus-visible, .campaign-stage-choice.active { border-color: #a6eaff; background: rgba(46, 121, 150, 0.48); color: #effcff; outline: none; }
+.campaign-stage-choice.locked { cursor: not-allowed; opacity: 0.48; }
 .campaign-info-button { position: absolute; top: 14px; right: 16px; width: 30px; height: 30px; border: 1px solid rgba(175, 239, 255, 0.7); border-radius: 50%; background: rgba(5, 26, 39, 0.78); color: #d8f7ff; font-family: "Cinzel", serif; font-weight: 700; cursor: pointer; }
 .campaign-info-button:hover, .campaign-info-button:focus-visible { background: rgba(50, 139, 173, 0.72); outline: none; }
 

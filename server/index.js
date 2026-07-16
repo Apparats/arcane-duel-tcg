@@ -1015,6 +1015,7 @@ async function handleMessage(ws, msg) {
     const user = await requireSessionUser(ws);
     const campaign = getCampaignEncounter(payload?.campaignId);
     if (!campaign) return broadcastError(ws, "Campaign not found.");
+    if (!campaign.available) return broadcastError(ws, "This campaign is not available yet.");
     discardActiveSingleplayerMatch(rooms, user.id, { clearTurnTimer, clearAllReconnectGraces });
     assertUserCanStartMatch(rooms, user.id);
     detachSocketFromRoom(ws);

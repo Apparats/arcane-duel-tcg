@@ -67,6 +67,7 @@ function normalizeCampaignEncounter(definition) {
     id: requireText(definition.id, "id", 64),
     name: requireText(definition.name, "name", 80),
     lore: requireText(definition.lore, "lore", 240),
+    available: definition.available !== false,
     theme: requireText(definition.theme || "frost", "theme", 32),
     audio: Object.freeze({
       // This is sent to the client only while this encounter is active.
