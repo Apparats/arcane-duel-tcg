@@ -401,8 +401,18 @@ function addPlayerVisuals(state, room, viewerIdx) {
     turnDeadline: room.turnTimer?.deadline || null,
     turnDurationMs: room.turnTimer?.durationMs || null,
     matchIntroRemainingMs: Math.max(0, (room.introEndsAt || 0) - Date.now()),
-    me: { ...state.me, avatarUrl: room.avatars?.[viewerIdx] || null, profile: matchProfile(room, viewerIdx) },
-    opponent: { ...state.opponent, avatarUrl: room.avatars?.[opponentIdx] || null, profile: matchProfile(room, opponentIdx) },
+    me: {
+      ...state.me,
+      avatarUrl: room.avatars?.[viewerIdx] || null,
+      profile: matchProfile(room, viewerIdx),
+      starts: room.game.startingPlayerIdx === viewerIdx,
+    },
+    opponent: {
+      ...state.opponent,
+      avatarUrl: room.avatars?.[opponentIdx] || null,
+      profile: matchProfile(room, opponentIdx),
+      starts: room.game.startingPlayerIdx === opponentIdx,
+    },
     campaignTheme: room.mode === "campaign" ? room.campaign?.theme || null : null,
     campaignBoardMusic: room.mode === "campaign" ? room.campaign?.audio?.boardMusic || null : null,
     tournament: room.tournament ? { id: room.tournament.id, matchId: room.tournament.matchId } : null,
@@ -591,7 +601,11 @@ async function startMultiplayerMatch(playerA, playerB, { matchType = "quickplay"
     Promise.all([getPublicPlayerProfile(playerA.user.id), getPublicPlayerProfile(playerB.user.id)]),
   ]);
   const room = {
-    game: new Game(code, playerA.name, playerB.name, { decks, randomInt: secureRandomInt }),
+    game: new Game(code, playerA.name, playerB.name, {
+      decks,
+      randomInt: secureRandomInt,
+      startingPlayerIdx: secureRandomInt(2),
+    }),
     sockets: [playerA.ws, playerB.ws],
     names: [playerA.name, playerB.name],
     avatars: [playerA.user.avatarUrl || null, playerB.user.avatarUrl || null],
@@ -1014,7 +1028,11 @@ async function handleMessage(ws, msg) {
     ws.playerIdx = 1;
 
     const decks = await Promise.all(room.userIds.map((userId) => getActiveDeckCardIds(userId)));
-    room.game = new Game(code, room.names[0], room.names[1], { decks, randomInt: secureRandomInt });
+    room.game = new Game(code, room.names[0], room.names[1], {
+      decks,
+      randomInt: secureRandomInt,
+      startingPlayerIdx: secureRandomInt(2),
+    });
     send(room.sockets[0], "matchStarted", {});
     send(room.sockets[1], "matchStarted", {});
     broadcastState(room);

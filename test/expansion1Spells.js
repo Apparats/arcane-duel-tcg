@@ -31,7 +31,31 @@ game.players[0].health = 28;
 game.players[0].hand = ["expansion1:greaterblessing"];
 game.players[0].manaCurrent = 10;
 game.playCard(0, 0, null);
-assert.strictEqual(game.players[0].health, 34, "Greater Blessing should preserve healing overflow.");
+assert.strictEqual(game.players[0].health, 30, "Greater Blessing should not heal a hero above maximum Health.");
+
+const healedMinion = {
+  instanceId: "healable-minion",
+  cardId: "base:aleex",
+  name: "Aleex",
+  attack: 1,
+  health: 2,
+  maxHealth: 3,
+  keywords: [],
+  canAttack: false,
+  divineShield: false,
+  statuses: [],
+};
+game.players[0].board = [healedMinion];
+game.players[0].hand = ["expansion1:quickbandage"];
+game.players[0].manaCurrent = 10;
+game.playCard(0, 0, healedMinion.instanceId);
+assert.strictEqual(healedMinion.health, 5, "Quick Bandage should preserve healing overflow for minions.");
+
+game.players[0].health = 25;
+game.players[0].hand = ["expansion1:quickbandage"];
+game.players[0].manaCurrent = 10;
+game.playCard(0, 0, "faceSelf");
+assert.strictEqual(game.players[0].health, 28, "Quick Bandage should heal the hero when it is selected as the target.");
 
 game.players[0].hand = ["expansion1:arcanereading"];
 game.players[0].deck = ["expansion1:minorspark", "expansion1:quickbandage"];

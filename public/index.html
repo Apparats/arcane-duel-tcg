@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="css/menu.css?v=1.5.2" />
 <link rel="stylesheet" href="css/account-profile.css?v=1.5.2" />
 <link rel="stylesheet" href="css/lobby.css?v=1.5.2" />
-<link rel="stylesheet" href="css/board.css?v=1.5.2" />
+<link rel="stylesheet" href="css/board.css?v=1.5.2-pvp-healing" />
 <link rel="stylesheet" href="css/cards.css?v=1.5.2" />
 <link rel="stylesheet" href="css/board-arena.css?v=1.5.2" />
 <link rel="stylesheet" href="css/board-hand.css?v=1.5.2" />
@@ -771,7 +771,7 @@
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
           <h3>Version 1.5.2</h3>
-          <span>Taunt Balance Update</span>
+          <span>Balance & Match Fixes</span>
         </div>
         <p class="changelog-entry-intro">A targeted balance pass for Taunt minions and their battlefield roles.</p>
         <ul class="changelog-list">
@@ -779,9 +779,11 @@
           <li>Alfred Longstocking is now a 5 Mana 2/6 Taunt minion, trading one more Mana for stronger Attack.</li>
           <li>Babu is now a 9 Mana 2/9 Taunt minion, reducing both Attack and Health by 1.</li>
           <li>Barto, DisappointmentPanda, and Fish now cost 4, 4, and 6 Mana respectively, keeping their existing stats and Taunt.</li>
-          <li>Saaaru is now a 7 Mana 5/6 Taunt minion, giving it a sturdier mid-game role.</li>
+          <li>Saaaru is now a 7 Mana 5/6 Taunt minion, making it a stronger and more accessible mid-game option.</li>
           <li>V for Vendetta now costs 4 Mana, while Rockseller now costs 7 Mana.</li>
           <li>Toy is now a 5 Mana 3/8 Mythic and no longer has Taunt. Its on-play Weaken effect remains available.</li>
+          <li>In 1v1 and Quickmatch, the player who starts is now chosen at random. The match introduction marks that contender with Starts.</li>
+          <li>Hero healing is now capped at maximum Health, while minion healing can still exceed maximum Health. Quick Bandage and Greater Blessing now state this clearly.</li>
         </ul>
       </article>
       <article class="changelog-entry">
@@ -797,10 +799,10 @@
           <li>Zoblezar no longer has Divine Shield or draws cards on death. The first time it dies, it revives as a 5/10.</li>
           <li>Zugzwang is now an 8/7 Charge minion. Its former three-card draw is replaced with a Minor Spark added to your hand at the start of every one of your turns while it survives.</li>
           <li>Humph is now a 7 Mana 8/10 without Divine Shield. When it dies, every remaining minion on both boards returns to its owner's deck.</li>
-          <li>Golden Warerita now transforms directly into a normal 1/5 Warerita when it dies, preserving its position on the board instead of creating a separate summon.</li>
+          <li>GoldenWarerita now transforms directly into a normal 1/5 Warerita when it dies, preserving its position on the board instead of creating a separate summon.</li>
           <li>Moonhammer changed from 3/9 to 4/8. Red gained 1 Health, becoming 0/9. Tucuquere is now 7/3, and its display name is capitalized.</li>
           <li>Chiorico is now a 5 Mana 6/7 without Charge. Mamaluteo is now a 7 Mana 5/7. These changes give their disruptive effects more appropriate timing and survivability.</li>
-          <li>Base-card balance: Dezadin costs 8; Juniiya is 7 Mana 6/5; Lifelinker costs 9; Lolflame is 3 Mana 3/7; Multimaker is 7 Mana 1/6; PrinceMVC is 3/10; Ranger costs 9; and Rin is 7 Mana 5/6.</li>
+          <li>Base-card balance: Dezadin costs 8; Juniiya is 7 Mana 6/5; Lifelinker costs 9; the Mythic Lolflame is 3 Mana 3/7 while the common version is 4 Mana 2/6; Multimaker is 7 Mana 1/6; PrinceMVC is 3/10; Ranger costs 9; and Rin is 7 Mana 5/6.</li>
           <li>Collection and Deck Builder can now sort cards by Mana, Attack, or Health in either direction.</li>
           <li>Hero Health and Mana values have sharper, higher-contrast presentation across desktop and mobile. Impact sounds now vary slightly in pitch, and board music stops immediately when a match result appears.</li>
         </ul>
@@ -813,7 +815,7 @@
         <p class="changelog-entry-intro">A competitive Arcana bracket is ready to open.</p>
         <ul class="changelog-list">
           <li>Added Fanex and Manuchiliz to Expansion 1. Fanex returns a chosen enemy minion to its owner's deck, while Manuchiliz damages every minion when played.</li>
-          <li>Completed the Expansion 1 spell presentation with illustrated spell cards, exact effect descriptions, heal overflow, and a three-spell deck limit.</li>
+          <li>Completed the Expansion 1 spell presentation with illustrated spell cards, exact effect descriptions, minion healing overflow, and a three-spell deck limit.</li>
           <li>Spell casts and Mythic summons now receive their own battlefield reveal, making important plays easier to follow for both players.</li>
           <li>Fastplay's NPC now builds a different legal minion deck each match, avoids spells, and never attacks with zero Attack.</li>
           <li>Refined card frames across the game: mana remains in the upper corner, while Attack, Health, damage, and healing use clearer lower stat circles. Mobile card inspection now supports press-and-hold.</li>
@@ -1100,9 +1102,9 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.5.2-taunt-hotfix"></script>
+  <script src="cards.js?v=1.5.2-pvp-healing"></script>
   <script src="deckRules.js?v=1.5.2"></script>
-  <script src="engine.js?v=1.5.2"></script>
+  <script src="engine.js?v=1.5.2-pvp-healing"></script>
   <script src="ai.js?v=1.5.2"></script>
   <script src="audioConfig.js?v=1.5.2"></script>
   <script src="audioManager.js?v=1.5.2"></script>
@@ -1111,7 +1113,7 @@
 <script src="profileCatalog.js?v=1.5.2"></script>
 <script src="profileBadges.js?v=1.5.2"></script>
 <script src="accountProfile.js?v=1.5.2"></script>
-<script src="client.js?v=1.5.2"></script>
+<script src="client.js?v=1.5.2-pvp-healing"></script>
 <script src="boardInteractions.js?v=1.5.2"></script>
 <script src="inventory.js?v=1.5.2"></script>
 <script src="deckBuilder.js?v=1.5.2"></script>

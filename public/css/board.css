@@ -91,7 +91,9 @@
 .match-intro-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .match-intro-copy { min-width: 0; }
 .match-intro-name { overflow: hidden; color: var(--cream); font: 700 clamp(17px, 2.3vw, 23px) "Cinzel", serif; text-overflow: ellipsis; white-space: nowrap; }
-.match-intro-title { margin-top: 4px; overflow: hidden; color: var(--gold); font-size: 11px; font-weight: 700; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.match-intro-title-row { display: flex; align-items: center; gap: 8px; min-width: 0; margin-top: 4px; }
+.match-intro-title { min-width: 0; overflow: hidden; color: var(--gold); font-size: 11px; font-weight: 700; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.match-intro-starts { flex: 0 0 auto; border: 1px solid rgba(178, 239, 255, 0.8); border-radius: 3px; background: rgba(36, 115, 138, 0.38); color: #e4fbff; font: 700 9px/1 "Cinzel", serif; letter-spacing: 0; padding: 3px 5px; text-transform: uppercase; }
 .match-intro-badges { display: flex; flex-wrap: wrap; gap: 5px; min-height: 28px; margin-top: 8px; }
 .match-intro-badge { display: grid; place-items: center; width: 28px; height: 28px; }
 .match-intro-badge .profile-badge-svg { width: 28px; height: 28px; }
@@ -105,7 +107,9 @@
   .match-intro-contender { grid-template-columns: 60px minmax(0, 1fr); gap: 10px; padding: 9px 11px; }
   .match-intro-avatar { width: 60px; height: 60px; font-size: 20px; }
   .match-intro-name { font-size: 16px; }
+  .match-intro-title-row { gap: 6px; margin-top: 3px; }
   .match-intro-title { font-size: 9px; }
+  .match-intro-starts { font-size: 8px; padding: 3px 4px; }
   .match-intro-badges { min-height: 22px; margin-top: 5px; }
   .match-intro-badge, .match-intro-badge .profile-badge-svg { width: 22px; height: 22px; }
   .match-intro-versus { width: 44px; height: 44px; margin-block: -3px; font-size: 12px; }

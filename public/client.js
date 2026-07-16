@@ -26,7 +26,7 @@ const STATUS_FULL_LABEL = {
 };
 const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", mythic: "Mythic" };
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.5.2-taunt-hotfix";
+const CHANGELOG_VERSION = "1.5.2-match-healing";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const TYPE_ICON = { minion: "⚔", spell: "✦" };
@@ -390,6 +390,7 @@ function introProfile(participant, own) {
     avatarUrl: profile.avatarUrl || participant?.avatarUrl || null,
     title: selected?.name || progress?.selectedTitle?.name || "Arcane Initiate",
     badges: profile.equippedBadges || progress?.equippedBadges || [],
+    starts: participant?.starts === true,
   };
 }
 
@@ -410,9 +411,18 @@ function renderIntroContender(element, profile) {
   const name = document.createElement("div");
   name.className = "match-intro-name";
   name.textContent = profile.username;
+  const titleRow = document.createElement("div");
+  titleRow.className = "match-intro-title-row";
   const title = document.createElement("div");
   title.className = "match-intro-title";
   title.textContent = profile.title;
+  titleRow.append(title);
+  if (profile.starts) {
+    const starts = document.createElement("span");
+    starts.className = "match-intro-starts";
+    starts.textContent = "Starts";
+    titleRow.append(starts);
+  }
   const badges = document.createElement("div");
   badges.className = "match-intro-badges";
   (profile.badges || []).slice(0, 3).forEach((badge) => {
@@ -422,7 +432,7 @@ function renderIntroContender(element, profile) {
     badgeElement.innerHTML = window.ArcaneProfileBadges?.badgeMarkup(badge.id, true) || "";
     badges.append(badgeElement);
   });
-  copy.append(name, title, badges);
+  copy.append(name, titleRow, badges);
   element.replaceChildren(avatar, copy);
 }
 

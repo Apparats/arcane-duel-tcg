@@ -35,6 +35,16 @@ function main() {
   assert(state0.opponent.handCount === 4, "Player 1 should start with 4 cards.");
   assert(state0.me.deckCount === 16, "Deck should have 20 cards before opening draws.");
 
+  const secondPlayerStarts = new Game("SECOND_STARTS", "First", "Second", { startingPlayerIdx: 1 });
+  let secondStarterState = secondPlayerStarts.getStateFor(1);
+  assert(secondStarterState.turn === 1, "The configured second player should start.");
+  assert(secondStarterState.me.hand.length === 4, "The starter should receive four opening cards.");
+  assert(secondStarterState.opponent.handCount === 4, "The non-starter should receive the compensating opening card.");
+  secondPlayerStarts.endTurn(1);
+  assert(secondPlayerStarts.getStateFor(0).turnNumber === 1, "The shared round should remain on round 1 after the starter ends.");
+  secondPlayerStarts.endTurn(0);
+  assert(secondPlayerStarts.getStateFor(1).turnNumber === 2, "The shared round should advance when control returns to the starter.");
+
   const fallbackDeck = buildFallbackDeck();
   const fullCollection = fallbackDeck.reduce((collection, cardId) => {
     collection[cardId] = (collection[cardId] || 0) + 2;

@@ -60,6 +60,10 @@
     target.health += amount;
   }
 
+  function applyHeroHeal(target, amount) {
+    target.health = Math.min(target.maxHealth, target.health + amount);
+  }
+
   function boundedInteger(value, fallback, min, max) {
     return Number.isInteger(value) && value >= min && value <= max ? value : fallback;
   }
@@ -419,7 +423,8 @@
         makePlayer(player1Name, options.decks?.[0], this.randomInt, options.playerConfigs?.[0]),
         makePlayer(player2Name, options.decks?.[1], this.randomInt, options.playerConfigs?.[1]),
       ];
-      this.turn = 0; // index of the active player
+      this.startingPlayerIdx = [0, 1].includes(options.startingPlayerIdx) ? options.startingPlayerIdx : 0;
+      this.turn = this.startingPlayerIdx; // index of the active player
       this.turnNumber = 1;
       this.winner = null; // 0, 1, or null
       this.log = [];
@@ -430,9 +435,9 @@
       this.lastAction = null;
 
       // Opening hands
-      this._draw(0, START_HAND);
-      this._draw(1, START_HAND + 1);
-      this._startTurn(0);
+      this._draw(0, START_HAND + (this.startingPlayerIdx === 1 ? 1 : 0));
+      this._draw(1, START_HAND + (this.startingPlayerIdx === 0 ? 1 : 0));
+      this._startTurn(this.startingPlayerIdx);
     }
 
     _addLog(msg) {
@@ -602,9 +607,10 @@
         return;
       }
       if (card.effect === "heal") {
-        // No target -> heals the caster's own hero
-        if (!targetInstanceId) {
-          applyOverflowHeal(caster, card.value);
+        // Heroes are capped at maximum Health. Minions retain healing overflow.
+        // Clicking the caster's hero explicitly uses faceSelf in the client.
+        if (!targetInstanceId || targetInstanceId === "faceSelf") {
+          applyHeroHeal(caster, card.value);
           return;
         }
         const target = this._findMinion(targetInstanceId);
@@ -830,7 +836,7 @@
       const next = this._opponentIdx(playerIdx);
       // turnNumber is the shared round counter: A plays round 1, then B
       // plays round 1. It advances only as control returns to the starter.
-      if (next === 0) this.turnNumber += 1;
+      if (next === this.startingPlayerIdx) this.turnNumber += 1;
       this._expireStatusesAtTurnEnd(playerIdx);
       this._startTurn(next);
     }
