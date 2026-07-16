@@ -1,6 +1,6 @@
 module.exports = {
   name: "DisappointmentPanda",
-  cost: 3,
+  cost: 4,
   type: "minion",
   attack: 4,
   health: 3,

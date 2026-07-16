@@ -254,10 +254,10 @@
     },
     {
       "name": "Jeraxes",
-      "cost": 7,
+      "cost": 6,
       "type": "minion",
       "attack": 0,
-      "health": 9,
+      "health": 8,
       "keywords": [
         "taunt"
       ],
@@ -663,13 +663,11 @@
     },
     {
       "name": "Toy",
-      "cost": 4,
+      "cost": 5,
       "type": "minion",
-      "attack": 2,
+      "attack": 3,
       "health": 8,
-      "keywords": [
-        "taunt"
-      ],
+      "keywords": [],
       "race": "Human",
       "rarity": "mythic",
       "country": "Portugal",
@@ -750,9 +748,9 @@
     },
     {
       "name": "Alfred Longstocking",
-      "cost": 4,
+      "cost": 5,
       "type": "minion",
-      "attack": 1,
+      "attack": 2,
       "health": 6,
       "keywords": [
         "taunt"
@@ -799,8 +797,8 @@
       "name": "Babu",
       "cost": 9,
       "type": "minion",
-      "attack": 3,
-      "health": 10,
+      "attack": 2,
+      "health": 9,
       "keywords": [
         "taunt"
       ],
@@ -814,7 +812,7 @@
     },
     {
       "name": "Barto",
-      "cost": 3,
+      "cost": 4,
       "type": "minion",
       "attack": 2,
       "health": 5,
@@ -940,7 +938,7 @@
     },
     {
       "name": "DisappointmentPanda",
-      "cost": 3,
+      "cost": 4,
       "type": "minion",
       "attack": 4,
       "health": 3,
@@ -989,7 +987,7 @@
     },
     {
       "name": "Fish",
-      "cost": 5,
+      "cost": 6,
       "type": "minion",
       "attack": 3,
       "health": 6,
@@ -1521,9 +1519,9 @@
     },
     {
       "name": "Saaaru",
-      "cost": 4,
+      "cost": 9,
       "type": "minion",
-      "attack": 2,
+      "attack": 5,
       "health": 6,
       "keywords": [
         "taunt"

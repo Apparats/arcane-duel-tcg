@@ -1,9 +1,9 @@
 module.exports = {
   name: "Jeraxes",
-  cost: 7,
+  cost: 6,
   type: "minion",
   attack: 0,
-  health: 9,
+  health: 8,
   keywords: ["taunt"],
   race: "Human",
   rarity: "rare",

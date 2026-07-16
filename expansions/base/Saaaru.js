@@ -1,8 +1,8 @@
 module.exports = {
   name: "Saaaru",
-  cost: 4,
+  cost: 9,
   type: "minion",
-  attack: 2,
+  attack: 5,
   health: 6,
   keywords: ["taunt"],
   race: "Human",
