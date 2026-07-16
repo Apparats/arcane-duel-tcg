@@ -9,16 +9,17 @@
     ArrowLeft: "left", KeyA: "left",
   };
   const VECTORS = {
-    up: [0, -1, 180],
-    right: [1, 0, -90],
-    down: [0, 1, 0],
-    left: [-1, 0, 90],
+    up: [0, -1, 0],
+    right: [1, 0, 90],
+    down: [0, 1, 180],
+    left: [-1, 0, -90],
   };
 
   const root = document.getElementById("shieldChallenge");
   const arena = document.getElementById("shieldChallengeArena");
   const shield = document.getElementById("shieldChallengeShield");
   const result = document.getElementById("shieldChallengeResult");
+  const title = document.getElementById("shieldChallengeTitle");
   if (!root || !arena || !shield || !result) return;
 
   let active = null;
@@ -27,6 +28,7 @@
 
   function setDirection(direction) {
     if (!active || !DIRECTIONS.has(direction)) return;
+    if (active.direction === direction) return;
     active.direction = direction;
     shield.dataset.direction = direction;
     root.querySelectorAll("[data-shield-direction]").forEach((button) => {
@@ -48,7 +50,13 @@
     const now = Date.now();
     active.arrows.forEach((arrow) => {
       const progress = (now - (arrow.impactAt - active.travelMs)) / active.travelMs;
-      if (progress < -0.08 || progress > 1.08) return;
+      if (arrow.resolved || progress < -0.08) return;
+      if (progress >= 1) {
+        arrow.resolved = true;
+        arrow.element?.remove();
+        window.ArcaneAudio?.playSfx(active.direction === arrow.direction ? "shieldBlock" : "shieldHit");
+        return;
+      }
       if (!arrow.element) {
         arrow.element = document.createElement("span");
         arrow.element.className = "shield-challenge-arrow";
@@ -60,7 +68,6 @@
       arrow.element.style.left = `calc(50% + ${x * distance}px)`;
       arrow.element.style.top = `calc(50% + ${y * distance}px)`;
       arrow.element.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
-      arrow.element.classList.toggle("impact", progress >= 0.94);
     });
     if (now < active.endsAt + 120) frame = requestAnimationFrame(renderFrame);
   }
@@ -78,9 +85,10 @@
       })),
       travelMs: payload.travelMs,
       endsAt: startsAt + Math.max(0, Number(payload.durationMs) || 0),
-      direction: "down",
+      direction: null,
     };
     result.textContent = "";
+    if (title) title.textContent = `${payload.sourceName || "Shield"}'s Shield Trial`;
     shield.dataset.direction = "down";
     root.classList.remove("hidden");
     setDirection("down");
@@ -89,6 +97,28 @@
 
   root.querySelectorAll("[data-shield-direction]").forEach((button) => {
     button.addEventListener("click", () => setDirection(button.dataset.shieldDirection));
+  });
+
+  let swipe = null;
+  arena.addEventListener("pointerdown", (event) => {
+    if (!active || (event.pointerType === "mouse" && event.button !== 0)) return;
+    swipe = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY };
+    arena.setPointerCapture?.(event.pointerId);
+  });
+  arena.addEventListener("pointermove", (event) => {
+    if (!active || !swipe || swipe.pointerId !== event.pointerId) return;
+    const deltaX = event.clientX - swipe.startX;
+    const deltaY = event.clientY - swipe.startY;
+    if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 12) return;
+    setDirection(Math.abs(deltaX) > Math.abs(deltaY)
+      ? (deltaX > 0 ? "right" : "left")
+      : (deltaY > 0 ? "down" : "up"));
+    event.preventDefault();
+  }, { passive: false });
+  ["pointerup", "pointercancel"].forEach((eventName) => {
+    arena.addEventListener(eventName, (event) => {
+      if (swipe?.pointerId === event.pointerId) swipe = null;
+    });
   });
 
   document.addEventListener("keydown", (event) => {
@@ -104,9 +134,10 @@
       if (!active) return;
       const damage = Number(payload?.damage || 0);
       const blocked = Number(payload?.blocked || 0);
+      const hits = Number(payload?.hits || 0);
       result.textContent = damage > 0
         ? `${blocked} blocked - ${damage} damage taken`
-        : "All arrows blocked";
+        : hits > 0 ? `${blocked} blocked - no damage` : "All arrows blocked";
       setTimeout(stop, 900);
     },
     stop,

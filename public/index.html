@@ -6,22 +6,22 @@
 <title>Arcana TCG</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css?v=1.5.2" />
-<link rel="stylesheet" href="css/menu.css?v=1.5.2" />
-<link rel="stylesheet" href="css/account-profile.css?v=1.5.2" />
-<link rel="stylesheet" href="css/lobby.css?v=1.5.2-campaign-lock" />
-<link rel="stylesheet" href="css/board.css?v=1.5.2-shield-trial-local" />
-<link rel="stylesheet" href="css/cards.css?v=1.5.2" />
-<link rel="stylesheet" href="css/board-arena.css?v=1.5.2" />
-<link rel="stylesheet" href="css/board-hand.css?v=1.5.2" />
-<link rel="stylesheet" href="css/inventory.css?v=1.5.2" />
-<link rel="stylesheet" href="css/deck-builder.css?v=1.5.2" />
-<link rel="stylesheet" href="css/shop.css?v=1.5.2" />
-<link rel="stylesheet" href="css/trade.css?v=1.5.2" />
-<link rel="stylesheet" href="css/pack-opening.css?v=1.5.2" />
-<link rel="stylesheet" href="css/fx.css?v=1.5.2" />
-<link rel="stylesheet" href="css/board-effects.css?v=1.5.2" />
-<link rel="stylesheet" href="css/overlay.css?v=1.5.2" />
+<link rel="stylesheet" href="css/base.css?v=1.5.3" />
+<link rel="stylesheet" href="css/menu.css?v=1.5.3" />
+<link rel="stylesheet" href="css/account-profile.css?v=1.5.3" />
+<link rel="stylesheet" href="css/lobby.css?v=1.5.3" />
+<link rel="stylesheet" href="css/board.css?v=1.5.3" />
+<link rel="stylesheet" href="css/cards.css?v=1.5.3" />
+<link rel="stylesheet" href="css/board-arena.css?v=1.5.3" />
+<link rel="stylesheet" href="css/board-hand.css?v=1.5.3" />
+<link rel="stylesheet" href="css/inventory.css?v=1.5.3" />
+<link rel="stylesheet" href="css/deck-builder.css?v=1.5.3" />
+<link rel="stylesheet" href="css/shop.css?v=1.5.3" />
+<link rel="stylesheet" href="css/trade.css?v=1.5.3" />
+<link rel="stylesheet" href="css/pack-opening.css?v=1.5.3" />
+<link rel="stylesheet" href="css/fx.css?v=1.5.3" />
+<link rel="stylesheet" href="css/board-effects.css?v=1.5.3" />
+<link rel="stylesheet" href="css/overlay.css?v=1.5.3" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -117,7 +117,7 @@
         <button id="btnOpenPrivacyMenu" class="btn menu-option-button" type="button">Privacy Notice</button>
         <div class="menu-option-config">
           <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Config</button>
-          <span class="menu-version">Version 1.5.2</span>
+          <span class="menu-version">Version 1.5.3</span>
         </div>
       </div>
     </div>
@@ -738,7 +738,7 @@
 
   <div id="shieldChallenge" class="shield-challenge hidden" aria-live="polite">
     <div class="shield-challenge-panel">
-      <div class="shield-challenge-title">Iron Sentinel's Shield Trial</div>
+      <div id="shieldChallengeTitle" class="shield-challenge-title">Shield Trial</div>
       <div id="shieldChallengeArena" class="shield-challenge-arena">
         <div id="shieldChallengeShield" class="shield-challenge-shield" data-direction="down" aria-hidden="true"><span></span></div>
       </div>
@@ -785,6 +785,21 @@
         <button id="btnCloseChangelog" class="changelog-close" type="button" aria-label="Close changelog">x</button>
       </div>
       <div class="changelog-content">
+      <article class="changelog-entry">
+        <div class="changelog-entry-meta">
+          <h3>Version 1.5.3</h3>
+          <span>Iron Watch: TheUnchained</span>
+        </div>
+        <p class="changelog-entry-intro">Stage 2 is now open, bringing a new boss encounter built around the Shield Trial.</p>
+        <ul class="changelog-list">
+          <li>Challenge TheUnchained in Iron Watch. The boss has 30 Health, follows normal Mana progression, and unleashes its 0/20 encounter-only Mythic after building enough Mana.</li>
+          <li>The Shield Trial returns whenever TheUnchained enters the board or survives to another turn. Block incoming arrows with the shield to avoid damage.</li>
+          <li>The trial grows through long battles: more arrows, faster patterns, longer sequences, mobile swipe controls, and hit or block sound feedback.</li>
+          <li>Defeat TheUnchained to earn 250 gold. This campaign reward is available once per account and its claimed state is visible from the stage reward panel.</li>
+          <li>Earn the new Unchained Conqueror achievement and its decorative profile badge for defeating the boss.</li>
+          <li>Targeted spells now hide the hand on mobile while selected or dragged, keeping hero and board targets clear without breaking the hand swipe gesture.</li>
+        </ul>
+      </article>
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
           <h3>Version 1.5.2</h3>
@@ -1119,24 +1134,24 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.5.2-shield-trial-local"></script>
-  <script src="deckRules.js?v=1.5.2"></script>
-  <script src="engine.js?v=1.5.2-shield-trial-local"></script>
-  <script src="ai.js?v=1.5.2"></script>
-  <script src="audioConfig.js?v=1.5.2"></script>
-  <script src="audioManager.js?v=1.5.2"></script>
-  <script src="packOpening.js?v=1.5.2"></script>
-<script src="legalNotices.js?v=1.5.2"></script>
-<script src="profileCatalog.js?v=1.5.2"></script>
-<script src="profileBadges.js?v=1.5.2"></script>
-<script src="accountProfile.js?v=1.5.2"></script>
-<script src="client.js?v=1.5.2-campaign-lock"></script>
-<script src="shieldChallenge.js?v=1.5.2-shield-trial-local"></script>
-<script src="boardInteractions.js?v=1.5.2-spell-hero-targets-local"></script>
-<script src="inventory.js?v=1.5.2"></script>
-<script src="deckBuilder.js?v=1.5.2"></script>
-<script src="shop.js?v=1.5.2"></script>
-<script src="trade.js?v=1.5.2"></script>
-<script src="tournaments.js?v=1.5.2-tournament-bracket-local"></script>
+  <script src="cards.js?v=1.5.3"></script>
+  <script src="deckRules.js?v=1.5.3"></script>
+  <script src="engine.js?v=1.5.3"></script>
+  <script src="ai.js?v=1.5.3"></script>
+  <script src="audioConfig.js?v=1.5.3"></script>
+  <script src="audioManager.js?v=1.5.3"></script>
+  <script src="packOpening.js?v=1.5.3"></script>
+<script src="legalNotices.js?v=1.5.3"></script>
+<script src="profileCatalog.js?v=1.5.3"></script>
+<script src="profileBadges.js?v=1.5.3"></script>
+<script src="accountProfile.js?v=1.5.3"></script>
+<script src="client.js?v=1.5.3"></script>
+<script src="shieldChallenge.js?v=1.5.3"></script>
+<script src="boardInteractions.js?v=1.5.3"></script>
+<script src="inventory.js?v=1.5.3"></script>
+<script src="deckBuilder.js?v=1.5.3"></script>
+<script src="shop.js?v=1.5.3"></script>
+<script src="trade.js?v=1.5.3"></script>
+<script src="tournaments.js?v=1.5.3"></script>
 </body>
 </html>

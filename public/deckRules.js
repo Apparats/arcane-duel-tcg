@@ -61,6 +61,10 @@
         errors.push(`Unknown card: ${cardId}.`);
         return;
       }
+      if (card.showInInventory === false) {
+        errors.push(`${card.name} cannot be used in player decks.`);
+        return;
+      }
 
       const rarity = getCardRarity(cardId);
       rarityTotals[rarity] = (rarityTotals[rarity] || 0) + amount;
@@ -126,7 +130,7 @@
     const rarityOrder = { mythic: 0, legendary: 1, rare: 2, common: 3 };
     const candidates = CARDS
       .map((card) => ({ card, owned: getOwnedCount(collection, card.id) }))
-      .filter((entry) => entry.owned > 0)
+      .filter((entry) => entry.owned > 0 && entry.card.showInInventory !== false)
       .sort((a, b) => {
         const rarityDiff = (rarityOrder[a.card.rarity || "common"] ?? 4) - (rarityOrder[b.card.rarity || "common"] ?? 4);
         return rarityDiff || a.card.cost - b.card.cost || a.card.name.localeCompare(b.card.name);

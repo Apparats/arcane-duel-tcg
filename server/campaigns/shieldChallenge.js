@@ -9,13 +9,30 @@ function normalizeShieldChallenge(definition = {}) {
   if (typeof definition.cardId !== "string" || !definition.cardId.trim()) {
     throw new Error("Campaign shield challenge needs a card id.");
   }
+  const arrowCount = boundedInteger(definition.arrowCount, 7, 3, 12);
   return Object.freeze({
     cardId: definition.cardId.trim(),
-    arrowCount: boundedInteger(definition.arrowCount, 7, 3, 12),
+    arrowCount,
+    maxArrowCount: boundedInteger(definition.maxArrowCount, Math.max(arrowCount, 12), arrowCount, 24),
     intervalMs: boundedInteger(definition.intervalMs, 620, 350, 1200),
     travelMs: boundedInteger(definition.travelMs, 850, 450, 1800),
-    damagePerHit: boundedInteger(definition.damagePerHit, 1, 1, 5),
+    damagePerHit: boundedInteger(definition.damagePerHit, 1, 0, 5),
+    arrowIncrease: boundedInteger(definition.arrowIncrease, 1, 0, 3),
+    intervalReductionMs: boundedInteger(definition.intervalReductionMs, 55, 0, 200),
+    minIntervalMs: boundedInteger(definition.minIntervalMs, 440, 260, 1200),
+    travelReductionMs: boundedInteger(definition.travelReductionMs, 50, 0, 200),
+    minTravelMs: boundedInteger(definition.minTravelMs, 650, 450, 1800),
   });
+}
+
+function scaleShieldChallenge(config, activationCount = 0) {
+  const level = Math.max(0, Number.isInteger(activationCount) ? activationCount : 0);
+  return {
+    ...config,
+    arrowCount: Math.min(config.maxArrowCount, config.arrowCount + level * config.arrowIncrease),
+    intervalMs: Math.max(config.minIntervalMs, config.intervalMs - level * config.intervalReductionMs),
+    travelMs: Math.max(config.minTravelMs, config.travelMs - level * config.travelReductionMs),
+  };
 }
 
 function createShieldChallenge(config, { randomInt, now = Date.now() } = {}) {
@@ -70,6 +87,7 @@ function resolveShieldChallenge(challenge) {
 module.exports = {
   DIRECTIONS,
   normalizeShieldChallenge,
+  scaleShieldChallenge,
   createShieldChallenge,
   recordShieldInput,
   resolveShieldChallenge,

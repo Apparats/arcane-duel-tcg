@@ -35,6 +35,8 @@ window.ArcaneAudioConfig = {
     menuClick: "sfx/tap3.wav",
     uiClick: "sfx/tap2.wav",
     hit: "sfx/hit.wav",
+    shieldBlock: "sfx/tap2.wav",
+    shieldHit: "sfx/hit.wav",
     victory: "sfx/winner.wav",
     defeat: "sfx/loses.wav",
     cardPlay: "sfx/card.wav",
@@ -50,6 +52,7 @@ window.ArcaneAudioConfig = {
   // Playback-rate changes reuse the same preloaded audio voices.
   sfxPlaybackRates: {
     hit: [0.92, 1.08],
+    shieldHit: [0.92, 1.08],
   },
 
   musicByScreen: {

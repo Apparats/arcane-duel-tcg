@@ -146,7 +146,7 @@ async function findOrCreateUserFromDiscord(discordProfile, starterOpening = null
         decks: starterDeck ? [starterDeck] : [],
         activeDeckId: starterDeck?.id || null,
         pendingRewards,
-        stats: { wins: 0, losses: 0, surrenders: 0, packsOpened: 0, quickplayWins: 0, campaignWins: 0, npcWins: 0, johnnyWins: 0, tournamentWins: 0 },
+        stats: { wins: 0, losses: 0, surrenders: 0, packsOpened: 0, quickplayWins: 0, campaignWins: 0, unchainedWins: 0, npcWins: 0, johnnyWins: 0, tournamentWins: 0 },
         modeStats: { singleplayer: { wins: 0, losses: 0, draws: 0, surrenders: 0 }, oneVsOne: { wins: 0, losses: 0, draws: 0, surrenders: 0 }, quickplay: { wins: 0, losses: 0, draws: 0, surrenders: 0 } },
         selectedTitle: "initiate",
         equippedBadgeIds: [],
@@ -181,41 +181,68 @@ async function consumePendingRewards(userId) {
   return result?.pendingRewards || result?.value?.pendingRewards || [];
 }
 
-async function grantCampaignReward(userId, campaignId, cardIds, rewardCount = 1) {
+async function grantCampaignReward(userId, campaignId, rewards = {}) {
   const users = getDB().collection("users");
   const _id = toObjectId(userId, "user id");
   const safeCampaignId = assertMongoKeySegment(campaignId, "campaign id");
-  const safeCardIds = Array.isArray(cardIds) ? cardIds.map((cardId) => assertMongoKeySegment(cardId, "card id")) : [];
-  if (safeCardIds.length === 0) throw new Error("Campaign reward has no cards.");
-  if (!Number.isInteger(rewardCount) || rewardCount < 1 || rewardCount > safeCardIds.length) {
+  const safeCardIds = Array.isArray(rewards.cards) ? rewards.cards.map((cardId) => assertMongoKeySegment(cardId, "card id")) : [];
+  const rewardCount = safeCardIds.length > 0 ? rewards.count : 0;
+  const rewardGold = Number.isInteger(rewards.gold) && rewards.gold >= 0 && rewards.gold <= 100000 ? rewards.gold : 0;
+  const goldOnce = rewards.goldOnce === true;
+  if (safeCardIds.length === 0 && rewardGold === 0) throw new Error("Campaign reward is invalid.");
+  if (safeCardIds.length > 0 && (!Number.isInteger(rewardCount) || rewardCount < 1 || rewardCount > safeCardIds.length)) {
     throw new Error("Campaign reward count is invalid.");
   }
 
   return withUserLock(String(_id), async () => {
-    const user = await users.findOne({ _id }, { projection: { cardCollection: 1, unlockedCards: 1, stats: 1 } });
+    const user = await users.findOne({ _id }, { projection: { cardCollection: 1, unlockedCards: 1, stats: 1, campaignProgress: 1, gold: 1 } });
     if (!user) throw new Error("User not found.");
 
     const rewardPool = safeCardIds.map((id) => getCardById(id));
     if (rewardPool.some((card) => !card)) throw new Error("Campaign reward contains an unknown card.");
-    // Campaign rewards are repeatable: every victory rolls only the configured
+    // Campaign card rewards are repeatable: every victory rolls only the configured
     // amount from its pool, so duplicates remain useful for trading.
-    const opening = summarizeOpening(buildPackOpening(rewardPool, rewardCount), user.cardCollection || {});
+    const opening = rewardPool.length > 0
+      ? summarizeOpening(buildPackOpening(rewardPool, rewardCount), user.cardCollection || {})
+      : { cards: [], collectionIncrements: {}, newCardIds: [] };
     const increments = Object.fromEntries(Object.entries(opening.collectionIncrements).map(([cardId, amount]) => [`cardCollection.${cardId}`, amount]));
     const campaignDrops = Object.fromEntries(Object.entries(opening.collectionIncrements).map(([cardId, amount]) => [`campaignProgress.${safeCampaignId}.cardDrops.${cardId}`, amount]));
+    const goldAlreadyClaimed = goldOnce && user.campaignProgress?.[safeCampaignId]?.goldRewardClaimed === true;
+    const goldAwarded = rewardGold > 0 && (!goldOnce || !goldAlreadyClaimed) ? rewardGold : 0;
+    const updateIncrements = {
+      ...increments,
+      ...campaignDrops,
+      "stats.campaignWins": 1,
+      [`campaignProgress.${safeCampaignId}.wins`]: 1,
+    };
+    if (goldAwarded > 0) updateIncrements.gold = goldAwarded;
+    const set = { updatedAt: new Date() };
+    if (goldAwarded > 0 && goldOnce) set[`campaignProgress.${safeCampaignId}.goldRewardClaimed`] = true;
     await users.updateOne(
       { _id },
       {
-        $inc: { ...increments, ...campaignDrops, "stats.campaignWins": 1, [`campaignProgress.${safeCampaignId}.wins`]: 1 },
+        $inc: updateIncrements,
         $addToSet: { unlockedCards: { $each: opening.newCardIds } },
-        $set: { updatedAt: new Date() },
+        $set: set,
       }
     );
-    const updated = await users.findOne({ _id }, { projection: { cardCollection: 1, unlockedCards: 1, campaignProgress: 1, stats: 1 } });
-    return { claimed: true, cards: opening.cards, cardCollection: updated.cardCollection || {}, unlockedCards: updated.unlockedCards || [], cardDrops: updated.campaignProgress?.[safeCampaignId]?.cardDrops || {}, campaignWins: updated.campaignProgress?.[safeCampaignId]?.wins || 0, stats: updated.stats || {} };
+    const updated = await users.findOne({ _id }, { projection: { cardCollection: 1, unlockedCards: 1, campaignProgress: 1, stats: 1, gold: 1 } });
+    return {
+      claimed: true,
+      cards: opening.cards,
+      cardCollection: updated.cardCollection || {},
+      unlockedCards: updated.unlockedCards || [],
+      cardDrops: updated.campaignProgress?.[safeCampaignId]?.cardDrops || {},
+      campaignWins: updated.campaignProgress?.[safeCampaignId]?.wins || 0,
+      stats: updated.stats || {},
+      gold: updated.gold || 0,
+      goldAwarded,
+      goldAlreadyClaimed,
+    };
   });
 }
 
-async function recordCampaignResult(userId, { result, surrendered = false }) {
+async function recordCampaignResult(userId, { result, surrendered = false, campaignId = null }) {
   if (!["win", "loss", "draw"].includes(result)) throw new Error("Invalid campaign result.");
   const users = getDB().collection("users");
   const _id = toObjectId(userId, "user id");
@@ -225,6 +252,7 @@ async function recordCampaignResult(userId, { result, surrendered = false }) {
   if (result === "win") {
     update.$inc["stats.wins"] = 1;
     update.$inc[`${modeField}.wins`] = 1;
+    if (campaignId === "iron-watch") update.$inc["stats.unchainedWins"] = 1;
   } else if (result === "loss") {
     update.$inc["stats.losses"] = 1;
     update.$inc[`${modeField}.losses`] = 1;
@@ -519,6 +547,7 @@ function normalizedPublicStats(stats = {}) {
     quickplayWins: Math.max(0, stats.quickplayWins || 0),
     packsOpened: Math.max(0, stats.packsOpened || 0),
     campaignWins: Math.max(0, stats.campaignWins || 0),
+    unchainedWins: Math.max(0, stats.unchainedWins || 0),
     npcWins: Math.max(0, stats.npcWins || 0),
     johnnyWins: Math.max(0, stats.johnnyWins || 0),
     tournamentWins: Math.max(0, stats.tournamentWins || 0),

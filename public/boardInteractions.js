@@ -44,10 +44,15 @@
     if (drag?.source) {
       drag.source.classList.remove("card-dragging", "card-dragging-hand", "card-dragging-attack");
       delete drag.source.dataset.dragArmed;
+      drag.source.style.pointerEvents = "";
       if (drag.type === "hand" || drag.type === "targeted-spell") drag.source.style.transform = "";
     }
     drag = null;
     clearArrow();
+  }
+
+  function notifySpellDrag(name, detail = {}) {
+    document.dispatchEvent(new CustomEvent(name, { detail }));
   }
 
   function startDrag(event, source, type, payload) {
@@ -77,6 +82,9 @@
 
   function moveHandCard(clientX, clientY) {
     if (!drag?.source) return;
+    // Keep the dragged card from masking the hero or minion beneath it at
+    // drop time. Pointer capture continues to deliver the gesture safely.
+    drag.source.style.pointerEvents = "none";
     const handRestY = drag.source.style.getPropertyValue("--hand-rest-y") || "0px";
     const handAngle = drag.source.style.getPropertyValue("--hand-angle") || "0deg";
     const offsetX = clientX - drag.startX;
@@ -210,7 +218,11 @@
     const distance = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
     const threshold = event.pointerType === "touch" ? MOVE_THRESHOLD + 6 : MOVE_THRESHOLD;
     if (distance < threshold) return;
+    const dragStarted = !drag.moved;
     drag.moved = true;
+    if (dragStarted && drag.type === "targeted-spell" && drag.payload.card.type === "spell") {
+      notifySpellDrag("arcana:spell-drag-start");
+    }
     drag.source.classList.add("card-dragging");
     drag.source.classList.toggle("card-dragging-attack", drag.type === "attack");
     drag.source.classList.toggle("card-dragging-hand", drag.type !== "attack");
@@ -222,20 +234,29 @@
   document.addEventListener("pointerup", (event) => {
     if (!drag) return;
     const activeDrag = drag;
+    let played = false;
     if (activeDrag.moved) {
       if (activeDrag.type === "attack") {
-        finishAttack(event.clientX, event.clientY);
+        played = finishAttack(event.clientX, event.clientY);
       } else {
-        finishHandDrag(event.clientX, event.clientY);
+        played = finishHandDrag(event.clientX, event.clientY);
       }
       // A completed drag, including a cancelled one, must not fall through
       // into the click-to-play or click-to-attack controls.
       suppressDragClick(activeDrag.source);
     }
+    if (activeDrag.moved && activeDrag.type === "targeted-spell" && activeDrag.payload.card.type === "spell") {
+      notifySpellDrag("arcana:spell-drag-end", { played });
+    }
     clearDrag();
   });
 
-  document.addEventListener("pointercancel", clearDrag);
+  document.addEventListener("pointercancel", () => {
+    if (drag?.moved && drag.type === "targeted-spell" && drag.payload.card.type === "spell") {
+      notifySpellDrag("arcana:spell-drag-end", { played: false });
+    }
+    clearDrag();
+  });
 
   document.addEventListener("click", (event) => {
     if (!suppressNextClick) return;

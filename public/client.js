@@ -26,7 +26,7 @@ const STATUS_FULL_LABEL = {
 };
 const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", mythic: "Mythic" };
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.5.2-match-healing";
+const CHANGELOG_VERSION = "1.5.3-the-unchained";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const TYPE_ICON = { minion: "⚔", spell: "✦" };
@@ -608,12 +608,19 @@ function handleServerMessage(msg) {
         ...(accountState?.user || {}),
         cardCollection: msg.payload?.cardCollection || {},
         unlockedCards: msg.payload?.unlockedCards || [],
+        gold: msg.payload?.gold ?? accountState?.user?.gold ?? 0,
         stats: msg.payload?.stats || accountState?.user?.stats || {},
         modeStats: msg.payload?.modeStats || accountState?.user?.modeStats || {},
       });
       const cards = msg.payload?.cards || [];
       if (activeCampaignStage) activeCampaignStage.cardDrops = msg.payload?.cardDrops || activeCampaignStage.cardDrops;
-      queueCardOpening({ title: "The Gates reward", summary: `${cards.length} random card revealed from The Gates.`, cards });
+      if (cards.length > 0) {
+        queueCardOpening({ title: `${activeCampaignStage?.name || "Campaign"} reward`, summary: `${cards.length} random card revealed.`, cards });
+      } else if (msg.payload?.goldAwarded > 0) {
+        showToast(`Campaign reward: +${msg.payload.goldAwarded} gold.`);
+      } else if (msg.payload?.goldAlreadyClaimed) {
+        showToast("TheUnchained is defeated. Its gold reward was already claimed.");
+      }
       break;
     }
     case "profileStatsUpdate":
@@ -1222,6 +1229,10 @@ function selectCampaignStage(campaign, index) {
   $("btnStartCampaignStage").textContent = campaign.available === false
     ? "Coming soon"
     : `Challenge ${campaign.npcName || campaign.name}`;
+  const campaignInfo = $("btnCampaignInfo");
+  const hasGoldReward = Number(campaign.rewardGold || 0) > 0;
+  campaignInfo.setAttribute("aria-label", hasGoldReward ? "View campaign rewards" : "View campaign card progress");
+  campaignInfo.title = hasGoldReward ? "View campaign rewards" : "View card progress";
   document.querySelectorAll(".campaign-stage-choice").forEach((button) => {
     button.classList.toggle("active", button.dataset.campaignId === campaign.id);
   });
@@ -1258,6 +1269,9 @@ $("btnCampaignInfo").addEventListener("click", () => {
     expansionName: activeCampaignStage.name,
     cardIds: activeCampaignStage.rewardCardIds,
     cardDrops: activeCampaignStage.cardDrops,
+    rewardGold: activeCampaignStage.rewardGold,
+    rewardGoldOnce: activeCampaignStage.rewardGoldOnce,
+    goldRewardClaimed: activeCampaignStage.goldRewardClaimed,
   });
 });
 
@@ -1531,6 +1545,7 @@ function onHandCardClick(idx, card, state, cardEl = null) {
 
   // Damage/heal spells and status cards: ask for a target.
   selectedHandIndex = idx;
+  collapseHandForSpellTargeting();
   showTargetHint(needsEnemyMinionTarget
     ? "Choose an enemy minion"
     : card.effect === "heal"
@@ -1646,6 +1661,22 @@ function shouldAutoHideHand(state) {
   return !state || state.winner !== null || !state.isYourTurn || !hasPlayableHandCard(state);
 }
 
+function isMobileTouchLayout() {
+  return typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse) and (max-width: 900px)").matches;
+}
+
+function collapseHandForSpellTargeting() {
+  if (isMobileTouchLayout()) setHandCollapsed(true);
+}
+
+document.addEventListener("arcana:spell-drag-start", () => {
+  collapseHandForSpellTargeting();
+});
+
+document.addEventListener("arcana:spell-drag-end", (event) => {
+  if (!event.detail?.played && selectedHandIndex === null) syncHandVisibility(myState);
+});
+
 function setHandCollapsed(collapsed) {
   const gameScreen = $("screen-game");
   const button = $("btnToggleHand");
@@ -1660,6 +1691,11 @@ function syncHandVisibility(state) {
   const startsYourTurn = state.isYourTurn && turnKey !== lastHandTurnKey;
   lastHandTurnKey = turnKey;
   $("screen-game").classList.remove("hand-preview-open");
+  const selectedCard = selectedHandIndex === null ? null : state.me.hand[selectedHandIndex];
+  if (isMobileTouchLayout() && selectedCard?.type === "spell" && selectedCard.effect && selectedCard.effect !== "draw") {
+    setHandCollapsed(true);
+    return;
+  }
   setHandCollapsed(startsYourTurn ? false : shouldAutoHideHand(state));
 }
 

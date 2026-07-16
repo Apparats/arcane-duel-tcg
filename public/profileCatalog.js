@@ -42,6 +42,7 @@
     { id: "bot-bane", name: "Bot Bane", description: "Defeat the NPC 3 times.", metric: "npcWins", target: 3 },
     { id: "collectors-sigil", name: "Collector's Sigil", description: "Open 25 card packs.", metric: "packsOpened", target: 25 },
     { id: "mythic-constellation", name: "Mythic Constellation", description: "Collect 10 different Mythic cards.", metric: "mythicCards", target: 10 },
+    { id: "unchained-conqueror", name: "Unchained Conqueror", description: "Defeat TheUnchained.", metric: "unchainedWins", target: 1 },
     { id: "more-than-honorable", name: "More than honorable", description: "You helped the developer with the game.", supporterOnly: true },
   ];
 
@@ -59,6 +60,7 @@
       quickplayWins: value(stats.quickplayWins),
       packsOpened: value(stats.packsOpened),
       campaignWins: value(stats.campaignWins),
+      unchainedWins: value(stats.unchainedWins),
       npcWins: value(stats.npcWins),
       johnnyWins: value(stats.johnnyWins),
       tournamentWins: value(stats.tournamentWins),

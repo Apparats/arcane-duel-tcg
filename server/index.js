@@ -24,7 +24,7 @@ const { clearTurnTimer, ensureTurnTimer, turnKey } = require("./turnTimerService
 const { cleanupExpiredWsTickets, consumeWsTicket } = require("./wsTicketService");
 const { secureRandomCode, secureRandomInt } = require("./random");
 const { createCampaignMatch, getCampaignEncounter, listCampaignEncounters } = require("./campaigns");
-const { createShieldChallenge, recordShieldInput, resolveShieldChallenge } = require("./campaigns/shieldChallenge");
+const { createShieldChallenge, recordShieldInput, resolveShieldChallenge, scaleShieldChallenge } = require("./campaigns/shieldChallenge");
 
 const PORT = process.env.PORT || 8443;
 const HTTP_JSON_LIMIT = "32kb";
@@ -114,6 +114,7 @@ app.get("/campaigns", createRateLimiter({ max: 30, keyPrefix: "campaigns" }), as
     campaigns: listCampaignEncounters().map((campaign) => ({
       ...campaign,
       cardDrops: progress[campaign.id]?.cardDrops || {},
+      goldRewardClaimed: progress[campaign.id]?.goldRewardClaimed === true,
     })),
   });
 });
@@ -759,11 +760,12 @@ async function settleRewards(room) {
     if (userId) {
       const result = resultFor(room.game, 0);
       const reward = result === "win"
-        ? await grantCampaignReward(userId, room.campaign.id, room.campaign.rewards.cards, room.campaign.rewards.count)
+        ? await grantCampaignReward(userId, room.campaign.id, room.campaign.rewards)
         : null;
       const profileStats = await recordCampaignResult(userId, {
         result,
         surrendered: room.surrenderedBy === 0,
+        campaignId: room.campaign.id,
       });
       if (result === "win") send(room.sockets[0], "campaignReward", { ...reward, ...profileStats });
       else send(room.sockets[0], "profileStatsUpdate", profileStats);
@@ -882,14 +884,18 @@ async function runCampaignShieldChallenge(room) {
   if (!game.players[1].board.some((minion) => minion.cardId === config.cardId)) return false;
 
   room.campaignShieldTurnKey = turnKey;
-  const challenge = createShieldChallenge(config, { randomInt: secureRandomInt });
+  const activationCount = room.campaignShieldActivations || 0;
+  const scaledConfig = scaleShieldChallenge(config, activationCount);
+  room.campaignShieldActivations = activationCount + 1;
+  const challenge = createShieldChallenge(scaledConfig, { randomInt: secureRandomInt });
   room.shieldChallenge = challenge;
   const sentAt = Date.now();
   send(room.sockets[0], "shieldChallengeStart", {
     challengeId: challenge.id,
+    sourceName: getCardById(scaledConfig.cardId)?.name || "TheUnchained",
     startInMs: Math.max(0, challenge.startsAt - sentAt),
     durationMs: challenge.endsAt - challenge.startsAt,
-    travelMs: config.travelMs,
+    travelMs: scaledConfig.travelMs,
     arrows: challenge.arrows.map((arrow) => ({
       direction: arrow.direction,
       impactOffsetMs: arrow.impactAt - challenge.startsAt,
@@ -901,8 +907,10 @@ async function runCampaignShieldChallenge(room) {
 
   const result = resolveShieldChallenge(challenge);
   room.shieldChallenge = null;
-  if (result.damage > 0) game.applyHeroDamage(0, result.damage, "Iron Sentinel's shield trial");
-  else game._addLog("Iron Sentinel's shield trial is fully blocked.");
+  const sourceName = getCardById(scaledConfig.cardId)?.name || "TheUnchained";
+  if (result.damage > 0) game.applyHeroDamage(0, result.damage, `${sourceName}'s shield trial`);
+  else if (result.hits > 0) game._addLog(`${sourceName}'s shield trial is survived without damage.`);
+  else game._addLog(`${sourceName}'s shield trial is fully blocked.`);
   send(room.sockets[0], "shieldChallengeResult", result);
   broadcastState(room);
   return true;

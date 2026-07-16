@@ -1685,19 +1685,18 @@
       "_expansionId": "base"
     },
     {
-      "name": "Iron Sentinel",
+      "name": "TheUnchained",
       "cost": 6,
-      "attack": 4,
-      "health": 10,
+      "attack": 0,
+      "health": 20,
       "type": "minion",
       "rarity": "mythic",
       "country": "Arcana",
       "race": "Construct",
-      "keywords": [
-        "taunt"
-      ],
-      "image": "art/Protector.webp",
-      "lore": "An encounter-only guardian. Its presence calls the shield trial.",
+      "keywords": [],
+      "image": "art/TheUnchained.webp",
+      "showInInventory": false,
+      "lore": "An encounter-only boss. Its presence calls the shield trial.",
       "id": "campaign2:iron-sentinel",
       "_expansionId": "campaign2"
     },

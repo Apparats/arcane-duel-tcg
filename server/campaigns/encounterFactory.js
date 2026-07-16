@@ -45,14 +45,19 @@ function normalizeCampaignEncounter(definition) {
   const mana = npc.mana || {};
   const manaCap = boundedInteger(mana.cap, "NPC mana cap", { min: 1, max: 30, fallback: 10 });
   const rewardCards = Array.isArray(definition.rewards?.cards) ? definition.rewards.cards : [];
-  if (rewardCards.length === 0 || rewardCards.length > 120 || rewardCards.some((cardId) => !getCardById(cardId))) {
+  if (rewardCards.length > 120 || rewardCards.some((cardId) => !getCardById(cardId))) {
     throw new Error("Campaign rewards are invalid.");
   }
-  const rewardCount = boundedInteger(definition.rewards?.count, "reward count", {
-    min: 1,
-    max: rewardCards.length,
-    fallback: 1,
-  });
+  const rewardCount = rewardCards.length > 0
+    ? boundedInteger(definition.rewards?.count, "reward count", {
+      min: 1,
+      max: rewardCards.length,
+      fallback: 1,
+    })
+    : 0;
+  const rewardGold = boundedInteger(definition.rewards?.gold, "gold reward", { min: 0, max: 100000, fallback: 0 });
+  const rewardGoldOnce = definition.rewards?.goldOnce === true;
+  if (rewardCards.length === 0 && rewardGold === 0) throw new Error("Campaign rewards are invalid.");
   const openingCardId = npc.openingCardId === undefined
     ? null
     : requireText(npc.openingCardId, "NPC opening card id", 120);
@@ -75,7 +80,12 @@ function normalizeCampaignEncounter(definition) {
       boardMusic: requireText(definition.audio?.boardMusic || "board", "board music", 64),
     }),
     shieldChallenge,
-    rewards: Object.freeze({ cards: Object.freeze(rewardCards.slice()), count: rewardCount }),
+    rewards: Object.freeze({
+      cards: Object.freeze(rewardCards.slice()),
+      count: rewardCount,
+      gold: rewardGold,
+      goldOnce: rewardGoldOnce,
+    }),
     npc: Object.freeze({
       name: requireText(npc.name, "NPC name", 48),
       avatarUrl: requireText(npc.avatarUrl, "NPC avatar", 240),

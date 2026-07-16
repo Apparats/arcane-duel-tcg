@@ -72,9 +72,25 @@ function cardsForShopPack(pack) {
 function openExpansionContents(pack) {
   const grid = $("expansionContentsGrid");
   const cards = cardsForShopPack(pack);
+  const rewardGold = Number(pack.rewardGold || 0);
   $("expansionContentsTitle").textContent = pack.expansionName || pack.name;
-  $("expansionContentsSummary").textContent = `${cards.length} collectible card${cards.length === 1 ? "" : "s"} in this expansion.`;
   grid.innerHTML = "";
+
+  if (cards.length === 0 && rewardGold > 0) {
+    $("expansionContentsSummary").textContent = pack.goldRewardClaimed
+      ? `The ${rewardGold} gold campaign reward has already been claimed.`
+      : `${rewardGold} gold for victory. This reward can be claimed once per account.`;
+    grid.innerHTML = `
+      <div class="campaign-gold-reward${pack.goldRewardClaimed ? " is-claimed" : ""}">
+        <span class="campaign-gold-reward-value">${rewardGold}</span>
+        <span class="campaign-gold-reward-label">gold</span>
+        <span class="campaign-gold-reward-status">${pack.goldRewardClaimed ? "Claimed" : "One-time victory reward"}</span>
+      </div>`;
+    $("expansionContentsOverlay").classList.remove("hidden");
+    return;
+  }
+
+  $("expansionContentsSummary").textContent = `${cards.length} collectible card${cards.length === 1 ? "" : "s"} in this expansion.`;
 
   cards.forEach((card) => {
     const el = document.createElement("div");

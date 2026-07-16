@@ -29,6 +29,7 @@
     "bot-bane": '<path d="M18 24h28v22H18z"/><path d="M24 24v-6h16v6M24 35h1M39 35h1M28 42h8"/><path d="M12 30h6M46 30h6"/>',
     "collectors-sigil": '<path d="M18 18h28v28H18z"/><path d="m18 18 14 10 14-10M32 28v18"/><circle cx="32" cy="18" r="5"/>',
     "mythic-constellation": '<path d="m32 10 5 13 14 1-11 9 4 14-12-8-12 8 4-14-11-9 14-1z"/><circle cx="32" cy="29" r="4"/><circle cx="20" cy="20" r="2"/><circle cx="45" cy="21" r="2"/><circle cx="18" cy="44" r="2"/><circle cx="46" cy="44" r="2"/><path d="m22 21 7 6m14 0 7-6M21 42l8-9m14 0 8 9M22 47l10 7 10-7"/>',
+    "unchained-conqueror": '<path d="M18 18 27 9l7 7 7-7 8 9-7 9 7 9-8 9-7-7-7 7-9-9 7-9z"/><path d="m14 25 10 7-10 7M50 25l-10 7 10 7M27 25l5 7-5 7M37 25l-5 7 5 7"/><circle cx="32" cy="32" r="4"/><path d="M12 13 7 8M52 13l5-5M12 51l-5 5M52 51l5 5"/>',
     "more-than-honorable": '<path d="M20 13h24v17c0 11-5 18-12 24-7-6-12-13-12-24z"/><path d="m23 19 9 6 9-6v13l-9 6-9-6z"/><path d="m25 40 7 7 7-7"/><circle cx="32" cy="30" r="4"/><path d="M17 17 11 11M47 17l6-6M15 47l-5 5M49 47l5 5"/>',
     "crown-of-arcana": '<path d="M16 21 22 13l10 9 10-9 6 8-4 24H20z"/><path d="m16 21 9 7 7-6 7 6 9-7M20 45h24M24 51h16"/><circle cx="32" cy="31" r="4"/><path d="M13 17 8 12M51 17l5-5M16 49l-5 5M48 49l5 5"/>',
   };
@@ -45,6 +46,7 @@
     "machine-breaker": ["#dfe7ed", "#71839b"],
     "npc-slayer": ["#dfe7ed", "#71839b"],
     "mythic-constellation": ["#f6d580", "#8f58c8"],
+    "unchained-conqueror": ["#ff7765", "#702f58"],
     "more-than-honorable": ["#ffe6a3", "#cd8052"],
     "crown-of-arcana": ["#ffe28a", "#c53e58"],
   };
