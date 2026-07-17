@@ -297,7 +297,9 @@
   document.addEventListener(
     "click",
     (event) => {
-      if (!unlocked) unlock();
+      // Discord OAuth can return to the standalone PWA outside a user gesture.
+      // Retrying here lets the first real interaction satisfy autoplay policy.
+      void unlock();
       const target = event.target;
       const clickable =
         target && target.nodeType === Node.ELEMENT_NODE
