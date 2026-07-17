@@ -10,7 +10,7 @@ module.exports = [
     startsAt: "2026-07-18T18:00:00.000Z",
     timeZone: "Europe/Madrid",
     maxPlayers: 32,
-    prizes: { first: 500, second: 250, third: 100 },
+    prizes: { first: 1000, second: 500, third: 250 },
     enabled: true,
   },
 ];
