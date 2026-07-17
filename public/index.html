@@ -13,22 +13,21 @@
 <link rel="apple-touch-icon" href="pwa-icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css?v=1.5.3" />
-<link rel="stylesheet" href="css/menu.css?v=1.5.3" />
-<link rel="stylesheet" href="css/account-profile.css?v=1.5.3" />
-<link rel="stylesheet" href="css/lobby.css?v=1.5.3" />
-<link rel="stylesheet" href="css/board.css?v=1.5.3" />
-<link rel="stylesheet" href="css/cards.css?v=1.5.3" />
-<link rel="stylesheet" href="css/board-arena.css?v=1.5.3" />
-<link rel="stylesheet" href="css/board-hand.css?v=1.5.3" />
-<link rel="stylesheet" href="css/inventory.css?v=1.5.3" />
-<link rel="stylesheet" href="css/deck-builder.css?v=1.5.3-deck-keywords-local" />
-<link rel="stylesheet" href="css/shop.css?v=1.5.3" />
-<link rel="stylesheet" href="css/trade.css?v=1.5.3" />
-<link rel="stylesheet" href="css/pack-opening.css?v=1.5.3" />
-<link rel="stylesheet" href="css/fx.css?v=1.5.3" />
-<link rel="stylesheet" href="css/board-effects.css?v=1.5.3" />
-<link rel="stylesheet" href="css/overlay.css?v=1.5.3-pwa-install-local" />
+<link rel="stylesheet" href="css/base.css?v=1.5.4" />
+<link rel="stylesheet" href="css/menu.css?v=1.5.4" />
+<link rel="stylesheet" href="css/account-profile.css?v=1.5.4" />
+<link rel="stylesheet" href="css/lobby.css?v=1.5.4" />
+<link rel="stylesheet" href="css/board.css?v=1.5.4" />
+<link rel="stylesheet" href="css/cards.css?v=1.5.4" />
+<link rel="stylesheet" href="css/board-arena.css?v=1.5.4" />
+<link rel="stylesheet" href="css/board-hand.css?v=1.5.4" />
+<link rel="stylesheet" href="css/inventory.css?v=1.5.4" />
+<link rel="stylesheet" href="css/deck-builder.css?v=1.5.4" />
+<link rel="stylesheet" href="css/shop.css?v=1.5.4" />
+<link rel="stylesheet" href="css/pack-opening.css?v=1.5.4" />
+<link rel="stylesheet" href="css/fx.css?v=1.5.4" />
+<link rel="stylesheet" href="css/board-effects.css?v=1.5.4" />
+<link rel="stylesheet" href="css/overlay.css?v=1.5.4" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -124,7 +123,7 @@
         <button id="btnOpenPrivacyMenu" class="btn menu-option-button" type="button">Privacy Notice</button>
         <div class="menu-option-config">
           <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Config</button>
-          <span class="menu-version">Version 1.5.3</span>
+          <span class="menu-version">Version 1.5.4</span>
         </div>
       </div>
     </div>
@@ -794,6 +793,21 @@
       <div class="changelog-content">
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
+          <h3>Version 1.5.4</h3>
+          <span>PWA & Tournament Stability</span>
+        </div>
+        <p class="changelog-entry-intro">Arcana is easier to install, more resilient during tournament starts, and clearer at a glance.</p>
+        <ul class="changelog-list">
+          <li>Install Arcana TCG as an app on compatible desktop and mobile browsers. An in-game install notice appears in the main menu when the browser confirms it is available.</li>
+          <li>The PWA cache now updates safely between releases without caching login, Discord Activity, profile, match, or other live API requests.</li>
+          <li>Tournament matches now start through a protected queue, preventing a rush of bracket pairings from loading the server at once. Duplicate starts, failed preparations, and disconnects are handled safely.</li>
+          <li>The tournament lobby now tells both players when a match is being prepared and preserves a clear re-entry path if preparation cannot finish.</li>
+          <li>Mythic Lolflame now deals 1 damage to every enemy minion whenever it attacks, including when it attacks the opposing hero. Deck lists now show Charge, Taunt, and Divine Shield beside card costs.</li>
+          <li>Updated the main-menu music rotation with MainMenu1 and removed the retired Board4 track from the board rotation.</li>
+        </ul>
+      </article>
+      <article class="changelog-entry">
+        <div class="changelog-entry-meta">
           <h3>Version 1.5.3</h3>
           <span>Iron Watch: TheUnchained</span>
         </div>
@@ -1141,25 +1155,25 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.5.3-lolflame-deck-keywords-local"></script>
-  <script src="deckRules.js?v=1.5.3"></script>
-  <script src="engine.js?v=1.5.3"></script>
-  <script src="ai.js?v=1.5.3"></script>
-  <script src="audioConfig.js?v=1.5.3"></script>
-  <script src="audioManager.js?v=1.5.3"></script>
-  <script src="packOpening.js?v=1.5.3"></script>
-<script src="legalNotices.js?v=1.5.3"></script>
-<script src="profileCatalog.js?v=1.5.3"></script>
-<script src="profileBadges.js?v=1.5.3"></script>
-<script src="accountProfile.js?v=1.5.3"></script>
-<script src="client.js?v=1.5.3"></script>
-<script src="shieldChallenge.js?v=1.5.3"></script>
-<script src="boardInteractions.js?v=1.5.3"></script>
-<script src="inventory.js?v=1.5.3"></script>
-<script src="deckBuilder.js?v=1.5.3-deck-keywords-local"></script>
-<script src="shop.js?v=1.5.3"></script>
-<script src="trade.js?v=1.5.3"></script>
-<script src="tournaments.js?v=1.5.3"></script>
-<script src="pwa.js?v=1.5.3-pwa-install-local"></script>
+  <script src="cards.js?v=1.5.4"></script>
+  <script src="deckRules.js?v=1.5.4"></script>
+  <script src="engine.js?v=1.5.4"></script>
+  <script src="ai.js?v=1.5.4"></script>
+  <script src="audioConfig.js?v=1.5.4"></script>
+  <script src="audioManager.js?v=1.5.4"></script>
+  <script src="packOpening.js?v=1.5.4"></script>
+<script src="legalNotices.js?v=1.5.4"></script>
+<script src="profileCatalog.js?v=1.5.4"></script>
+<script src="profileBadges.js?v=1.5.4"></script>
+<script src="accountProfile.js?v=1.5.4"></script>
+<script src="client.js?v=1.5.4"></script>
+<script src="shieldChallenge.js?v=1.5.4"></script>
+<script src="boardInteractions.js?v=1.5.4"></script>
+<script src="inventory.js?v=1.5.4"></script>
+<script src="deckBuilder.js?v=1.5.4"></script>
+<script src="shop.js?v=1.5.4"></script>
+<script src="trade.js?v=1.5.4"></script>
+<script src="tournaments.js?v=1.5.4"></script>
+<script src="pwa.js?v=1.5.4"></script>
 </body>
 </html>

@@ -8,6 +8,7 @@ window.ArcaneAudioConfig = {
   music: {
     mainMenu: {
       src: [
+        "music/MainMenu1.ogg",
         "music/MainMenu2.ogg",
         "music/MainMenu3.ogg",
         "music/MainMenu4.ogg",
@@ -21,7 +22,6 @@ window.ArcaneAudioConfig = {
       src: [
         "music/Board1.ogg",
         "music/Board2.ogg",
-        "music/Board4.ogg",
         "music/Board5.ogg",
         "music/Board6.ogg",
         "music/Board7.ogg",
