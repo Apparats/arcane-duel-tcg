@@ -61,9 +61,10 @@ async function main() {
   assert.strictEqual(playCalls, 1, "The first automatic attempt should be made once.");
 
   const inertTarget = { nodeType: 1, closest: () => null };
-  listeners.get("click")({ target: inertTarget });
+  assert(listeners.has("pointerdown") && listeners.has("touchend"), "Mobile gesture listeners must be registered.");
+  listeners.get("pointerdown")({ target: inertTarget });
   await new Promise((resolve) => setImmediate(resolve));
-  assert.strictEqual(playCalls, 2, "A later user click must retry music after autoplay blocks the first attempt.");
+  assert.strictEqual(playCalls, 2, "A later mobile gesture must retry music after autoplay blocks the first attempt.");
   console.log("--- AUDIO UNLOCK TEST OK ---");
 }
 

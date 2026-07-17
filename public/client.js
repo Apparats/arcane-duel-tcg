@@ -2638,6 +2638,10 @@ function updateVolumeFromInput(kind, value) {
   if (label) label.textContent = `${Math.round(volume * 100)}%`;
 }
 
+function setAudioActivationVisible(visible) {
+  $("btnEnableAudio")?.classList.toggle("hidden", !visible);
+}
+
 function inviteDiscordActivity() {
   const inviteUrl = accountState?.discordInviteUrl;
   if (!inviteUrl) {
@@ -2841,6 +2845,12 @@ $("howToPlayModal").addEventListener("click", (event) => {
 $("btnCloseAudioConfig").addEventListener("click", () => setAudioConfigOpen(false));
 $("musicVolumeInput").addEventListener("input", (event) => updateVolumeFromInput("music", event.target.value));
 $("sfxVolumeInput").addEventListener("input", (event) => updateVolumeFromInput("sfx", event.target.value));
+$("btnEnableAudio").addEventListener("click", () => {
+  void window.ArcaneAudio?.unlock();
+});
+window.addEventListener("arcaneAudioState", (event) => {
+  setAudioActivationVisible(event.detail?.state === "blocked");
+});
 
 document.addEventListener("click", (event) => {
   if (!closestElement(event.target, ".menu-options")) setMenuOptionsOpen(false);

@@ -11,6 +11,7 @@
   let currentMusicId = null;
   let currentMusic = null;
   let currentMusicLocalVolume = 1;
+  let playbackBlocked = false;
   const fadeTimers = new WeakMap();
   const MAX_SFX_VOICES = 4;
 
@@ -87,6 +88,11 @@
     const master = config.masterVolume ?? 1;
     const channel = kind === "music" ? config.musicVolume ?? 1 : config.sfxVolume ?? 1;
     return clampVolume(master * channel * localVolume);
+  }
+
+  function notifyAudioState(state) {
+    if (typeof window.dispatchEvent !== "function" || typeof CustomEvent !== "function") return;
+    window.dispatchEvent(new CustomEvent("arcaneAudioState", { detail: { state } }));
   }
 
   function fadeAudio(audio, toVolume, { duration = MUSIC_FADE_MS, pauseAtEnd = false, resetAtEnd = false } = {}) {
@@ -208,8 +214,12 @@
       cancelFade(currentMusic);
       if (currentMusic.paused || currentMusic.currentTime === 0) currentMusic.volume = 0;
       await currentMusic.play();
+      playbackBlocked = false;
+      notifyAudioState("playing");
       fadeAudio(currentMusic, targetVolume, { duration: MUSIC_FADE_MS });
     } catch (err) {
+      playbackBlocked = true;
+      notifyAudioState("blocked");
       console.warn("Music playback was blocked or failed:", err.message);
     }
   }
@@ -282,7 +292,15 @@
     sound.currentTime = 0;
     sound.volume = effectiveVolume("sfx");
     sound.playbackRate = playbackRateFor(id);
-    sound.play().catch(() => {});
+    sound.play().then(() => {
+      if (playbackBlocked) {
+        playbackBlocked = false;
+        notifyAudioState("playing");
+      }
+    }).catch(() => {
+      playbackBlocked = true;
+      notifyAudioState("blocked");
+    });
   }
 
   function onScreenChange(screenName) {
@@ -294,12 +312,19 @@
     stopMusic();
   }
 
+  function resumeFromUserGesture() {
+    // Mobile browsers preserve tap activation most reliably during these early
+    // input events. Discord OAuth can return outside a gesture, so retry here.
+    void unlock();
+  }
+
+  document.addEventListener("pointerdown", resumeFromUserGesture, { capture: true, passive: true });
+  document.addEventListener("touchend", resumeFromUserGesture, { capture: true, passive: true });
+  document.addEventListener("keydown", resumeFromUserGesture, true);
   document.addEventListener(
     "click",
     (event) => {
-      // Discord OAuth can return to the standalone PWA outside a user gesture.
-      // Retrying here lets the first real interaction satisfy autoplay policy.
-      void unlock();
+      resumeFromUserGesture();
       const target = event.target;
       const clickable =
         target && target.nodeType === Node.ELEMENT_NODE

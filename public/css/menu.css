@@ -294,6 +294,26 @@
   -webkit-backdrop-filter: blur(16px);
 }
 
+.audio-activation {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: calc(14px + var(--safe-bottom));
+  min-height: 34px;
+  padding: 7px 13px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(232, 179, 79, 0.7);
+  border-radius: 5px;
+  background: rgba(37, 29, 53, 0.94);
+  color: var(--gold);
+  font: 700 11px "Cinzel", serif;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.38);
+  cursor: pointer;
+}
+
+.audio-activation:hover,
+.audio-activation:focus-visible { background: rgba(64, 48, 78, 0.98); }
+
 .audio-config-header {
   display: flex;
   align-items: center;
@@ -399,6 +419,7 @@
     left: 10px;
     width: min(260px, calc(100% - 20px));
   }
+  .audio-activation { bottom: calc(10px + var(--safe-bottom)); }
   .btn-discord { font-size: 11px; padding: 7px 12px; }
   .btn-discord svg { width: 15px; height: 15px; }
   .account-name { font-size: 11px; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

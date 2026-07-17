@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/base.css?v=1.5.4" />
-<link rel="stylesheet" href="css/menu.css?v=1.5.4" />
+<link rel="stylesheet" href="css/menu.css?v=1.5.4-mobile-audio" />
 <link rel="stylesheet" href="css/account-profile.css?v=1.5.4" />
 <link rel="stylesheet" href="css/lobby.css?v=1.5.4" />
 <link rel="stylesheet" href="css/board.css?v=1.5.4" />
@@ -127,6 +127,7 @@
         </div>
       </div>
     </div>
+    <button id="btnEnableAudio" class="audio-activation hidden" type="button">Enable sound</button>
     <div class="fireflies" aria-hidden="true">
       <div class="firefly"></div>
       <div class="firefly"></div>
@@ -804,6 +805,7 @@
           <li>The tournament lobby now tells both players when a match is being prepared and preserves a clear re-entry path if preparation cannot finish.</li>
           <li>Mythic Lolflame now deals 1 damage to every enemy minion whenever it attacks, including when it attacks the opposing hero. Deck lists now show Charge, Taunt, and Divine Shield beside card costs.</li>
           <li>Updated the main-menu music rotation with MainMenu1 and removed the retired Board4 track from the board rotation.</li>
+          <li>Mobile audio now retries during touch input and offers an Enable sound action whenever the browser blocks playback after login.</li>
         </ul>
       </article>
       <article class="changelog-entry">
@@ -1160,13 +1162,13 @@
   <script src="engine.js?v=1.5.4"></script>
   <script src="ai.js?v=1.5.4"></script>
   <script src="audioConfig.js?v=1.5.4"></script>
-  <script src="audioManager.js?v=1.5.4-audio-unlock"></script>
+  <script src="audioManager.js?v=1.5.4-mobile-audio"></script>
   <script src="packOpening.js?v=1.5.4"></script>
 <script src="legalNotices.js?v=1.5.4"></script>
 <script src="profileCatalog.js?v=1.5.4"></script>
 <script src="profileBadges.js?v=1.5.4"></script>
 <script src="accountProfile.js?v=1.5.4"></script>
-<script src="client.js?v=1.5.4"></script>
+<script src="client.js?v=1.5.4-mobile-audio"></script>
 <script src="shieldChallenge.js?v=1.5.4"></script>
 <script src="boardInteractions.js?v=1.5.4"></script>
 <script src="inventory.js?v=1.5.4"></script>
