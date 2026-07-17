@@ -9,6 +9,7 @@
     "test:smoke": "node test/simulate.js",
     "test:tournaments": "node test/tournamentBracket.js && node test/tournamentMatchFlows.js && node test/tournamentStartQueue.js",
     "test:audio": "node test/audioUnlock.js",
+    "test:pwa": "node test/serviceWorkerCache.js",
     "cards:build": "node scripts/build-cards.js",
     "cards:check": "node scripts/build-cards.js --check",
     "cards:watch": "node scripts/build-cards.js --watch"

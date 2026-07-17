@@ -1,4 +1,4 @@
-const SHELL_CACHE = "arcana-tcg-shell-v1.5.4";
+const SHELL_CACHE = "arcana-tcg-shell-v1.5.4-media-network";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -11,7 +11,7 @@ const APP_SHELL = [
 const isStaticAsset = (request, url) =>
   request.method === "GET" &&
   url.origin === self.location.origin &&
-  /\.(?:css|js|svg|png|webp|woff2?|ogg|wav)$/i.test(url.pathname) &&
+  /\.(?:css|js|svg|png|webp|woff2?)$/i.test(url.pathname) &&
   url.pathname !== "/service-worker.js";
 
 async function putIfSuccessful(cache, request, response) {
