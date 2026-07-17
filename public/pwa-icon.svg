@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Arcana TCG</title>
+  <rect width="512" height="512" rx="96" fill="#0b0912"/>
+  <rect x="28" y="28" width="456" height="456" rx="76" fill="#1a1227" stroke="#e8b34f" stroke-width="12"/>
+  <path d="M256 66 294 158l99 8-75 65 23 97-85-51-85 51 23-97-75-65 99-8z" fill="#e8b34f"/>
+  <path d="M256 137 279 195l63 5-48 42 15 62-53-32-53 32 15-62-48-42 63-5z" fill="#56c5e7"/>
+  <path d="M256 181 275 229l52 4-40 35 12 52-43-26-43 26 12-52-40-35 52-4z" fill="#b25ee6"/>
+  <circle cx="256" cy="256" r="32" fill="#f6df9e"/>
+  <path d="m256 224 10 22 24 2-18 16 5 24-21-13-21 13 5-24-18-16 24-2z" fill="#5d255b"/>
+  <path d="M104 256h64M344 256h64M256 104v64M256 344v64M149 149l45 45M318 318l45 45M363 149l-45 45M194 318l-45 45" stroke="#f6df9e" stroke-width="14" stroke-linecap="round"/>
+</svg>

@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#1a1227" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Arcana TCG</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="pwa-icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="pwa-icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/base.css?v=1.5.3" />
@@ -15,13 +22,13 @@
 <link rel="stylesheet" href="css/board-arena.css?v=1.5.3" />
 <link rel="stylesheet" href="css/board-hand.css?v=1.5.3" />
 <link rel="stylesheet" href="css/inventory.css?v=1.5.3" />
-<link rel="stylesheet" href="css/deck-builder.css?v=1.5.3" />
+<link rel="stylesheet" href="css/deck-builder.css?v=1.5.3-deck-keywords-local" />
 <link rel="stylesheet" href="css/shop.css?v=1.5.3" />
 <link rel="stylesheet" href="css/trade.css?v=1.5.3" />
 <link rel="stylesheet" href="css/pack-opening.css?v=1.5.3" />
 <link rel="stylesheet" href="css/fx.css?v=1.5.3" />
 <link rel="stylesheet" href="css/board-effects.css?v=1.5.3" />
-<link rel="stylesheet" href="css/overlay.css?v=1.5.3" />
+<link rel="stylesheet" href="css/overlay.css?v=1.5.3-pwa-install-local" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -1134,7 +1141,7 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.5.3"></script>
+  <script src="cards.js?v=1.5.3-lolflame-deck-keywords-local"></script>
   <script src="deckRules.js?v=1.5.3"></script>
   <script src="engine.js?v=1.5.3"></script>
   <script src="ai.js?v=1.5.3"></script>
@@ -1149,9 +1156,10 @@
 <script src="shieldChallenge.js?v=1.5.3"></script>
 <script src="boardInteractions.js?v=1.5.3"></script>
 <script src="inventory.js?v=1.5.3"></script>
-<script src="deckBuilder.js?v=1.5.3"></script>
+<script src="deckBuilder.js?v=1.5.3-deck-keywords-local"></script>
 <script src="shop.js?v=1.5.3"></script>
 <script src="trade.js?v=1.5.3"></script>
 <script src="tournaments.js?v=1.5.3"></script>
+<script src="pwa.js?v=1.5.3-pwa-install-local"></script>
 </body>
 </html>

@@ -80,6 +80,26 @@ function main() {
   state0 = game.getStateFor(0);
   assert(state0.winner === 0, "Player 0 should win when Player 1 surrenders.");
 
+  const lolflameAttackTest = new Game("LOLFLAME_ATTACK", "Lolflame", "Target", {
+    decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
+  });
+  lolflameAttackTest.players[0].board = [{
+    ...testMinion("lolflame", "base:lolflame2"),
+    name: "Lolflame",
+    attack: 3,
+    health: 7,
+    maxHealth: 7,
+    canAttack: true,
+  }];
+  lolflameAttackTest.players[1].board = [{
+    ...testMinion("enemy-minion", "base:aleex"),
+    health: 2,
+    maxHealth: 2,
+  }];
+  lolflameAttackTest.attack(0, "lolflame", "face");
+  assert(lolflameAttackTest.players[1].health === 27, "Lolflame should still deal its normal damage to the enemy hero.");
+  assert(lolflameAttackTest.players[1].board[0].health === 1, "Lolflame should damage every enemy minion after a face attack.");
+
   const exhaustedGame = new Game("EXHAUSTED", "Empty A", "Empty B");
   exhaustedGame.players.forEach((player) => {
     player.hand = [];

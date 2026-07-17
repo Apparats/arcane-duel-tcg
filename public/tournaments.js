@@ -4,7 +4,7 @@
   let tournaments = [];
   let loading = false;
   let countdownTimer = null;
-  const queuedMatchIds = new Set();
+  const queuedMatches = new Map();
 
   const el = (id) => document.getElementById(id);
   const text = (value) => escapeHtml(String(value || ""));
@@ -103,7 +103,12 @@
     }
     if (tournament.phase === "active" && tournament.myMatchId) {
       const queueKey = `${tournament.id}:${tournament.myMatchId}`;
-      if (queuedMatchIds.has(queueKey)) {
+      const queued = queuedMatches.get(queueKey);
+      if (queued?.state === "preparing") {
+        const position = queued.position > 1 ? ` Queue position: ${queued.position}.` : "";
+        return `<div class="tournament-actions"><span class="tournament-player-state status-waiting-round">Both players are ready. Preparing your match.${text(position)}</span></div>`;
+      }
+      if (queued) {
         return '<div class="tournament-actions"><span class="tournament-player-state status-waiting-round">Waiting for your opponent to enter this match.</span><button class="btn btn-secondary" type="button" data-tournament-action="cancel-match">Cancel</button></div>';
       }
       return `<div class="tournament-actions">${status}<button class="btn btn-primary" type="button" data-tournament-action="join" data-match-id="${text(tournament.myMatchId)}">Play match</button></div>`;
@@ -196,11 +201,18 @@
     load,
     setQueuedMatch(payload) {
       if (!payload?.tournamentId || !payload?.matchId) return;
-      queuedMatchIds.add(`${payload.tournamentId}:${payload.matchId}`);
+      queuedMatches.set(`${payload.tournamentId}:${payload.matchId}`, { state: "waiting" });
       render();
     },
-    clearQueuedMatch() {
-      queuedMatchIds.clear();
+    setPreparingMatch(payload) {
+      if (!payload?.tournamentId || !payload?.matchId) return;
+      queuedMatches.set(`${payload.tournamentId}:${payload.matchId}`, { state: "preparing", position: Number(payload.queuePosition) || 1 });
+      render();
+    },
+    clearQueuedMatch(payload) {
+      if (payload?.tournamentId && payload?.matchId) queuedMatches.delete(`${payload.tournamentId}:${payload.matchId}`);
+      else queuedMatches.clear();
+      render();
     },
   };
 })();

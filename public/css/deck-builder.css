@@ -233,7 +233,7 @@
   width: 100%;
   min-height: 36px;
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto 22px;
+  grid-template-columns: auto minmax(0, 1fr) auto 22px;
   align-items: center;
   gap: 8px;
   padding: 5px 7px;
@@ -264,6 +264,36 @@
   font-size: 13px;
   font-weight: 700;
 }
+
+.deck-row-mana,
+.deck-row-keywords {
+  display: inline-flex;
+  align-items: center;
+}
+
+.deck-row-mana { gap: 4px; }
+.deck-row-keywords { gap: 2px; }
+
+.deck-row-keyword {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.36);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.58), inset 0 1px 1px rgba(255, 255, 255, 0.26);
+}
+
+.deck-row-keyword.kw-charge { background: var(--gold); color: #241800; }
+.deck-row-keyword.kw-taunt { background: var(--taunt); color: #0d1509; }
+.deck-row-keyword.kw-divineShield {
+  background: radial-gradient(circle at 35% 30%, #d6f2fc, var(--mana) 70%);
+  color: #04222c;
+}
+
+.deck-row-keyword .keyword-icon { width: 11px; height: 11px; }
+.deck-row-keyword .keyword-icon-taunt { width: 10px; height: 10px; }
 
 .deck-row-name {
   min-width: 0;
@@ -401,7 +431,7 @@
 
   .deck-row {
     min-height: 32px;
-    grid-template-columns: 24px minmax(0, 1fr) auto 22px;
+    grid-template-columns: auto minmax(0, 1fr) auto 22px;
     gap: 6px;
     padding: 4px 6px;
   }
@@ -411,6 +441,12 @@
     height: 21px;
     font-size: 11px;
   }
+
+  .deck-row-mana { gap: 3px; }
+  .deck-row-keywords { gap: 1px; }
+  .deck-row-keyword { width: 16px; height: 16px; }
+  .deck-row-keyword .keyword-icon { width: 10px; height: 10px; }
+  .deck-row-keyword .keyword-icon-taunt { width: 9px; height: 9px; }
 
   .deck-row-name {
     font-size: 12px;

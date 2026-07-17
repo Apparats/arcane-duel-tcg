@@ -17,6 +17,7 @@ const { router: decksRouter } = require("./decks");
 const { router: tradesRouter } = require("./trades");
 const { getActiveDeckCardIds } = require("./deckService");
 const { createRateLimiter, isTrustedWebSocketOrigin, requireSameOrigin, setSecurityHeaders } = require("./security");
+const { TournamentMatchStartQueue } = require("./tournaments/matchStartQueue");
 const { DEFAULT_RECONNECT_GRACE_MS, startReconnectGrace, clearReconnectGrace, clearAllReconnectGraces } = require("./reconnectService");
 const { assertUserCanStartMatch, assertUserIsNotAlreadyInRoom } = require("./matchAccess");
 const { discardActiveSingleplayerMatch } = require("./singleplayerMatchService");
@@ -35,6 +36,7 @@ const WS_HEARTBEAT_INTERVAL_MS = 15_000;
 const MAX_WS_CONNECTIONS = readBoundedEnvInt("MAX_WS_CONNECTIONS", 200, { min: 10, max: 2_000 });
 const MAX_WS_SOCKETS_PER_USER = readBoundedEnvInt("MAX_WS_SOCKETS_PER_USER", 3, { min: 1, max: 10 });
 const MAX_WS_SOCKETS_PER_IP = readBoundedEnvInt("MAX_WS_SOCKETS_PER_IP", 5, { min: 1, max: 100 });
+const TOURNAMENT_MATCH_START_CONCURRENCY = readBoundedEnvInt("TOURNAMENT_MATCH_START_CONCURRENCY", 2, { min: 1, max: 8 });
 const CLIENT_TIMING_FIELDS = new Set([
   "clientnow",
   "clienttime",
@@ -222,7 +224,7 @@ app.use((req, res, next) => {
 app.use(
   express.static(PUBLIC_DIR, {
     setHeaders(res, filePath) {
-      if (filePath.endsWith(".html")) {
+      if (filePath.endsWith(".html") || filePath.endsWith("service-worker.js") || filePath.endsWith("manifest.webmanifest")) {
         res.setHeader("Cache-Control", "no-store");
       } else if ((filePath.endsWith(".css") || filePath.endsWith(".js")) && !res.getHeader("Cache-Control")) {
         res.setHeader("Cache-Control", "no-cache");
@@ -254,6 +256,8 @@ const wss = new WebSocketServer({ noServer: true, maxPayload: WS_MAX_PAYLOAD_BYT
 const rooms = new Map();
 const quickplayQueue = [];
 const tournamentQueues = new Map();
+const tournamentMatchStarts = new Map();
+const tournamentMatchStartQueue = new TournamentMatchStartQueue({ concurrency: TOURNAMENT_MATCH_START_CONCURRENCY });
 const socketsByUserId = new Map();
 const socketsByIp = new Map();
 
@@ -503,6 +507,60 @@ function removeFromTournamentQueues(ws) {
   }
 }
 
+function hasPendingTournamentStart(userId) {
+  return [...tournamentMatchStarts.values()].some((entry) => entry.players.some((player) => String(player.user.id) === String(userId)));
+}
+
+function assertUserCanStartOrPrepareMatch(userId) {
+  assertUserCanStartMatch(rooms, userId);
+  if (!hasPendingTournamentStart(userId)) return;
+  throw new Error("Your tournament match is preparing. Please wait a moment.");
+}
+
+function cancelPendingTournamentStart(ws) {
+  for (const pending of tournamentMatchStarts.values()) {
+    if (!pending.players.some((player) => player.ws === ws)) continue;
+    pending.cancelled = true;
+  }
+}
+
+function assertTournamentStartReady(pending) {
+  if (pending.cancelled) throw new Error("Tournament match preparation was cancelled.");
+  if (pending.players.some((player) => player.ws.readyState !== player.ws.OPEN)) {
+    throw new Error("A player disconnected before the tournament match could start.");
+  }
+  pending.players.forEach((player) => assertUserCanStartMatch(rooms, player.user.id));
+}
+
+function queueTournamentMatchStart(queueKey, tournamentId, matchId, ready, players) {
+  const existing = tournamentMatchStarts.get(queueKey);
+  if (existing) return existing;
+
+  const pending = { queueKey, tournamentId, matchId, config: ready.config, players, cancelled: false, position: null };
+  tournamentMatchStarts.set(queueKey, pending);
+  const queued = tournamentMatchStartQueue.enqueue(queueKey, async () => {
+    assertTournamentStartReady(pending);
+    const latest = await getReadyMatch(tournamentId, players[0].user.id);
+    const hasSamePlayers = latest.match.id === matchId
+      && latest.match.playerIds.every((id) => players.some((player) => String(player.user.id) === String(id)));
+    if (!hasSamePlayers) throw new Error("That tournament match is no longer ready.");
+    assertTournamentStartReady(pending);
+    await startMultiplayerMatch(players[0], players[1], {
+      matchType: "tournament",
+      tournament: { id: latest.config.id, matchId, prizes: latest.config.prizes },
+    });
+  });
+  pending.position = queued.position;
+
+  queued.promise.catch((err) => {
+    const message = err.message || "Could not prepare the tournament match.";
+    players.forEach((player) => send(player.ws, "tournamentMatchUnavailable", { tournamentId, matchId, message }));
+  }).finally(() => {
+    if (tournamentMatchStarts.get(queueKey) === pending) tournamentMatchStarts.delete(queueKey);
+  });
+  return pending;
+}
+
 function cancelDisconnectedMatch(room, disconnectedIdx) {
   if (!room.game || room.sockets[disconnectedIdx] !== null || !room.reconnects?.[disconnectedIdx]) return;
   const roomCode = room.game.roomCode;
@@ -594,6 +652,7 @@ function detachSocketFromRoom(ws, { notifyOpponent = false } = {}) {
 function handleSocketClose(ws) {
   removeFromQuickplayQueue(ws);
   removeFromTournamentQueues(ws);
+  cancelPendingTournamentStart(ws);
   if (!ws.roomCode || !rooms.has(ws.roomCode)) return;
 
   const room = rooms.get(ws.roomCode);
@@ -985,7 +1044,7 @@ async function handleMessage(ws, msg) {
   if (type === "startSingleplayer") {
     const user = await requireSessionUser(ws);
     discardActiveSingleplayerMatch(rooms, user.id, { clearTurnTimer, clearAllReconnectGraces });
-    assertUserCanStartMatch(rooms, user.id);
+    assertUserCanStartOrPrepareMatch(user.id);
     detachSocketFromRoom(ws);
     const playerDeck = await getActiveDeckCardIds(user.id);
     const profile = await getPublicPlayerProfile(user.id);
@@ -1025,7 +1084,7 @@ async function handleMessage(ws, msg) {
     if (!campaign) return broadcastError(ws, "Campaign not found.");
     if (!campaign.available) return broadcastError(ws, "This campaign is not available yet.");
     discardActiveSingleplayerMatch(rooms, user.id, { clearTurnTimer, clearAllReconnectGraces });
-    assertUserCanStartMatch(rooms, user.id);
+    assertUserCanStartOrPrepareMatch(user.id);
     detachSocketFromRoom(ws);
     const playerDeck = await getActiveDeckCardIds(user.id);
     const profile = await getPublicPlayerProfile(user.id);
@@ -1046,7 +1105,7 @@ async function handleMessage(ws, msg) {
 
   if (type === "createRoom") {
     const user = await requireSessionUser(ws);
-    assertUserCanStartMatch(rooms, user.id);
+    assertUserCanStartOrPrepareMatch(user.id);
     detachSocketFromRoom(ws);
     const name = user.username || "Player 1";
     const code = makeRoomCode();
@@ -1078,7 +1137,7 @@ async function handleMessage(ws, msg) {
     const room = rooms.get(code);
     if (!room) return broadcastError(ws, "Room not found.");
     if (room.sockets[1]) return broadcastError(ws, "That room is already full.");
-    assertUserCanStartMatch(rooms, user.id);
+    assertUserCanStartOrPrepareMatch(user.id);
     assertUserIsNotAlreadyInRoom(room, user.id);
     detachSocketFromRoom(ws);
 
@@ -1110,7 +1169,7 @@ async function handleMessage(ws, msg) {
 
   if (type === "quickplay") {
     const user = await requireSessionUser(ws);
-    assertUserCanStartMatch(rooms, user.id);
+    assertUserCanStartOrPrepareMatch(user.id);
     detachSocketFromRoom(ws);
     const name = user.username || "Player";
     const opponentIndex = quickplayQueue.findIndex((entry) => entry.ws.readyState === entry.ws.OPEN && entry.user.id !== user.id);
@@ -1128,7 +1187,7 @@ async function handleMessage(ws, msg) {
 
   if (type === "tournamentJoinMatch") {
     const user = await requireSessionUser(ws);
-    assertUserCanStartMatch(rooms, user.id);
+    assertUserCanStartOrPrepareMatch(user.id);
     const tournamentId = typeof payload?.tournamentId === "string" ? payload.tournamentId : "";
     const matchId = typeof payload?.matchId === "string" ? payload.matchId : "";
     const ready = await getReadyMatch(tournamentId, user.id);
@@ -1152,10 +1211,12 @@ async function handleMessage(ws, msg) {
     tournamentQueues.delete(queueKey);
     detachSocketFromRoom(waiting.ws);
     detachSocketFromRoom(ws);
-    await startMultiplayerMatch(waiting, entry, {
-      matchType: "tournament",
-      tournament: { id: ready.config.id, matchId, prizes: ready.config.prizes },
-    });
+    const pending = queueTournamentMatchStart(queueKey, tournamentId, matchId, ready, [waiting, entry]);
+    pending.players.forEach((player) => send(player.ws, "tournamentMatchPreparing", {
+      tournamentId,
+      matchId,
+      queuePosition: pending.position,
+    }));
     return;
   }
 
@@ -1166,6 +1227,7 @@ async function handleMessage(ws, msg) {
 
   if (type === "cancelTournamentMatch") {
     removeFromTournamentQueues(ws);
+    cancelPendingTournamentStart(ws);
     return;
   }
 

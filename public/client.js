@@ -548,6 +548,15 @@ function handleServerMessage(msg) {
       window.ArcaneTournaments?.setQueuedMatch(msg.payload);
       showToast("Waiting for your tournament opponent to enter the match.");
       break;
+    case "tournamentMatchPreparing":
+      window.ArcaneTournaments?.setPreparingMatch(msg.payload);
+      showToast("Both tournament players are ready. Preparing the match.");
+      break;
+    case "tournamentMatchUnavailable":
+      window.ArcaneTournaments?.clearQueuedMatch(msg.payload);
+      showToast(msg.payload?.message || "Tournament match preparation stopped. Please enter again.");
+      void window.ArcaneTournaments?.load();
+      break;
     case "tournamentUpdated":
       void window.ArcaneTournaments?.load();
       break;

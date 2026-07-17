@@ -81,6 +81,7 @@ function setSecurityHeaders(req, res, next) {
       "base-uri 'self'",
       "object-src 'none'",
       "script-src 'self' https://static.cloudflareinsights.com",
+      "worker-src 'self'",
       "style-src 'self' https://fonts.googleapis.com",
       "style-src-attr 'unsafe-inline'",
       "font-src 'self' https://fonts.gstatic.com",

@@ -1245,11 +1245,11 @@
       "race": "Monster",
       "rarity": "mythic",
       "country": "Djibouti",
-      "lore": "This card can instantly attack when prepared. This card also deals +1 damage to all enemy cards.",
+      "lore": "Charge. Whenever this attacks, deal 1 damage to all enemy minions.",
       "image": "art/Lolflames.webp",
       "abilities": [
         {
-          "trigger": "onAttackMinion",
+          "trigger": "onAttack",
           "effect": "damageAllEnemyMinions",
           "value": 1
         }

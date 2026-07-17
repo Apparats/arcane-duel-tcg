@@ -203,12 +203,20 @@ function renderDeckList() {
     .filter((item) => item.card)
     .sort((a, b) => a.card.cost - b.card.cost || a.card.name.localeCompare(b.card.name))
     .forEach(({ card, count }) => {
+      const keywords = (card.keywords || []).filter((keyword) => ["charge", "taunt", "divineShield"].includes(keyword));
+      const keywordMarkup = keywords.map((keyword) => {
+        const label = keyword === "divineShield" ? "Divine Shield" : keyword[0].toUpperCase() + keyword.slice(1);
+        return `<span class="deck-row-keyword kw-${keyword}" title="${label}" aria-label="${label}">${keywordIconHTML(keyword)}</span>`;
+      }).join("");
       const row = document.createElement("button");
       row.className = `deck-row ${rarityClass(card)}`;
       row.type = "button";
       row.title = "Remove one copy";
       row.innerHTML = `
-        <span class="deck-row-cost">${card.cost}</span>
+        <span class="deck-row-mana">
+          <span class="deck-row-cost">${card.cost}</span>
+          ${keywordMarkup ? `<span class="deck-row-keywords">${keywordMarkup}</span>` : ""}
+        </span>
         <span class="deck-row-name">${escapeHtml(card.name)}</span>
         <span class="deck-row-count">x${count}</span>
         <span class="deck-row-remove" aria-hidden="true">-</span>
