@@ -1,4 +1,4 @@
-const SHELL_CACHE = "arcana-tcg-shell-v1.5.4-media-direct-v2";
+const SHELL_CACHE = "arcana-tcg-shell-v1.5.4-minimal-v3";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -7,12 +7,6 @@ const APP_SHELL = [
   "/pwa-icon-192.png",
   "/pwa-icon-512.png",
 ];
-
-const isStaticAsset = (request, url) =>
-  request.method === "GET" &&
-  url.origin === self.location.origin &&
-  /\.(?:css|js|svg|png|webp|woff2?)$/i.test(url.pathname) &&
-  url.pathname !== "/service-worker.js";
 
 async function putIfSuccessful(cache, request, response) {
   if (response?.ok) await cache.put(request, response.clone());
@@ -50,23 +44,6 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
-
-  if (request.mode === "navigate" && (url.pathname === "/" || url.pathname === "/index.html")) {
-    event.respondWith(networkFirst(request, "/index.html"));
-    return;
-  }
-
-  if (!isStaticAsset(request, url)) return;
-  event.respondWith((async () => {
-    const cache = await caches.open(SHELL_CACHE);
-    if (url.searchParams.has("v")) {
-      const cached = await cache.match(request);
-      if (cached) return cached;
-    }
-    try {
-      return await putIfSuccessful(cache, request, await fetch(request));
-    } catch {
-      return (await cache.match(request)) || Response.error();
-    }
-  })());
+  if (request.mode !== "navigate" || (url.pathname !== "/" && url.pathname !== "/index.html")) return;
+  event.respondWith(networkFirst(request, "/index.html"));
 });

@@ -12,6 +12,7 @@
   let currentMusic = null;
   let currentMusicLocalVolume = 1;
   let playbackBlocked = false;
+  let sfxPreloadStarted = false;
   const fadeTimers = new WeakMap();
   const MAX_SFX_VOICES = 4;
 
@@ -51,8 +52,11 @@
 
   function assetUrl(src) {
     if (!src) return "";
-    if (/^(https?:)?\/\//.test(src) || src.startsWith("/")) return src;
-    return `${config.assetsBasePath || ""}${src}`;
+    const url = /^(https?:)?\/\//.test(src) || src.startsWith("/")
+      ? src
+      : `${config.assetsBasePath || ""}${src}`;
+    if (!config.assetVersion) return url;
+    return `${url}${url.includes("?") ? "&" : "?"}v=${encodeURIComponent(config.assetVersion)}`;
   }
 
   function pickSource(entry) {
@@ -157,9 +161,10 @@
 
   async function unlock() {
     if (!isEnabled()) return false;
+    const shouldResumeMusic = !unlocked || playbackBlocked;
     unlocked = true;
     preloadSfx();
-    if (currentMusicId) await playMusic(currentMusicId);
+    if (currentMusicId && shouldResumeMusic) await playMusic(currentMusicId);
     return true;
   }
 
@@ -250,6 +255,8 @@
   }
 
   function preloadSfx() {
+    if (sfxPreloadStarted) return;
+    sfxPreloadStarted = true;
     Object.keys(config.sfx || {}).forEach((id) => {
       const audio = getSfx(id);
       audio?.load();
@@ -319,12 +326,10 @@
   }
 
   document.addEventListener("pointerdown", resumeFromUserGesture, { capture: true, passive: true });
-  document.addEventListener("touchend", resumeFromUserGesture, { capture: true, passive: true });
   document.addEventListener("keydown", resumeFromUserGesture, true);
   document.addEventListener(
     "click",
     (event) => {
-      resumeFromUserGesture();
       const target = event.target;
       const clickable =
         target && target.nodeType === Node.ELEMENT_NODE

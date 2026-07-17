@@ -5,6 +5,7 @@ const vm = require("vm");
 async function main() {
   const listeners = new Map();
   let playCalls = 0;
+  let loadCalls = 0;
   let now = 0;
 
   class FakeAudio {
@@ -20,7 +21,7 @@ async function main() {
       this.listeners.set(type, callback);
     }
 
-    load() {}
+    load() { loadCalls += 1; }
     pause() { this.paused = true; }
     cloneNode() { return new FakeAudio(); }
 
@@ -36,7 +37,7 @@ async function main() {
     window: {
       ArcaneAudioConfig: {
         music: { mainMenu: { src: "music/menu.ogg", loop: true, volume: 1 } },
-        sfx: {},
+        sfx: { click: "sfx/click.wav" },
         musicByScreen: { menu: "mainMenu" },
       },
     },
@@ -61,10 +62,16 @@ async function main() {
   assert.strictEqual(playCalls, 1, "The first automatic attempt should be made once.");
 
   const inertTarget = { nodeType: 1, closest: () => null };
-  assert(listeners.has("pointerdown") && listeners.has("touchend"), "Mobile gesture listeners must be registered.");
+  assert(listeners.has("pointerdown") && listeners.has("keydown"), "Gesture listeners must be registered.");
   listeners.get("pointerdown")({ target: inertTarget });
   await new Promise((resolve) => setImmediate(resolve));
   assert.strictEqual(playCalls, 2, "A later mobile gesture must retry music after autoplay blocks the first attempt.");
+  assert.strictEqual(loadCalls, 1, "Sound effects should preload only once.");
+
+  listeners.get("pointerdown")({ target: inertTarget });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.strictEqual(playCalls, 2, "Normal input must not restart music after it begins playing.");
+  assert.strictEqual(loadCalls, 1, "Normal input must not reset the sound-effect preload.");
   console.log("--- AUDIO UNLOCK TEST OK ---");
 }
 

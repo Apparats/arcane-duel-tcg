@@ -224,7 +224,10 @@ app.use((req, res, next) => {
 app.use(
   express.static(PUBLIC_DIR, {
     setHeaders(res, filePath) {
-      if (filePath.endsWith(".html") || filePath.endsWith("service-worker.js") || filePath.endsWith("manifest.webmanifest")) {
+      const relativePath = path.relative(PUBLIC_DIR, filePath).split(path.sep).join("/");
+      if (/^assets\/audio\/.+\.(?:ogg|wav)$/i.test(relativePath)) {
+        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      } else if (filePath.endsWith(".html") || filePath.endsWith("service-worker.js") || filePath.endsWith("manifest.webmanifest")) {
         res.setHeader("Cache-Control", "no-store");
       } else if ((filePath.endsWith(".css") || filePath.endsWith(".js")) && !res.getHeader("Cache-Control")) {
         res.setHeader("Cache-Control", "no-cache");

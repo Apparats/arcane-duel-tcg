@@ -8,7 +8,7 @@
     "start": "node server/index.js",
     "test:smoke": "node test/simulate.js",
     "test:tournaments": "node test/tournamentBracket.js && node test/tournamentMatchFlows.js && node test/tournamentStartQueue.js",
-    "test:audio": "node test/audioUnlock.js",
+    "test:audio": "node test/audioUnlock.js && node test/audioDelivery.js",
     "test:pwa": "node test/serviceWorkerCache.js",
     "cards:build": "node scripts/build-cards.js",
     "cards:check": "node scripts/build-cards.js --check",
