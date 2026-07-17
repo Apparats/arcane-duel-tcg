@@ -64,36 +64,40 @@
     document.body.append(notice);
   };
 
-  if (!("serviceWorker" in navigator) || !window.isSecureContext || window.top !== window || isInstalled()) return;
+  if (!("serviceWorker" in navigator) || !window.isSecureContext || window.top !== window) return;
 
-  window.addEventListener("beforeinstallprompt", (event) => {
-    event.preventDefault();
-    installPrompt = event;
-    window.setTimeout(showNotice, 700);
-  });
+  if (!isInstalled()) {
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      installPrompt = event;
+      window.setTimeout(showNotice, 700);
+    });
 
-  window.addEventListener("appinstalled", () => {
-    localStorage.removeItem(DISMISS_KEY);
-    installPrompt = null;
-    removeNotice();
-  });
-
-  const syncNoticeWithMenu = () => {
-    if (document.querySelector("#screen-menu")?.classList.contains("hidden")) {
+    window.addEventListener("appinstalled", () => {
+      localStorage.removeItem(DISMISS_KEY);
+      installPrompt = null;
       removeNotice();
-      return;
-    }
-    showNotice();
-  };
+    });
 
-  new MutationObserver(syncNoticeWithMenu).observe(document.querySelector("#screen-menu"), {
-    attributes: true,
-    attributeFilter: ["class"],
-  });
+    const syncNoticeWithMenu = () => {
+      if (document.querySelector("#screen-menu")?.classList.contains("hidden")) {
+        removeNotice();
+        return;
+      }
+      showNotice();
+    };
+
+    new MutationObserver(syncNoticeWithMenu).observe(document.querySelector("#screen-menu"), {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+  }
 
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/service-worker.js", { scope: "/" }).catch(() => {
-      // The game remains fully usable when installation support is unavailable.
-    });
+    navigator.serviceWorker.register("/service-worker.js", { scope: "/" })
+      .then((registration) => registration.update())
+      .catch(() => {
+        // The game remains fully usable when installation support is unavailable.
+      });
   });
 })();

@@ -1,4 +1,4 @@
-const SHELL_CACHE = "arcana-tcg-shell-v1.5.4-media-network";
+const SHELL_CACHE = "arcana-tcg-shell-v1.5.4-media-direct-v2";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -29,7 +29,11 @@ async function networkFirst(request, fallbackUrl) {
 }
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(SHELL_CACHE).then((cache) => cache.addAll(APP_SHELL)));
+  event.waitUntil((async () => {
+    const cache = await caches.open(SHELL_CACHE);
+    await cache.addAll(APP_SHELL);
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener("activate", (event) => {
