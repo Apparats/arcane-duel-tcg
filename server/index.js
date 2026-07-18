@@ -10,7 +10,7 @@ const { getCardById } = require("../public/cards");
 const { buildRandomLegalDeck } = require("../public/deckRules");
 const { connectDB, getCampaignProgress, grantCampaignReward, grantMatchEconomy, getPublicPlayerProfile, getQuickplayRanking, isDbEnabled, recordCampaignResult, recordMultiplayerDisconnect, resetConsecutiveDisconnects, searchPublicPlayers, setEquippedBadges, setSelectedTitle, submitCardRequest } = require("./db");
 const { listTournaments, registerForTournament, unregisterFromTournament, getReadyMatch, recordTournamentResult } = require("./tournaments/service");
-const { TOURNAMENT_TURN_DURATION_MS, TOURNAMENT_RECONNECT_GRACE_MS } = require("./tournaments/rules");
+const { TOURNAMENT_TURN_DURATION_MS, TOURNAMENT_RECONNECT_GRACE_MS, TOURNAMENT_READY_GRACE_MS } = require("./tournaments/rules");
 const { router: authRouter, getSessionUser, isAuthEnabled } = require("./auth");
 const { router: shopRouter } = require("./shop");
 const { router: decksRouter } = require("./decks");
@@ -260,6 +260,7 @@ const rooms = new Map();
 const quickplayQueue = [];
 const tournamentQueues = new Map();
 const tournamentMatchStarts = new Map();
+const tournamentNoShowResolutions = new Set();
 const tournamentMatchStartQueue = new TournamentMatchStartQueue({ concurrency: TOURNAMENT_MATCH_START_CONCURRENCY });
 const socketsByUserId = new Map();
 const socketsByIp = new Map();
@@ -506,7 +507,18 @@ function removeFromQuickplayQueue(ws) {
 
 function removeFromTournamentQueues(ws) {
   for (const [key, entry] of tournamentQueues) {
-    if (entry.ws === ws) tournamentQueues.delete(key);
+    if (entry.ws === ws) {
+      clearTournamentQueueEntry(entry);
+      tournamentQueues.delete(key);
+    }
+  }
+}
+
+function clearTournamentQueueEntry(entry) {
+  if (entry?.noShowTimer) clearTimeout(entry.noShowTimer);
+  if (entry) {
+    entry.noShowTimer = null;
+    entry.noShowDeadline = null;
   }
 }
 
@@ -562,6 +574,63 @@ function queueTournamentMatchStart(queueKey, tournamentId, matchId, ready, playe
     if (tournamentMatchStarts.get(queueKey) === pending) tournamentMatchStarts.delete(queueKey);
   });
   return pending;
+}
+
+function sendTournamentResultUpdates(recipients, result, prizes) {
+  recipients.forEach((recipient) => {
+    const socket = recipient?.socket || recipient?.ws;
+    const userId = recipient?.userId || recipient?.user?.id;
+    if (!socket || socket.readyState !== socket.OPEN) return;
+    const prize = result.awards.find((award) => String(award.userId) === String(userId) && award.awarded);
+    if (prize) send(socket, "tournamentPrize", {
+      place: prize.place,
+      gold: prizes?.[prize.place] || 0,
+      balance: prize.gold,
+      stats: prize.stats,
+    });
+    send(socket, "tournamentUpdated", {});
+  });
+}
+
+async function resolveTournamentNoShow(queueKey, entry) {
+  if (tournamentQueues.get(queueKey) !== entry) return;
+  clearTournamentQueueEntry(entry);
+  tournamentQueues.delete(queueKey);
+  if (!entry.ws || entry.ws.readyState !== entry.ws.OPEN) {
+    return;
+  }
+
+  tournamentNoShowResolutions.add(queueKey);
+  try {
+    const latest = await getReadyMatch(entry.tournament.id, entry.user.id);
+    const matchStillReady = latest.match.id === entry.matchId
+      && latest.match.playerIds.includes(String(entry.user.id));
+    if (!matchStillReady) throw new Error("That tournament match is no longer ready.");
+
+    const result = await recordTournamentResult(entry.tournament.id, entry.matchId, entry.user.id);
+    send(entry.ws, "tournamentNoShowWin", {
+      tournamentId: entry.tournament.id,
+      matchId: entry.matchId,
+      graceMs: TOURNAMENT_READY_GRACE_MS,
+    });
+    sendTournamentResultUpdates([entry], result, latest.config.prizes);
+  } catch (err) {
+    send(entry.ws, "tournamentMatchUnavailable", {
+      tournamentId: entry.tournament.id,
+      matchId: entry.matchId,
+      message: err.message || "Tournament match preparation stopped. Please enter again.",
+    });
+  } finally {
+    tournamentNoShowResolutions.delete(queueKey);
+  }
+}
+
+function startTournamentNoShowTimer(queueKey, entry) {
+  clearTournamentQueueEntry(entry);
+  entry.noShowDeadline = Date.now() + TOURNAMENT_READY_GRACE_MS;
+  entry.noShowTimer = setTimeout(() => {
+    resolveTournamentNoShow(queueKey, entry).catch((err) => console.error("Tournament no-show forfeit failed:", err.message));
+  }, TOURNAMENT_READY_GRACE_MS);
 }
 
 function cancelDisconnectedMatch(room, disconnectedIdx) {
@@ -857,16 +926,7 @@ async function settleRewards(room) {
   if (room.tournament && room.game.winner !== "draw") {
     const winnerId = room.userIds[room.game.winner];
     const result = await recordTournamentResult(room.tournament.id, room.tournament.matchId, winnerId);
-    room.sockets.forEach((socket, idx) => {
-      const prize = result.awards.find((award) => String(award.userId) === String(room.userIds[idx]) && award.awarded);
-      if (prize) send(socket, "tournamentPrize", {
-        place: prize.place,
-        gold: room.tournament.prizes[prize.place],
-        balance: prize.gold,
-        stats: prize.stats,
-      });
-      send(socket, "tournamentUpdated", {});
-    });
+    sendTournamentResultUpdates(room.sockets.map((socket, idx) => ({ socket, userId: room.userIds[idx] })), result, room.tournament.prizes);
   }
 }
 
@@ -1197,20 +1257,33 @@ async function handleMessage(ws, msg) {
     if (ready.match.id !== matchId) return broadcastError(ws, "That tournament match is no longer ready.");
 
     const queueKey = `${tournamentId}:${matchId}`;
+    if (tournamentNoShowResolutions.has(queueKey)) return broadcastError(ws, "That tournament match is being resolved. Refresh the bracket and try again.");
     const opponentId = ready.match.playerIds.find((id) => String(id) !== String(user.id));
     const waiting = tournamentQueues.get(queueKey);
     const entry = { ws, user, name: user.username || "Player", tournament: ready.config, matchId };
     if (!waiting || waiting.ws.readyState !== waiting.ws.OPEN || String(waiting.user.id) === String(user.id)) {
+      if (waiting) {
+        clearTournamentQueueEntry(waiting);
+        tournamentQueues.delete(queueKey);
+      }
       detachSocketFromRoom(ws);
       tournamentQueues.set(queueKey, entry);
-      send(ws, "tournamentMatchQueued", { tournamentId, matchId });
+      startTournamentNoShowTimer(queueKey, entry);
+      send(ws, "tournamentMatchQueued", {
+        tournamentId,
+        matchId,
+        noShowDeadline: entry.noShowDeadline,
+        noShowGraceMs: TOURNAMENT_READY_GRACE_MS,
+      });
       return;
     }
     if (String(waiting.user.id) !== String(opponentId)) {
+      clearTournamentQueueEntry(waiting);
       tournamentQueues.delete(queueKey);
       return broadcastError(ws, "Your tournament opponent changed. Refresh the bracket and try again.");
     }
 
+    clearTournamentQueueEntry(waiting);
     tournamentQueues.delete(queueKey);
     detachSocketFromRoom(waiting.ws);
     detachSocketFromRoom(ws);

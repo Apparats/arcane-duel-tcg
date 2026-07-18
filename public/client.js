@@ -557,6 +557,11 @@ function handleServerMessage(msg) {
       showToast(msg.payload?.message || "Tournament match preparation stopped. Please enter again.");
       void window.ArcaneTournaments?.load();
       break;
+    case "tournamentNoShowWin":
+      window.ArcaneTournaments?.clearQueuedMatch(msg.payload);
+      showToast("Your opponent did not enter. You advance by tournament forfeit.");
+      void window.ArcaneTournaments?.load();
+      break;
     case "tournamentUpdated":
       void window.ArcaneTournaments?.load();
       break;

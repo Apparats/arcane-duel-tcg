@@ -1,6 +1,6 @@
 const assert = require("assert");
 const { createBracket, reportMatchResult, playerMatch } = require("../server/tournaments/bracket");
-const { TOURNAMENT_TURN_DURATION_MS, TOURNAMENT_RECONNECT_GRACE_MS } = require("../server/tournaments/rules");
+const { TOURNAMENT_TURN_DURATION_MS, TOURNAMENT_RECONNECT_GRACE_MS, TOURNAMENT_READY_GRACE_MS } = require("../server/tournaments/rules");
 
 function dummyPlayers() {
   return ["alice", "bruno", "cora", "david"].map((userId) => ({ userId }));
@@ -18,6 +18,7 @@ reportMatchResult(disconnectBracket, "r1m2", "cora");
 assert.strictEqual(disconnectBracket.rounds[0][1].loserId, "david", "A disconnected player who times out must be eliminated.");
 assert.strictEqual(TOURNAMENT_TURN_DURATION_MS, 30_000, "Tournament turns must stay short.");
 assert.strictEqual(TOURNAMENT_RECONNECT_GRACE_MS, 30_000, "Tournament reconnect grace must stay short.");
+assert.strictEqual(TOURNAMENT_READY_GRACE_MS, 180_000, "Tournament no-shows must not leave opponents waiting forever.");
 
 const drawBracket = createBracket(dummyPlayers());
 assert.strictEqual(playerMatch(drawBracket, "alice").id, "r1m1", "A draw must leave the bracket match ready for a replay.");
