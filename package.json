@@ -7,7 +7,7 @@
     "prestart": "node scripts/build-cards.js",
     "start": "node server/index.js",
     "test:smoke": "node test/simulate.js",
-    "test:tournaments": "node test/tournamentBracket.js && node test/tournamentMatchFlows.js && node test/tournamentStartQueue.js",
+    "test:tournaments": "node test/tournamentBracket.js && node test/tournamentMatchFlows.js && node test/tournamentHistory.js && node test/tournamentStartQueue.js",
     "test:audio": "node test/audioUnlock.js && node test/audioDelivery.js",
     "test:pwa": "node test/serviceWorkerCache.js",
     "cards:build": "node scripts/build-cards.js",

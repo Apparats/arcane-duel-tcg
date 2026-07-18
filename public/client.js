@@ -566,6 +566,7 @@ function handleServerMessage(msg) {
       break;
     case "matchStarted":
       window.ArcaneTournaments?.clearQueuedMatch();
+      window.ArcaneTournaments?.setVisible(false);
       forfeitResultMessage = "";
       setOpponentReconnectPaused(false);
       setQuickplaySearching(false);
@@ -1106,6 +1107,7 @@ $("btnBackToMenu").addEventListener("click", () => {
   setQuickplaySearching(false);
   send("cancelQuickplay", {});
   send("cancelTournamentMatch", {});
+  window.ArcaneTournaments?.setVisible(false);
   switchScreen("menu");
 });
 
@@ -1125,7 +1127,7 @@ function setLobbyTab(tab) {
   $("rankingPanel").classList.toggle("hidden", !isRanking);
   $("tournamentPanel").classList.toggle("hidden", !isTournaments);
   $("roomInfo").classList.add("hidden");
-  if (isTournaments) void window.ArcaneTournaments?.load();
+  window.ArcaneTournaments?.setVisible(isTournaments);
 }
 
 function rankingRowHTML(player) {

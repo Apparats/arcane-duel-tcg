@@ -4,6 +4,8 @@
   let tournaments = [];
   let loading = false;
   let countdownTimer = null;
+  let refreshTimer = null;
+  let visible = false;
   const queuedMatches = new Map();
 
   const el = (id) => document.getElementById(id);
@@ -68,15 +70,19 @@
     }
   }
 
-  function playerHTML(player, winnerId) {
+  function playerHTML(player, match) {
     if (!player) return '<span class="tournament-player">Waiting</span>';
-    return `<span class="tournament-player${String(player.userId) === String(winnerId) ? " winner" : ""}">${text(player.username)}</span>`;
+    const isWinner = String(player.userId) === String(match.winnerId || "");
+    const isEliminated = String(player.userId) === String(match.loserId || "");
+    const state = isWinner ? " winner" : isEliminated ? " eliminated" : "";
+    const marker = isWinner ? "Advanced" : isEliminated ? "Out" : "";
+    return `<span class="tournament-player${state}"><span>${text(player.username)}</span>${marker ? `<small>${marker}</small>` : ""}</span>`;
   }
 
   function matchHTML(match, extraClass = "") {
     if (!match) return "";
-    const status = match.status === "bye" ? "Bye" : match.status === "void" ? "No contest" : "";
-    return `<div class="tournament-match ${text(match.status)} ${extraClass}">${match.players.map((player) => playerHTML(player, match.winnerId)).join("")}${status ? `<span class="tournament-match-status">${status}</span>` : ""}</div>`;
+    const status = ({ ready: "Ready to play", waiting: "Awaiting result", complete: "Result", bye: "Advanced by bye", void: "No contest" })[match.status] || "";
+    return `<div class="tournament-match ${text(match.status)} ${extraClass}"><div class="tournament-match-players">${match.players.map((player) => playerHTML(player, match)).join("")}</div>${status ? `<span class="tournament-match-status">${status}</span>` : ""}</div>`;
   }
 
   function bracketHTML(tournament) {
@@ -88,8 +94,13 @@
       </section>
     `).join("");
     const third = tournament.bracket.thirdPlace ? `<section class="tournament-round"><span class="tournament-round-label">Third place</span>${matchHTML(tournament.bracket.thirdPlace, "tournament-match-third")}</section>` : "";
-    const podium = Object.entries(tournament.bracket.placements || {}).filter(([, player]) => player).map(([place, player]) => `<span><strong>${place}:</strong> ${text(player.username)}</span>`).join("");
-    return `<div class="tournament-bracket"><span class="tournament-bracket-title">Bracket</span><div class="tournament-rounds">${rounds}${third}</div>${podium ? `<div class="tournament-meta">${podium}</div>` : ""}</div>`;
+    const podium = [
+      ["first", "Champion"],
+      ["second", "Runner-up"],
+      ["third", "Third place"],
+    ].filter(([place]) => tournament.bracket.placements?.[place]).map(([place, label]) => `<div class="tournament-podium-place podium-${place}"><span>${label}</span><strong>${text(tournament.bracket.placements[place].username)}</strong></div>`).join("");
+    const title = tournament.phase === "completed" ? "Final bracket" : "Live bracket";
+    return `<div class="tournament-bracket"><span class="tournament-bracket-title">${title}</span><div class="tournament-rounds">${rounds}${third}</div>${podium ? `<div class="tournament-podium">${podium}</div>` : ""}</div>`;
   }
 
   function actionHTML(tournament) {
@@ -130,6 +141,7 @@
         ${registrationTime ? `<p class="tournament-timing">${text(registrationTime)}</p>` : ""}
         <p class="tournament-timing">${tournament.phase === "active" || tournament.phase === "completed" ? "Started" : "Starts"} ${text(dateTime(tournament.startsAt, tournament.timeZone))}</p>
         <p class="tournament-timing tournament-local-start">Your local start: ${text(localDateTime(tournament.startsAt))}</p>
+        ${tournament.finishedAt ? `<p class="tournament-timing">Completed ${text(localDateTime(tournament.finishedAt))}</p>` : ""}
         ${startInFuture ? `<p class="tournament-countdown" data-tournament-countdown="${text(tournament.startsAt)}">Starts in --</p>` : ""}
         <div class="tournament-meta"><span>${tournament.participantCount}/${tournament.maxPlayers} players</span><span><strong>1st</strong> ${prize.first || 0} gold</span><span><strong>2nd</strong> ${prize.second || 0} gold</span><span><strong>3rd</strong> ${prize.third || 0} gold</span></div>
         ${actionHTML(tournament)}
@@ -142,12 +154,25 @@
     const list = el("tournamentList");
     if (!list) return;
     clearCountdownTimer();
-    if (loading) {
+    if (loading && tournaments.length === 0) {
       list.innerHTML = '<p class="tournament-empty">Loading tournaments...</p>';
       return;
     }
-    list.innerHTML = tournaments.length ? tournaments.map(tournamentHTML).join("") : '<p class="tournament-empty">No tournaments are scheduled right now.</p>';
+    const current = tournaments.filter((tournament) => !["completed", "cancelled"].includes(tournament.phase));
+    const history = tournaments.filter((tournament) => ["completed", "cancelled"].includes(tournament.phase));
+    list.innerHTML = tournaments.length
+      ? `${current.map(tournamentHTML).join("")}${history.length ? `<section class="tournament-history"><div class="tournament-history-heading"><span>Tournament history</span><small>Completed brackets remain available here.</small></div>${history.map(tournamentHTML).join("")}</section>` : ""}`
+      : '<p class="tournament-empty">No tournaments are scheduled right now.</p>';
     startCountdowns();
+  }
+
+  function syncRefreshTimer() {
+    if (refreshTimer) {
+      clearInterval(refreshTimer);
+      refreshTimer = null;
+    }
+    if (!visible || document.hidden) return;
+    refreshTimer = setInterval(() => void load(), 5_000);
   }
 
   async function load() {
@@ -160,7 +185,6 @@
       if (!response.ok) throw new Error(data.error || "Could not load tournaments.");
       tournaments = Array.isArray(data.tournaments) ? data.tournaments : [];
     } catch (error) {
-      tournaments = [];
       showToast(error.message || "Could not load tournaments.");
     } finally {
       loading = false;
@@ -189,7 +213,8 @@
       }
       if (button.dataset.tournamentAction === "cancel-match") {
         send("cancelTournamentMatch", {});
-        queuedMatchIds.delete(`${tournamentId}:${tournament.myMatchId}`);
+        const tournament = tournaments.find((entry) => entry.id === tournamentId);
+        queuedMatches.delete(`${tournamentId}:${tournament?.myMatchId || ""}`);
         render();
       }
     } catch (error) {
@@ -199,6 +224,11 @@
 
   window.ArcaneTournaments = {
     load,
+    setVisible(nextVisible) {
+      visible = Boolean(nextVisible);
+      syncRefreshTimer();
+      if (visible) void load();
+    },
     setQueuedMatch(payload) {
       if (!payload?.tournamentId || !payload?.matchId) return;
       queuedMatches.set(`${payload.tournamentId}:${payload.matchId}`, { state: "waiting" });
@@ -215,4 +245,6 @@
       render();
     },
   };
+
+  document.addEventListener("visibilitychange", syncRefreshTimer);
 })();
