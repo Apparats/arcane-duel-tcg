@@ -30,7 +30,7 @@ module.exports = {
   race: "Human",
 
   // ---- Presentation fields (shown when hovering over the card) ----
-  rarity: "common",   // "common" | "rare" | "legendary" (sets the border color)
+  rarity: "common",   // "common" | "rare" | "legendary" | "mythic" | "souvenir"
   country: "Arcana",  // the card's country/faction (pick whichever you want)
   lore: "A short flavor line, no more than a couple of sentences.",
 

@@ -8,8 +8,8 @@ const { WebSocketServer } = require("ws");
 const { Game } = require("../public/engine");
 const { getCardById } = require("../public/cards");
 const { buildRandomLegalDeck } = require("../public/deckRules");
-const { connectDB, getCampaignProgress, grantCampaignReward, grantMatchEconomy, getPublicPlayerProfile, getQuickplayRanking, isDbEnabled, recordCampaignResult, recordMultiplayerDisconnect, resetConsecutiveDisconnects, searchPublicPlayers, setEquippedBadges, setSelectedTitle, submitCardRequest } = require("./db");
-const { listTournaments, registerForTournament, unregisterFromTournament, getReadyMatch, recordTournamentResult } = require("./tournaments/service");
+const { connectDB, getCampaignProgress, grantCampaignReward, grantMatchEconomy, getPublicPlayerProfile, getQuickplayRanking, isDbEnabled, recordCampaignResult, recordMultiplayerDisconnect, resetConsecutiveDisconnects, searchPublicPlayers, setDisplayName, setEquippedBadges, setSelectedTitle, submitCardRequest } = require("./db");
+const { listTournaments, registerForTournament, unregisterFromTournament, getReadyMatch, recordTournamentResult, recordTournamentMatchArrival, clearTournamentMatchArrival, clearTournamentMatchNoShowDeadline } = require("./tournaments/service");
 const { TOURNAMENT_TURN_DURATION_MS, TOURNAMENT_RECONNECT_GRACE_MS, TOURNAMENT_READY_GRACE_MS } = require("./tournaments/rules");
 const { router: authRouter, getSessionUser, isAuthEnabled } = require("./auth");
 const { router: shopRouter } = require("./shop");
@@ -198,6 +198,15 @@ app.put("/account/badges", createRateLimiter({ max: 20, keyPrefix: "account-badg
     res.json({ profile: await setEquippedBadges(user.id, req.body?.achievementIds) });
   } catch (err) {
     res.status(400).json({ error: err.message || "Could not update achievement badges." });
+  }
+});
+app.put("/account/display-name", createRateLimiter({ max: 10, keyPrefix: "account-display-name" }), async (req, res) => {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Login with Discord is required." });
+  try {
+    res.json({ profile: await setDisplayName(user.id, req.body?.displayName) });
+  } catch (err) {
+    res.status(400).json({ error: err.message || "Could not update username." });
   }
 });
 app.post("/card-requests", createRateLimiter({ max: 10, keyPrefix: "card-requests" }), async (req, res) => {
@@ -509,6 +518,7 @@ function removeFromTournamentQueues(ws) {
   for (const [key, entry] of tournamentQueues) {
     if (entry.ws === ws) {
       clearTournamentQueueEntry(entry);
+      clearTournamentQueueArrival(entry);
       tournamentQueues.delete(key);
     }
   }
@@ -520,6 +530,12 @@ function clearTournamentQueueEntry(entry) {
     entry.noShowTimer = null;
     entry.noShowDeadline = null;
   }
+}
+
+function clearTournamentQueueArrival(entry) {
+  if (!entry?.tournament?.id || !entry?.matchId || !entry?.user?.id) return;
+  clearTournamentMatchArrival(entry.tournament.id, entry.matchId, entry.user.id)
+    .catch((err) => console.error("Tournament queue arrival cleanup failed:", err.message));
 }
 
 function hasPendingTournamentStart(userId) {
@@ -564,6 +580,7 @@ function queueTournamentMatchStart(queueKey, tournamentId, matchId, ready, playe
       matchType: "tournament",
       tournament: { id: latest.config.id, matchId, prizes: latest.config.prizes },
     });
+    await clearTournamentMatchNoShowDeadline(tournamentId, matchId);
   });
   pending.position = queued.position;
 
@@ -752,6 +769,7 @@ async function startMultiplayerMatch(playerA, playerB, { matchType = "quickplay"
       decks,
       randomInt: secureRandomInt,
       startingPlayerIdx: secureRandomInt(2),
+      grantSecondPlayerManaCard: true,
     }),
     sockets: [playerA.ws, playerB.ws],
     names: [playerA.name, playerB.name],
@@ -1218,6 +1236,7 @@ async function handleMessage(ws, msg) {
       decks,
       randomInt: secureRandomInt,
       startingPlayerIdx: secureRandomInt(2),
+      grantSecondPlayerManaCard: true,
     });
     send(room.sockets[0], "matchStarted", {});
     send(room.sockets[1], "matchStarted", {});
@@ -1258,12 +1277,14 @@ async function handleMessage(ws, msg) {
 
     const queueKey = `${tournamentId}:${matchId}`;
     if (tournamentNoShowResolutions.has(queueKey)) return broadcastError(ws, "That tournament match is being resolved. Refresh the bracket and try again.");
+    await recordTournamentMatchArrival(tournamentId, matchId, user.id);
     const opponentId = ready.match.playerIds.find((id) => String(id) !== String(user.id));
     const waiting = tournamentQueues.get(queueKey);
     const entry = { ws, user, name: user.username || "Player", tournament: ready.config, matchId };
     if (!waiting || waiting.ws.readyState !== waiting.ws.OPEN || String(waiting.user.id) === String(user.id)) {
       if (waiting) {
         clearTournamentQueueEntry(waiting);
+        clearTournamentQueueArrival(waiting);
         tournamentQueues.delete(queueKey);
       }
       detachSocketFromRoom(ws);
@@ -1279,6 +1300,7 @@ async function handleMessage(ws, msg) {
     }
     if (String(waiting.user.id) !== String(opponentId)) {
       clearTournamentQueueEntry(waiting);
+      clearTournamentQueueArrival(waiting);
       tournamentQueues.delete(queueKey);
       return broadcastError(ws, "Your tournament opponent changed. Refresh the bracket and try again.");
     }

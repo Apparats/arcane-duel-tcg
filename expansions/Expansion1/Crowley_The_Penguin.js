@@ -1,9 +1,9 @@
 module.exports = {
   name: "Crowley_The_Penguin",
-  cost: 10,
+  cost: 8,
   type: "minion",
   attack: 2,
-  health: 13,
+  health: 14,
   keywords: ["taunt"],
   race: "Monster",
   rarity: "mythic",

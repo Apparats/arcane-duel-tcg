@@ -1,9 +1,9 @@
 module.exports = {
   name: "Aslani",
-  cost: 2,
+  cost: 3,
   type: "minion",
   attack: 3,
-  health: 2,
+  health: 1,
   keywords: ["charge"],
   race: "Monster",
   rarity: "common",

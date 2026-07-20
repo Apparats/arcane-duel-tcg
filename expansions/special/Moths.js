@@ -2,7 +2,7 @@ module.exports = {
   name: "Moths",
   cost: 5,
   type: "minion",
-  attack: 0,
+  attack: 2,
   health: 3,
   keywords: [],
   race: "Monster",

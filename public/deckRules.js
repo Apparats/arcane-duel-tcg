@@ -19,7 +19,12 @@
     rare: 2,
     legendary: 1,
     mythic: 1,
+    souvenir: DECK_SIZE,
   };
+
+  function cardCopyLimit(rarity) {
+    return CARD_COPY_LIMITS[rarity || "common"] ?? 2;
+  }
 
   function countCards(cardIds) {
     return cardIds.reduce((counts, cardId) => {
@@ -69,7 +74,7 @@
       const rarity = getCardRarity(cardId);
       rarityTotals[rarity] = (rarityTotals[rarity] || 0) + amount;
 
-      const copyLimit = CARD_COPY_LIMITS[rarity] || 2;
+      const copyLimit = cardCopyLimit(rarity);
       if (amount > copyLimit) errors.push(`${card.name}: max ${copyLimit} ${copyLimit === 1 ? "copy" : "copies"}.`);
 
       const owned = getOwnedCount(collection, cardId);
@@ -92,7 +97,7 @@
     let spellTotal = 0;
     const candidates = buildStarterDeck()
       .map((cardId) => getCardById(cardId))
-      .filter(Boolean)
+      .filter((card) => card && card.showInInventory !== false)
       .sort((a, b) => {
         const order = { common: 0, rare: 1, legendary: 2, mythic: 3 };
         return (order[a.rarity || "common"] ?? 0) - (order[b.rarity || "common"] ?? 0) || a.cost - b.cost;
@@ -100,7 +105,7 @@
 
     function canAdd(card) {
       const rarity = card.rarity || "common";
-      const copyLimit = CARD_COPY_LIMITS[rarity] || 2;
+      const copyLimit = cardCopyLimit(rarity);
       const totalLimit = RARITY_TOTAL_LIMITS[rarity] || Infinity;
       return (
         (counts[card.id] || 0) < copyLimit &&
@@ -139,7 +144,7 @@
     function canAdd(entry) {
       const card = entry.card;
       const rarity = card.rarity || "common";
-      const copyLimit = CARD_COPY_LIMITS[rarity] || 2;
+      const copyLimit = cardCopyLimit(rarity);
       const totalLimit = RARITY_TOTAL_LIMITS[rarity] || Infinity;
       return (
         (counts[card.id] || 0) < Math.min(entry.owned, copyLimit) &&
@@ -173,7 +178,7 @@
     const collection = {
       cardCollection: Object.fromEntries(candidates.map((card) => [
         card.id,
-        CARD_COPY_LIMITS[card.rarity || "common"] || 2,
+        cardCopyLimit(card.rarity),
       ])),
     };
     const deck = [];
@@ -183,7 +188,7 @@
 
     function canAdd(card) {
       const rarity = card.rarity || "common";
-      const copyLimit = CARD_COPY_LIMITS[rarity] || 2;
+      const copyLimit = cardCopyLimit(rarity);
       const rarityLimit = RARITY_TOTAL_LIMITS[rarity] || Infinity;
       return (
         (counts[card.id] || 0) < copyLimit &&
@@ -215,6 +220,7 @@
     MAX_SPELLS,
     RARITY_TOTAL_LIMITS,
     CARD_COPY_LIMITS,
+    cardCopyLimit,
     countCards,
     countSpellCards,
     getOwnedCount,

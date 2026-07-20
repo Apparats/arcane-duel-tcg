@@ -1,9 +1,9 @@
 module.exports = {
   name: "Warerita",
-  cost: 2,
+  cost: 3,
   type: "minion",
-  attack: 1,
-  health: 5,
+  attack: 3,
+  health: 4,
   keywords: [],
   race: "Monster",
   rarity: "rare",

@@ -1,8 +1,9 @@
 const PACK_RARITY_WEIGHTS = {
-  common: 65,
+  common: 64.4,
   rare: 25,
   legendary: 8,
   mythic: 2,
+  souvenir: 0.6,
 };
 
 const STARTER_CARD_COUNT = 20;
@@ -25,13 +26,18 @@ function randomFrom(pool) {
 }
 
 function weightedPick(entries) {
-  const total = entries.reduce((sum, entry) => sum + entry.weight, 0);
+  const scale = 10;
+  const weighted = entries
+    .map((entry) => ({ ...entry, weight: Math.max(0, Math.round(Number(entry.weight || 0) * scale)) }))
+    .filter((entry) => entry.weight > 0);
+  const total = weighted.reduce((sum, entry) => sum + entry.weight, 0);
+  if (total <= 0) return null;
   let roll = secureRandomInt(total);
-  for (const entry of entries) {
+  for (const entry of weighted) {
     if (roll < entry.weight) return entry.value;
     roll -= entry.weight;
   }
-  return entries[entries.length - 1].value;
+  return weighted[weighted.length - 1].value;
 }
 
 function cardsByRarity(cards, rarity) {

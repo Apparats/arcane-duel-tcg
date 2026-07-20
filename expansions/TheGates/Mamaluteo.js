@@ -3,14 +3,14 @@ module.exports = {
   cost: 7,
   type: "minion",
   attack: 5,
-  health: 7,
+  health: 10,
   keywords: [],
   race: "Monster",
   rarity: "mythic",
   country: "Bolivia",
-  lore: "On play, poison an enemy minion. The venom keeps working after the clash.",
+  lore: "On play, poison an enemy minion or hero for six turns. Poison deals +2 damage.",
   image: "art/mamaluteo.webp",
   abilities: [
-    { trigger: "onPlay", effect: "applyStatus", target: "enemyMinion", status: "poisoned", value: 2, turns: 3 },
+    { trigger: "onPlay", effect: "applyStatus", target: "enemy", status: "poisoned", value: 2, turns: 6 },
   ],
 };

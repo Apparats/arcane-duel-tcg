@@ -169,7 +169,7 @@ function renderDeckPool() {
     const used = counts[card.id] || 0;
     const full = used >= owned || deckBuilderState.cardIds.length >= TCGDeckRules.DECK_SIZE || (card.type === "spell" && spellLimitReached);
     const el = document.createElement("button");
-    el.className = `deck-pool-card${full ? " deck-pool-card-disabled" : ""}`;
+    el.className = `deck-pool-card card-tilt-shell${full ? " deck-pool-card-disabled" : ""}`;
     el.disabled = full;
     el.innerHTML = `
       <span class="minion-card inventory-card deck-card-preview ${rarityClass(card)}">

@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { CARDS } = require("../public/cards");
+const { PACK_RARITY_WEIGHTS } = require("./cardRewards");
 const { PACK_PRICE_GOLD, PACK_SIZE } = require("./db");
 const { assertMongoKeySegment, sanitizeString } = require("./mongoSafety");
 const { getShopPackSettings, isShopExpansion } = require("./expansionPack");
@@ -73,6 +74,7 @@ function toPublicPack(pack) {
     size: pack.size,
     art: pack.art,
     cardCount: pack.cards.length,
+    rarityWeights: { ...PACK_RARITY_WEIGHTS },
     // The client already has the public card catalog. IDs keep this response
     // compact while precisely describing which cards can come from this pack.
     cardIds: pack.cards.map((card) => card.id),

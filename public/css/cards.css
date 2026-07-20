@@ -135,6 +135,8 @@
 .status-badge.status-silenced { background: radial-gradient(circle at 35% 25%, #ced0da, #4d5060 70%); }
 .status-badge.status-poisoned { background: radial-gradient(circle at 35% 25%, #d8ff9b, #568b28 70%); color: #142707; }
 .status-badge.status-marked { background: radial-gradient(circle at 35% 25%, #ffd5a6, #c34b22 70%); }
+.status-badge.status-burning { background: radial-gradient(circle at 35% 25%, #fff0a8, #e36b1f 48%, #7e1712 78%); }
+.status-badge.status-drunk { background: radial-gradient(circle at 35% 25%, #fff3a6, #b6842c 48%, #236b68 82%); color: #171109; }
 
 .card-footer {
   position: absolute;
@@ -213,13 +215,36 @@
 
 /* ---- Rarity: border color + glow ---- */
 
-.rarity-common { border-color: var(--line); }
-.rarity-rare { border-color: var(--mana); box-shadow: 0 0 10px rgba(79, 195, 232, 0.35); }
-.rarity-legendary { border-color: var(--gold); box-shadow: 0 0 14px rgba(232, 179, 79, 0.5); }
-.rarity-mythic {
+.minion-card.rarity-common,
+.hand-card.rarity-common { border-color: var(--line); }
+.minion-card.rarity-rare,
+.hand-card.rarity-rare { border-color: var(--mana); box-shadow: 0 0 10px rgba(79, 195, 232, 0.35); }
+.minion-card.rarity-legendary,
+.hand-card.rarity-legendary { border-color: var(--gold); box-shadow: 0 0 14px rgba(232, 179, 79, 0.5); }
+.minion-card.rarity-mythic,
+.hand-card.rarity-mythic {
   border-color: var(--mythic);
   box-shadow: 0 0 18px var(--mythic-glow), 0 0 6px var(--mythic-glow) inset;
   animation: mythic-pulse 2.2s ease-in-out infinite alternate;
+}
+.minion-card.rarity-souvenir,
+.hand-card.rarity-souvenir {
+  border-color: var(--souvenir);
+  background:
+    linear-gradient(145deg, rgba(255, 247, 202, 0.22), transparent 28%, rgba(92, 57, 10, 0.22) 62%, rgba(255, 236, 164, 0.18)),
+    linear-gradient(160deg, var(--panel-2), var(--panel));
+  box-shadow:
+    0 0 16px rgba(247, 215, 123, 0.5),
+    0 0 7px rgba(255, 247, 202, 0.28) inset,
+    0 8px 24px rgba(76, 46, 8, 0.28);
+}
+.minion-card.rarity-souvenir:hover,
+.hand-card.rarity-souvenir:hover {
+  box-shadow:
+    0 0 24px rgba(255, 235, 157, 0.78),
+    0 0 46px rgba(216, 153, 45, 0.36),
+    0 0 14px rgba(255, 250, 220, 0.36) inset,
+    0 12px 28px rgba(75, 47, 10, 0.42);
 }
 
 @keyframes mythic-pulse {
@@ -228,6 +253,21 @@
 }
 
 /* ---- States ---- */
+
+.card-tilt-shell {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.card-tilt-shell > .minion-card,
+.card-tilt-shell > .hand-card {
+  width: 100%;
+  height: 100%;
+}
 
 .minion-card { width: clamp(128px, 9.2vw, 150px); }
 .minion-card:hover { transform: translateY(-5px); }
@@ -317,8 +357,12 @@
 
 /* ---- Holographic foil overlay (legendary & mythic only) ---- */
 /* Uses a ::before element driven by --foil-angle CSS var from JS */
-.rarity-legendary::before,
-.rarity-mythic::before {
+.minion-card.rarity-legendary::before,
+.minion-card.rarity-mythic::before,
+.minion-card.rarity-souvenir::before,
+.hand-card.rarity-legendary::before,
+.hand-card.rarity-mythic::before,
+.hand-card.rarity-souvenir::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -339,4 +383,26 @@
   mix-blend-mode: color-dodge;
   opacity: var(--foil-opacity, 0.25); /* Visible at rest; stronger on hover */
   transition: opacity 0.3s ease, background 0.15s ease;
+}
+
+.minion-card.rarity-souvenir::before,
+.hand-card.rarity-souvenir::before {
+  background:
+    linear-gradient(
+      calc(var(--foil-angle, 118deg)),
+      rgba(255, 255, 255, 0.36) 0%,
+      rgba(255, 229, 139, 0.14) 18%,
+      rgba(168, 105, 22, 0.22) 36%,
+      rgba(255, 247, 204, 0.34) 50%,
+      rgba(194, 133, 33, 0.18) 67%,
+      rgba(255, 226, 128, 0.22) 84%,
+      rgba(255, 255, 255, 0.34) 100%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.1) 0 1px,
+      transparent 1px 6px
+    );
+  mix-blend-mode: color-dodge;
+  opacity: var(--foil-opacity, 0.34);
 }

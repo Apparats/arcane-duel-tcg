@@ -16,6 +16,8 @@ const STATUS_LABEL = {
   silenced: "X",
   poisoned: "P",
   marked: "!",
+  burning: "B",
+  drunk: "D",
 };
 const STATUS_FULL_LABEL = {
   weakened: "Weakened",
@@ -23,10 +25,13 @@ const STATUS_FULL_LABEL = {
   silenced: "Silenced",
   poisoned: "Poisoned",
   marked: "Marked",
+  burning: "Burning",
+  drunk: "Drunk",
 };
-const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", mythic: "Mythic" };
+const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", mythic: "Mythic", souvenir: "Souvenir" };
+const BABU2_CARD_ID = "expansion2:Babu2";
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.5.4-pwa-tournament-stability";
+const CHANGELOG_VERSION = "1.6.0-embers-exchange-fair-play";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const TYPE_ICON = { minion: "⚔", spell: "✦" };
@@ -389,6 +394,8 @@ function introProfile(participant, own) {
       supporter: profile.supporter === true,
       cardCollection: profile.cardCollection,
       unlockedCards: profile.unlockedCards,
+      quickplayRank: profile.quickplayRank,
+      bestQuickplayRank: profile.quickplayBestRank ?? profile.stats?.bestQuickplayRank,
     })
     : null;
   return {
@@ -1077,7 +1084,8 @@ function showEmote(emote, isSelf) {
 function openLobby(mode) {
   if (!requireLoggedInForPlay()) return;
   $("screen-lobby").classList.toggle("lobby-singleplayer", mode === "singleplayer");
-  $("singleplayerSnow").classList.toggle("hidden", mode !== "singleplayer");
+  $("screen-lobby").classList.toggle("lobby-multiplayer", mode === "multiplayer");
+  $("lobbyEmbers").classList.toggle("hidden", !["singleplayer", "multiplayer"].includes(mode));
   $("singleplayerActions").classList.toggle("hidden", mode !== "singleplayer");
   $("multiplayerActions").classList.toggle("hidden", mode !== "multiplayer");
   $("lobbySubtitle").textContent =
@@ -1326,6 +1334,7 @@ function render(state) {
   $("selfHealth").textContent = state.me.health;
   $("selfMana").textContent = state.me.manaCurrent;
   $("selfManaMax").textContent = state.me.manaMax;
+  $("selfHeroStatuses").innerHTML = statusBadgesHTML(state.me);
   $("selfDeckCount").textContent = state.me.deckCount + " 🂠";
 
   $("oppName").textContent = state.opponent.name;
@@ -1333,6 +1342,7 @@ function render(state) {
   $("oppHealth").textContent = state.opponent.health;
   $("oppMana").textContent = state.opponent.manaCurrent;
   $("oppManaMax").textContent = state.opponent.manaMax;
+  $("oppHeroStatuses").innerHTML = statusBadgesHTML(state.opponent);
   $("oppDeckCount").textContent = state.opponent.deckCount + " 🂠";
 
   $("selfHero").classList.toggle("active-turn", state.isYourTurn);
@@ -1495,7 +1505,7 @@ function renderHand(state) {
     // lower board frame.
     el.style.setProperty("--hand-rest-y", `${-Math.abs(fanOffset) * 5}px`);
     if (card.type === "spell") el.classList.add("spell");
-    if (card.cost > state.me.manaCurrent) el.classList.add("unaffordable");
+    if (card.cost > state.me.manaCurrent || getHandCardPlayBlockReason(state, card)) el.classList.add("unaffordable");
     if (idx === selectedHandIndex) el.classList.add("selected");
     el.dataset.handIndex = String(idx);
 
@@ -1523,6 +1533,8 @@ function renderHand(state) {
 function onHandCardClick(idx, card, state, cardEl = null) {
   if (!state.isYourTurn) return showToast("It's not your turn.");
   if (card.cost > state.me.manaCurrent) return showToast("Not enough mana.");
+  const blockReason = getHandCardPlayBlockReason(state, card);
+  if (blockReason) return showToast(blockReason);
 
   selectedAttackerId = null;
 
@@ -1534,11 +1546,14 @@ function onHandCardClick(idx, card, state, cardEl = null) {
     return;
   }
 
+  const needsPlayTarget = cardRequiresPlayTarget(card);
   const needsEnemyMinionTarget = cardRequiresEnemyMinionTarget(card);
+  const needsEnemyHeroTarget = cardRequiresEnemyHeroTarget(card);
+  const enemyOnlyTarget = cardTargetsEnemyOnly(card);
 
   // Minions normally enter the board immediately. A minion with an on-play
   // status effect waits for an enemy target before the server accepts it.
-  if (card.type === "minion" && !needsEnemyMinionTarget) {
+  if (card.type === "minion" && !needsPlayTarget) {
     selectedHandIndex = null;
     pendingHandPlayAnimation = cardEl
       ? { cardId: card.id, rect: cardEl.getBoundingClientRect(), createdAt: performance.now() }
@@ -1551,7 +1566,7 @@ function onHandCardClick(idx, card, state, cardEl = null) {
 
   // Draw spell, or a spell that works purely off "abilities" (no
   // classic effect): neither one needs you to pick a target.
-  if ((card.effect === "draw" || !card.effect) && !needsEnemyMinionTarget) {
+  if ((card.effect === "draw" || !card.effect) && !needsPlayTarget) {
     selectedHandIndex = null;
     predictCardPlay(cardEl);
     window.ArcaneAudio?.playSfx("cardPlay");
@@ -1564,9 +1579,13 @@ function onHandCardClick(idx, card, state, cardEl = null) {
   collapseHandForSpellTargeting();
   showTargetHint(needsEnemyMinionTarget
     ? "Choose an enemy minion"
-    : card.effect === "heal"
-      ? "Choose who to heal (or your own hero)"
-      : "Choose a target (or the enemy hero)");
+    : needsEnemyHeroTarget
+      ? "Choose the enemy hero"
+      : enemyOnlyTarget
+        ? "Choose an enemy minion or the enemy hero"
+        : card.effect === "heal"
+          ? "Choose who to heal (or your own hero)"
+          : "Choose a target (or the enemy hero)");
   render(myState);
 }
 
@@ -1579,6 +1598,12 @@ function onMinionClick(minion, isSelf) {
     const selectedCard = state.me.hand[selectedHandIndex];
     if (cardRequiresEnemyMinionTarget(selectedCard) && isSelf) {
       return showToast("Choose an enemy minion.");
+    }
+    if (cardRequiresEnemyHeroTarget(selectedCard)) {
+      return showToast("Choose the enemy hero.");
+    }
+    if (cardTargetsEnemyOnly(selectedCard) && isSelf) {
+      return showToast("Choose an enemy target.");
     }
     predictCardPlay(document.querySelector(`.hand-card[data-hand-index="${selectedHandIndex}"]`));
     window.ArcaneAudio?.playSfx("cardPlay");
@@ -1614,6 +1639,9 @@ function onHeroClick(isSelf) {
     const selectedCard = state.me.hand[selectedHandIndex];
     if (cardRequiresEnemyMinionTarget(selectedCard)) {
       return showToast("Choose an enemy minion.");
+    }
+    if (cardTargetsEnemyOnly(selectedCard) && isSelf) {
+      return showToast("Choose an enemy target.");
     }
     if (selectedCard?.effect === "heal" && !isSelf) {
       return showToast("Choose your own hero or a minion to heal.");
@@ -1670,7 +1698,29 @@ $("btnToggleHand").addEventListener("click", () => {
 
 function hasPlayableHandCard(state) {
   const mana = Number(state?.me?.manaCurrent);
-  return Number.isFinite(mana) && Boolean(state?.me?.hand?.some((card) => Number(card.cost) <= mana));
+  return Number.isFinite(mana) && Boolean(state?.me?.hand?.some((card) => Number(card.cost) <= mana && !getHandCardPlayBlockReason(state, card)));
+}
+
+function hasBabuBoardLock(board) {
+  return (board || []).some((minion) => minion.cardId === BABU2_CARD_ID);
+}
+
+function cardReturnsOtherFriendlyMinionsToHand(card) {
+  return Boolean(card?.abilities?.some((ability) => ability.effect === "returnOtherFriendlyMinionsToHand"));
+}
+
+function getHandCardPlayBlockReason(state, card) {
+  if (!state?.me || !card) return "";
+  if (card.type === "minion" && hasBabuBoardLock(state.me.board)) {
+    return "Babu prevents you from summoning more minions.";
+  }
+  if (card.type === "minion" && cardReturnsOtherFriendlyMinionsToHand(card)) {
+    const handCountAfterPlay = Math.max(0, (state.me.hand || []).length - 1);
+    if (handCountAfterPlay + (state.me.board || []).length > 10) {
+      return "Not enough hand space.";
+    }
+  }
+  return "";
 }
 
 function shouldAutoHideHand(state) {
@@ -1768,16 +1818,18 @@ function updateTargetableHighlights(state) {
   const targetingAttack = selectedAttackerId !== null;
   const selectedCard = targetingSpell ? state.me.hand[selectedHandIndex] : null;
   const enemyMinionOnly = cardRequiresEnemyMinionTarget(selectedCard);
+  const enemyHeroOnly = cardRequiresEnemyHeroTarget(selectedCard);
+  const enemyOnlyTarget = cardTargetsEnemyOnly(selectedCard);
   const healingSpell = selectedCard?.effect === "heal";
 
   $("oppHero").classList.toggle("targetable", targetingAttack || (targetingSpell && !enemyMinionOnly && !healingSpell));
-  $("selfHero").classList.toggle("targetable", targetingSpell && !enemyMinionOnly);
+  $("selfHero").classList.toggle("targetable", targetingSpell && !enemyMinionOnly && !enemyOnlyTarget);
 
   document.querySelectorAll("#oppBoard .minion-card").forEach((el) => {
-    el.classList.toggle("targetable", targetingSpell || targetingAttack);
+    el.classList.toggle("targetable", (targetingSpell && !enemyHeroOnly) || targetingAttack);
   });
   document.querySelectorAll("#selfBoard .minion-card").forEach((el) => {
-    el.classList.toggle("targetable", targetingSpell && !enemyMinionOnly);
+    el.classList.toggle("targetable", targetingSpell && !enemyMinionOnly && !enemyHeroOnly && !enemyOnlyTarget);
   });
 }
 
@@ -1887,8 +1939,10 @@ function statusDescription(status) {
     case "weakened": return `Weakened: -${amount} Attack ${duration}.`;
     case "frozen": return `Frozen: cannot attack ${duration}.`;
     case "silenced": return "Silenced: abilities and keywords are removed permanently.";
-    case "poisoned": return `Poisoned: takes ${amount} damage at the start of its turn, ${duration}.`;
+    case "poisoned": return `Poisoned: takes ${amount} damage at the start of its turn, ${duration}. Can affect minions and heroes; reapplying Poison refreshes it.`;
     case "marked": return `Marked: the next damage taken is increased by ${amount}, ${duration}.`;
+    case "burning": return `Burning: takes ${amount} damage at the start of its turn, ${duration}. Further Burning adds damage and duration.`;
+    case "drunk": return "Drunk: attacks a random minion on either side instead of the chosen target.";
     default: return "Status effect.";
   }
 }
@@ -1897,6 +1951,28 @@ function cardRequiresEnemyMinionTarget(card) {
   return Boolean(card?.abilities?.some((ability) =>
     ["applyStatus", "returnEnemyMinionToDeck"].includes(ability.effect) && ability.target === "enemyMinion"
   ));
+}
+
+function cardRequiresEnemyHeroTarget(card) {
+  return Boolean(card?.abilities?.some((ability) =>
+    ability.effect === "applyStatus" && ability.target === "enemyHero"
+  ));
+}
+
+function cardTargetsEnemyOnly(card) {
+  return Boolean(card?.abilities?.some((ability) =>
+    ability.trigger === "onPlay" &&
+    (
+      ability.effect === "returnEnemyMinionToDeck" ||
+      (ability.effect === "applyStatus" && ["enemyMinion", "enemy", "enemyCharacter", "enemyHero"].includes(ability.target))
+    )
+  ));
+}
+
+function cardRequiresPlayTarget(card) {
+  if (!card) return false;
+  if (card.type === "spell" && card.effect && card.effect !== "draw") return true;
+  return cardTargetsEnemyOnly(card);
 }
 
 function cardCostHTML(card) {
@@ -2748,7 +2824,7 @@ function updateDailyRewardProgress(economyUpdate) {
 
 function renderMenuGoldProgress() {
   const rewards = accountState?.user?.economy?.dailyRewards || {};
-  setModeGoldProgress("singleplayer", rewards.singleplayer, 10);
+  setModeGoldProgress("singleplayer", rewards.singleplayer, 80);
   setModeGoldProgress("multiplayer", rewards.multiplayer, 50);
 }
 
@@ -2789,6 +2865,10 @@ window.ArcaneAccountProfile?.init({
   showToast,
   switchScreen,
 });
+
+window.ArcaneClient = {
+  getAccountState: () => accountState,
+};
 
 $("btnOpenTerms").addEventListener("click", () => setLegalNoticeOpen("terms"));
 $("btnOpenPrivacy").addEventListener("click", () => setLegalNoticeOpen("privacy"));
@@ -2889,14 +2969,37 @@ window.addEventListener("load", () => {
 // ---------------- 3D CARD PARALLAX EFFECT ----------------
 // Tilts the card and moves its inner art on mouse move for a 3D hologram look.
 
+function cardFreeTiltShell(card) {
+  return card?.closest?.(".card-tilt-shell, .card-opening-slot") || null;
+}
+
+function cardCanUseParallax(card) {
+  if (!card) return false;
+  if (card.classList.contains("dying") || card.classList.contains("inventory-card-locked") || card.dataset.dragArmed) return false;
+  if (card.closest(".card-opening-slot.is-face-down")) return false;
+  return true;
+}
+
+function cardParallaxProfile(card) {
+  const freeShell = cardFreeTiltShell(card);
+  const inOpening = Boolean(card.closest(".card-opening-slot"));
+  const inHand = card.classList.contains("hand-card");
+  return {
+    freeShell,
+    maxRotate: inOpening ? 25 : freeShell ? 21 : 16,
+    zRotate: freeShell ? 2.4 : 0,
+    lift: inOpening ? "-8px" : freeShell ? "-6px" : "-5px",
+    zIndex: inHand ? "40" : freeShell ? "30" : "10",
+  };
+}
+
 // Track mouse entry to animate the initial tilt smoothly instead of snapping
 document.addEventListener("mouseenter", (e) => {
   if (!canUseHoverTooltips()) return;
   const card = closestElement(e.target, ".minion-card, .hand-card");
   if (!card) return;
 
-  // Skip cards that are dying or locked
-  if (card.classList.contains("dying") || card.classList.contains("inventory-card-locked") || card.dataset.dragArmed) return;
+  if (!cardCanUseParallax(card)) return;
 
   card.dataset.entering = "true";
   
@@ -2920,8 +3023,7 @@ document.addEventListener("mousemove", (e) => {
   const card = closestElement(e.target, ".minion-card, .hand-card");
   if (!card) return;
 
-  // Skip cards that are dying or locked
-  if (card.classList.contains("dying") || card.classList.contains("inventory-card-locked") || card.dataset.dragArmed) return;
+  if (!cardCanUseParallax(card)) return;
 
   const rect = card.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -2930,19 +3032,20 @@ document.addEventListener("mousemove", (e) => {
   const centerX = rect.width / 2;
   const centerY = rect.height / 2;
 
-  // Max rotation angle (degrees)
-  const maxRotate = 16;
+  const profile = cardParallaxProfile(card);
+  const maxRotate = profile.maxRotate;
   
   // Consistent tilt: card face tilts TOWARDS the cursor
   const rotateX = ((y - centerY) / centerY) * maxRotate;
   const rotateY = ((centerX - x) / centerX) * maxRotate;
+  const rotateZ = ((x - centerX) / centerX) * profile.zRotate;
 
   // If we just entered, keep the smooth transition. Otherwise, update fast for real-time tracking
   if (card.dataset.entering !== "true") {
     card.style.transition = "transform 0.08s ease-out, box-shadow 0.15s ease";
   }
   
-  // Hand card vs Board minion card adjustments (keep their selected state translate offset)
+  // Hand card vs Board/inspection card adjustments (keep selected state translate offset)
   let baseTranslateY = "0px";
   if (card.classList.contains("hand-card")) {
     const handRestY = card.style.getPropertyValue("--hand-rest-y") || "0px";
@@ -2957,11 +3060,11 @@ document.addEventListener("mousemove", (e) => {
     if (card.classList.contains("selected")) {
       baseTranslateY = "-5px";
     } else {
-      baseTranslateY = "-5px"; // Match CSS hover lift
+      baseTranslateY = profile.lift;
     }
-    card.style.transform = `translateY(${baseTranslateY}) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    card.style.transform = `translateY(${baseTranslateY}) rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`;
   }
-  card.style.zIndex = card.classList.contains("hand-card") ? "40" : "10";
+  card.style.zIndex = profile.zIndex;
 
   // Keep the art at native scale so hover inspection does not blur or crop it.
   // Depth now comes from card tilt, shine, and foil instead of zooming the image.
@@ -2980,13 +3083,13 @@ document.addEventListener("mousemove", (e) => {
   card.style.setProperty("--shine-y", `${shineY}%`);
   card.style.setProperty("--shine-opacity", "1");
 
-  // Update holographic foil for legendary and mythic cards
-  const isHolo = card.classList.contains("rarity-legendary") || card.classList.contains("rarity-mythic");
+  // Update holographic foil for premium card finishes.
+  const isHolo = card.classList.contains("rarity-legendary") || card.classList.contains("rarity-mythic") || card.classList.contains("rarity-souvenir");
   if (isHolo) {
     // Angle is derived from the cursor position across the card diagonally
     const foilAngle = 90 + ((x / rect.width) - 0.5) * 80 + ((y / rect.height) - 0.5) * 40;
     card.style.setProperty("--foil-angle", `${foilAngle}deg`);
-    card.style.setProperty("--foil-opacity", "0.8");
+    card.style.setProperty("--foil-opacity", card.classList.contains("rarity-souvenir") ? "0.95" : "0.8");
   }
 });
 

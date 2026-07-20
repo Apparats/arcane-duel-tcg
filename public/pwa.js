@@ -94,7 +94,7 @@
   }
 
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/service-worker.js", { scope: "/" })
+    navigator.serviceWorker.register("/service-worker.js", { scope: "/", updateViaCache: "none" })
       .then((registration) => registration.update())
       .catch(() => {
         // The game remains fully usable when installation support is unavailable.

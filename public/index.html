@@ -13,22 +13,22 @@
 <link rel="apple-touch-icon" href="pwa-icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css?v=1.5.4" />
-<link rel="stylesheet" href="css/menu.css?v=1.5.4-mobile-audio" />
-<link rel="stylesheet" href="css/account-profile.css?v=1.5.4" />
-<link rel="stylesheet" href="css/lobby.css?v=1.5.4-tournament-history" />
-<link rel="stylesheet" href="css/board.css?v=1.5.4" />
-<link rel="stylesheet" href="css/cards.css?v=1.5.4" />
-<link rel="stylesheet" href="css/board-arena.css?v=1.5.4" />
-<link rel="stylesheet" href="css/board-hand.css?v=1.5.4" />
-<link rel="stylesheet" href="css/inventory.css?v=1.5.4" />
-<link rel="stylesheet" href="css/deck-builder.css?v=1.5.4" />
-<link rel="stylesheet" href="css/shop.css?v=1.5.4" />
-<link rel="stylesheet" href="css/trade.css?v=1.5.4-trade-layout-v2" />
-<link rel="stylesheet" href="css/pack-opening.css?v=1.5.4" />
-<link rel="stylesheet" href="css/fx.css?v=1.5.4" />
-<link rel="stylesheet" href="css/board-effects.css?v=1.5.4" />
-<link rel="stylesheet" href="css/overlay.css?v=1.5.4" />
+<link rel="stylesheet" href="css/base.css?v=1.6.0-athena-swap" />
+  <link rel="stylesheet" href="css/menu.css?v=1.6.0-athena-swap" />
+<link rel="stylesheet" href="css/account-profile.css?v=1.6.0-athena-swap" />
+<link rel="stylesheet" href="css/lobby.css?v=1.6.0-athena-swap" />
+<link rel="stylesheet" href="css/board.css?v=1.6.0-athena-swap" />
+<link rel="stylesheet" href="css/cards.css?v=1.6.0-athena-swap" />
+<link rel="stylesheet" href="css/board-arena.css?v=1.6.0-athena-swap" />
+<link rel="stylesheet" href="css/board-hand.css?v=1.6.0-athena-swap" />
+<link rel="stylesheet" href="css/inventory.css?v=1.6.0-athena-swap" />
+<link rel="stylesheet" href="css/deck-builder.css?v=1.6.0-athena-swap" />
+<link rel="stylesheet" href="css/shop.css?v=1.6.0-athena-swap" />
+<link rel="stylesheet" href="css/trade.css?v=1.6.0-athena-swap" />
+<link rel="stylesheet" href="css/pack-opening.css?v=1.6.0-athena-swap" />
+<link rel="stylesheet" href="css/fx.css?v=1.6.0-athena-swap" />
+<link rel="stylesheet" href="css/board-effects.css?v=1.6.0-athena-swap" />
+<link rel="stylesheet" href="css/overlay.css?v=1.6.0-athena-swap" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -124,7 +124,7 @@
         <button id="btnOpenPrivacyMenu" class="btn menu-option-button" type="button">Privacy Notice</button>
         <div class="menu-option-config">
           <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Config</button>
-          <span class="menu-version">Version 1.5.4</span>
+          <span class="menu-version">Version 1.6</span>
         </div>
       </div>
     </div>
@@ -214,7 +214,7 @@
       <h1 class="brand menu-brand">ARCANA TCG</h1>
       <div class="menu-info-actions">
         <button id="btnOpenHowToPlay" class="changelog-button" type="button">How to Play</button>
-        <button id="btnOpenChangelog" class="changelog-button" type="button">Changelog <span id="changelogNewBadge" class="changelog-new-badge hidden">NEW!</span></button>
+        <button id="btnOpenChangelog" class="changelog-button" type="button">Patch Notes <span id="changelogNewBadge" class="changelog-new-badge hidden">NEW!</span></button>
       </div>
 
       <div class="menu-grid">
@@ -229,7 +229,7 @@
           </span>
           <span class="menu-tile-label">Play Singleplayer</span>
           <span class="menu-tile-sub">Fastplay vs NPC or play the campaigns!</span>
-          <span class="menu-tile-gold" id="singleplayerGoldProgress">0 / 50 gold today</span>
+          <span class="menu-tile-gold" id="singleplayerGoldProgress">0 / 80 gold today</span>
         </button>
         <div class="menu-tile-wrap">
           <span id="tournamentIncoming" class="tournament-incoming hidden" aria-live="polite"><span aria-hidden="true"></span>Tournament incoming</span>
@@ -302,43 +302,67 @@
     <div class="trade-wrap">
       <div class="trade-header">
         <button id="btnTradeBack" class="btn-link back-link-inline">&#x2190; Back to menu</button>
-        <h1 class="brand trade-brand">TRADE</h1>
-        <p class="brand-sub">Exchange one card directly with another player</p>
+        <div class="trade-heading">
+          <span class="trade-eyebrow">Player exchange</span>
+          <h1 class="brand trade-brand">TRADE</h1>
+          <p>Connect, compare both offers, then confirm when the deal feels right.</p>
+        </div>
+        <div class="trade-progress" aria-hidden="true">
+          <span><b>1</b> Connect</span>
+          <i></i>
+          <span><b>2</b> Choose</span>
+          <i></i>
+          <span><b>3</b> Confirm</span>
+        </div>
       </div>
 
       <div class="trade-layout">
-        <section class="trade-code-panel">
-          <h2>Your trade code</h2>
-          <div class="trade-code-row">
-            <span id="tradeOwnCode" class="trade-code">------</span>
-            <button id="btnRefreshTradeCode" class="btn btn-secondary">Refresh</button>
-          </div>
-          <div class="trade-join-row">
-            <input id="tradeJoinCode" class="text-input code-input" maxlength="8" placeholder="CODE" />
-            <button id="btnStartTrade" class="btn btn-primary">Connect</button>
-          </div>
-          <div id="tradeSessions" class="trade-session-list"></div>
-        </section>
+        <aside class="trade-sidebar">
+          <section class="trade-code-panel">
+            <div class="trade-section-heading">
+              <span class="trade-step">01</span>
+              <div><h2>Connect</h2><p>Share your code or enter another player's.</p></div>
+            </div>
+            <div class="trade-code-block">
+              <span class="trade-field-label">Your trade code</span>
+              <div class="trade-code-row">
+                <span id="tradeOwnCode" class="trade-code">------</span>
+                <button id="btnRefreshTradeCode" class="btn btn-secondary">Refresh</button>
+              </div>
+            </div>
+            <div class="trade-divider"><span>or join a player</span></div>
+            <label class="trade-field-label" for="tradeJoinCode">Player code</label>
+            <div class="trade-join-row">
+              <input id="tradeJoinCode" class="text-input code-input" maxlength="8" placeholder="CODE" />
+              <button id="btnStartTrade" class="btn btn-primary">Connect</button>
+            </div>
+            <div class="trade-sessions-heading"><span>Open trades</span><small>Select to continue</small></div>
+            <div id="tradeSessions" class="trade-session-list"></div>
+          </section>
+        </aside>
 
-        <section class="trade-session-panel">
-          <div class="trade-session-header">
-            <h2 id="tradeSessionTitle">No trade selected</h2>
-            <span id="tradeSessionStatus" class="trade-status">Waiting</span>
-          </div>
-          <div id="tradeOfferSummary" class="trade-offer-summary"></div>
-          <div class="trade-actions">
-            <button id="btnConfirmTrade" class="btn btn-primary" disabled>Confirm</button>
-            <button id="btnCancelTrade" class="btn btn-secondary" disabled>Cancel</button>
-          </div>
-        </section>
+        <main class="trade-workspace">
+          <section class="trade-session-panel">
+            <div class="trade-session-header">
+              <div><span class="trade-section-kicker">Current deal</span><h2 id="tradeSessionTitle">No trade selected</h2></div>
+              <span id="tradeSessionStatus" class="trade-status">Waiting</span>
+            </div>
+            <div id="tradeOfferSummary" class="trade-offer-summary"></div>
+            <div class="trade-actions">
+              <button id="btnCancelTrade" class="btn btn-secondary" disabled>Cancel trade</button>
+              <button id="btnConfirmTrade" class="btn btn-primary" disabled>Confirm offer</button>
+            </div>
+          </section>
 
-        <section class="trade-card-panel">
-          <div class="trade-panel-header">
-            <h2>Your cards</h2>
-            <span id="tradeSelectedCard">Choose a card to offer</span>
-          </div>
-          <div id="tradeCardGrid" class="trade-card-grid"></div>
-        </section>
+          <section class="trade-card-panel">
+            <div class="trade-panel-header">
+              <div><span class="trade-section-kicker">Your collection</span><h2>Choose your offer</h2></div>
+              <span id="tradeSelectedCard">Choose a card to offer</span>
+            </div>
+            <div id="tradeCardGrid" class="trade-card-grid"></div>
+            <nav id="tradeCardPagination" class="trade-card-pagination" aria-label="Trade card pages"></nav>
+          </section>
+        </main>
       </div>
     </div>
   </section>
@@ -346,20 +370,32 @@
   <!-- ---------- SCREEN: SHOP ---------- -->
   <section id="screen-shop" class="screen hidden">
     <div class="shop-wrap">
-      <div class="shop-header">
-        <button id="btnShopBack" class="btn-link back-link-inline">&#x2190; Back to menu</button>
-        <h1 class="brand shop-brand">SHOP</h1>
-        <p class="brand-sub" id="shopGold">0 gold</p>
-      </div>
+      <header class="shop-header">
+        <div class="shop-header-action">
+          <button id="btnShopBack" class="btn-link back-link-inline">&#x2190; Back to menu</button>
+        </div>
+        <div class="shop-title-block">
+          <span>Arcane Market</span>
+          <h1 class="brand shop-brand">Shop</h1>
+        </div>
+        <div class="shop-wallet" aria-live="polite">
+          <span>Balance</span>
+          <strong id="shopGold">0 gold</strong>
+        </div>
+      </header>
+
+      <div id="shopDashboard" class="shop-dashboard"></div>
 
       <div class="shop-layout">
         <div id="shopPackList" class="shop-pack-list"></div>
+        <div id="shopItemList" class="shop-item-list"></div>
 
         <div class="pack-results">
           <div class="pack-results-header">
             <h2>Opened cards</h2>
             <p id="packResultSummary">Buy a pack to reveal cards.</p>
           </div>
+          <div id="packResultStats" class="pack-result-stats"></div>
           <div id="packResultGrid" class="pack-result-grid"></div>
         </div>
       </div>
@@ -392,7 +428,7 @@
 
   <!-- ---------- SCREEN: LOBBY ---------- -->
   <section id="screen-lobby" class="screen hidden">
-    <div id="singleplayerSnow" class="fireflies lobby-snow hidden" aria-hidden="true">
+    <div id="lobbyEmbers" class="fireflies lobby-snow hidden" aria-hidden="true">
       <div class="firefly"></div><div class="firefly"></div><div class="firefly"></div><div class="firefly"></div>
       <div class="firefly"></div><div class="firefly"></div><div class="firefly"></div><div class="firefly"></div>
       <div class="firefly"></div><div class="firefly"></div><div class="firefly"></div><div class="firefly"></div>
@@ -480,9 +516,17 @@
   <section id="screen-inventory" class="screen hidden">
     <div class="inventory-wrap">
       <div class="inventory-header">
-        <button id="btnInventoryBack" class="btn-link back-link-inline">&#x2190; Back to menu</button>
-        <h1 class="brand inventory-brand">INVENTORY</h1>
-        <p class="brand-sub" id="inventoryCount">-</p>
+        <div class="inventory-header-action">
+          <button id="btnInventoryBack" class="btn-link back-link-inline">&#x2190; Back to menu</button>
+        </div>
+        <div class="inventory-title-block">
+          <span>Card archive</span>
+          <h1 class="brand inventory-brand">Inventory</h1>
+        </div>
+        <div class="inventory-count-card">
+          <span>Collection</span>
+          <strong id="inventoryCount">-</strong>
+        </div>
       </div>
 
       <div class="inventory-tabs">
@@ -491,6 +535,7 @@
       </div>
 
       <div id="collectionPanel">
+      <div id="inventorySummary" class="inventory-summary"></div>
       <div class="inventory-filters">
         <div class="filter-group">
           <label for="filterType">Type</label>
@@ -684,6 +729,7 @@
             <span class="stat mana" aria-label="Mana"><span id="oppMana">0</span>/<span id="oppManaMax">0</span></span>
             <span class="stat deck" id="oppDeckCount" aria-label="Cards remaining">30</span>
           </div>
+          <div class="hero-statuses" id="oppHeroStatuses"></div>
         </div>
         <div id="oppBoard" class="minion-row"></div>
         <div class="hand-back" id="oppHandBack"></div>
@@ -725,6 +771,7 @@
             <span class="stat mana" aria-label="Mana"><span id="selfMana">0</span>/<span id="selfManaMax">0</span></span>
             <span class="stat deck" id="selfDeckCount" aria-label="Cards remaining">30</span>
           </div>
+          <div class="hero-statuses" id="selfHeroStatuses"></div>
         </div>
         </div>
 
@@ -785,14 +832,59 @@
     </div>
   </div>
 
+  <!-- ---------- MODAL: TOURNAMENT BRACKET ---------- -->
+  <div id="tournamentBracketModal" class="overlay tournament-bracket-modal hidden" role="dialog" aria-modal="true" aria-labelledby="tournamentBracketModalTitle">
+    <div class="overlay-card tournament-bracket-modal-card">
+      <header class="tournament-bracket-modal-header">
+        <div>
+          <p>Live tournament</p>
+          <h2 id="tournamentBracketModalTitle">Tournament bracket</h2>
+        </div>
+        <button id="btnCloseTournamentBracket" class="tournament-bracket-modal-close" type="button" aria-label="Close bracket">×</button>
+      </header>
+      <div id="tournamentBracketModalContent" class="tournament-bracket-modal-content"></div>
+    </div>
+  </div>
+
   <!-- ---------- MODAL: CHANGELOG ---------- -->
   <div id="changelogModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="changelogTitle">
     <div class="overlay-card changelog-card">
       <div class="changelog-header">
-        <h2 id="changelogTitle">Changelog</h2>
-        <button id="btnCloseChangelog" class="changelog-close" type="button" aria-label="Close changelog">x</button>
+        <h2 id="changelogTitle">Patch Notes</h2>
+        <button id="btnCloseChangelog" class="changelog-close" type="button" aria-label="Close patch notes">x</button>
       </div>
       <div class="changelog-content">
+      <article class="changelog-entry">
+        <div class="changelog-entry-meta">
+          <h3>Version 1.6</h3>
+          <span>Embers, Exchange &amp; Fair Play</span>
+        </div>
+        <p class="changelog-entry-intro">A visual refresh, smoother social features, stronger shop and collection screens, tournament quality-of-life upgrades, and a broad balance update for every way to play.</p>
+        <ul class="changelog-list">
+          <li>Main Menu refresh.</li>
+          <li>Choose a display name from your Profile without changing your Discord account or player ID. Open it with the pencil beside your name; names accept letters, numbers, and underscores only.</li>
+          <li>Trade has been rebuilt around a clearer offer workspace. Your collection is now a compact vertical list of five cards per page with numbered pagination, making offers easier to compare on desktop and mobile.</li>
+          <li>Trade controls and card panels now fit more cleanly inside their frame on desktop and phone layouts.</li>
+          <li>Card artwork in the collection zoom is larger and remains balanced on both phone and desktop layouts.</li>
+          <li>The Shop has a cleaner mobile-ready layout with a tighter wallet display, clearer pack details, QTY labels, pack odds, and a collection-focused dashboard.</li>
+          <li>The Inventory screen has a richer collection layout with stronger card presentation and better behavior across phone and desktop sizes.</li>
+          <li>Opening packs is more interactive: cards begin face down with expansion art, can be flipped manually or revealed all at once, and now hint rarity through the face-down border glow.</li>
+          <li>Card hover movement is now more expressive and consistent across Shop, Inventory, deck views, and pack opening without stretching the card art.</li>
+          <li>Tournament brackets now open from the ? button on tournament cards into a dedicated responsive modal.</li>
+          <li>On phones, tournament rounds use a compact dropdown, match cards are smaller, the bracket scrolls vertically, and accidental text selection or sideways dragging is reduced.</li>
+          <li>On desktop, the tournament podium stays visible beside the bracket and the bracket scrollbar has matching styling.</li>
+          <li>Active tournaments automatically focus the round currently in progress. Registered players see their own relevant match, status, and essential details first; completed brackets stop refreshing unnecessarily.</li>
+          <li>Tournament readiness is more reliable: players who arrive are tracked, one-sided no-shows advance the waiting player, and a match with no arrivals no longer blocks the bracket.</li>
+          <li>In every mode except Singleplayer, the player going second receives Mana Spark: a 0-cost Special card that grants 1 temporary Mana for the current turn.</li>
+          <li>Only one Charge minion can be played to a side of the board at once.</li>
+          <li>Overseer now costs 3 Mana and is a 4/6. On its first death it deals 20 damage to all minions, then returns with 1 Health; the explosion cannot trigger again.</li>
+          <li>Fanex now steals a random minion from the enemy board and immediately deploys it on your side.</li>
+          <li>New achievements have been added for reaching Top 5, reaching Top 1, completing the Base collection, and completing the Expansion 1 collection. Reaching Top 1 also unlocks a new title.</li>
+          <li>Souvenir cards are now available as a new 0.6% rarity tier.</li>
+          <li>Singleplayer rewards now grant 80 gold. Base packs cost 15 gold and Expansion 1 packs cost 25 gold.</li>
+          <li>General balance pass across Base, Expansion 1, and The Gates. Most affected cards gained 1-3 Health, alongside targeted Mana, Attack, and effect adjustments.</li>
+        </ul>
+      </article>
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
           <h3>Version 1.5.4</h3>
@@ -849,8 +941,8 @@
         </div>
         <p class="changelog-entry-intro">A focused pass on card identity, counterplay, and battlefield clarity.</p>
         <ul class="changelog-list">
-          <li>Added new reusable card mechanics: revival at half Health, in-place transformations, adding a named card to hand each turn, stealing a non-Mythic card from an enemy deck, and returning both boards to their owners' decks.</li>
-          <li>Fanex is now a Mythic 4 Mana 6/4. On play, it steals a random non-Mythic card from the enemy deck and adds it to your hand. Fanex cannot be played while your hand is full.</li>
+          <li>Added new reusable card mechanics: revival at half Health, in-place transformations, adding a named card to hand each turn, stealing a random minion from the enemy board, and returning both boards to their owners' decks.</li>
+          <li>Fanex is a Mythic 6 Mana 6/10. On play, it steals a random minion from the enemy board and deploys it to your board.</li>
           <li>Manuchiliz is now a 7 Mana 5/9 Mythic. Its arrival still deals 3 damage to every minion on both sides of the board.</li>
           <li>Zoblezar no longer has Divine Shield or draws cards on death. The first time it dies, it revives as a 5/10.</li>
           <li>Zugzwang is now an 8/7 Charge minion. Its former three-card draw is replaced with a Minor Spark added to your hand at the start of every one of your turns while it survives.</li>
@@ -1005,7 +1097,7 @@
           <h3>Board Rules</h3>
           <ul>
             <li>You may normally control up to 4 minions. Summoning effects can create one extra minion, for a maximum of 5.</li>
-            <li>You may have up to 2 Taunt minions and up to 3 Charge minions on your board.</li>
+            <li>You may have up to 2 Taunt minions and up to 1 Charge minion on your board.</li>
           </ul>
         </section>
 
@@ -1028,8 +1120,10 @@
             <div><span class="how-to-badge how-to-status how-to-status-weakened">W</span><span><strong>Weakened</strong> - loses the listed Attack for its duration.</span></div>
             <div><span class="how-to-badge how-to-status how-to-status-frozen">F</span><span><strong>Frozen</strong> - cannot attack for its duration.</span></div>
             <div><span class="how-to-badge how-to-status how-to-status-silenced">X</span><span><strong>Silenced</strong> - its abilities and keywords are removed permanently.</span></div>
-            <div><span class="how-to-badge how-to-status how-to-status-poisoned">P</span><span><strong>Poisoned</strong> - takes the listed damage at the start of its turn.</span></div>
+            <div><span class="how-to-badge how-to-status how-to-status-poisoned">P</span><span><strong>Poisoned</strong> - minions and heroes take the listed damage at the start of their turn. Reapplying Poison refreshes it instead of stacking damage.</span></div>
             <div><span class="how-to-badge how-to-status how-to-status-marked">!</span><span><strong>Marked</strong> - the next damage it takes is increased by the listed amount, then the mark is removed.</span></div>
+            <div><span class="how-to-badge how-to-status how-to-status-burning">B</span><span><strong>Burning</strong> - minions and heroes take the listed damage at the start of their turn. More Burning adds damage and duration.</span></div>
+            <div><span class="how-to-badge how-to-status how-to-status-drunk">D</span><span><strong>Drunk</strong> - attacks a random minion on either side instead of the chosen target.</span></div>
           </div>
         </section>
 
@@ -1088,7 +1182,10 @@
             </div>
             <div class="profile-identity">
               <p id="profilePageSubtitle" class="profile-kicker">Player profile</p>
-              <h1 id="profilePageName">Player</h1>
+              <div class="profile-name-row">
+                <h1 id="profilePageName">Player</h1>
+                <button id="btnEditProfileDisplayName" class="profile-edit-name-button hidden" type="button" aria-label="Edit game username" title="Edit game username">✎</button>
+              </div>
               <p id="profilePageTitle" class="profile-title-badge">Arcane Initiate</p>
               <div id="profileEquippedBadges" class="profile-equipped-badges" aria-label="Equipped achievement badges"></div>
               <div class="profile-meta-row">
@@ -1151,6 +1248,24 @@
     </div>
   </section>
 
+  <!-- ---------- MODAL: GAME USERNAME ---------- -->
+  <div id="profileDisplayNameModal" class="overlay profile-display-name-modal hidden" role="dialog" aria-modal="true" aria-labelledby="profileDisplayNameModalTitle">
+    <div class="overlay-card profile-display-name-modal-card">
+      <button id="btnCloseProfileDisplayName" class="profile-display-name-close" type="button" aria-label="Close username editor">×</button>
+      <p class="profile-display-name-kicker">Profile</p>
+      <h2 id="profileDisplayNameModalTitle">Change game username</h2>
+      <form id="profileDisplayNameForm" class="profile-display-name-form">
+        <label for="profileDisplayNameInput">Game username</label>
+        <input id="profileDisplayNameInput" type="text" maxlength="24" autocomplete="username" spellcheck="false" pattern="[A-Za-z0-9_]+" aria-describedby="profileDisplayNameHint" />
+        <p id="profileDisplayNameHint">1–24 letters, numbers, or _. Spaces and special characters are not allowed.</p>
+        <div class="profile-display-name-actions">
+          <button id="btnCancelProfileDisplayName" class="btn btn-secondary" type="button">Cancel</button>
+          <button class="btn btn-primary" type="submit">Save username</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ---------- ERROR TOAST ---------- -->
   <div id="toast" class="toast hidden"></div>
   <div id="profileUnlockNotifications" class="profile-unlock-notifications" aria-live="polite" aria-atomic="true"></div>
@@ -1158,25 +1273,25 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.5.4"></script>
-  <script src="deckRules.js?v=1.5.4"></script>
-  <script src="engine.js?v=1.5.4"></script>
-  <script src="ai.js?v=1.5.4"></script>
-  <script src="audioConfig.js?v=1.5.4-audio-simple"></script>
-  <script src="audioManager.js?v=1.5.4-audio-simple"></script>
-  <script src="packOpening.js?v=1.5.4"></script>
-<script src="legalNotices.js?v=1.5.4"></script>
-<script src="profileCatalog.js?v=1.5.4"></script>
-<script src="profileBadges.js?v=1.5.4"></script>
-<script src="accountProfile.js?v=1.5.4"></script>
-<script src="client.js?v=1.5.4-tournament-history"></script>
-<script src="shieldChallenge.js?v=1.5.4"></script>
-<script src="boardInteractions.js?v=1.5.4"></script>
-<script src="inventory.js?v=1.5.4"></script>
-<script src="deckBuilder.js?v=1.5.4"></script>
-<script src="shop.js?v=1.5.4"></script>
-<script src="trade.js?v=1.5.4"></script>
-<script src="tournaments.js?v=1.5.4-tournament-history"></script>
-<script src="pwa.js?v=1.5.4-media-direct-v2"></script>
+  <script src="cards.js?v=1.6.0-athena-swap"></script>
+  <script src="deckRules.js?v=1.6.0-athena-swap"></script>
+  <script src="engine.js?v=1.6.0-athena-swap"></script>
+  <script src="ai.js?v=1.6.0-athena-swap"></script>
+  <script src="audioConfig.js?v=1.6.0-athena-swap"></script>
+  <script src="audioManager.js?v=1.6.0-athena-swap"></script>
+  <script src="packOpening.js?v=1.6.0-athena-swap"></script>
+<script src="legalNotices.js?v=1.6.0-athena-swap"></script>
+<script src="profileCatalog.js?v=1.6.0-athena-swap"></script>
+<script src="profileBadges.js?v=1.6.0-athena-swap"></script>
+<script src="accountProfile.js?v=1.6.0-athena-swap"></script>
+<script src="client.js?v=1.6.0-athena-swap"></script>
+<script src="shieldChallenge.js?v=1.6.0-athena-swap"></script>
+<script src="boardInteractions.js?v=1.6.0-athena-swap"></script>
+<script src="inventory.js?v=1.6.0-athena-swap"></script>
+<script src="deckBuilder.js?v=1.6.0-athena-swap"></script>
+<script src="shop.js?v=1.6.0-athena-swap"></script>
+<script src="trade.js?v=1.6.0-athena-swap"></script>
+<script src="tournaments.js?v=1.6.0-athena-swap"></script>
+<script src="pwa.js?v=1.6.0-athena-swap"></script>
 </body>
 </html>

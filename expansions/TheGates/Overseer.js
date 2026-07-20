@@ -1,16 +1,17 @@
 module.exports = {
   name: "Overseer",
-  cost: 6,
+  cost: 3,
   type: "minion",
-  attack: 3,
+  attack: 4,
   health: 6,
   keywords: [],
   race: "Monster",
   rarity: "mythic",
   country: "Oman",
-  lore: "When this card dies, it deals 20 of damage to ALL cards on the board.",
+  lore: "On its first death, deal 20 damage to all minions, then return with 1 Health.",
   image: "art/Overseer.webp",
   abilities: [
-    { trigger: "onDeath", effect: "damageAllMinions", value: 20 },
+    { trigger: "onDeath", effect: "damageAllMinions", value: 20, firstDeathOnly: true },
+    { trigger: "onDeath", effect: "rebirthWithHealth", value: 1 },
   ],
 };

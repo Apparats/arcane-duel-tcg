@@ -1,3 +1,5 @@
+const { TOURNAMENT_READY_GRACE_MS } = require("./rules");
+
 function nextPowerOfTwo(value) {
   let size = 1;
   while (size < value) size *= 2;
@@ -13,6 +15,9 @@ function createMatch(round, slot, playerA = null, playerB = null) {
     status: "waiting",
     winnerId: null,
     loserId: null,
+    readyAt: null,
+    noShowDeadline: null,
+    arrivedPlayerIds: [],
   };
 }
 
@@ -66,6 +71,17 @@ function matchIsSettled(match) {
   return ["complete", "bye", "void"].includes(match.status);
 }
 
+function deadlineDate(now, graceMs) {
+  return new Date(Number(now) + graceMs);
+}
+
+function markMatchReady(match, { now = Date.now(), graceMs = TOURNAMENT_READY_GRACE_MS } = {}) {
+  match.status = "ready";
+  match.readyAt = new Date(now);
+  match.noShowDeadline = deadlineDate(now, graceMs);
+  if (!Array.isArray(match.arrivedPlayerIds)) match.arrivedPlayerIds = [];
+}
+
 function findMatch(bracket, matchId) {
   for (const round of bracket.rounds) {
     const match = round.find((entry) => entry.id === matchId);
@@ -100,6 +116,8 @@ function completeMatch(bracket, match, winnerId, { bye = false } = {}) {
   match.winnerId = winnerId;
   match.loserId = winnerId === playerA ? playerB : playerA;
   match.status = bye ? "bye" : "complete";
+  match.noShowDeadline = null;
+  match.arrivedPlayerIds = [];
   if (match === bracket.thirdPlace) {
     bracket.placements.third = winnerId;
     return;
@@ -108,7 +126,16 @@ function completeMatch(bracket, match, winnerId, { bye = false } = {}) {
   if (!bye) advanceSemifinalLoser(bracket, match);
 }
 
-function resolveByes(bracket) {
+function voidMatch(bracket, match) {
+  match.winnerId = null;
+  match.loserId = null;
+  match.status = "void";
+  match.noShowDeadline = null;
+  match.arrivedPlayerIds = [];
+  if (match === bracket.thirdPlace) return;
+}
+
+function resolveByes(bracket, options = {}) {
   let changed = true;
   while (changed) {
     changed = false;
@@ -119,7 +146,7 @@ function resolveByes(bracket) {
         const previousRound = typeof match.round === "number" ? bracket.rounds[match.round - 1] : null;
         const feedersSettled = !previousRound || previousRound.every(matchIsSettled);
         if (active.length === 2) {
-          match.status = "ready";
+          markMatchReady(match, options);
           changed = true;
         } else if (active.length === 1 && feedersSettled) {
           completeMatch(bracket, match, active[0], { bye: true });
@@ -132,7 +159,7 @@ function resolveByes(bracket) {
       }
     }
     if (bracket.thirdPlace?.status === "waiting" && bracket.thirdPlace.playerIds.filter(Boolean).length === 2) {
-      bracket.thirdPlace.status = "ready";
+      markMatchReady(bracket.thirdPlace, options);
       changed = true;
     }
   }
@@ -146,6 +173,65 @@ function reportMatchResult(bracket, matchId, winnerId) {
   completeMatch(bracket, match, winnerId);
   resolveByes(bracket);
   return bracket;
+}
+
+function recordMatchArrival(bracket, matchId, playerId) {
+  const match = findMatch(bracket, matchId);
+  const id = String(playerId);
+  if (!match || match.status !== "ready") throw new Error("That tournament match is not ready.");
+  if (!match.playerIds.includes(id)) throw new Error("That player is not in that tournament match.");
+  if (!Array.isArray(match.arrivedPlayerIds)) match.arrivedPlayerIds = [];
+  if (!match.arrivedPlayerIds.includes(id)) match.arrivedPlayerIds.push(id);
+  if (!match.noShowDeadline) match.noShowDeadline = deadlineDate(Date.now(), TOURNAMENT_READY_GRACE_MS);
+  return match;
+}
+
+function clearMatchArrival(bracket, matchId, playerId) {
+  const match = findMatch(bracket, matchId);
+  if (!match || match.status !== "ready") return null;
+  const id = String(playerId);
+  match.arrivedPlayerIds = (match.arrivedPlayerIds || []).filter((arrivedId) => String(arrivedId) !== id);
+  if (match.arrivedPlayerIds.length === 0 && !match.noShowDeadline) {
+    match.noShowDeadline = deadlineDate(Date.now(), TOURNAMENT_READY_GRACE_MS);
+  }
+  return match;
+}
+
+function clearMatchNoShowDeadline(bracket, matchId) {
+  const match = findMatch(bracket, matchId);
+  if (!match || match.status !== "ready") return null;
+  match.noShowDeadline = null;
+  match.arrivedPlayerIds = [];
+  return match;
+}
+
+function resolveReadyNoShows(bracket, { now = Date.now() } = {}) {
+  let changed = false;
+  const matches = [...bracket.rounds.flat(), ...(bracket.thirdPlace ? [bracket.thirdPlace] : [])];
+  for (const match of matches) {
+    if (match.status !== "ready") continue;
+    if (!match.noShowDeadline) {
+      if (!match.readyAt) {
+        markMatchReady(match, { now });
+        changed = true;
+      }
+      continue;
+    }
+    const deadline = Date.parse(match.noShowDeadline);
+    if (!Number.isFinite(deadline) || deadline > now) continue;
+    const arrived = (match.arrivedPlayerIds || []).filter((id) => match.playerIds.includes(String(id)));
+    if (arrived.length === 1) {
+      completeMatch(bracket, match, String(arrived[0]));
+    } else if (arrived.length === 0) {
+      voidMatch(bracket, match);
+    } else {
+      match.arrivedPlayerIds = [];
+      match.noShowDeadline = deadlineDate(now, TOURNAMENT_READY_GRACE_MS);
+    }
+    changed = true;
+  }
+  if (changed) resolveByes(bracket, { now });
+  return changed;
 }
 
 function playerMatch(bracket, playerId) {
@@ -182,4 +268,4 @@ function playerTournamentStatus(bracket, playerId) {
   return { kind: "waiting-bracket", message: "The bracket is being prepared." };
 }
 
-module.exports = { createBracket, reportMatchResult, playerMatch, playerTournamentStatus, findMatch, resolveByes };
+module.exports = { createBracket, reportMatchResult, playerMatch, playerTournamentStatus, findMatch, resolveByes, recordMatchArrival, clearMatchArrival, clearMatchNoShowDeadline, resolveReadyNoShows };

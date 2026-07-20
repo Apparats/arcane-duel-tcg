@@ -20,6 +20,8 @@
     { id: "machine-breaker", name: "Machine Breaker", description: "Defeat the NPC 10 times.", metric: "npcWins", target: 10 },
     { id: "johnnys-bane", name: "Johnny's Bane", description: "Defeat Johnny in a multiplayer match.", metric: "johnnyWins", target: 1 },
     { id: "tournament-sovereign", name: "Tournament Sovereign", description: "Claim first place in an Arcana tournament.", metric: "tournamentWins", target: 1 },
+    { id: "quickplay-apex", name: "Quickplay Apex", description: "Reach #1 in the quickplay ranking.", metric: "quickplayTop1", target: 1 },
+    { id: "lord-of-the-cards", name: "Lord of the Cards", description: "Purchased from the shop.", purchasable: true, shopType: "title" },
     { id: "more-than-honorable", name: "More than honorable", description: "You helped the developer with the game.", supporterOnly: true },
   ];
 
@@ -42,7 +44,12 @@
     { id: "bot-bane", name: "Bot Bane", description: "Defeat the NPC 3 times.", metric: "npcWins", target: 3 },
     { id: "collectors-sigil", name: "Collector's Sigil", description: "Open 25 card packs.", metric: "packsOpened", target: 25 },
     { id: "mythic-constellation", name: "Mythic Constellation", description: "Collect 10 different Mythic cards.", metric: "mythicCards", target: 10 },
+    { id: "ranking-elite", name: "Ranking Elite", description: "Reach the top 5 of the quickplay ranking.", metric: "quickplayTop5", target: 1 },
+    { id: "ranking-apex", name: "Ranking Apex", description: "Reach #1 in the quickplay ranking.", metric: "quickplayTop1", target: 1 },
+    { id: "base-archivist", name: "Base Archivist", description: "Collect every card from the base expansion.", expansionId: "base" },
+    { id: "expansion-one-archivist", name: "Expansion 1 Archivist", description: "Collect every card from Expansion 1.", expansionId: "expansion1" },
     { id: "unchained-conqueror", name: "Unchained Conqueror", description: "Defeat TheUnchained.", metric: "unchainedWins", target: 1 },
+    { id: "gold-hoarder", name: "Gold Hoarder", description: "Purchased from the shop with accumulated gold.", purchasable: true, shopType: "achievement" },
     { id: "more-than-honorable", name: "More than honorable", description: "You helped the developer with the game.", supporterOnly: true },
   ];
 
@@ -86,13 +93,70 @@
     return [...ownedIds].filter((cardId) => cards?.getCardById?.(cardId)?.rarity === "mythic").length;
   }
 
+  function ownedCardIds(options = {}) {
+    const collection = options.cardCollection && typeof options.cardCollection === "object"
+      ? options.cardCollection
+      : {};
+    const unlockedCards = Array.isArray(options.unlockedCards) ? options.unlockedCards : [];
+    return new Set([
+      ...Object.entries(collection)
+        .filter(([, quantity]) => value(quantity) > 0)
+        .map(([cardId]) => cardId),
+      ...unlockedCards.filter((cardId) => typeof cardId === "string"),
+    ]);
+  }
+
+  function cardExpansionId(card) {
+    return card?._expansionId || String(card?.id || "").split(":")[0];
+  }
+
+  function expansionCollectionProgress(expansionId, options = {}) {
+    const expansionCards = (cards?.CARDS || [])
+      .filter((card) => card?.showInInventory !== false && cardExpansionId(card) === expansionId);
+    const ownedIds = ownedCardIds(options);
+    return {
+      current: expansionCards.filter((card) => ownedIds.has(card.id)).length,
+      target: expansionCards.length || 1,
+    };
+  }
+
+  function quickplayRankProgress(options = {}, limit = 1) {
+    const currentRank = value(options.quickplayRank);
+    const bestRank = value(options.bestQuickplayRank ?? options.quickplayBestRank);
+    const rank = bestRank > 0 && currentRank > 0
+      ? Math.min(bestRank, currentRank)
+      : bestRank || currentRank;
+    return rank > 0 && rank <= limit ? 1 : 0;
+  }
+
   function withProgress(definition, stats, options = {}) {
-    const current = definition.supporterOnly
+    const purchasedAchievementIds = Array.isArray(options.purchasedAchievementIds) ? options.purchasedAchievementIds : [];
+    const purchasedTitleIds = Array.isArray(options.purchasedTitleIds) ? options.purchasedTitleIds : [];
+    const purchasedIds = definition.shopType === "achievement"
+      ? purchasedAchievementIds
+      : definition.shopType === "title"
+        ? purchasedTitleIds
+        : [];
+    const expansionProgress = definition.expansionId
+      ? expansionCollectionProgress(definition.expansionId, options)
+      : null;
+    const current = expansionProgress
+      ? expansionProgress.current
+      : definition.purchasable
+      ? (purchasedIds.includes(definition.id) ? 1 : 0)
+      : definition.supporterOnly
       ? (options.supporter === true ? 1 : 0)
+      : definition.metric === "quickplayTop1"
+        ? quickplayRankProgress(options, 1)
+      : definition.metric === "quickplayTop5"
+        ? quickplayRankProgress(options, 5)
       : definition.metric === "mythicCards"
         ? mythicCollectionCount(options)
       : metricValue(stats, definition.metric);
-    const target = definition.supporterOnly ? 1 : definition.target;
+    const target = expansionProgress
+      ? expansionProgress.target
+      : definition.purchasable ? 1
+      : definition.supporterOnly ? 1 : definition.target;
     return {
       id: definition.id,
       name: definition.name,
@@ -118,5 +182,5 @@
     return { stats: normalizedStats, achievements, titles, selectedTitle, equippedBadges };
   }
 
-  return { getProgress, normalizeStats, mythicCollectionCount, TITLE_DEFINITIONS, ACHIEVEMENT_DEFINITIONS };
+  return { getProgress, normalizeStats, mythicCollectionCount, expansionCollectionProgress, TITLE_DEFINITIONS, ACHIEVEMENT_DEFINITIONS };
 });

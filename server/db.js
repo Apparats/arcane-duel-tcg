@@ -61,6 +61,7 @@ async function connectDB() {
     await Promise.all([
       db.collection("users").createIndex({ discordId: 1 }, { unique: true }),
       db.collection("users").createIndex({ username: 1 }),
+      db.collection("users").createIndex({ displayName: 1 }),
       db.collection("users").createIndex({ "stats.quickplayWins": -1, _id: 1 }),
       cardRequests.createIndex({ userId: 1, requestDay: 1 }, { unique: true }),
       db.collection("tournaments").createIndex({ status: 1, updatedAt: -1 }),
@@ -150,6 +151,8 @@ async function findOrCreateUserFromDiscord(discordProfile, starterOpening = null
         modeStats: { singleplayer: { wins: 0, losses: 0, draws: 0, surrenders: 0 }, oneVsOne: { wins: 0, losses: 0, draws: 0, surrenders: 0 }, quickplay: { wins: 0, losses: 0, draws: 0, surrenders: 0 } },
         selectedTitle: "initiate",
         equippedBadgeIds: [],
+        purchasedAchievementIds: [],
+        purchasedTitleIds: [],
         supporter: false,
         gold: 0,
         warnings: [],
@@ -281,7 +284,7 @@ async function getCampaignProgress(userId) {
 }
 
 const DAILY_REWARD_LIMITS = {
-  singleplayer: 50,
+  singleplayer: 80,
   multiplayer: 100,
 };
 
@@ -487,6 +490,9 @@ async function grantMatchEconomy(userId, { mode, result, surrendered = false, qu
 
   await users.updateOne({ _id }, update);
   const updated = await users.findOne({ _id });
+  const rankProgress = result === "win" && mode === "multiplayer" && quickplay
+    ? await getQuickplayRankStateForUser(updated, { persistBest: true })
+    : { quickplayRank: 0, bestQuickplayRank: updated?.stats?.bestQuickplayRank || 0 };
 
   return {
     mode,
@@ -501,6 +507,8 @@ async function grantMatchEconomy(userId, { mode, result, surrendered = false, qu
     warnings: updated.warnings || [],
     stats: updated.stats || { wins: 0, losses: 0, surrenders: 0 },
     modeStats: updated.modeStats || {},
+    quickplayRank: rankProgress.quickplayRank,
+    quickplayBestRank: rankProgress.bestQuickplayRank,
   };
   });
 }
@@ -532,11 +540,22 @@ async function grantTournamentPrize(userId, { tournamentId, place, gold }) {
 function publicRankingPlayer(user, rank) {
   return {
     rank,
-    username: user.username || "Player",
+    username: playerDisplayName(user),
     wins: user.stats?.quickplayWins || 0,
     avatarUrl: user.avatar ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png` : null,
     userId: String(user._id),
   };
+}
+
+function playerDisplayName(user) {
+  return user.displayName || user.username || "Player";
+}
+
+function normalizeDisplayName(value) {
+  if (typeof value !== "string" || !/^[A-Za-z0-9_]{1,24}$/.test(value)) {
+    throw new Error("Username must use 1 to 24 letters, numbers, or underscores only (no spaces).");
+  }
+  return value;
 }
 
 function normalizedPublicStats(stats = {}) {
@@ -575,13 +594,23 @@ function normalizedModeStats(modeStats = {}, legacyStats = {}) {
   return { singleplayer, oneVsOne, quickplay };
 }
 
-function publicPlayerProfile(user) {
+function publicPlayerProfile(user, options = {}) {
   const supporter = user.supporter === true;
-  const progressOptions = { supporter, cardCollection: user.cardCollection, unlockedCards: user.unlockedCards };
+  const quickplayRank = Math.max(0, Number(options.quickplayRank ?? user.quickplayRank) || 0);
+  const bestQuickplayRank = Math.max(0, Number(options.bestQuickplayRank ?? user.stats?.bestQuickplayRank ?? user.quickplayBestRank) || 0);
+  const progressOptions = {
+    supporter,
+    cardCollection: user.cardCollection,
+    unlockedCards: user.unlockedCards,
+    purchasedAchievementIds: user.purchasedAchievementIds,
+    purchasedTitleIds: user.purchasedTitleIds,
+    quickplayRank,
+    bestQuickplayRank,
+  };
   const progress = getProgress(user.stats, user.selectedTitle, user.equippedBadgeIds, progressOptions);
   return {
     id: String(user._id),
-    username: user.username || "Player",
+    username: playerDisplayName(user),
     avatarUrl: user.avatar ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png` : null,
     stats: normalizedPublicStats(progress.stats),
     modeStats: normalizedModeStats(user.modeStats, user.stats),
@@ -589,11 +618,57 @@ function publicPlayerProfile(user) {
     achievements: progress.achievements,
     titles: progress.titles,
     equippedBadges: progress.equippedBadges,
+    quickplayRank,
+    quickplayBestRank: bestQuickplayRank,
     cardCollection: user.cardCollection || {},
     unlockedCards: user.unlockedCards || [],
+    purchasedAchievementIds: user.purchasedAchievementIds || [],
+    purchasedTitleIds: user.purchasedTitleIds || [],
     supporter,
     createdAt: user.createdAt || null,
   };
+}
+
+async function getQuickplayRankForUser(user) {
+  const wins = Math.max(0, user?.stats?.quickplayWins || 0);
+  if (wins <= 0 || !user?._id) return 0;
+  const users = getDB().collection("users");
+  const playersAhead = await users.countDocuments({
+    $or: [
+      { "stats.quickplayWins": { $gt: wins } },
+      { "stats.quickplayWins": wins, _id: { $lt: user._id } },
+    ],
+  });
+  return playersAhead + 1;
+}
+
+async function getQuickplayRankStateForUser(user, { persistBest = false } = {}) {
+  const quickplayRank = await getQuickplayRankForUser(user);
+  const previousBest = Math.max(0, user?.stats?.bestQuickplayRank || 0);
+  const bestQuickplayRank = quickplayRank > 0
+    ? previousBest > 0 ? Math.min(previousBest, quickplayRank) : quickplayRank
+    : previousBest;
+  if (persistBest && bestQuickplayRank > 0 && bestQuickplayRank !== previousBest) {
+    await getDB().collection("users").updateOne(
+      { _id: user._id },
+      { $set: { "stats.bestQuickplayRank": bestQuickplayRank, updatedAt: new Date() } }
+    );
+    user.stats = { ...(user.stats || {}), bestQuickplayRank };
+  }
+  return { quickplayRank, bestQuickplayRank };
+}
+
+async function setDisplayName(userId, displayNameInput) {
+  const displayName = normalizeDisplayName(displayNameInput);
+  const users = getDB().collection("users");
+  const _id = toObjectId(userId, "user id");
+  const user = await users.findOneAndUpdate(
+    { _id },
+    { $set: { displayName, updatedAt: new Date() } },
+    { returnDocument: "after" }
+  );
+  if (!user) throw new Error("User not found.");
+  return publicPlayerProfile(user, await getQuickplayRankStateForUser(user, { persistBest: true }));
 }
 
 async function setEquippedBadges(userId, achievementIds) {
@@ -605,14 +680,19 @@ async function setEquippedBadges(userId, achievementIds) {
   const _id = toObjectId(userId, "user id");
   const user = await users.findOne({ _id });
   if (!user) throw new Error("User not found.");
+  const rankProgress = await getQuickplayRankStateForUser(user, { persistBest: true });
   const progress = getProgress(user.stats, user.selectedTitle, ids, {
     supporter: user.supporter === true,
     cardCollection: user.cardCollection,
     unlockedCards: user.unlockedCards,
+    purchasedAchievementIds: user.purchasedAchievementIds,
+    purchasedTitleIds: user.purchasedTitleIds,
+    quickplayRank: rankProgress.quickplayRank,
+    bestQuickplayRank: rankProgress.bestQuickplayRank,
   });
   if (progress.equippedBadges.length !== ids.length) throw new Error("Only unlocked achievement badges can be equipped.");
   await users.updateOne({ _id }, { $set: { equippedBadgeIds: ids } });
-  return publicPlayerProfile({ ...user, equippedBadgeIds: ids });
+  return publicPlayerProfile({ ...user, equippedBadgeIds: ids }, rankProgress);
 }
 
 async function setSelectedTitle(userId, titleId) {
@@ -621,17 +701,22 @@ async function setSelectedTitle(userId, titleId) {
   const user = await users.findOne({ _id });
   if (!user) throw new Error("User not found.");
 
+  const rankProgress = await getQuickplayRankStateForUser(user, { persistBest: true });
   const progress = getProgress(user.stats, titleId, user.equippedBadgeIds, {
     supporter: user.supporter === true,
     cardCollection: user.cardCollection,
     unlockedCards: user.unlockedCards,
+    purchasedAchievementIds: user.purchasedAchievementIds,
+    purchasedTitleIds: user.purchasedTitleIds,
+    quickplayRank: rankProgress.quickplayRank,
+    bestQuickplayRank: rankProgress.bestQuickplayRank,
   });
   const requested = progress.titles.find((title) => title.id === titleId);
   if (!requested) throw new Error("Unknown title.");
   if (!requested.unlocked) throw new Error("That title has not been unlocked yet.");
 
   await users.updateOne({ _id }, { $set: { selectedTitle: requested.id } });
-  return publicPlayerProfile({ ...user, selectedTitle: requested.id });
+  return publicPlayerProfile({ ...user, selectedTitle: requested.id }, rankProgress);
 }
 
 function escapeRegex(value) {
@@ -649,15 +734,16 @@ async function searchPublicPlayers(query, limit = 8) {
 
   const safeLimit = Math.max(1, Math.min(Number.isInteger(limit) ? limit : 8, 12));
   const regex = new RegExp(escapeRegex(search), "i");
-  const projection = { username: 1, discordUsername: 1, avatar: 1, discordId: 1, stats: 1, modeStats: 1, selectedTitle: 1, equippedBadgeIds: 1, supporter: 1, cardCollection: 1, unlockedCards: 1, createdAt: 1 };
+  const projection = { username: 1, displayName: 1, discordUsername: 1, avatar: 1, discordId: 1, stats: 1, modeStats: 1, selectedTitle: 1, equippedBadgeIds: 1, purchasedAchievementIds: 1, purchasedTitleIds: 1, supporter: 1, cardCollection: 1, unlockedCards: 1, createdAt: 1 };
   const users = await getDB()
     .collection("users")
-    .find({ $or: [{ username: regex }, { discordUsername: regex }] }, { projection })
-    .sort({ "stats.quickplayWins": -1, username: 1, _id: 1 })
+    .find({ $or: [{ displayName: regex }, { username: regex }, { discordUsername: regex }] }, { projection })
+    .sort({ "stats.quickplayWins": -1, displayName: 1, username: 1, _id: 1 })
     .limit(safeLimit)
     .toArray();
 
-  return users.map(publicPlayerProfile);
+  const ranks = await Promise.all(users.map((user) => getQuickplayRankStateForUser(user)));
+  return users.map((user, index) => publicPlayerProfile(user, ranks[index]));
 }
 
 async function getPublicPlayerProfile(userId) {
@@ -665,9 +751,9 @@ async function getPublicPlayerProfile(userId) {
     .collection("users")
     .findOne(
       { _id: toObjectId(userId, "user id") },
-      { projection: { username: 1, avatar: 1, discordId: 1, stats: 1, modeStats: 1, selectedTitle: 1, equippedBadgeIds: 1, supporter: 1, cardCollection: 1, unlockedCards: 1, createdAt: 1 } }
+      { projection: { username: 1, displayName: 1, avatar: 1, discordId: 1, stats: 1, modeStats: 1, selectedTitle: 1, equippedBadgeIds: 1, purchasedAchievementIds: 1, purchasedTitleIds: 1, supporter: 1, cardCollection: 1, unlockedCards: 1, createdAt: 1 } }
     );
-  return user ? publicPlayerProfile(user) : null;
+  return user ? publicPlayerProfile(user, await getQuickplayRankStateForUser(user, { persistBest: true })) : null;
 }
 
 function rankQuickplayPlayers(users, userId, limit = 50) {
@@ -690,7 +776,7 @@ function rankQuickplayPlayers(users, userId, limit = 50) {
 async function getQuickplayRanking(userId, limit = 50) {
   const users = getDB().collection("users");
   const safeLimit = Math.max(1, Math.min(Number.isInteger(limit) ? limit : 50, 50));
-  const projection = { username: 1, avatar: 1, discordId: 1, stats: 1 };
+  const projection = { username: 1, displayName: 1, avatar: 1, discordId: 1, stats: 1 };
   const sort = { "stats.quickplayWins": -1, _id: 1 };
   const [topPlayers, currentUser] = await Promise.all([
     users.find({ "stats.quickplayWins": { $gt: 0 } }, { projection }).sort(sort).limit(safeLimit).toArray(),
@@ -861,6 +947,72 @@ async function buyPack(userId, pack) {
   });
 }
 
+async function buyShopItem(userId, item) {
+  const users = getDB().collection("users");
+  const _id = toObjectId(userId, "user id");
+  return withUserLock(String(_id), async () => {
+    const now = new Date();
+    const priceGold = assertPositiveInteger(item.priceGold, "item price", { min: 1, max: 100000 });
+    const unlockField = item.type === "achievement" ? "purchasedAchievementIds" : item.type === "title" ? "purchasedTitleIds" : null;
+    const unlockId = item.type === "achievement" ? item.achievementId : item.type === "title" ? item.titleId : null;
+    if (!unlockField || !unlockId) throw new Error("Shop item is invalid.");
+    const safeUnlockId = assertMongoKeySegment(unlockId, "shop unlock id");
+
+    const purchase = await users.updateOne(
+      { _id, gold: { $gte: priceGold }, [unlockField]: { $ne: safeUnlockId } },
+      {
+        $inc: { gold: -priceGold },
+        $addToSet: { [unlockField]: safeUnlockId },
+        $set: { updatedAt: now },
+        $push: {
+          shopHistory: {
+            createdAt: now,
+            itemId: item.id,
+            type: item.type,
+            unlockId: safeUnlockId,
+            cost: priceGold,
+          },
+        },
+      }
+    );
+
+    if (purchase.modifiedCount !== 1) {
+      const user = await users.findOne({ _id }, { projection: { gold: 1, [unlockField]: 1 } });
+      if (!user) throw new Error("User not found.");
+      if ((user[unlockField] || []).includes(safeUnlockId)) {
+        const err = new Error("You already own this item.");
+        err.code = "SHOP_ITEM_OWNED";
+        throw err;
+      }
+      const err = new Error(`Not enough gold. This item costs ${priceGold} gold.`);
+      err.code = "NOT_ENOUGH_GOLD";
+      throw err;
+    }
+
+    const updated = await users.findOne({ _id });
+    const rankProgress = await getQuickplayRankStateForUser(updated, { persistBest: true });
+    return {
+      item: {
+        id: item.id,
+        type: item.type,
+        achievementId: item.achievementId,
+        titleId: item.titleId,
+        name: item.name,
+        cost: priceGold,
+      },
+      gold: updated.gold || 0,
+      user: {
+        ...publicPlayerProfile(updated, rankProgress),
+        gold: updated.gold || 0,
+        economy: {
+          dailyRewards: getDailyRewardProgress(updated),
+        },
+        warnings: updated.warnings || [],
+      },
+    };
+  });
+}
+
 function normalizeWareraName(value) {
   if (typeof value !== "string") throw new Error("Enter your Warera name.");
   const wareraName = value.trim().replace(/\s+/g, " ");
@@ -912,6 +1064,7 @@ module.exports = {
   grantTournamentPrize,
   getQuickplayRanking,
   getPublicPlayerProfile,
+  setDisplayName,
   setSelectedTitle,
   setEquippedBadges,
   rankQuickplayPlayers,
@@ -929,5 +1082,7 @@ module.exports = {
   PACK_PRICE_GOLD,
   PACK_SIZE,
   buyPack,
+  buyShopItem,
   submitCardRequest,
+  normalizeDisplayName,
 };

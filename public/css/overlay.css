@@ -220,6 +220,7 @@
 .tooltip-rarity.rarity-rare { color: var(--mana); }
 .tooltip-rarity.rarity-legendary { color: var(--gold); }
 .tooltip-rarity.rarity-mythic { color: var(--mythic); text-shadow: 0 0 8px var(--mythic-glow); }
+.tooltip-rarity.rarity-souvenir { color: var(--souvenir); text-shadow: 0 0 10px var(--souvenir-glow); }
 
 .tooltip-meta {
   display: flex;
@@ -259,6 +260,8 @@
 .tooltip-kw.status-silenced { background: rgba(192, 195, 208, 0.13); color: #e0e2ec; border: 1px solid #8e93a5; }
 .tooltip-kw.status-poisoned { background: rgba(125, 192, 54, 0.16); color: #c9f28d; border: 1px solid #96c849; }
 .tooltip-kw.status-marked { background: rgba(255, 97, 72, 0.15); color: #ffc09d; border: 1px solid #ff895f; }
+.tooltip-kw.status-burning { background: rgba(239, 101, 28, 0.16); color: #ffd29c; border: 1px solid #ef7c35; }
+.tooltip-kw.status-drunk { background: rgba(214, 181, 95, 0.15); color: #f7dea0; border: 1px solid #c6a34b; }
 
 .tooltip-lore {
   font-size: 12px;

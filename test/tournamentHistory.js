@@ -1,5 +1,5 @@
 const assert = require("assert");
-const { createBracket, reportMatchResult } = require("../server/tournaments/bracket");
+const { createBracket, reportMatchResult, resolveReadyNoShows } = require("../server/tournaments/bracket");
 const { isTournamentComplete, publicTournament, snapshotTournamentConfig } = require("../server/tournaments/service");
 
 const config = {
@@ -45,6 +45,12 @@ assert.strictEqual(isTournamentComplete(parallelFinalBracket), false, "A malform
 parallelFinalBracket.thirdPlace.status = "ready";
 reportMatchResult(parallelFinalBracket, "third-place", "b");
 assert.strictEqual(isTournamentComplete(parallelFinalBracket), true, "The tournament should complete once the final and third-place result are settled.");
+
+const abandonedBracket = createBracket(["a", "b"].map((userId) => ({ userId })));
+abandonedBracket.rounds[0][0].noShowDeadline = new Date(Date.now() - 1);
+resolveReadyNoShows(abandonedBracket);
+assert.strictEqual(abandonedBracket.rounds[0][0].status, "void", "A fully abandoned final should become a no contest.");
+assert.strictEqual(isTournamentComplete(abandonedBracket), true, "A fully abandoned tournament should still reach a terminal state.");
 
 for (let count = 2; count <= 32; count += 1) {
   const bracketUnderTest = createBracket(Array.from({ length: count }, (_, index) => ({ userId: `p${index}` })));

@@ -117,6 +117,49 @@ function sortCardsForDisplay(cards, sortBy = "default") {
   });
 }
 
+function inventoryCollectionStats(cards) {
+  return cards.reduce((stats, card) => {
+    const quantity = getCardQuantity(card);
+    if (quantity > 0) {
+      stats.owned += 1;
+      stats.copies += quantity;
+    } else {
+      stats.missing += 1;
+    }
+    if (quantity > 0 && card.rarity === "mythic") stats.mythics += 1;
+    return stats;
+  }, { owned: 0, missing: 0, copies: 0, mythics: 0 });
+}
+
+function renderInventorySummary(cards, filtered) {
+  const summary = $("inventorySummary");
+  if (!summary) return;
+  const stats = inventoryCollectionStats(cards);
+  const completion = cards.length > 0 ? Math.round((stats.owned / cards.length) * 100) : 0;
+  summary.innerHTML = `
+    <div class="inventory-summary-card">
+      <span>Completion</span>
+      <strong>${completion}%</strong>
+      <small>${stats.owned} / ${cards.length} cards</small>
+    </div>
+    <div class="inventory-summary-card">
+      <span>Total copies</span>
+      <strong>${stats.copies}</strong>
+      <small>available for decks and trades</small>
+    </div>
+    <div class="inventory-summary-card">
+      <span>Mythics</span>
+      <strong>${stats.mythics}</strong>
+      <small>owned in collection</small>
+    </div>
+    <div class="inventory-summary-card">
+      <span>Filtered</span>
+      <strong>${filtered.length}</strong>
+      <small>matching current filters</small>
+    </div>
+  `;
+}
+
 async function openInventory() {
   if (!requireLoggedInForPlay()) return;
   await populateInventoryFilters();
@@ -163,12 +206,15 @@ function renderInventoryGrid() {
 
   const unlockedCount = cards.filter(isCardUnlocked).length;
   $("inventoryCount").textContent = `${unlockedCount} / ${cards.length} unlocked`;
+  renderInventorySummary(cards, filtered);
   $("inventoryEmpty").classList.toggle("hidden", filtered.length > 0);
 
   const grid = $("inventoryGrid");
   grid.innerHTML = "";
 
   filtered.forEach((card) => {
+    const shell = document.createElement("div");
+    shell.className = "card-tilt-shell";
     const el = document.createElement("div");
     const unlocked = isCardUnlocked(card);
     el.className = `minion-card inventory-card ${rarityClass(card)}${unlocked ? "" : " inventory-card-locked"}`;
@@ -177,7 +223,8 @@ function renderInventoryGrid() {
       if (!unlocked) return showToast("Unlock this card from packs.");
       openCardZoom(card);
     });
-    grid.appendChild(el);
+    shell.appendChild(el);
+    grid.appendChild(shell);
   });
 
   lazyLoadInventoryArt();
@@ -229,6 +276,12 @@ $("tileInventory").addEventListener("click", () => openInventory());
 
 function openCardZoom(card) {
   hideCardTooltip(); // it could still be showing from the hover/tap that triggered this click
+
+  const zoomPanel = document.querySelector(".card-zoom-panel");
+  if (zoomPanel) {
+    zoomPanel.classList.remove("rarity-common", "rarity-rare", "rarity-legendary", "rarity-mythic", "rarity-souvenir");
+    zoomPanel.classList.add(rarityClass(card));
+  }
 
   const zoomArt = $("cardZoomArt");
   zoomArt.className = `minion-card card-zoom-art ${rarityClass(card)}`;

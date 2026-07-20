@@ -1,9 +1,9 @@
 module.exports = {
   name: "Lolflame",
-  cost: 3,
+  cost: 4,
   type: "minion",
   attack: 3,
-  health: 7,
+  health: 5,
   keywords: ["charge"], 
   race: "Monster",
   rarity: "mythic",

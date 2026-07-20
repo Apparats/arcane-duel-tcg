@@ -1,6 +1,6 @@
 module.exports = {
   name: "Devastating Meteor",
-  cost: 6,
+  cost: 7,
   type: "spell",
   effect: "damage",
   value: 8,

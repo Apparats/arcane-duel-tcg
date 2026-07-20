@@ -151,13 +151,20 @@
     const target = targetFromPoint(clientX, clientY);
     const overSelfBoard = Boolean(closest(elementAtDrop, "#selfBoard"));
 
+    const needsPlayTarget = typeof cardRequiresPlayTarget === "function" && cardRequiresPlayTarget(card);
     const needsEnemyMinionTarget = typeof cardRequiresEnemyMinionTarget === "function" && cardRequiresEnemyMinionTarget(card);
-    if (needsEnemyMinionTarget) {
+    const needsEnemyHeroTarget = typeof cardRequiresEnemyHeroTarget === "function" && cardRequiresEnemyHeroTarget(card);
+    const enemyOnlyTarget = typeof cardTargetsEnemyOnly === "function" && cardTargetsEnemyOnly(card);
+    if (needsPlayTarget && enemyOnlyTarget) {
+      if (!target) return false;
       const isEnemyMinion = target?.minion?.parentElement?.id === "oppBoard";
-      if (!isEnemyMinion) return false;
+      const isEnemyHero = target?.id === "face";
+      if (needsEnemyMinionTarget && !isEnemyMinion) return false;
+      if (needsEnemyHeroTarget && !isEnemyHero) return false;
+      if (!isEnemyMinion && !isEnemyHero) return false;
       window.ArcaneAudio?.playSfx("cardPlay");
       predictCardPlay(drag.source);
-      send("playCard", { handIndex, targetInstanceId: target.id });
+      send("playCard", { handIndex, targetInstanceId: spellTargetId(target) });
       selectedHandIndex = null;
       hideTargetHint();
       return true;
@@ -199,8 +206,9 @@
       const handIndex = Number(handCard.dataset.handIndex);
       const card = myState?.me?.hand?.[handIndex];
       if (!myState?.isYourTurn || !card || card.cost > myState.me.manaCurrent) return;
-      const needsEnemyMinionTarget = typeof cardRequiresEnemyMinionTarget === "function" && cardRequiresEnemyMinionTarget(card);
-      const targetedCard = needsEnemyMinionTarget || (card.type === "spell" && card.effect && card.effect !== "draw");
+      if (typeof getHandCardPlayBlockReason === "function" && getHandCardPlayBlockReason(myState, card)) return;
+      const needsPlayTarget = typeof cardRequiresPlayTarget === "function" && cardRequiresPlayTarget(card);
+      const targetedCard = needsPlayTarget || (card.type === "spell" && card.effect && card.effect !== "draw");
       startDrag(event, handCard, targetedCard ? "targeted-spell" : "hand", { card, handIndex });
       return;
     }

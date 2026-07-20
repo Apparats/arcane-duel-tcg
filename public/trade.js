@@ -3,6 +3,7 @@ const tradeState = {
   code: null,
   currentTradeId: null,
   currentTrade: null,
+  cardPage: 1,
   pollTimer: null,
   homePollTimer: null,
 };
@@ -60,11 +61,15 @@ async function loadTradeHome() {
 function renderTradeSessions(sessions) {
   const list = $("tradeSessions");
   list.innerHTML = "";
+  if (!sessions.length) {
+    list.innerHTML = '<p class="trade-session-empty">No open trades yet.</p>';
+    return;
+  }
   sessions.forEach((trade) => {
     const other = trade.players.find((player) => !player.isYou);
     const button = document.createElement("button");
     button.className = `trade-session-item${trade.id === tradeState.currentTradeId ? " active" : ""}`;
-    button.textContent = `${other?.username || "Player"} - ${trade.status}`;
+    button.innerHTML = `<span>${escapeHtml(other?.username || "Player")}</span><small>${escapeHtml(trade.status || "pending")}</small>`;
     button.addEventListener("click", () => setCurrentTrade(trade));
     list.appendChild(button);
   });
@@ -80,58 +85,112 @@ function setCurrentTrade(trade) {
 
 function renderTradeSession() {
   const trade = tradeState.currentTrade;
+  const status = $("tradeSessionStatus");
   $("btnConfirmTrade").disabled = !trade || trade.status !== "pending";
   $("btnCancelTrade").disabled = !trade || trade.status !== "pending";
 
   if (!trade) {
     $("tradeSessionTitle").textContent = "No trade selected";
-    $("tradeSessionStatus").textContent = "Waiting";
-    $("tradeOfferSummary").innerHTML = "";
+    status.textContent = "Waiting";
+    status.dataset.state = "waiting";
+    $("tradeOfferSummary").innerHTML = '<div class="trade-deal-empty"><span>↔</span><strong>Connect with a player to begin</strong><small>Both offers will appear here before either card is exchanged.</small></div>';
     return;
   }
 
   const other = trade.players.find((player) => !player.isYou);
   $("tradeSessionTitle").textContent = `Trading with ${other?.username || "Player"}`;
-  $("tradeSessionStatus").textContent = trade.status;
+  status.textContent = trade.status;
+  status.dataset.state = trade.status;
   $("tradeOfferSummary").innerHTML = trade.players
     .map((player) => {
       const offer = player.offer;
+      const card = offer?.id ? TCGCards.getCardById(offer.id) : null;
+      const cardHTML = card
+        ? `<span class="minion-card inventory-card trade-offer-preview ${rarityClass(card)}">${inventoryCardFaceHTML(card, true)}</span>`
+        : '<span class="trade-offer-placeholder" aria-hidden="true"><b>+</b><small>Waiting for a card</small></span>';
       return `
         <div class="trade-offer-card${player.confirmed ? " confirmed" : ""}">
-          <span>${player.isYou ? "You" : escapeHtml(player.username || "Player")}</span>
-          <strong>${offer ? escapeHtml(offer.name) : "No card offered"}</strong>
-          <small>${player.confirmed ? "Confirmed" : "Not confirmed"}</small>
+          <div class="trade-offer-owner"><span>${player.isYou ? "Your offer" : escapeHtml(player.username || "Player")}</span><small>${player.confirmed ? "Confirmed" : "Reviewing"}</small></div>
+          <div class="trade-offer-visual">${cardHTML}</div>
+          <strong>${offer ? escapeHtml(offer.name) : "No card selected"}</strong>
         </div>
       `;
     })
     .join("");
+  lazyLoadInventoryArt();
 }
 
 function renderTradeCards() {
   const grid = $("tradeCardGrid");
+  const pagination = $("tradeCardPagination");
   grid.innerHTML = "";
 
   const myOfferId = tradeState.currentTrade?.players.find((player) => player.isYou)?.offer?.id;
-  ownTradeCards().forEach((card) => {
+  const cards = ownTradeCards();
+  const cardsPerPage = 5;
+  const pageCount = Math.max(1, Math.ceil(cards.length / cardsPerPage));
+  tradeState.cardPage = Math.min(Math.max(1, tradeState.cardPage), pageCount);
+  const firstCard = (tradeState.cardPage - 1) * cardsPerPage;
+  const visibleCards = cards.slice(firstCard, firstCard + cardsPerPage);
+
+  if (!cards.length) {
+    grid.innerHTML = '<p class="trade-cards-empty">Your collection has no tradable cards.</p>';
+    pagination.innerHTML = "";
+  }
+
+  visibleCards.forEach((card) => {
     const selected = card.id === myOfferId;
     const el = document.createElement("button");
-    el.className = `trade-card-button${selected ? " selected" : ""}`;
+    el.className = `trade-card-button trade-card-row${selected ? " selected" : ""}`;
     el.disabled = !tradeState.currentTrade || tradeState.currentTrade.status !== "pending";
+    el.setAttribute("aria-label", `Offer ${card.name}`);
     el.innerHTML = `
       <span class="minion-card inventory-card trade-card-preview ${rarityClass(card)}">
         ${inventoryCardFaceHTML(card, true)}
         <span class="inventory-card-count">x${getCardQuantity(card)}</span>
       </span>
+      <span class="trade-card-row-info">
+        <strong>${escapeHtml(card.name)}</strong>
+        <small>${escapeHtml(card.rarity || "common")} · ${escapeHtml(card.type || "card")} · ${card.cost} mana</small>
+      </span>
+      <span class="trade-card-row-action">${selected ? "Offering" : "Offer"}</span>
     `;
     el.addEventListener("click", () => offerTradeCard(card.id));
     attachCardTooltip(el, card);
     grid.appendChild(el);
   });
 
+  if (cards.length) renderTradeCardPagination(pageCount);
+
   $("tradeSelectedCard").textContent = myOfferId
     ? `Offering ${TCGCards.getCardById(myOfferId)?.name || "selected card"}`
     : "Choose a card to offer";
   lazyLoadInventoryArt();
+}
+
+function renderTradeCardPagination(pageCount) {
+  const pagination = $("tradeCardPagination");
+  const page = tradeState.cardPage;
+  const visiblePages = 5;
+  const start = Math.max(1, Math.min(page - Math.floor(visiblePages / 2), pageCount - visiblePages + 1));
+  const end = Math.min(pageCount, start + visiblePages - 1);
+  const pageButtons = [];
+  for (let number = start; number <= end; number += 1) {
+    pageButtons.push(`<button type="button" class="trade-page-button${number === page ? " active" : ""}" data-trade-page="${number}" aria-current="${number === page ? "page" : "false"}">${number}</button>`);
+  }
+  pagination.innerHTML = `
+    <button type="button" class="trade-page-button trade-page-step" data-trade-page="${page - 1}" ${page === 1 ? "disabled" : ""} aria-label="Previous page">‹</button>
+    ${start > 1 ? '<span class="trade-page-ellipsis">…</span>' : ""}
+    ${pageButtons.join("")}
+    ${end < pageCount ? '<span class="trade-page-ellipsis">…</span>' : ""}
+    <button type="button" class="trade-page-button trade-page-step" data-trade-page="${page + 1}" ${page === pageCount ? "disabled" : ""} aria-label="Next page">›</button>
+  `;
+  pagination.querySelectorAll("[data-trade-page]").forEach((button) => {
+    button.addEventListener("click", () => {
+      tradeState.cardPage = Number(button.dataset.tradePage);
+      renderTradeCards();
+    });
+  });
 }
 
 async function refreshTradeCode() {

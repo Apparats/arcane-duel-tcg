@@ -1,6 +1,6 @@
 module.exports = {
   name: "Minor Spark",
-  cost: 1,
+  cost: 2,
   type: "spell",
   effect: "damage",
   value: 2,

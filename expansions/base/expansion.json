@@ -3,5 +3,6 @@
   "name": "Base",
   "description": "The core set of cards for Arcana Duel TCG.",
   "enabled": true,
-  "shop": true
+  "shop": true,
+  "packPriceGold": 15
 }

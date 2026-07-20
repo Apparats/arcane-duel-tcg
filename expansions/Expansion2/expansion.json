@@ -1,0 +1,11 @@
+{
+  "id": "expansion2",
+  "name": "Expansion 2",
+  "description": "Second Arcana Expansion.",
+  "enabled": true,
+  "shop": true,
+  "packName": "Expansion 2 Pack",
+  "packPriceGold": 35,
+  "packSize": 3,
+  "packArt": "art/reverse3.webp"
+}

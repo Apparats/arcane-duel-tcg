@@ -218,8 +218,10 @@
 .deck-row.rarity-rare { border-color: rgba(79, 195, 232, 0.46); border-left-color: var(--mana); box-shadow: inset 3px 0 10px rgba(79, 195, 232, 0.12); }
 .deck-row.rarity-legendary { border-color: rgba(232, 179, 79, 0.58); border-left-color: var(--gold); box-shadow: inset 3px 0 10px rgba(232, 179, 79, 0.14); }
 .deck-row.rarity-mythic { border-color: rgba(214, 58, 42, 0.62); border-left-color: var(--mythic); box-shadow: inset 3px 0 10px rgba(214, 58, 42, 0.16); animation: none; }
+.deck-row.rarity-souvenir { border-color: rgba(255, 229, 146, 0.66); border-left-color: var(--souvenir); box-shadow: inset 3px 0 12px rgba(247, 215, 123, 0.2); animation: none; }
 .deck-row.rarity-legendary::before,
-.deck-row.rarity-mythic::before { content: none; }
+.deck-row.rarity-mythic::before,
+.deck-row.rarity-souvenir::before { content: none; }
 
 .deck-list {
   display: grid;

@@ -45,6 +45,22 @@ function main() {
   secondPlayerStarts.endTurn(0);
   assert(secondPlayerStarts.getStateFor(1).turnNumber === 2, "The shared round should advance when control returns to the starter.");
 
+  const manaSparkGame = new Game("MANA_SPARK", "First", "Second", {
+    decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
+    startingPlayerIdx: 0,
+    grantSecondPlayerManaCard: true,
+  });
+  assert(manaSparkGame.players[1].hand.includes("special:manaspark"), "The player going second should receive Mana Spark.");
+  manaSparkGame.endTurn(0);
+  const manaSparkIndex = manaSparkGame.players[1].hand.indexOf("special:manaspark");
+  const manaBeforeSpark = manaSparkGame.players[1].manaCurrent;
+  manaSparkGame.playCard(1, manaSparkIndex, null);
+  assert(manaSparkGame.players[1].manaCurrent === manaBeforeSpark + 1, "Mana Spark must grant 1 temporary Mana.");
+  assert(!manaSparkGame.players[1].hand.includes("special:manaspark"), "Mana Spark must be consumed when played.");
+  manaSparkGame.endTurn(1);
+  manaSparkGame.endTurn(0);
+  assert(manaSparkGame.players[1].manaCurrent === manaSparkGame.players[1].manaMax, "Mana Spark's Mana must expire at the next turn.");
+
   const fallbackDeck = buildFallbackDeck();
   const fullCollection = fallbackDeck.reduce((collection, cardId) => {
     collection[cardId] = (collection[cardId] || 0) + 2;
@@ -201,12 +217,10 @@ function main() {
   });
   chargeTest.players[0].board = [
     testMinion("c1", "base:beitsas", ["charge"]),
-    testMinion("c2", "base:dog", ["charge"]),
-    testMinion("c3", "base:hazzard", ["charge"]),
   ];
   chargeTest.players[0].hand = ["base:kurzemnieks"];
   chargeTest.players[0].manaCurrent = 10;
-  assertThrows(() => chargeTest.playCard(0, 0, null), "A board with three Charge cards should reject a fourth Charge.");
+  assertThrows(() => chargeTest.playCard(0, 0, null), "A board with one Charge card should reject a second Charge.");
 
   const summonLimitTest = new Game("SUMMON", "Summon1", "Summon2", {
     decks: [

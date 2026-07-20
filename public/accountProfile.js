@@ -87,6 +87,10 @@
       supporter: profile.supporter === true,
       cardCollection: profile.cardCollection,
       unlockedCards: profile.unlockedCards,
+      purchasedAchievementIds: profile.purchasedAchievementIds,
+      purchasedTitleIds: profile.purchasedTitleIds,
+      quickplayRank: profile.quickplayRank,
+      bestQuickplayRank: profile.quickplayBestRank ?? profile.stats?.bestQuickplayRank,
     });
     return {
       ...profile,
@@ -135,6 +139,7 @@
     refreshProgressIndicator(currentUser);
     detectNewProgress(currentUser);
     setAvatar($("accountAvatar"), $("accountAvatarFallback"), currentUser);
+    if ($("accountName")) $("accountName").textContent = currentUser.username || "Player";
     $("accountProfile")?.classList.remove("hidden");
     if (activeProfile && isCurrentUser(activeProfile)) renderProfile({ ...activeProfile, ...currentUser });
   }
@@ -303,6 +308,10 @@
       supporter: user?.supporter === true,
       cardCollection: user?.cardCollection,
       unlockedCards: user?.unlockedCards,
+      purchasedAchievementIds: user?.purchasedAchievementIds,
+      purchasedTitleIds: user?.purchasedTitleIds,
+      quickplayRank: user?.quickplayRank,
+      bestQuickplayRank: user?.quickplayBestRank ?? user?.stats?.bestQuickplayRank,
     });
     if (!progress) return [];
     return [...progress.achievements, ...progress.titles]
@@ -359,6 +368,10 @@
       supporter: user?.supporter === true,
       cardCollection: user?.cardCollection,
       unlockedCards: user?.unlockedCards,
+      purchasedAchievementIds: user?.purchasedAchievementIds,
+      purchasedTitleIds: user?.purchasedTitleIds,
+      quickplayRank: user?.quickplayRank,
+      bestQuickplayRank: user?.quickplayBestRank ?? user?.stats?.bestQuickplayRank,
     });
     if (!progress || !user?.id) return;
     const unlocked = [
@@ -440,6 +453,9 @@
     const own = isCurrentUser(activeProfile);
     $("profilePageName").textContent = activeProfile.username || "Player";
     $("profilePageSubtitle").textContent = own ? "Your Arcana account" : "Player profile";
+    $("btnEditProfileDisplayName")?.classList.toggle("hidden", !own);
+    if (!own) closeDisplayNameModal();
+    if (own && $("profileDisplayNameInput")) $("profileDisplayNameInput").value = activeProfile.username || "";
     $("profilePageTitle").textContent = activeProfile.selectedTitle?.name || "Arcane Initiate";
     renderEquippedBadges(activeProfile);
     $("profilePageGold").textContent = own ? `${formatNumber(activeProfile.gold)} gold` : "Public profile";
@@ -490,7 +506,11 @@
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Could not equip this title.");
       const selectedTitle = data.profile?.selectedTitle;
-      syncUser({ selectedTitle: selectedTitle?.id || "initiate" });
+      syncUser({
+        selectedTitle: selectedTitle?.id || "initiate",
+        quickplayRank: data.profile?.quickplayRank,
+        quickplayBestRank: data.profile?.quickplayBestRank,
+      });
       renderProfile(data.profile);
       notify?.(`${selectedTitle?.name || "Title"} equipped.`);
     } catch (error) {
@@ -514,10 +534,36 @@
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Could not update achievement badges.");
       const equippedBadgeIds = (data.profile?.equippedBadges || []).map((badge) => badge.id);
-      syncUser({ equippedBadgeIds });
+      syncUser({
+        equippedBadgeIds,
+        quickplayRank: data.profile?.quickplayRank,
+        quickplayBestRank: data.profile?.quickplayBestRank,
+      });
       renderProfile(data.profile);
     } catch (error) {
       notify?.(error.message || "Could not update achievement badges.");
+    }
+  }
+
+  async function updateDisplayName(displayName) {
+    if (!fetcher || !isCurrentUser(activeProfile)) return;
+    if (!/^[A-Za-z0-9_]{1,24}$/.test(displayName)) {
+      return notify?.("Use 1–24 letters, numbers, or underscores only; spaces are not allowed.");
+    }
+    try {
+      const response = await fetcher("/account/display-name", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ displayName }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Could not update username.");
+      syncUser({ username: data.profile?.username || displayName });
+      renderProfile(data.profile);
+      closeDisplayNameModal();
+      notify?.("Game username updated.");
+    } catch (error) {
+      notify?.(error.message || "Could not update username.");
     }
   }
 
@@ -599,7 +645,25 @@
   }
 
   function closeProfile() {
+    closeDisplayNameModal();
     changeScreen?.("menu");
+  }
+
+  function openDisplayNameModal() {
+    if (!isCurrentUser(activeProfile)) return;
+    const modal = $("profileDisplayNameModal");
+    const input = $("profileDisplayNameInput");
+    if (!modal || !input) return;
+    input.value = activeProfile?.username || "";
+    modal.classList.remove("hidden");
+    setTimeout(() => {
+      input.focus();
+      input.select();
+    }, 0);
+  }
+
+  function closeDisplayNameModal() {
+    $("profileDisplayNameModal")?.classList.add("hidden");
   }
 
   function init(options = {}) {
@@ -612,6 +676,16 @@
     $("accountProfile")?.addEventListener("click", () => openProfile());
     $("btnProfileBack")?.addEventListener("click", closeProfile);
     $("btnViewOwnProfile")?.addEventListener("click", openProfile);
+    $("btnEditProfileDisplayName")?.addEventListener("click", openDisplayNameModal);
+    $("btnCloseProfileDisplayName")?.addEventListener("click", closeDisplayNameModal);
+    $("btnCancelProfileDisplayName")?.addEventListener("click", closeDisplayNameModal);
+    $("profileDisplayNameModal")?.addEventListener("click", (event) => {
+      if (event.target === event.currentTarget) closeDisplayNameModal();
+    });
+    $("profileDisplayNameForm")?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      updateDisplayName($("profileDisplayNameInput")?.value || "");
+    });
     $("playerSearchInput")?.addEventListener("focus", () => setSearchPopoverOpen(true));
     $("playerSearchForm")?.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -624,7 +698,9 @@
       button.addEventListener("click", () => setActiveTab(button.dataset.profileTab));
     });
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && !$("screen-profile")?.classList.contains("hidden")) closeProfile();
+      if (event.key !== "Escape") return;
+      if (!$("profileDisplayNameModal")?.classList.contains("hidden")) return closeDisplayNameModal();
+      if (!$("screen-profile")?.classList.contains("hidden")) closeProfile();
     });
   }
 

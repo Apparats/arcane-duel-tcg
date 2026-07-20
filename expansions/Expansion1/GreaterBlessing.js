@@ -1,6 +1,6 @@
 module.exports = {
   name: "Greater Blessing",
-  cost: 3,
+  cost: 4,
   type: "spell",
   effect: "heal",
   value: 6,

@@ -12,9 +12,7 @@
   height: 100%;
   padding: clamp(12px, 3vh, 24px);
   overflow: hidden;
-  background:
-    linear-gradient(125deg, rgba(72, 136, 164, 0.16), transparent 34%),
-    linear-gradient(180deg, #102833 0%, #071722 52%, #020910 100%);
+  background: linear-gradient(180deg, #3b0909 0%, #1d0708 45%, #090305 100%);
 }
 
 #screen-menu::before {
@@ -22,8 +20,8 @@
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   background:
-    linear-gradient(90deg, rgba(1, 7, 12, 0.42), transparent 24%, transparent 76%, rgba(1, 7, 12, 0.56)),
-    radial-gradient(circle at center, transparent 28%, rgba(0, 5, 10, 0.7) 100%);
+    linear-gradient(90deg, rgba(16, 2, 3, 0.66), transparent 26%, transparent 74%, rgba(16, 2, 3, 0.76)),
+    radial-gradient(circle at center, transparent 25%, rgba(8, 1, 3, 0.7) 100%);
   z-index: 0;
   pointer-events: none;
 }
@@ -126,27 +124,46 @@
   text-decoration-color: currentColor;
 }
 
-/* ---- Cold wind haze ---- */
+/* ---- Firelight haze ---- */
 
+/* Smooth multi-layer glow — no hard clip-path cones */
 .menu-glow {
   position: absolute;
-  inset: -18%;
-  background:
-    linear-gradient(112deg, transparent 18%, rgba(168, 228, 242, 0.08) 39%, transparent 58%),
-    linear-gradient(112deg, transparent 34%, rgba(79, 162, 192, 0.1) 51%, transparent 68%);
-  filter: blur(24px);
+  inset: -20% -15% -20%;
   pointer-events: none;
   z-index: 0;
-  opacity: 1;
-  animation: menu-winter-breathe 5.2s ease-in-out infinite;
+  animation: menu-fire-breathe 5s ease-in-out infinite;
 }
 
-@keyframes menu-winter-breathe {
-  0%, 100% { opacity: 0.5; transform: scale(0.94); filter: blur(20px) brightness(0.85); }
-  50% { opacity: 1; transform: scale(1.06); filter: blur(30px) brightness(1.24); }
+/* Primary central bloom */
+.menu-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 55% 55% at 50% 0%, rgba(220, 55, 20, 0.55) 0%, rgba(180, 30, 15, 0.25) 45%, transparent 75%),
+    radial-gradient(ellipse 80% 40% at 50% 10%, rgba(255, 90, 30, 0.18) 0%, transparent 65%);
+  filter: blur(28px);
 }
 
-/* ---- Soft falling snow ---- */
+/* Soft wide ambient halo */
+.menu-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(200, 40, 15, 0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 50% 5%, rgba(255, 140, 60, 0.12) 0%, transparent 50%);
+  filter: blur(48px);
+}
+
+@keyframes menu-fire-breathe {
+  0%, 100% { opacity: 0.6; transform: scaleY(0.94) scaleX(0.96); }
+  45% { opacity: 1; transform: scaleY(1.06) scaleX(1.03); }
+  75% { opacity: 0.78; transform: scaleY(1.01) scaleX(0.99); }
+}
+
+/* ---- Rising embers ---- */
 
 .fireflies {
   position: absolute;
@@ -158,14 +175,14 @@
 
 .firefly {
   position: absolute;
-  top: -15px;
+  top: 108%;
   width: var(--snow-size, 3px);
   height: var(--snow-size, 3px);
-  background: rgba(248, 253, 255, 0.96);
+  background: radial-gradient(circle at 35% 30%, #fff7c8 0 10%, #ffc34e 34%, #ff602d 72%, #b71f16 100%);
   border-radius: 50%;
-  filter: drop-shadow(0 0 4px rgba(211, 243, 255, 0.72));
+  filter: drop-shadow(0 0 4px rgba(255, 99, 35, 0.92)) drop-shadow(0 0 10px rgba(255, 179, 55, 0.38));
   opacity: 0;
-  animation: snow-fall var(--snow-duration, 12s) linear infinite, snow-flicker 2.8s ease-in-out infinite;
+  animation: ember-rise var(--snow-duration, 12s) linear infinite, ember-flicker 2.4s ease-in-out infinite;
   animation-delay: var(--snow-delay, 0s);
 }
 
@@ -194,22 +211,22 @@
 .firefly:nth-child(23) { left: 86%; --snow-size: 4px; --snow-delay: -8s; --snow-duration: 11s; }
 .firefly:nth-child(24) { left: 92%; --snow-size: 3px; --snow-delay: -3s; --snow-duration: 14s; }
 
-@keyframes snow-fall {
-  0% { top: -15px; transform: translateX(0); }
-  30% { transform: translateX(12px); }
-  65% { transform: translateX(-10px); }
-  100% { top: 112%; transform: translateX(8px); }
+@keyframes ember-rise {
+  0% { top: 108%; transform: translateX(0) scale(0.68); }
+  30% { transform: translateX(14px) scale(1); }
+  65% { transform: translateX(-11px) scale(0.8); }
+  100% { top: -12%; transform: translateX(8px) scale(0.34); }
 }
 
-@keyframes snow-flicker {
+@keyframes ember-flicker {
   0%, 100% { opacity: 0; }
-  26%, 72% { opacity: 0.9; }
-  52% { opacity: 0.28; }
+  22%, 70% { opacity: 0.94; }
+  52% { opacity: 0.3; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .firefly { animation: none; opacity: 0.46; transform: translateY(44vh); }
-  .menu-glow { animation: none; opacity: 0.78; transform: none; }
+  .firefly { animation: none; opacity: 0.58; transform: translateY(-44vh); }
+  .menu-glow { animation: none; opacity: 0.65; }
 }
 
 .menu-wrap {
@@ -427,9 +444,9 @@
 
 .menu-brand {
   font-size: 56px;
-  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.8), 0 0 25px rgba(232, 179, 79, 0.4);
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.8), 0 0 25px rgba(255, 87, 28, 0.54);
   margin-bottom: 8px;
-  background: linear-gradient(to bottom, #ffffff, #ffd98f);
+  background: linear-gradient(to bottom, #fff4cf, #ffc24b 48%, #ff7b31);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
@@ -503,9 +520,11 @@
 
 .menu-tile {
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 177, 86, 0.2);
   border-radius: 12px;
-  background: rgba(25, 20, 35, 0.5);
+  background:
+    linear-gradient(145deg, rgba(42, 17, 16, 0.86), rgba(13, 7, 10, 0.88)),
+    radial-gradient(circle at 50% 0%, rgba(255, 118, 38, 0.08), transparent 58%);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: var(--cream);
@@ -519,7 +538,7 @@
   gap: 12px;
   padding: 30px 16px;
   transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255, 219, 171, 0.06);
 }
 
 .menu-tile::after {
@@ -571,9 +590,11 @@
 .menu-tile-primary:hover,
 .menu-tile-primary:focus-visible {
   transform: translateY(-8px) scale(1.03);
-  border-color: var(--gold);
-  background: rgba(35, 30, 50, 0.75);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--gold), 0 0 30px rgba(232, 179, 79, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  border-color: #ffb65a;
+  background:
+    linear-gradient(145deg, rgba(72, 25, 17, 0.94), rgba(20, 8, 10, 0.94)),
+    radial-gradient(circle at 50% 0%, rgba(255, 121, 35, 0.18), transparent 58%);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 160, 62, 0.72), 0 0 34px rgba(255, 75, 25, 0.36), inset 0 1px 0 rgba(255, 244, 211, 0.14);
   outline: none;
 }
 
@@ -592,7 +613,7 @@
 .menu-tile-primary:hover .menu-tile-icon,
 .menu-tile-primary:focus-visible .menu-tile-icon {
   transform: scale(1.15) translateY(-2px);
-  filter: drop-shadow(0 4px 12px rgba(232, 179, 79, 0.4));
+  filter: drop-shadow(0 4px 12px rgba(255, 87, 26, 0.62));
 }
 
 .menu-tile-label {
@@ -667,9 +688,11 @@
 .menu-tile-secondary-active:hover,
 .menu-tile-secondary-active:focus-visible {
   transform: translateY(-5px) scale(1.02);
-  border-color: var(--gold);
-  background: rgba(35, 30, 50, 0.75);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--gold), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  border-color: #ffb65a;
+  background:
+    linear-gradient(145deg, rgba(65, 23, 16, 0.93), rgba(19, 8, 10, 0.93)),
+    radial-gradient(circle at 50% 0%, rgba(255, 121, 35, 0.15), transparent 58%);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 160, 62, 0.62), inset 0 1px 0 rgba(255, 244, 211, 0.12);
   outline: none;
 }
 .menu-tile-secondary-active:hover .menu-tile-icon {
@@ -851,6 +874,8 @@
 .how-to-status-silenced { background: radial-gradient(circle at 35% 25%, #ced0da, #4d5060 70%); }
 .how-to-status-poisoned { background: radial-gradient(circle at 35% 25%, #d8ff9b, #568b28 70%); color: #142707; }
 .how-to-status-marked { background: radial-gradient(circle at 35% 25%, #ffd5a6, #c34b22 70%); }
+.how-to-status-burning { background: radial-gradient(circle at 35% 25%, #fff0a8, #e36b1f 48%, #7e1712 78%); }
+.how-to-status-drunk { background: radial-gradient(circle at 35% 25%, #fff3a6, #b6842c 48%, #236b68 82%); color: #171109; }
 .how-to-note { margin-top: 10px !important; font-size: 12px; }
 
 .legal-card {

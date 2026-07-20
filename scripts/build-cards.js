@@ -27,17 +27,21 @@ const OUTPUT_FILE = path.join(ROOT, "public", "cards.js");
 const VALID_TYPES = ["minion", "spell"];
 const VALID_KEYWORDS = ["taunt", "charge", "divineShield"];
 const VALID_EFFECTS = ["damage", "heal", "draw"];
-const VALID_RARITIES = ["common", "rare", "legendary", "mythic"];
+const VALID_RARITIES = ["common", "rare", "legendary", "mythic", "souvenir"];
 const MAX_LORE_LENGTH = 180;
 
 // Must exactly mirror the effects implemented in the ABILITY_EFFECTS
 // object in public/engine.js. If you add a new effect there, add it
 // here too (and to the required-parameters list below).
-const VALID_TRIGGERS = ["onPlay", "onDeath", "onTurnStart", "onAnyTurnStart", "onAttack", "onAttackMinion"];
+const VALID_TRIGGERS = ["passive", "onPlay", "onDeath", "onTurnStart", "onAnyTurnStart", "onAttack", "onAttackMinion"];
 const VALID_ABILITY_EFFECTS = [
   "drawCards",
+  "gainTemporaryMana",
   "addCardToHand",
+  "addRandomSpellToHand",
   "stealRandomEnemyDeckCardToHand",
+  "stealRandomEnemyBoardMinion",
+  "stealEnemyBoardNonMythicMinions",
   "damageAllEnemyMinions",
   "damageAllMinions",
   "damageEnemyHero",
@@ -45,17 +49,24 @@ const VALID_ABILITY_EFFECTS = [
   "summonMinion",
   "summonMinionIfMissing",
   "buffAllFriendlyMinions",
+  "buffSelf",
   "grantDivineShieldToAllFriendlyMinions",
   "healSelf",
   "returnToDeck",
   "returnEnemyMinionToDeck",
   "returnAllMinionsToDeck",
+  "returnOtherFriendlyMinionsToHand",
   "rebirthWithHalfHealth",
+  "rebirthWithHealth",
   "transformIntoMinion",
   "returnToDeckIfPlayedLessThan",
   "destroySelf",
   "destroySelfIfPlayedAtLeast",
   "applyStatus",
+  "applyBurning",
+  "preventDamageFromRace",
+  "reviveOtherFriendlyMinions",
+  "drunkAllMinions",
 ];
 
 class BuildError extends Error {}
@@ -227,6 +238,9 @@ function validateAbilities(card, label) {
     if (!VALID_ABILITY_EFFECTS.includes(ability.effect)) {
       fail(`${abLabel}: unknown effect "${ability.effect}". Valid: ${VALID_ABILITY_EFFECTS.join(", ")}.`);
     }
+    if (ability.trigger === "passive" && !["preventDamageFromRace", "reviveOtherFriendlyMinions", "drunkAllMinions"].includes(ability.effect)) {
+      fail(`${abLabel}: only passive effects can use trigger: "passive".`);
+    }
 
     if (["summonMinion", "summonMinionIfMissing", "transformIntoMinion"].includes(ability.effect)) {
       if (!ability.cardId || typeof ability.cardId !== "string") {
@@ -248,9 +262,16 @@ function validateAbilities(card, label) {
       if (ability.trigger !== "onTurnStart") {
         fail(`${abLabel}: addCardToHand can only use the "onTurnStart" trigger.`);
       }
-    } else if (ability.effect === "buffAllFriendlyMinions") {
+    } else if (ability.effect === "addRandomSpellToHand") {
+      if (ability.trigger !== "onTurnStart") {
+        fail(`${abLabel}: addRandomSpellToHand can only use the "onTurnStart" trigger.`);
+      }
+    } else if (["buffAllFriendlyMinions", "buffSelf"].includes(ability.effect)) {
       if (ability.attack === undefined && ability.health === undefined) {
-        fail(`${abLabel}: buffAllFriendlyMinions needs at least "attack" or "health".`);
+        fail(`${abLabel}: ${ability.effect} needs at least "attack" or "health".`);
+      }
+      if (ability.effect === "buffSelf" && ability.trigger !== "onTurnStart") {
+        fail(`${abLabel}: buffSelf can only use the "onTurnStart" trigger.`);
       }
       if (ability.attack !== undefined && !isIntegerInRange(ability.attack, -99, 99)) {
         fail(`${abLabel}: "attack" must be an integer between -99 and 99.`);
@@ -267,14 +288,17 @@ function validateAbilities(card, label) {
       }
     } else if (ability.effect === "applyStatus") {
       const validStatuses = ["weakened", "frozen", "silenced", "poisoned", "marked"];
+      const validTargets = ability.status === "poisoned"
+        ? ["enemyMinion", "enemy", "enemyCharacter", "enemyHero"]
+        : ["enemyMinion"];
       if (ability.trigger !== "onPlay") {
         fail(`${abLabel}: applyStatus can only use the "onPlay" trigger.`);
       }
-      if (ability.target !== "enemyMinion") {
-        fail(`${abLabel}: applyStatus needs target: "enemyMinion".`);
-      }
       if (!validStatuses.includes(ability.status)) {
         fail(`${abLabel}: "status" must be one of ${validStatuses.join(", ")}.`);
+      }
+      if (!validTargets.includes(ability.target)) {
+        fail(`${abLabel}: applyStatus needs target: ${validTargets.map((target) => `"${target}"`).join(", ")}.`);
       }
       if (ability.value !== undefined && !isIntegerInRange(ability.value, 1, 99)) {
         fail(`${abLabel}: "value" must be an integer between 1 and 99 if you include it.`);
@@ -285,12 +309,53 @@ function validateAbilities(card, label) {
       if (ability.status === "silenced" && ability.turns !== undefined) {
         fail(`${abLabel}: silenced is permanent, so do not set "turns".`);
       }
+    } else if (ability.effect === "applyBurning") {
+      if (ability.trigger !== "onAttack") {
+        fail(`${abLabel}: applyBurning can only use the "onAttack" trigger.`);
+      }
+      if (ability.value !== undefined && !isIntegerInRange(ability.value, 1, 99)) {
+        fail(`${abLabel}: "value" must be an integer between 1 and 99 if you include it.`);
+      }
+      if (ability.turns !== undefined && !isIntegerInRange(ability.turns, 1, 9)) {
+        fail(`${abLabel}: "turns" must be an integer between 1 and 9 if you include it.`);
+      }
     } else if (ability.effect === "returnEnemyMinionToDeck") {
       if (ability.trigger !== "onPlay" || ability.target !== "enemyMinion") {
         fail(`${abLabel}: returnEnemyMinionToDeck needs trigger: "onPlay" and target: "enemyMinion".`);
       }
-    } else if (["returnToDeck", "returnAllMinionsToDeck", "rebirthWithHalfHealth", "stealRandomEnemyDeckCardToHand", "destroySelf"].includes(ability.effect)) {
+    } else if (ability.effect === "returnOtherFriendlyMinionsToHand") {
+      if (ability.trigger !== "onPlay") {
+        fail(`${abLabel}: returnOtherFriendlyMinionsToHand can only use the "onPlay" trigger.`);
+      }
+    } else if (ability.effect === "stealEnemyBoardNonMythicMinions") {
+      if (ability.trigger !== "onPlay") {
+        fail(`${abLabel}: stealEnemyBoardNonMythicMinions can only use the "onPlay" trigger.`);
+      }
+    } else if (ability.effect === "preventDamageFromRace") {
+      if (ability.trigger !== "passive") {
+        fail(`${abLabel}: preventDamageFromRace must use trigger: "passive".`);
+      }
+      if (!ability.race || typeof ability.race !== "string") {
+        fail(`${abLabel}: preventDamageFromRace needs "race" (string).`);
+      }
+    } else if (ability.effect === "reviveOtherFriendlyMinions") {
+      if (ability.trigger !== "passive") {
+        fail(`${abLabel}: reviveOtherFriendlyMinions must use trigger: "passive".`);
+      }
+    } else if (ability.effect === "drunkAllMinions") {
+      if (ability.trigger !== "passive") {
+        fail(`${abLabel}: drunkAllMinions must use trigger: "passive".`);
+      }
+    } else if (["returnToDeck", "returnAllMinionsToDeck", "rebirthWithHalfHealth", "stealRandomEnemyDeckCardToHand", "stealRandomEnemyBoardMinion", "destroySelf"].includes(ability.effect)) {
       // No extra params required.
+    } else if (ability.effect === "rebirthWithHealth") {
+      if (ability.trigger !== "onDeath" || !isIntegerInRange(ability.value, 1, 99)) {
+        fail(`${abLabel}: rebirthWithHealth needs trigger: "onDeath" and a "value" between 1 and 99.`);
+      }
+    } else if (ability.effect === "gainTemporaryMana") {
+      if (ability.trigger !== "onPlay" || !isIntegerInRange(ability.value, 1, 99)) {
+        fail(`${abLabel}: gainTemporaryMana needs trigger: "onPlay" and a "value" between 1 and 99.`);
+      }
     } else {
       // drawCards, damageAllEnemyMinions, damageAllMinions, damageEnemyHero,
       // healAllFriendlyMinions, healSelf, returnToDeckIfPlayedLessThan,
@@ -298,6 +363,9 @@ function validateAbilities(card, label) {
       if (!isIntegerInRange(ability.value, 1, 99)) {
         fail(`${abLabel}: "value" must be an integer between 1 and 99 for effect "${ability.effect}".`);
       }
+    }
+    if (ability.firstDeathOnly !== undefined && typeof ability.firstDeathOnly !== "boolean") {
+      fail(`${abLabel}: "firstDeathOnly" must be a boolean when provided.`);
     }
   });
 }

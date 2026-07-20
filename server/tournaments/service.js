@@ -1,5 +1,5 @@
 const tournamentCatalog = require("./catalog");
-const { createBracket, reportMatchResult, playerMatch, playerTournamentStatus, resolveByes } = require("./bracket");
+const { createBracket, reportMatchResult, playerMatch, playerTournamentStatus, resolveByes, recordMatchArrival, clearMatchArrival, clearMatchNoShowDeadline, resolveReadyNoShows } = require("./bracket");
 const { getDB, grantTournamentPrize } = require("../db");
 const { secureRandomInt } = require("../random");
 
@@ -60,7 +60,11 @@ async function resolveTournamentConfig(id) {
 }
 
 function isTournamentComplete(bracket) {
-  if (!bracket?.placements?.first) return false;
+  if (!bracket?.rounds) return false;
+  if (!bracket.placements?.first) {
+    const matches = [...bracket.rounds.flat(), ...(bracket.thirdPlace ? [bracket.thirdPlace] : [])];
+    return matches.length > 0 && matches.every((match) => ["complete", "bye", "void"].includes(match.status));
+  }
   const thirdPlace = bracket.thirdPlace;
   if (!thirdPlace) return true;
   const thirdPlaceEntrants = thirdPlace.playerIds.filter(Boolean);
@@ -95,13 +99,17 @@ function publicBracket(state) {
   const viewMatch = (match) => !match ? null : {
     id: match.id,
     round: match.round,
+    slot: match.slot,
     status: match.status,
+    playerIds: match.playerIds.map((id) => id ? String(id) : null),
     players: match.playerIds.map((id) => id ? players[String(id)] || { userId: String(id), username: "Player", avatarUrl: null } : null),
     winnerId: match.winnerId || null,
     loserId: match.loserId || null,
+    noShowDeadline: match.noShowDeadline || null,
   };
   return {
     size: state.bracket.size,
+    playerCount: (state.participants || []).length,
     rounds: state.bracket.rounds.map((round) => round.map(viewMatch)),
     thirdPlace: viewMatch(state.bracket.thirdPlace),
     placements: Object.fromEntries(Object.entries(state.bracket.placements).map(([place, userId]) => [place, userId ? players[String(userId)] || null : null])),
@@ -150,6 +158,31 @@ async function preserveArchivedConfig(config, state) {
   return { ...state, configSnapshot };
 }
 
+async function persistTournamentProgress(config, state) {
+  const placements = state.bracket.placements;
+  const completed = isTournamentComplete(state.bracket);
+  const tournament = stateConfig(state, config);
+  const update = {
+    bracket: state.bracket,
+    status: completed ? "completed" : "active",
+    configSnapshot: tournament,
+    updatedAt: new Date(),
+  };
+  if (completed) update.finishedAt = new Date();
+  await getDB().collection("tournaments").updateOne(
+    { _id: config.id },
+    { $set: update }
+  );
+  const prizes = [["first", placements.first], ["second", placements.second], ["third", placements.third]];
+  const awards = [];
+  for (const [place, userId] of prizes) {
+    if (!userId) continue;
+    const award = await grantTournamentPrize(userId, { tournamentId: config.id, place, gold: tournament.prizes[place] });
+    awards.push({ place, userId, ...award });
+  }
+  return { state: await getState(config), awards };
+}
+
 async function activateIfDue(config) {
   return withTournamentLock(config.id, async () => {
     const state = await getState(config);
@@ -175,11 +208,9 @@ async function activateIfDue(config) {
     if (state.status === "active" && state.bracket) {
       const before = JSON.stringify(state.bracket);
       resolveByes(state.bracket);
+      resolveReadyNoShows(state.bracket);
       if (JSON.stringify(state.bracket) !== before) {
-        await getDB().collection("tournaments").updateOne(
-          { _id: config.id, status: "active" },
-          { $set: { bracket: state.bracket, updatedAt: new Date() } }
-        );
+        return (await persistTournamentProgress(config, state)).state;
       }
     }
     return state;
@@ -250,29 +281,55 @@ async function recordTournamentResult(tournamentId, matchId, winnerId) {
     const state = await getState(config);
     if (state.status !== "active" || !state.bracket) throw new Error("Tournament is not active.");
     reportMatchResult(state.bracket, matchId, String(winnerId));
-    const placements = state.bracket.placements;
-    const completed = isTournamentComplete(state.bracket);
-    const tournament = stateConfig(state, config);
-    const update = {
-      bracket: state.bracket,
-      status: completed ? "completed" : "active",
-      configSnapshot: tournament,
-      updatedAt: new Date(),
-    };
-    if (completed) update.finishedAt = new Date();
-    await getDB().collection("tournaments").updateOne(
-      { _id: config.id },
-      { $set: update }
-    );
-    const prizes = [["first", placements.first], ["second", placements.second], ["third", placements.third]];
-    const awards = [];
-    for (const [place, userId] of prizes) {
-      if (!userId) continue;
-      const award = await grantTournamentPrize(userId, { tournamentId: config.id, place, gold: tournament.prizes[place] });
-      awards.push({ place, userId, ...award });
-    }
-    return { state: await getState(config), awards };
+    return persistTournamentProgress(config, state);
   });
 }
 
-module.exports = { listTournaments, registerForTournament, unregisterFromTournament, getReadyMatch, recordTournamentResult, activateIfDue, publicTournament, snapshotTournamentConfig, isTournamentComplete };
+async function recordTournamentMatchArrival(tournamentId, matchId, userId) {
+  const config = await resolveTournamentConfig(tournamentId);
+  if (!config) throw new Error("Tournament not found.");
+  return withTournamentLock(config.id, async () => {
+    const state = await getState(config);
+    if (state.status !== "active" || !state.bracket) throw new Error("Tournament is not active.");
+    const match = recordMatchArrival(state.bracket, matchId, userId);
+    await getDB().collection("tournaments").updateOne(
+      { _id: config.id, status: "active" },
+      { $set: { bracket: state.bracket, updatedAt: new Date() } }
+    );
+    return { config: stateConfig(state, config), state, match };
+  });
+}
+
+async function clearTournamentMatchArrival(tournamentId, matchId, userId) {
+  const config = await resolveTournamentConfig(tournamentId);
+  if (!config) return null;
+  return withTournamentLock(config.id, async () => {
+    const state = await getState(config);
+    if (state.status !== "active" || !state.bracket) return null;
+    const match = clearMatchArrival(state.bracket, matchId, userId);
+    if (!match) return null;
+    await getDB().collection("tournaments").updateOne(
+      { _id: config.id, status: "active" },
+      { $set: { bracket: state.bracket, updatedAt: new Date() } }
+    );
+    return match;
+  });
+}
+
+async function clearTournamentMatchNoShowDeadline(tournamentId, matchId) {
+  const config = await resolveTournamentConfig(tournamentId);
+  if (!config) return null;
+  return withTournamentLock(config.id, async () => {
+    const state = await getState(config);
+    if (state.status !== "active" || !state.bracket) return null;
+    const match = clearMatchNoShowDeadline(state.bracket, matchId);
+    if (!match) return null;
+    await getDB().collection("tournaments").updateOne(
+      { _id: config.id, status: "active" },
+      { $set: { bracket: state.bracket, updatedAt: new Date() } }
+    );
+    return match;
+  });
+}
+
+module.exports = { listTournaments, registerForTournament, unregisterFromTournament, getReadyMatch, recordTournamentResult, recordTournamentMatchArrival, clearTournamentMatchArrival, clearTournamentMatchNoShowDeadline, activateIfDue, publicTournament, snapshotTournamentConfig, isTournamentComplete };

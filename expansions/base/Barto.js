@@ -3,7 +3,7 @@ module.exports = {
   cost: 4,
   type: "minion",
   attack: 2,
-  health: 5,
+  health: 6,
   keywords: ["taunt"],
   race: "Monster",
   rarity: "common",

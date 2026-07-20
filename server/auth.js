@@ -194,7 +194,7 @@ async function getSessionUser(req) {
 function toPublicUser(user) {
   return {
     id: String(user._id),
-    username: user.username,
+    username: user.displayName || user.username,
     avatarUrl: user.avatar ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png` : null,
     stats: user.stats || { wins: 0, losses: 0, surrenders: 0, quickplayWins: 0 },
     modeStats: user.modeStats || {},
@@ -207,6 +207,8 @@ function toPublicUser(user) {
     cardCollection: user.cardCollection || {},
     selectedTitle: user.selectedTitle || "initiate",
     equippedBadgeIds: user.equippedBadgeIds || [],
+    purchasedAchievementIds: user.purchasedAchievementIds || [],
+    purchasedTitleIds: user.purchasedTitleIds || [],
     supporter: user.supporter === true,
   };
 }

@@ -1,9 +1,9 @@
 module.exports = {
   name: "Puipui_09",
-  cost: 7,
+  cost: 6,
   type: "minion",
-  attack: 6,
-  health: 6,
+  attack: 5,
+  health: 8,
   keywords: [],
   race: "Human",
   rarity: "common",

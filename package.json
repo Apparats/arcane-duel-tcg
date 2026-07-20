@@ -1,12 +1,13 @@
 {
   "name": "duelo-arcano-tcg",
-  "version": "1.5.4",
+  "version": "1.6.0",
   "description": "Simple Hearthstone-style TCG, online 1v1 over WebSocket. Authoritative server + vanilla client.",
   "main": "server/index.js",
   "scripts": {
     "prestart": "node scripts/build-cards.js",
     "start": "node server/index.js",
     "test:smoke": "node test/simulate.js",
+    "test:display-name": "node test/displayName.js",
     "test:tournaments": "node test/tournamentBracket.js && node test/tournamentMatchFlows.js && node test/tournamentHistory.js && node test/tournamentStartQueue.js",
     "test:audio": "node test/audioUnlock.js && node test/audioDelivery.js",
     "test:pwa": "node test/serviceWorkerCache.js",

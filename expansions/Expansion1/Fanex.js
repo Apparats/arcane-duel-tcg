@@ -1,16 +1,16 @@
 module.exports = {
   name: "Fanex",
-  cost: 4,
+  cost: 6,
   type: "minion",
   attack: 6,
-  health: 4,
+  health: 10,
   keywords: [],
   race: "Monster",
   rarity: "mythic",
   country: "Rwanda",
-  lore: "On play, steal a random non-Mythic card from the enemy deck and add it to your hand. Cannot be played with a full hand.",
+  lore: "On play, steal a random minion from the enemy board and deploy it to your board.",
   image: "art/Fanex.webp",
   abilities: [
-    { trigger: "onPlay", effect: "stealRandomEnemyDeckCardToHand" },
+    { trigger: "onPlay", effect: "stealRandomEnemyBoardMinion" },
   ],
 };

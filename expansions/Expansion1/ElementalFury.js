@@ -1,6 +1,6 @@
 module.exports = {
   name: "Elemental Fury",
-  cost: 4,
+  cost: 5,
   type: "spell",
   effect: "damage",
   value: 5,

@@ -1,6 +1,6 @@
 module.exports = {
   name: "Quick Bandage",
-  cost: 1,
+  cost: 2,
   type: "spell",
   effect: "heal",
   value: 3,

@@ -1,6 +1,6 @@
 module.exports = {
   name: "Focused Bolt",
-  cost: 3,
+  cost: 4,
   type: "spell",
   effect: "damage",
   value: 4,

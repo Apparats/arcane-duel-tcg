@@ -35,6 +35,7 @@
 #screen-game .minion-card.status-silenced { filter: saturate(0.55) brightness(0.84); }
 #screen-game .minion-card.status-poisoned { border-color: #a8d95a; box-shadow: 0 0 15px rgba(125, 192, 54, 0.46); }
 #screen-game .minion-card.status-marked { border-color: #ff895f; box-shadow: 0 0 16px rgba(255, 97, 72, 0.52); }
+#screen-game .minion-card.status-drunk { border-color: #d6b55f; box-shadow: 0 0 15px rgba(214, 181, 95, 0.45), 0 0 22px rgba(94, 209, 181, 0.22); }
 
 #screen-game .hero-panel.targetable {
   border-color: #ffb2a5;
