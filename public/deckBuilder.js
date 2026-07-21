@@ -10,11 +10,15 @@ let deckFiltersReady = false;
 
 function setInventoryTab(tabName) {
   const isDeck = tabName === "deck";
-  $("collectionPanel").classList.toggle("hidden", isDeck);
+  const isScraping = tabName === "scraping";
+  $("collectionPanel").classList.toggle("hidden", isDeck || isScraping);
   $("deckBuilderPanel").classList.toggle("hidden", !isDeck);
-  $("tabCollection").classList.toggle("active", !isDeck);
+  $("scrapingPanel").classList.toggle("hidden", !isScraping);
+  $("tabCollection").classList.toggle("active", !isDeck && !isScraping);
   $("tabDeckBuilder").classList.toggle("active", isDeck);
+  $("tabScraping").classList.toggle("active", isScraping);
   if (isDeck) openDeckBuilder();
+  if (isScraping) openScrapingPanel();
 }
 
 async function fetchDeckState() {
@@ -123,7 +127,7 @@ function populateDeckFilters() {
 
 function currentDeckFilters() {
   return {
-    type: $("deckFilterType").value,
+    name: $("deckFilterName").value,
     rarity: $("deckFilterRarity").value,
     country: $("deckFilterCountry").value,
     keyword: $("deckFilterKeyword").value,
@@ -313,6 +317,7 @@ async function autoBuildCurrentDeck() {
 
 $("tabCollection").addEventListener("click", () => setInventoryTab("collection"));
 $("tabDeckBuilder").addEventListener("click", () => setInventoryTab("deck"));
+$("tabScraping").addEventListener("click", () => setInventoryTab("scraping"));
 $("savedDeckSelect").addEventListener("change", (event) => selectSavedDeck(event.target.value));
 $("btnNewDeck").addEventListener("click", newDeck);
 $("btnAutoDeck").addEventListener("click", autoBuildCurrentDeck);
@@ -357,12 +362,14 @@ $("deleteDeckModal").addEventListener("click", (event) => {
   if (event.target.id === "deleteDeckModal") closeDeleteDeckModal();
 });
 
-["deckFilterType", "deckFilterRarity", "deckFilterCountry", "deckFilterKeyword", "deckFilterExpansion", "deckFilterSort"].forEach((id) => {
+["deckFilterRarity", "deckFilterCountry", "deckFilterKeyword", "deckFilterExpansion", "deckFilterSort"].forEach((id) => {
   $(id).addEventListener("change", renderDeckPool);
 });
 
+$("deckFilterName").addEventListener("input", renderDeckPool);
+
 $("btnClearDeckFilters").addEventListener("click", () => {
-  $("deckFilterType").value = "all";
+  $("deckFilterName").value = "";
   $("deckFilterRarity").value = "all";
   $("deckFilterCountry").value = "all";
   $("deckFilterKeyword").value = "all";

@@ -126,6 +126,15 @@
 
 .trade-panel-header { align-items: center; margin-bottom: 14px; }
 .trade-panel-header > span { max-width: 48%; padding: 5px 9px; border-radius: 99px; background: rgba(232,179,79,.07); color: #d8c5a5; font-size: 10px; line-height: 1.25; text-align: right; }
+.trade-card-search {
+  flex: 0 1 240px;
+  width: min(44vw, 240px);
+  min-height: 36px;
+  margin: 0;
+  border-color: rgba(232,179,79,.24);
+  background: rgba(7, 6, 9, .54);
+  font-size: 12px;
+}
 .trade-card-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
 .trade-card-button { display: block; min-width: 0; width: 100%; padding: 0; border: 0; border-radius: 9px; background: transparent; color: inherit; cursor: pointer; }
 .trade-card-button:disabled { cursor: not-allowed; opacity: .46; filter: saturate(.72); }
@@ -174,6 +183,8 @@
   .trade-card-panel { border-radius: 11px; }
   .trade-workspace { gap: 12px; }
   .trade-session-list { max-height: 160px; }
+  .trade-panel-header { align-items: stretch; flex-direction: column; }
+  .trade-card-search { width: 100%; flex-basis: auto; }
   .trade-card-row { grid-template-columns: 58px minmax(0, 1fr) auto; gap: 9px; padding: 7px; }
   .trade-card-preview { width: 58px; }
   .trade-card-row-info strong { font-size: 12px; }
@@ -202,7 +213,6 @@
   .trade-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .trade-actions .btn { width: 100%; min-width: 0; padding-inline: 8px; font-size: 11px; }
   .trade-panel-header { align-items: flex-start; gap: 8px; }
-  .trade-panel-header > span { max-width: 52%; padding: 4px 7px; font-size: 9px; }
 }
 
 @media (max-width: 340px) {

@@ -289,7 +289,7 @@ const DAILY_REWARD_LIMITS = {
 };
 
 const MATCH_REWARDS = {
-  singleplayer: { win: 5, loss: 1 },
+  singleplayer: { win: 10, loss: 1 },
   multiplayer: { win: 10, loss: 4 },
 };
 
@@ -299,6 +299,17 @@ const DISCONNECT_PENALTY_THRESHOLD = 4;
 const DAILY_LOGIN_GOLD = 50;
 const PACK_PRICE_GOLD = 20;
 const PACK_SIZE = 5;
+const SCRAP_GOLD_VALUES = {
+  common: 1,
+  rare: 2,
+  legendary: 3,
+  mythic: 5,
+  souvenir: 10,
+};
+
+function normalizeScrapeRarity(rarity) {
+  return String(rarity || "common").trim().toLowerCase();
+}
 
 function todayKey(date = new Date()) {
   return date.toISOString().slice(0, 10);
@@ -510,6 +521,143 @@ async function grantMatchEconomy(userId, { mode, result, surrendered = false, qu
     quickplayRank: rankProgress.quickplayRank,
     quickplayBestRank: rankProgress.bestQuickplayRank,
   };
+  });
+}
+
+function normalizeScrapeRequests(items) {
+  if (!Array.isArray(items) || items.length === 0 || items.length > 300) {
+    const err = new Error("Choose at least one duplicate card to scrape.");
+    err.code = "SCRAPE_EMPTY";
+    throw err;
+  }
+
+  const merged = new Map();
+  items.forEach((item) => {
+    const cardId = assertMongoKeySegment(item?.cardId, "card id");
+    const quantity = assertPositiveInteger(item?.quantity, "scrape quantity", { min: 1, max: 1000 });
+    const total = (merged.get(cardId) || 0) + quantity;
+    if (total > 1000) {
+      const err = new Error("Invalid scrape quantity.");
+      err.code = "INVALID_INPUT";
+      throw err;
+    }
+    merged.set(cardId, total);
+  });
+  return [...merged.entries()].map(([cardId, quantity]) => ({ cardId, quantity }));
+}
+
+function planScrapeDuplicateCards(user, items) {
+  const requests = normalizeScrapeRequests(items);
+  const plannedItems = [];
+  let goldAwarded = 0;
+  let totalCards = 0;
+
+  requests.forEach(({ cardId, quantity }) => {
+    const card = getCardById(cardId);
+    if (!card || card.showInInventory === false) {
+      const err = new Error("Unknown card.");
+      err.code = "INVALID_ID";
+      throw err;
+    }
+
+    const rarity = normalizeScrapeRarity(card.rarity);
+    const goldEach = SCRAP_GOLD_VALUES[rarity];
+    if (!goldEach) {
+      const err = new Error(`${card.name} cannot be scraped.`);
+      err.code = "CARD_NOT_SCRAPEABLE";
+      throw err;
+    }
+
+    const owned = Math.max(0, Math.floor(Number(user?.cardCollection?.[cardId]) || 0));
+    const minimumKept = Math.max(1, maxDeckUsage(user?.decks || [], cardId));
+    const available = Math.max(0, owned - minimumKept);
+    if (quantity > available) {
+      const err = new Error(available > 0
+        ? `You can scrape up to ${available} duplicate ${card.name} ${available === 1 ? "copy" : "copies"}.`
+        : `${card.name} has no spare duplicate copies to scrape.`);
+      err.code = available > 0 ? "SCRAPE_LIMIT" : owned <= 1 ? "CARD_NOT_DUPLICATE" : "CARD_LOCKED_BY_DECK";
+      throw err;
+    }
+
+    plannedItems.push({
+      cardId,
+      name: card.name,
+      rarity,
+      quantity,
+      goldEach,
+      minimumKept,
+      gold: quantity * goldEach,
+    });
+    goldAwarded += quantity * goldEach;
+    totalCards += quantity;
+  });
+
+  if (goldAwarded <= 0 || totalCards <= 0) {
+    const err = new Error("Choose at least one duplicate card to scrape.");
+    err.code = "SCRAPE_EMPTY";
+    throw err;
+  }
+
+  return { items: plannedItems, goldAwarded, totalCards };
+}
+
+async function scrapeDuplicateCards(userId, items) {
+  const users = getDB().collection("users");
+  const _id = toObjectId(userId, "user id");
+  return withUserLock(String(_id), async () => {
+    const user = await users.findOne(
+      { _id },
+      { projection: { gold: 1, cardCollection: 1, unlockedCards: 1, decks: 1 } }
+    );
+    if (!user) throw new Error("User not found.");
+
+    const plan = planScrapeDuplicateCards(user, items);
+    const inc = { gold: plan.goldAwarded };
+    const filter = { _id };
+    plan.items.forEach((item) => {
+      inc[`cardCollection.${item.cardId}`] = -item.quantity;
+      filter[`cardCollection.${item.cardId}`] = { $gte: item.quantity + item.minimumKept };
+    });
+
+    const now = new Date();
+    const update = await users.updateOne(
+      filter,
+      {
+        $inc: inc,
+        $set: { updatedAt: now },
+        $push: {
+          scrapeHistory: {
+            createdAt: now,
+            goldAwarded: plan.goldAwarded,
+            cards: plan.items.map((item) => ({
+              cardId: item.cardId,
+              quantity: item.quantity,
+              goldEach: item.goldEach,
+              gold: item.gold,
+            })),
+          },
+        },
+      }
+    );
+
+    if (update.modifiedCount !== 1) {
+      const err = new Error("Those cards are no longer available to scrape.");
+      err.code = "SCRAPE_LIMIT";
+      throw err;
+    }
+
+    const updated = await users.findOne(
+      { _id },
+      { projection: { gold: 1, cardCollection: 1, unlockedCards: 1 } }
+    );
+    return {
+      goldAwarded: plan.goldAwarded,
+      totalCards: plan.totalCards,
+      items: plan.items,
+      gold: updated?.gold || 0,
+      cardCollection: updated?.cardCollection || {},
+      unlockedCards: updated?.unlockedCards || [],
+    };
   });
 }
 
@@ -1081,8 +1229,11 @@ module.exports = {
   DISCONNECT_PENALTY_THRESHOLD,
   PACK_PRICE_GOLD,
   PACK_SIZE,
+  SCRAP_GOLD_VALUES,
   buyPack,
   buyShopItem,
+  planScrapeDuplicateCards,
+  scrapeDuplicateCards,
   submitCardRequest,
   normalizeDisplayName,
 };

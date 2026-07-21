@@ -13,22 +13,22 @@
 <link rel="apple-touch-icon" href="pwa-icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css?v=1.6.0-michiel-revive-fix" />
-  <link rel="stylesheet" href="css/menu.css?v=1.6.0-michiel-revive-fix" />
-<link rel="stylesheet" href="css/account-profile.css?v=1.6.0-michiel-revive-fix" />
-<link rel="stylesheet" href="css/lobby.css?v=1.6.0-michiel-revive-fix" />
-<link rel="stylesheet" href="css/board.css?v=1.6.0-michiel-revive-fix" />
-<link rel="stylesheet" href="css/cards.css?v=1.6.0-michiel-revive-fix" />
-<link rel="stylesheet" href="css/board-arena.css?v=1.6.0-michiel-revive-fix" />
-<link rel="stylesheet" href="css/board-hand.css?v=1.6.0-michiel-revive-fix" />
-<link rel="stylesheet" href="css/inventory.css?v=1.6.0-michiel-revive-fix" />
-<link rel="stylesheet" href="css/deck-builder.css?v=1.6.0-michiel-revive-fix" />
-<link rel="stylesheet" href="css/shop.css?v=1.6.0-michiel-revive-fix" />
-<link rel="stylesheet" href="css/trade.css?v=1.6.0-michiel-revive-fix" />
-<link rel="stylesheet" href="css/pack-opening.css?v=1.6.0-michiel-revive-fix" />
-<link rel="stylesheet" href="css/fx.css?v=1.6.0-michiel-revive-fix" />
-<link rel="stylesheet" href="css/board-effects.css?v=1.6.0-michiel-revive-fix" />
-<link rel="stylesheet" href="css/overlay.css?v=1.6.0-michiel-revive-fix" />
+<link rel="stylesheet" href="css/base.css?v=1.6.1" />
+  <link rel="stylesheet" href="css/menu.css?v=1.6.1" />
+<link rel="stylesheet" href="css/account-profile.css?v=1.6.1" />
+<link rel="stylesheet" href="css/lobby.css?v=1.6.1" />
+<link rel="stylesheet" href="css/board.css?v=1.6.1" />
+<link rel="stylesheet" href="css/cards.css?v=1.6.1" />
+<link rel="stylesheet" href="css/board-arena.css?v=1.6.1" />
+<link rel="stylesheet" href="css/board-hand.css?v=1.6.1" />
+<link rel="stylesheet" href="css/inventory.css?v=1.6.1" />
+<link rel="stylesheet" href="css/deck-builder.css?v=1.6.1" />
+<link rel="stylesheet" href="css/shop.css?v=1.6.1" />
+<link rel="stylesheet" href="css/trade.css?v=1.6.1" />
+<link rel="stylesheet" href="css/pack-opening.css?v=1.6.1" />
+<link rel="stylesheet" href="css/fx.css?v=1.6.1" />
+<link rel="stylesheet" href="css/board-effects.css?v=1.6.1" />
+<link rel="stylesheet" href="css/overlay.css?v=1.6.1" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -357,7 +357,7 @@
           <section class="trade-card-panel">
             <div class="trade-panel-header">
               <div><span class="trade-section-kicker">Your collection</span><h2>Choose your offer</h2></div>
-              <span id="tradeSelectedCard">Choose a card to offer</span>
+              <input id="tradeCardSearch" class="text-input trade-card-search" type="search" maxlength="48" autocomplete="off" placeholder="Search card" aria-label="Search cards by name" />
             </div>
             <div id="tradeCardGrid" class="trade-card-grid"></div>
             <nav id="tradeCardPagination" class="trade-card-pagination" aria-label="Trade card pages"></nav>
@@ -532,18 +532,15 @@
       <div class="inventory-tabs">
         <button id="tabCollection" class="inventory-tab active">Collection</button>
         <button id="tabDeckBuilder" class="inventory-tab">Deck Builder</button>
+        <button id="tabScraping" class="inventory-tab">Scraping</button>
       </div>
 
       <div id="collectionPanel">
       <div id="inventorySummary" class="inventory-summary"></div>
       <div class="inventory-filters">
         <div class="filter-group">
-          <label for="filterType">Type</label>
-          <select id="filterType" class="filter-select">
-            <option value="all">All</option>
-            <option value="minion">Minion</option>
-            <option value="spell">Spell</option>
-          </select>
+          <label for="filterName">Card name</label>
+          <input id="filterName" class="text-input filter-search-input" type="search" maxlength="48" autocomplete="off" placeholder="Search card" />
         </div>
         <div class="filter-group">
           <label for="filterRarity">Rarity</label>
@@ -618,12 +615,8 @@
             </div>
             <div class="inventory-filters deck-filters">
               <div class="filter-group">
-                <label for="deckFilterType">Type</label>
-                <select id="deckFilterType" class="filter-select">
-                  <option value="all">All</option>
-                  <option value="minion">Minion</option>
-                  <option value="spell">Spell</option>
-                </select>
+                <label for="deckFilterName">Card name</label>
+                <input id="deckFilterName" class="text-input filter-search-input" type="search" maxlength="48" autocomplete="off" placeholder="Search card" />
               </div>
               <div class="filter-group">
                 <label for="deckFilterRarity">Rarity</label>
@@ -682,8 +675,125 @@
           </aside>
         </div>
       </div>
+
+      <div id="scrapingPanel" class="scraping-panel hidden">
+        <div class="scraping-layout">
+          <section class="scraping-card-list-panel">
+            <div class="deck-panel-header">
+              <h2>Duplicate cards</h2>
+              <span id="scrapingAvailableCount" class="deck-panel-hint">-</span>
+            </div>
+            <div class="inventory-filters deck-filters scraping-filters">
+              <div class="filter-group">
+                <label for="scrapingFilterName">Card name</label>
+                <input id="scrapingFilterName" class="text-input filter-search-input" type="search" maxlength="48" autocomplete="off" placeholder="Search card" />
+              </div>
+              <div class="filter-group">
+                <label for="scrapingFilterRarity">Rarity</label>
+                <select id="scrapingFilterRarity" class="filter-select">
+                  <option value="all">All</option>
+                  <option value="common">Common</option>
+                  <option value="rare">Rare</option>
+                  <option value="legendary">Legendary</option>
+                  <option value="mythic">Mythic</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="scrapingFilterCountry">Country</label>
+                <select id="scrapingFilterCountry" class="filter-select">
+                  <option value="all">All</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="scrapingFilterKeyword">Combat</label>
+                <select id="scrapingFilterKeyword" class="filter-select">
+                  <option value="all">All</option>
+                  <option value="normal">Normal</option>
+                  <option value="taunt">Taunt</option>
+                  <option value="charge">Charge</option>
+                  <option value="divineShield">Divine Shield</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="scrapingFilterExpansion">Expansion</label>
+                <select id="scrapingFilterExpansion" class="filter-select">
+                  <option value="all">All collectible expansions</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="scrapingFilterSort">Sort cards</label>
+                <select id="scrapingFilterSort" class="filter-select">
+                  <option value="value-desc">Scrap value: high to low</option>
+                  <option value="name-asc">Name: A to Z</option>
+                  <option value="copies-desc">Spare copies: high to low</option>
+                  <option value="cost-asc">Mana: low to high</option>
+                  <option value="cost-desc">Mana: high to low</option>
+                </select>
+              </div>
+              <button id="btnClearScrapingFilters" class="btn-link clear-filters-link">Clear filters</button>
+            </div>
+            <div id="scrapingList" class="scraping-list"></div>
+            <p id="scrapingEmpty" class="deck-list-empty hidden">No duplicate cards available.</p>
+            <div id="scrapingPagination" class="scraping-pagination hidden">
+              <button id="btnScrapingPrev" class="btn-link scraping-page-button" type="button">Previous</button>
+              <span id="scrapingPageStatus" class="deck-count-pill">Page 1 / 1</span>
+              <button id="btnScrapingNext" class="btn-link scraping-page-button" type="button">Next</button>
+            </div>
+          </section>
+          <aside class="scraping-summary-panel">
+            <div class="deck-panel-header">
+              <h2>Scraping</h2>
+            </div>
+            <div class="scraping-rates" aria-label="Scraping gold values">
+              <div><span>Common</span><strong>1g</strong></div>
+              <div><span>Rare</span><strong>2g</strong></div>
+              <div><span>Legendary</span><strong>3g</strong></div>
+              <div><span>Mythic</span><strong>5g</strong></div>
+              <div><span>Souvenir</span><strong>10g</strong></div>
+            </div>
+            <div class="scraping-selected">
+              <span>Selected</span>
+              <strong id="scrapingSelectedCount">0 cards</strong>
+            </div>
+            <div class="scraping-actions">
+              <button id="btnScrapeCards" class="btn btn-primary scraping-action" type="button" disabled>Scrape</button>
+              <button id="btnScrapeAllCards" class="btn btn-secondary scraping-action" type="button" disabled>Scrape all</button>
+            </div>
+          </aside>
+        </div>
+      </div>
     </div>
   </section>
+
+  <!-- ---------- MODAL: SCRAPING CONFIRMATION ---------- -->
+  <div id="scrapeConfirmModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="scrapeConfirmTitle">
+    <div class="overlay-card scrape-modal-card">
+      <p class="scrape-modal-kicker">Scraping</p>
+      <h2 id="scrapeConfirmTitle">Scrape these cards?</h2>
+      <div id="scrapeConfirmStack" class="scrape-card-stack" aria-hidden="true"></div>
+      <div class="scrape-confirm-summary">
+        <span id="scrapeConfirmCount">0 cards</span>
+        <strong id="scrapeConfirmGold">0 gold</strong>
+      </div>
+      <div class="scrape-modal-actions">
+        <button id="btnCancelScrape" class="btn btn-secondary" type="button">Cancel</button>
+        <button id="btnConfirmScrape" class="btn btn-primary" type="button">Yes, scrape</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- MODAL: SCRAPING RESULT ---------- -->
+  <div id="scrapeResultModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="scrapeResultTitle">
+    <div class="overlay-card scrape-modal-card scrape-result-card">
+      <p class="scrape-modal-kicker">Scraping complete</p>
+      <h2 id="scrapeResultTitle">Gold gained</h2>
+      <strong id="scrapeResultGold" class="scrape-result-gold">+0</strong>
+      <p id="scrapeResultCount" class="scrape-result-count">0 cards scraped</p>
+      <div class="scrape-modal-actions">
+        <button id="btnCloseScrapeResult" class="btn btn-primary" type="button">Continue</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ---------- OVERLAY: CARD ZOOM ---------- -->
   <div id="cardZoomOverlay" class="overlay hidden">
@@ -856,6 +966,23 @@
       <div class="changelog-content">
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
+          <h3>Version 1.6.1</h3>
+          <span>Scraping, Search &amp; Rewards</span>
+        </div>
+        <p class="changelog-entry-intro">A focused quality-of-life update for managing large collections, earning gold from duplicates, and finding cards faster.</p>
+        <ul class="changelog-list">
+          <li>The Inventory now has a Scraping tab where duplicate cards can be converted into gold while keeping at least one copy and protecting cards needed by saved decks.</li>
+          <li>Scraping values are now visible in-game: Common cards give 1 gold, Rare 2, Legendary 3, Mythic 5, and Souvenir 10.</li>
+          <li>Scraping now asks for confirmation, shows a compact animated stack preview, and finishes with a gold-earned result modal.</li>
+          <li>Scrape all is available for the currently filtered duplicate list.</li>
+          <li>Collection, Deck Builder, Scraping, and Trade now support searching cards by name.</li>
+          <li>The old Type filter was removed from the Inventory tabs to make room for the faster card-name search.</li>
+          <li>The Trade card picker now uses card-name search in place of the selected-card text label, while the selected offer remains visible in the trade summary and card row.</li>
+          <li>Singleplayer victories now grant 10 gold, matching multiplayer wins.</li>
+        </ul>
+      </article>
+      <article class="changelog-entry">
+        <div class="changelog-entry-meta">
           <h3>Version 1.6</h3>
           <span>Embers, Exchange &amp; Fair Play</span>
         </div>
@@ -881,7 +1008,7 @@
           <li>Fanex now steals a random minion from the enemy board and immediately deploys it on your side.</li>
           <li>New achievements have been added for reaching Top 5, reaching Top 1, completing the Base collection, and completing the Expansion 1 collection. Reaching Top 1 also unlocks a new title.</li>
           <li>Souvenir cards are now available as a new 0.6% rarity tier.</li>
-          <li>Singleplayer rewards now grant 80 gold. Base packs cost 15 gold and Expansion 1 packs cost 25 gold.</li>
+          <li>Base packs cost 15 gold and Expansion 1 packs cost 25 gold.</li>
           <li>General balance pass across Base, Expansion 1, and The Gates. Most affected cards gained 1-3 Health, alongside targeted Mana, Attack, and effect adjustments.</li>
         </ul>
       </article>
@@ -1273,25 +1400,25 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.6.0-michiel-revive-fix"></script>
-  <script src="deckRules.js?v=1.6.0-michiel-revive-fix"></script>
-  <script src="engine.js?v=1.6.0-michiel-revive-fix"></script>
-  <script src="ai.js?v=1.6.0-michiel-revive-fix"></script>
-  <script src="audioConfig.js?v=1.6.0-michiel-revive-fix"></script>
-  <script src="audioManager.js?v=1.6.0-michiel-revive-fix"></script>
-  <script src="packOpening.js?v=1.6.0-michiel-revive-fix"></script>
-<script src="legalNotices.js?v=1.6.0-michiel-revive-fix"></script>
-<script src="profileCatalog.js?v=1.6.0-michiel-revive-fix"></script>
-<script src="profileBadges.js?v=1.6.0-michiel-revive-fix"></script>
-<script src="accountProfile.js?v=1.6.0-michiel-revive-fix"></script>
-<script src="client.js?v=1.6.0-michiel-revive-fix"></script>
-<script src="shieldChallenge.js?v=1.6.0-michiel-revive-fix"></script>
-<script src="boardInteractions.js?v=1.6.0-michiel-revive-fix"></script>
-<script src="inventory.js?v=1.6.0-michiel-revive-fix"></script>
-<script src="deckBuilder.js?v=1.6.0-michiel-revive-fix"></script>
-<script src="shop.js?v=1.6.0-michiel-revive-fix"></script>
-<script src="trade.js?v=1.6.0-michiel-revive-fix"></script>
-<script src="tournaments.js?v=1.6.0-michiel-revive-fix"></script>
-<script src="pwa.js?v=1.6.0-michiel-revive-fix"></script>
+  <script src="cards.js?v=1.6.1"></script>
+  <script src="deckRules.js?v=1.6.1"></script>
+  <script src="engine.js?v=1.6.1"></script>
+  <script src="ai.js?v=1.6.1"></script>
+  <script src="audioConfig.js?v=1.6.1"></script>
+  <script src="audioManager.js?v=1.6.1"></script>
+  <script src="packOpening.js?v=1.6.1"></script>
+<script src="legalNotices.js?v=1.6.1"></script>
+<script src="profileCatalog.js?v=1.6.1"></script>
+<script src="profileBadges.js?v=1.6.1"></script>
+<script src="accountProfile.js?v=1.6.1"></script>
+<script src="client.js?v=1.6.1"></script>
+<script src="shieldChallenge.js?v=1.6.1"></script>
+<script src="boardInteractions.js?v=1.6.1"></script>
+<script src="inventory.js?v=1.6.1"></script>
+<script src="deckBuilder.js?v=1.6.1"></script>
+<script src="shop.js?v=1.6.1"></script>
+<script src="trade.js?v=1.6.1"></script>
+<script src="tournaments.js?v=1.6.1"></script>
+<script src="pwa.js?v=1.6.1"></script>
 </body>
 </html>

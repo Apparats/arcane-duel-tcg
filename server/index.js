@@ -8,7 +8,7 @@ const { WebSocketServer } = require("ws");
 const { Game } = require("../public/engine");
 const { getCardById } = require("../public/cards");
 const { buildRandomLegalDeck } = require("../public/deckRules");
-const { connectDB, getCampaignProgress, grantCampaignReward, grantMatchEconomy, getPublicPlayerProfile, getQuickplayRanking, isDbEnabled, recordCampaignResult, recordMultiplayerDisconnect, resetConsecutiveDisconnects, searchPublicPlayers, setDisplayName, setEquippedBadges, setSelectedTitle, submitCardRequest } = require("./db");
+const { connectDB, getCampaignProgress, grantCampaignReward, grantMatchEconomy, getPublicPlayerProfile, getQuickplayRanking, isDbEnabled, recordCampaignResult, recordMultiplayerDisconnect, resetConsecutiveDisconnects, scrapeDuplicateCards, searchPublicPlayers, setDisplayName, setEquippedBadges, setSelectedTitle, submitCardRequest } = require("./db");
 const { listTournaments, registerForTournament, unregisterFromTournament, getReadyMatch, recordTournamentResult, recordTournamentMatchArrival, clearTournamentMatchArrival, clearTournamentMatchNoShowDeadline } = require("./tournaments/service");
 const { TOURNAMENT_TURN_DURATION_MS, TOURNAMENT_RECONNECT_GRACE_MS, TOURNAMENT_READY_GRACE_MS } = require("./tournaments/rules");
 const { router: authRouter, getSessionUser, isAuthEnabled } = require("./auth");
@@ -218,6 +218,20 @@ app.post("/card-requests", createRateLimiter({ max: 10, keyPrefix: "card-request
   } catch (err) {
     const status = err.code === "CARD_REQUEST_DAILY_LIMIT" ? 429 : 400;
     res.status(status).json({ error: err.message || "Could not save the card request." });
+  }
+});
+app.post("/inventory/scrape", createRateLimiter({ max: 30, keyPrefix: "inventory-scrape" }), async (req, res) => {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Login with Discord is required." });
+  try {
+    const scrape = await scrapeDuplicateCards(user.id, req.body?.items);
+    res.json({ ok: true, scrape });
+  } catch (err) {
+    if (["INVALID_INPUT", "INVALID_ID", "SCRAPE_EMPTY", "CARD_NOT_SCRAPEABLE", "CARD_NOT_DUPLICATE", "CARD_LOCKED_BY_DECK", "SCRAPE_LIMIT"].includes(err.code)) {
+      return res.status(400).json({ error: err.message });
+    }
+    console.error("Inventory scrape failed:", err);
+    res.status(500).json({ error: "Could not scrape cards." });
   }
 });
 app.get("/expansions/enabled", (req, res) => {

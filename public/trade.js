@@ -28,8 +28,10 @@ async function tradeRequest(path, options = {}) {
 }
 
 function ownTradeCards() {
+  const search = String($("tradeCardSearch")?.value || "").trim().toLowerCase();
   return getInventoryCards()
     .filter((card) => getCardQuantity(card) > 0)
+    .filter((card) => !search || String(card.name || "").toLowerCase().includes(search))
     .sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name));
 }
 
@@ -134,7 +136,9 @@ function renderTradeCards() {
   const visibleCards = cards.slice(firstCard, firstCard + cardsPerPage);
 
   if (!cards.length) {
-    grid.innerHTML = '<p class="trade-cards-empty">Your collection has no tradable cards.</p>';
+    grid.innerHTML = $("tradeCardSearch")?.value
+      ? '<p class="trade-cards-empty">No tradable cards match that search.</p>'
+      : '<p class="trade-cards-empty">Your collection has no tradable cards.</p>';
     pagination.innerHTML = "";
   }
 
@@ -162,9 +166,6 @@ function renderTradeCards() {
 
   if (cards.length) renderTradeCardPagination(pageCount);
 
-  $("tradeSelectedCard").textContent = myOfferId
-    ? `Offering ${TCGCards.getCardById(myOfferId)?.name || "selected card"}`
-    : "Choose a card to offer";
   lazyLoadInventoryArt();
 }
 
@@ -317,3 +318,7 @@ $("btnRefreshTradeCode").addEventListener("click", refreshTradeCode);
 $("btnStartTrade").addEventListener("click", startTradeFromCode);
 $("btnConfirmTrade").addEventListener("click", confirmTrade);
 $("btnCancelTrade").addEventListener("click", cancelTrade);
+$("tradeCardSearch").addEventListener("input", () => {
+  tradeState.cardPage = 1;
+  renderTradeCards();
+});
