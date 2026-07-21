@@ -15,6 +15,7 @@ window.ArcaneAudioConfig = {
         "music/MainMenu4.ogg",
         "music/MainMenu5.ogg",
         "music/MainMenu6.ogg",
+        "music/MainMenu7.ogg",
       ],
       loop: true,
       volume: 1,

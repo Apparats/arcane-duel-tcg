@@ -105,6 +105,10 @@
     return Boolean(cardDef?.abilities?.some((ability) => ability.effect === "reviveOtherFriendlyMinions"));
   }
 
+  function minionHasTaunt(minion, cardDef = getCardById(minion?.cardId)) {
+    return Boolean((minion?.keywords || cardDef?.keywords || []).includes("taunt") || (cardDef?.keywords || []).includes("taunt"));
+  }
+
   function minionAppliesDrunkAura(minion) {
     if ((minion.statuses || []).some((status) => status.type === "silenced")) return false;
     const cardDef = getCardById(minion.cardId);
@@ -970,6 +974,8 @@
       const cardDef = getCardById(minion.cardId);
       if (!cardDef || cardDef.type !== "minion") return;
       if ((cardDef.abilities || []).some((ability) => ability.effect === "reviveOtherFriendlyMinions")) return;
+      if (minionHasTaunt(minion, cardDef)) return;
+      if (minion.friendlyReviveUsed === true) return;
 
       const aura = player.board.find((ally) =>
         ally.instanceId !== minion.instanceId && minionRevivesOtherFriendlyMinions(ally)
@@ -986,6 +992,7 @@
       revived.health = 1;
       revived.maxHealth = 1;
       revived.canAttack = false;
+      revived.friendlyReviveUsed = true;
 
       const insertAt = Math.min(Math.max(boardIndex, 0), player.board.length);
       player.board.splice(insertAt, 0, revived);

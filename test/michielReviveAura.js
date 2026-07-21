@@ -39,7 +39,7 @@ function makeGame() {
 const michielId = "expansion2:michiel-op-snuifari";
 const michielCard = getCardById(michielId);
 assert(michielCard.abilities.some((ability) => ability.effect === "reviveOtherFriendlyMinions"), "Michiel_op_Snuifari should have the revive aura.");
-assert(michielCard.lore.includes("revive with 1 Health"), "Michiel_op_Snuifari should describe the revive aura.");
+assert(michielCard.lore.includes("non-Taunt allied minions revive once"), "Michiel_op_Snuifari should describe the revive restrictions.");
 
 {
   const game = makeGame();
@@ -57,7 +57,32 @@ assert(michielCard.lore.includes("revive with 1 Health"), "Michiel_op_Snuifari s
   assert.strictEqual(revived.attack, 3, "The revived ally should have half its death Attack, rounded up.");
   assert.strictEqual(revived.canAttack, false, "The revived ally should not be ready to attack immediately.");
   assert.strictEqual(revived.returnCount, 2, "The revived ally should preserve return-count metadata.");
+  assert.strictEqual(revived.friendlyReviveUsed, true, "The revived ally should be marked so it cannot revive again.");
   assert(game.players[0].board.some((card) => card.cardId === michielId), "Michiel should remain on board.");
+}
+
+{
+  const game = makeGame();
+  const michiel = minion("michiel", michielId);
+  const ally = minion("ally", "base:aleex", { attack: 5, health: 2, maxHealth: 2 });
+  game.players[0].board = [michiel, ally];
+
+  game._damageMinion(0, ally, 99);
+  const revived = game.players[0].board.find((card) => card.cardId === "base:aleex");
+  assert(revived, "The normal ally should revive once.");
+
+  game._damageMinion(0, revived, 99);
+  assert.deepStrictEqual(game.players[0].board.map((card) => card.instanceId), ["michiel"], "Michiel should not revive the same card more than once.");
+}
+
+{
+  const game = makeGame();
+  const michiel = minion("michiel", michielId);
+  const tauntAlly = minion("taunt-ally", "base:fish", { health: 2, maxHealth: 2 });
+  game.players[0].board = [michiel, tauntAlly];
+
+  game._damageMinion(0, tauntAlly, 99);
+  assert.deepStrictEqual(game.players[0].board.map((card) => card.instanceId), ["michiel"], "Michiel should not revive Taunt allied minions.");
 }
 
 {
