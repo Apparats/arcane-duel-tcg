@@ -41,9 +41,9 @@ const SCRAPE_ANIMATION_SOUND_LIMIT = 34;
 
 const SCRAP_GOLD_VALUES = {
   common: 1,
-  rare: 2,
-  legendary: 3,
-  mythic: 5,
+  rare: 1,
+  legendary: 2,
+  mythic: 3,
   souvenir: 10,
 };
 
@@ -268,6 +268,12 @@ function maxScrapeCopies(card) {
   return Math.max(0, owned - Math.max(1, maxSavedDeckUsage(card.id)));
 }
 
+function maxScrapeAllCopies(card) {
+  const owned = getCardQuantity(card);
+  if (owned <= 2 || scrapeGoldValue(card) <= 0) return 0;
+  return Math.max(0, owned - Math.max(2, maxSavedDeckUsage(card.id)));
+}
+
 function duplicateScrapeCards() {
   const filters = currentScrapingFilters();
   const cards = getInventoryCards()
@@ -340,7 +346,7 @@ function selectedScrapeItems() {
 
 function allFilteredScrapeItems() {
   return duplicateScrapeCards()
-    .map((card) => ({ cardId: card.id, quantity: maxScrapeCopies(card) }))
+    .map((card) => ({ cardId: card.id, quantity: maxScrapeAllCopies(card) }))
     .filter((item) => item.quantity > 0);
 }
 

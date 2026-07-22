@@ -26,6 +26,7 @@ const { cleanupExpiredWsTickets, consumeWsTicket } = require("./wsTicketService"
 const { secureRandomCode, secureRandomInt } = require("./random");
 const { createCampaignMatch, getCampaignEncounter, listCampaignEncounters } = require("./campaigns");
 const { createShieldChallenge, recordShieldInput, resolveShieldChallenge, scaleShieldChallenge } = require("./campaigns/shieldChallenge");
+const { chooseNpcAttack, chooseNpcPlayable } = require("./npcAi");
 
 const PORT = process.env.PORT || 8443;
 const HTTP_JSON_LIMIT = "32kb";
@@ -284,6 +285,7 @@ const quickplayQueue = [];
 const tournamentQueues = new Map();
 const tournamentMatchStarts = new Map();
 const tournamentNoShowResolutions = new Set();
+const singleplayerMatchStarts = new Set();
 const tournamentMatchStartQueue = new TournamentMatchStartQueue({ concurrency: TOURNAMENT_MATCH_START_CONCURRENCY });
 const socketsByUserId = new Map();
 const socketsByIp = new Map();
@@ -988,46 +990,6 @@ async function resumeMultiplayerMatch(ws) {
   broadcastState(match);
 }
 
-function chooseNpcPlayable(game, { limitMythics = false } = {}) {
-  const npc = game.players[1];
-  const playerBoard = game.players[0].board;
-  const hasMythicInPlay = limitMythics && npc.board.some((minion) => minion.rarity === "mythic");
-  let best = null;
-  npc.hand.forEach((cardRef, handIndex) => {
-    const card = getCardById(String(cardRef).split("|")[0]);
-    if (!card || card.cost > npc.manaCurrent) return;
-    if (card.type !== "minion") return;
-    // The standard NPC may still use its usual board-rule exceptions, but it
-    // never controls more than one mythic minion at a time. Campaign bosses
-    // deliberately opt out through the caller below.
-    if (hasMythicInPlay && card.type === "minion" && card.rarity === "mythic") return;
-    if (game.getBoardLimitError(1, card)) return;
-    const needsEnemyMinion = cardRequiresEnemyMinionTarget(card);
-    if (needsEnemyMinion && playerBoard.length === 0) return;
-    if (!best || card.cost > best.card.cost) best = { card, handIndex };
-  });
-  return best;
-}
-
-function cardRequiresEnemyMinionTarget(card) {
-  return (card.abilities || []).some((ability) =>
-    ability.trigger === "onPlay" && ability.target === "enemyMinion" &&
-    ["applyStatus", "returnEnemyMinionToDeck"].includes(ability.effect)
-  );
-}
-
-function npcCardTarget(game, card) {
-  if (cardRequiresEnemyMinionTarget(card)) {
-    const target = game.players[0].board
-      .slice()
-      .sort((a, b) => b.attack - a.attack || b.health - a.health)[0];
-    return target?.instanceId || null;
-  }
-  if (card.effect === "damage") return "faceEnemy";
-  if (card.effect === "heal") return null;
-  return null;
-}
-
 async function runCampaignShieldChallenge(room) {
   const config = room.campaign?.shieldChallenge;
   const game = room.game;
@@ -1081,28 +1043,28 @@ async function runNpcTurn(room) {
     if (game.winner !== null || game.turn !== 1) return;
     await sleep(NPC_STEP_DELAY_MS);
 
-    const play = chooseNpcPlayable(game, { limitMythics: room.mode === "singleplayer" });
-    if (play && game.winner === null && game.turn === 1) {
+    let playGuard = 0;
+    while (game.winner === null && game.turn === 1 && playGuard++ < 6) {
+      const play = chooseNpcPlayable(game, { limitMythics: room.mode === "singleplayer" });
+      if (!play) break;
       try {
-        await playCardWithReveal(room, 1, play.handIndex, npcCardTarget(game, play.card));
+        await playCardWithReveal(room, 1, play.handIndex, play.target);
         broadcastState(room);
         await runCampaignShieldChallenge(room);
         if (game.winner !== null || game.turn !== 1) return;
         await sleep(NPC_STEP_DELAY_MS);
       } catch (err) {
         // Skip illegal NPC plays; the game state remains authoritative.
+        break;
       }
     }
 
     let attackGuard = 0;
     while (game.winner === null && game.turn === 1 && attackGuard++ < 12) {
-      const attacker = game.players[1].board.find((minion) => minion.canAttack && minion.attack > 0);
-      if (!attacker) break;
-      const playerBoard = game.players[0].board;
-      const taunt = playerBoard.find((m) => m.keywords.includes("taunt"));
-      const target = taunt || playerBoard.find((m) => m.health <= attacker.attack);
+      const attack = chooseNpcAttack(game, 1);
+      if (!attack) break;
       try {
-        game.attack(1, attacker.instanceId, target ? target.instanceId : "face");
+        game.attack(1, attack.attackerInstanceId, attack.targetInstanceId);
         broadcastState(room);
         await sleep(NPC_STEP_DELAY_MS);
       } catch (err) {
@@ -1138,38 +1100,51 @@ async function handleMessage(ws, msg) {
 
   if (type === "startSingleplayer") {
     const user = await requireSessionUser(ws);
-    discardActiveSingleplayerMatch(rooms, user.id, { clearTurnTimer, clearAllReconnectGraces });
-    assertUserCanStartOrPrepareMatch(user.id);
-    detachSocketFromRoom(ws);
-    const playerDeck = await getActiveDeckCardIds(user.id);
-    const profile = await getPublicPlayerProfile(user.id);
-    const code = makeRoomCode();
-    const name = user.username || "Player";
-    const npcDeck = buildRandomLegalDeck({
-      randomInt: secureRandomInt,
-      // The NPC deliberately does not cast spells, so keep its random deck
-      // to playable minions while applying every normal deck-building limit.
-      includeCard: (card) => card.type === "minion",
-    });
-    const room = {
-      game: new Game(code, name, "NPC", { decks: [playerDeck, npcDeck], randomInt: secureRandomInt }),
-      sockets: [ws, null],
-      names: [name, "NPC"],
-      avatars: [user.avatarUrl || null, null],
-      userIds: [user.id, null],
-      profiles: [profile, null],
-      introEndsAt: Date.now() + MATCH_INTRO_DURATION_MS,
-      mode: "singleplayer",
-      rewardGranted: false,
-      surrenderedBy: null,
-      reconnects: [null, null],
-      disconnectEvents: [null, null],
-    };
-    rooms.set(code, room);
-    ws.roomCode = code;
-    ws.playerIdx = 0;
-    send(ws, "matchStarted", {});
-    broadcastState(room);
+    const existingRoom = ws.roomCode ? rooms.get(ws.roomCode) : null;
+    if (existingRoom?.mode === "singleplayer" && existingRoom.game?.winner === null && existingRoom.userIds?.some((userId) => String(userId) === String(user.id))) {
+      broadcastState(existingRoom);
+      return;
+    }
+
+    const startKey = String(user.id);
+    if (singleplayerMatchStarts.has(startKey)) return;
+    singleplayerMatchStarts.add(startKey);
+    try {
+      discardActiveSingleplayerMatch(rooms, user.id, { clearTurnTimer, clearAllReconnectGraces });
+      assertUserCanStartOrPrepareMatch(user.id);
+      detachSocketFromRoom(ws);
+      const playerDeck = await getActiveDeckCardIds(user.id);
+      const profile = await getPublicPlayerProfile(user.id);
+      const code = makeRoomCode();
+      const name = user.username || "Player";
+      const npcDeck = buildRandomLegalDeck({
+        randomInt: secureRandomInt,
+        // The NPC deliberately does not cast spells, so keep its random deck
+        // to playable minions while applying every normal deck-building limit.
+        includeCard: (card) => card.type === "minion",
+      });
+      const room = {
+        game: new Game(code, name, "NPC", { decks: [playerDeck, npcDeck], randomInt: secureRandomInt }),
+        sockets: [ws, null],
+        names: [name, "NPC"],
+        avatars: [user.avatarUrl || null, null],
+        userIds: [user.id, null],
+        profiles: [profile, null],
+        introEndsAt: Date.now() + MATCH_INTRO_DURATION_MS,
+        mode: "singleplayer",
+        rewardGranted: false,
+        surrenderedBy: null,
+        reconnects: [null, null],
+        disconnectEvents: [null, null],
+      };
+      rooms.set(code, room);
+      ws.roomCode = code;
+      ws.playerIdx = 0;
+      send(ws, "matchStarted", {});
+      broadcastState(room);
+    } finally {
+      singleplayerMatchStarts.delete(startKey);
+    }
     return;
   }
 

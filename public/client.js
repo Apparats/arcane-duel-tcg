@@ -31,7 +31,7 @@ const STATUS_FULL_LABEL = {
 const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", mythic: "Mythic", souvenir: "Souvenir" };
 const BABU2_CARD_ID = "expansion2:Babu2";
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.6.0-embers-exchange-fair-play";
+const CHANGELOG_VERSION = "1.6.2-smarter-npc-scraping-status";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const TYPE_ICON = { minion: "⚔", spell: "✦" };
@@ -57,6 +57,7 @@ const SPELL_REVEAL_MS = 800;
 const TOUCH_TOOLTIP_HOLD_MS = 500;
 const TOUCH_TOOLTIP_MOVE_TOLERANCE = 10;
 let quickplaySearching = false;
+let singleplayerStartPending = false;
 let enabledExpansionIds = null;
 let activeMatchMode = null;
 let matchIntroTimer = null;
@@ -141,6 +142,7 @@ function connect(onOpen) {
     });
     socket.addEventListener("close", () => {
       if (ws === socket) ws = null;
+      setSingleplayerStartPending(false);
       if (shouldReconnectMultiplayer()) {
         showToast("Connection lost. Reconnecting to your match...");
         beginMultiplayerReconnect();
@@ -302,6 +304,8 @@ function startLocalMatch(playerName) {
 }
 
 function startServerSingleplayer() {
+  if (singleplayerStartPending) return;
+  setSingleplayerStartPending(true);
   clearMultiplayerReconnect();
   forgetMultiplayerMatch();
   isLocalMode = false;
@@ -311,7 +315,9 @@ function startServerSingleplayer() {
   lastRoundBannerKey = null;
   resetStateQueue();
   lastEconomyUpdate = null;
-  connect(() => send("startSingleplayer", {}));
+  connect(() => send("startSingleplayer", {})).catch(() => {
+    setSingleplayerStartPending(false);
+  });
 }
 
 async function handleLocalAction(type, payload) {
@@ -582,6 +588,7 @@ function handleServerMessage(msg) {
       forfeitResultMessage = "";
       setOpponentReconnectPaused(false);
       setQuickplaySearching(false);
+      setSingleplayerStartPending(false);
       activeMatchMode = activeMatchMode || "multiplayer";
       if (activeMatchMode === "multiplayer") rememberMultiplayerMatch();
       else forgetMultiplayerMatch();
@@ -682,6 +689,7 @@ function handleServerMessage(msg) {
       setOpponentReconnectPaused(false);
       clearMatchStatus();
       clearMultiplayerReconnect();
+      setSingleplayerStartPending(false);
       forgetMultiplayerMatch();
       myState = null;
       resetStateQueue();
@@ -695,6 +703,7 @@ function handleServerMessage(msg) {
     case "error":
       pendingHandPlayAnimation = null;
       setQuickplaySearching(false);
+      setSingleplayerStartPending(false);
       showToast(msg.payload.message);
       break;
   }
@@ -1118,6 +1127,7 @@ document.querySelectorAll(".menu-tile-locked").forEach((tile) => {
 
 $("btnBackToMenu").addEventListener("click", () => {
   setQuickplaySearching(false);
+  setSingleplayerStartPending(false);
   send("cancelQuickplay", {});
   send("cancelTournamentMatch", {});
   window.ArcaneTournaments?.setVisible(false);
@@ -1185,6 +1195,16 @@ function setQuickplaySearching(searching) {
   $("quickplayStatus").textContent = searching ? "Searching for an opponent" : "Queue for a basic online 1v1 match.";
 }
 
+function setSingleplayerStartPending(pending) {
+  singleplayerStartPending = pending;
+  const button = $("btnStartSingle");
+  if (!button) return;
+  button.disabled = pending;
+  button.setAttribute("aria-busy", pending ? "true" : "false");
+  const subtitle = button.querySelector(".singleplayer-mode-subtitle");
+  if (subtitle) subtitle.textContent = pending ? "Preparing match..." : "Earn gold on Fastplay!";
+}
+
 $("tabRoomCode").addEventListener("click", () => setLobbyTab("room"));
 $("tabQuickplay").addEventListener("click", () => setLobbyTab("quickplay"));
 $("tabTournaments").addEventListener("click", () => setLobbyTab("tournaments"));
@@ -1196,6 +1216,7 @@ $("tabRanking").addEventListener("click", () => {
 $("btnCreate").addEventListener("click", () => {
   if (!requireLoggedInForPlay()) return;
   setQuickplaySearching(false);
+  setSingleplayerStartPending(false);
   connect(() => send("createRoom", {}));
 });
 
@@ -1204,12 +1225,14 @@ $("btnJoin").addEventListener("click", () => {
   const roomCode = $("joinCode").value.trim();
   if (!roomCode) return showToast("Enter a room code.");
   setQuickplaySearching(false);
+  setSingleplayerStartPending(false);
   connect(() => send("joinRoom", { roomCode }));
 });
 
 $("btnQuickplay").addEventListener("click", () => {
   if (!requireLoggedInForPlay()) return;
   setQuickplaySearching(true);
+  setSingleplayerStartPending(false);
   connect(() => send("quickplay", {}));
 });
 
@@ -1301,6 +1324,7 @@ $("btnCampaignInfo").addEventListener("click", () => {
 
 $("btnStartCampaignStage").addEventListener("click", () => {
   if (!activeCampaignStage || !requireLoggedInForPlay()) return;
+  setSingleplayerStartPending(false);
   clearMultiplayerReconnect();
   forgetMultiplayerMatch();
   isLocalMode = false;

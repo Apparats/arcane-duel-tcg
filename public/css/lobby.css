@@ -216,6 +216,18 @@
   outline: none;
 }
 
+.singleplayer-mode:disabled {
+  cursor: wait;
+  opacity: 0.72;
+  transform: none;
+  filter: saturate(0.78);
+}
+
+.singleplayer-mode:disabled:hover,
+.singleplayer-mode:disabled:focus-visible {
+  transform: none;
+}
+
 .singleplayer-mode-locked {
   cursor: not-allowed;
   opacity: 0.48;

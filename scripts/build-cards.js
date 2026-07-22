@@ -63,6 +63,7 @@ const VALID_ABILITY_EFFECTS = [
   "destroySelf",
   "destroySelfIfPlayedAtLeast",
   "applyStatus",
+  "applyStatusToRandomEnemyMinion",
   "applyBurning",
   "preventDamageFromRace",
   "reviveOtherFriendlyMinions",
@@ -286,18 +287,23 @@ function validateAbilities(card, label) {
       if (ability.firstPlayOnly !== undefined && typeof ability.firstPlayOnly !== "boolean") {
         fail(`${abLabel}: "firstPlayOnly" must be true or false when included.`);
       }
-    } else if (ability.effect === "applyStatus") {
-      const validStatuses = ["weakened", "frozen", "silenced", "poisoned", "marked"];
+    } else if (["applyStatus", "applyStatusToRandomEnemyMinion"].includes(ability.effect)) {
+      const validStatuses = ability.effect === "applyStatusToRandomEnemyMinion"
+        ? ["weakened", "frozen", "silenced", "marked"]
+        : ["weakened", "frozen", "silenced", "poisoned", "marked"];
       const validTargets = ability.status === "poisoned"
         ? ["enemyMinion", "enemy", "enemyCharacter", "enemyHero"]
         : ["enemyMinion"];
-      if (ability.trigger !== "onPlay") {
+      if (ability.effect === "applyStatus" && ability.trigger !== "onPlay") {
         fail(`${abLabel}: applyStatus can only use the "onPlay" trigger.`);
+      }
+      if (ability.effect === "applyStatusToRandomEnemyMinion" && ability.trigger !== "onTurnStart") {
+        fail(`${abLabel}: applyStatusToRandomEnemyMinion can only use the "onTurnStart" trigger.`);
       }
       if (!validStatuses.includes(ability.status)) {
         fail(`${abLabel}: "status" must be one of ${validStatuses.join(", ")}.`);
       }
-      if (!validTargets.includes(ability.target)) {
+      if (ability.effect === "applyStatus" && !validTargets.includes(ability.target)) {
         fail(`${abLabel}: applyStatus needs target: ${validTargets.map((target) => `"${target}"`).join(", ")}.`);
       }
       if (ability.value !== undefined && !isIntegerInRange(ability.value, 1, 99)) {

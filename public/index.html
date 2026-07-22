@@ -13,22 +13,22 @@
 <link rel="apple-touch-icon" href="pwa-icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css?v=1.6.1" />
-  <link rel="stylesheet" href="css/menu.css?v=1.6.1" />
-<link rel="stylesheet" href="css/account-profile.css?v=1.6.1" />
-<link rel="stylesheet" href="css/lobby.css?v=1.6.1" />
-<link rel="stylesheet" href="css/board.css?v=1.6.1" />
-<link rel="stylesheet" href="css/cards.css?v=1.6.1" />
-<link rel="stylesheet" href="css/board-arena.css?v=1.6.1" />
-<link rel="stylesheet" href="css/board-hand.css?v=1.6.1" />
-<link rel="stylesheet" href="css/inventory.css?v=1.6.1" />
-<link rel="stylesheet" href="css/deck-builder.css?v=1.6.1" />
-<link rel="stylesheet" href="css/shop.css?v=1.6.1" />
-<link rel="stylesheet" href="css/trade.css?v=1.6.1" />
-<link rel="stylesheet" href="css/pack-opening.css?v=1.6.1" />
-<link rel="stylesheet" href="css/fx.css?v=1.6.1" />
-<link rel="stylesheet" href="css/board-effects.css?v=1.6.1" />
-<link rel="stylesheet" href="css/overlay.css?v=1.6.1" />
+<link rel="stylesheet" href="css/base.css?v=1.6.2-v2" />
+  <link rel="stylesheet" href="css/menu.css?v=1.6.2-v2" />
+<link rel="stylesheet" href="css/account-profile.css?v=1.6.2-v2" />
+<link rel="stylesheet" href="css/lobby.css?v=1.6.2-v2" />
+<link rel="stylesheet" href="css/board.css?v=1.6.2-v2" />
+<link rel="stylesheet" href="css/cards.css?v=1.6.2-v2" />
+<link rel="stylesheet" href="css/board-arena.css?v=1.6.2-v2" />
+<link rel="stylesheet" href="css/board-hand.css?v=1.6.2-v2" />
+<link rel="stylesheet" href="css/inventory.css?v=1.6.2-v2" />
+<link rel="stylesheet" href="css/deck-builder.css?v=1.6.2-v2" />
+<link rel="stylesheet" href="css/shop.css?v=1.6.2-v2" />
+<link rel="stylesheet" href="css/trade.css?v=1.6.2-v2" />
+<link rel="stylesheet" href="css/pack-opening.css?v=1.6.2-v2" />
+<link rel="stylesheet" href="css/fx.css?v=1.6.2-v2" />
+<link rel="stylesheet" href="css/board-effects.css?v=1.6.2-v2" />
+<link rel="stylesheet" href="css/overlay.css?v=1.6.2-v2" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -746,9 +746,9 @@
             </div>
             <div class="scraping-rates" aria-label="Scraping gold values">
               <div><span>Common</span><strong>1g</strong></div>
-              <div><span>Rare</span><strong>2g</strong></div>
-              <div><span>Legendary</span><strong>3g</strong></div>
-              <div><span>Mythic</span><strong>5g</strong></div>
+              <div><span>Rare</span><strong>1g</strong></div>
+              <div><span>Legendary</span><strong>2g</strong></div>
+              <div><span>Mythic</span><strong>3g</strong></div>
               <div><span>Souvenir</span><strong>10g</strong></div>
             </div>
             <div class="scraping-selected">
@@ -966,13 +966,28 @@
       <div class="changelog-content">
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
+          <h3>Version 1.6.2</h3>
+          <span>Smarter NPC &amp; Scraping Tuning</span>
+        </div>
+        <p class="changelog-entry-intro">Fastplay and campaign opponents now make stronger decisions without changing their stats, while duplicate scraping receives a safer economy pass.</p>
+        <ul class="changelog-list">
+          <li>The Singleplayer NPC now it's more intelligent, ponderates movements and moves more as a real human than automated actions.</li>
+          <li>The Protector now correctly plays Mamaluteo onto the board even when it targets the player hero with Poison.</li>
+          <li>Status-focused Mythic cards from The Gates now keep pressuring the enemy board by applying their status to a random enemy minion at the start of each of your turns.</li>
+          <li>Singleplayer start now ignores repeated taps while the NPC match is being prepared, preventing duplicate match creation on slow connections.</li>
+          <li>Scraping values have been tuned: Common and Rare cards give 1 gold, Legendary 2, Mythic 3, and Souvenir 10.</li>
+          <li>Scrape all now keeps two copies of each card, or more if saved decks need them, before converting extras into gold.</li>
+        </ul>
+      </article>
+      <article class="changelog-entry">
+        <div class="changelog-entry-meta">
           <h3>Version 1.6.1</h3>
           <span>Scraping, Search &amp; Rewards</span>
         </div>
         <p class="changelog-entry-intro">A focused quality-of-life update for managing large collections, earning gold from duplicates, and finding cards faster.</p>
         <ul class="changelog-list">
           <li>The Inventory now has a Scraping tab where duplicate cards can be converted into gold while keeping at least one copy and protecting cards needed by saved decks.</li>
-          <li>Scraping values are now visible in-game: Common cards give 1 gold, Rare 2, Legendary 3, Mythic 5, and Souvenir 10.</li>
+          <li>Scraping values are now visible in-game for each rarity.</li>
           <li>Scraping now asks for confirmation, shows a compact animated stack preview, and finishes with a gold-earned result modal.</li>
           <li>Scrape all is available for the currently filtered duplicate list.</li>
           <li>Collection, Deck Builder, Scraping, and Trade now support searching cards by name.</li>
@@ -1400,25 +1415,25 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.6.1"></script>
-  <script src="deckRules.js?v=1.6.1"></script>
-  <script src="engine.js?v=1.6.1"></script>
-  <script src="ai.js?v=1.6.1"></script>
-  <script src="audioConfig.js?v=1.6.1"></script>
-  <script src="audioManager.js?v=1.6.1"></script>
-  <script src="packOpening.js?v=1.6.1"></script>
-<script src="legalNotices.js?v=1.6.1"></script>
-<script src="profileCatalog.js?v=1.6.1"></script>
-<script src="profileBadges.js?v=1.6.1"></script>
-<script src="accountProfile.js?v=1.6.1"></script>
-<script src="client.js?v=1.6.1"></script>
-<script src="shieldChallenge.js?v=1.6.1"></script>
-<script src="boardInteractions.js?v=1.6.1"></script>
-<script src="inventory.js?v=1.6.1"></script>
-<script src="deckBuilder.js?v=1.6.1"></script>
-<script src="shop.js?v=1.6.1"></script>
-<script src="trade.js?v=1.6.1"></script>
-<script src="tournaments.js?v=1.6.1"></script>
-<script src="pwa.js?v=1.6.1"></script>
+  <script src="cards.js?v=1.6.2-v2"></script>
+  <script src="deckRules.js?v=1.6.2-v2"></script>
+  <script src="engine.js?v=1.6.2-v2"></script>
+  <script src="ai.js?v=1.6.2-v2"></script>
+  <script src="audioConfig.js?v=1.6.2-v2"></script>
+  <script src="audioManager.js?v=1.6.2-v2"></script>
+  <script src="packOpening.js?v=1.6.2-v2"></script>
+<script src="legalNotices.js?v=1.6.2-v2"></script>
+<script src="profileCatalog.js?v=1.6.2-v2"></script>
+<script src="profileBadges.js?v=1.6.2-v2"></script>
+<script src="accountProfile.js?v=1.6.2-v2"></script>
+<script src="client.js?v=1.6.2-v2"></script>
+<script src="shieldChallenge.js?v=1.6.2-v2"></script>
+<script src="boardInteractions.js?v=1.6.2-v2"></script>
+<script src="inventory.js?v=1.6.2-v2"></script>
+<script src="deckBuilder.js?v=1.6.2-v2"></script>
+<script src="shop.js?v=1.6.2-v2"></script>
+<script src="trade.js?v=1.6.2-v2"></script>
+<script src="tournaments.js?v=1.6.2-v2"></script>
+<script src="pwa.js?v=1.6.2-v2"></script>
 </body>
 </html>

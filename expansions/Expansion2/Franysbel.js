@@ -8,6 +8,6 @@ module.exports = {
   race: "Human",
   rarity: "common",
   country: "Honduras",
-  lore: "Pending final tuning.",
+  lore: "Honduras Lord.",
   image: "art/Franysbel.webp",
 };

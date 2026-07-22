@@ -8,9 +8,10 @@ module.exports = {
   race: "Human",
   rarity: "mythic",
   country: "Thailand",
-  lore: "On play, silence an enemy minion. A wall of doctrine against any engine.",
+  lore: "On play and at the start of each of your turns, silence an enemy minion.",
   image: "art/Cardinal_Severin.webp",
   abilities: [
     { trigger: "onPlay", effect: "applyStatus", target: "enemyMinion", status: "silenced" },
+    { trigger: "onTurnStart", effect: "applyStatusToRandomEnemyMinion", status: "silenced" },
   ],
 };

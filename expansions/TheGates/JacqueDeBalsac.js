@@ -8,9 +8,10 @@ module.exports = {
   race: "Human",
   rarity: "mythic",
   country: "Belgium",
-  lore: "On play, freeze an enemy minion before its next assault.",
+  lore: "On play and at the start of each of your turns, freeze an enemy minion.",
   image: "art/JacqueDeBalsac.webp",
   abilities: [
     { trigger: "onPlay", effect: "applyStatus", target: "enemyMinion", status: "frozen", turns: 1 },
+    { trigger: "onTurnStart", effect: "applyStatusToRandomEnemyMinion", status: "frozen", turns: 1 },
   ],
 };

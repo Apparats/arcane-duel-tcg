@@ -301,9 +301,9 @@ const PACK_PRICE_GOLD = 20;
 const PACK_SIZE = 5;
 const SCRAP_GOLD_VALUES = {
   common: 1,
-  rare: 2,
-  legendary: 3,
-  mythic: 5,
+  rare: 1,
+  legendary: 2,
+  mythic: 3,
   souvenir: 10,
 };
 

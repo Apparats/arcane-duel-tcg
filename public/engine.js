@@ -602,6 +602,15 @@
       game._addLog(`${ctx.sourceName} applies ${ability.status} to ${target.minion.name}.`);
     },
 
+    applyStatusToRandomEnemyMinion(game, ctx, ability) {
+      const opponentIdx = game._opponentIdx(ctx.casterIdx);
+      const targets = game.players[opponentIdx].board;
+      if (targets.length === 0) return;
+      const target = targets[game.randomInt(targets.length)];
+      const applied = game._applyStatus(opponentIdx, target, { ...ability, sourceRace: ctx.sourceRace });
+      game._addLog(`${ctx.sourceName} applies ${applied.type} to ${target.name}.`);
+    },
+
     applyBurning(game, ctx, ability) {
       const value = Math.max(1, Number.isInteger(ability.value) ? ability.value : 1);
       const turns = Math.max(1, Number.isInteger(ability.turns) ? ability.turns : 1);
@@ -702,6 +711,9 @@
             casterIdx: playerIdx,
             sourceName: m.name,
             instanceId: m.instanceId,
+            cardId: m.cardId,
+            playedCount: m.playedCount || 0,
+            returnCount: m.returnCount || 0,
             silenced: this._hasStatus(m, "silenced"),
           });
         }

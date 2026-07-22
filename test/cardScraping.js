@@ -4,7 +4,7 @@ const { getCardById } = require("../public/cards");
 
 assert.deepStrictEqual(
   SCRAP_GOLD_VALUES,
-  { common: 1, rare: 2, legendary: 3, mythic: 5, souvenir: 10 },
+  { common: 1, rare: 1, legendary: 2, mythic: 3, souvenir: 10 },
   "Scrap gold values should match the economy table."
 );
 
@@ -27,7 +27,7 @@ assert.deepStrictEqual(
     { cardId: "expansion2:vatou", quantity: 1 },
   ]);
   assert.strictEqual(plan.totalCards, 5, "Scraping should count all selected copies.");
-  assert.strictEqual(plan.goldAwarded, 21, "Scraping should pay by rarity.");
+  assert.strictEqual(plan.goldAwarded, 17, "Scraping should pay by rarity.");
 }
 
 {
