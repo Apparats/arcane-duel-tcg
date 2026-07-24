@@ -51,14 +51,18 @@
 
 .card-badges {
   position: absolute;
-  top: 34px;
-  left: -3px;
+  top: -6px;
+  left: 50%;
   z-index: 12;
   display: flex;
-  width: 24px;
-  flex-direction: column;
+  width: auto;
+  max-width: calc(100% - 30px);
+  flex-direction: row;
   align-items: center;
-  gap: 3px;
+  justify-content: center;
+  gap: 2px;
+  transform: translateX(-50%);
+  pointer-events: none;
 }
 
 .card-cost {
@@ -84,9 +88,9 @@
 }
 
 .keyword-badge {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
+  width: 34px;
+  height: 16px;
+  border-radius: 6px 6px 4px 4px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -95,8 +99,16 @@
   border: 1px solid rgba(0, 0, 0, 0.35);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.3);
 }
-.keyword-badge.kw-taunt { background: var(--taunt); color: #0d1509; }
-.keyword-badge.kw-charge { background: var(--gold); color: #241800; }
+.keyword-badge.kw-taunt {
+  background: radial-gradient(circle at 35% 28%, #d7f4ba 0%, var(--taunt) 62%, #315f24 100%);
+  color: #0d1509;
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.62), 0 0 9px rgba(127, 176, 105, 0.52), inset 0 1px 1px rgba(255, 255, 255, 0.34);
+}
+.keyword-badge.kw-charge {
+  background: radial-gradient(circle at 35% 28%, #fff3ad 0%, var(--gold) 60%, #805315 100%);
+  color: #241800;
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.62), 0 0 9px rgba(232, 179, 79, 0.58), inset 0 1px 1px rgba(255, 255, 255, 0.34);
+}
 .keyword-icon {
   width: 12px;
   height: 12px;
@@ -115,24 +127,50 @@
 .keyword-badge.kw-divineShield {
   background: radial-gradient(circle at 35% 30%, #d6f2fc, var(--mana) 70%);
   color: #04222c;
-  box-shadow: 0 0 8px rgba(79, 195, 232, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.62), 0 0 9px rgba(79, 195, 232, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.5);
 }
 .special-ability-badge {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  display: flex;
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  z-index: 12;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 16px;
+  height: 16px;
   border: 1px solid rgba(238, 207, 255, 0.72);
+  border-radius: 5px;
   background: radial-gradient(circle at 35% 28%, #d18cff 0%, #8547d6 58%, #3d176f 100%);
   color: #fff3ff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.62), 0 0 8px rgba(148, 80, 214, 0.72), inset 0 1px 1px rgba(255, 255, 255, 0.34);
+  transform: translateX(-50%);
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.62), 0 0 9px rgba(148, 80, 214, 0.72), inset 0 1px 1px rgba(255, 255, 255, 0.34);
+}
+
+.card-status-badges {
+  position: absolute;
+  top: 34px;
+  left: -3px;
+  z-index: 12;
+  display: flex;
+  width: 24px;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  pointer-events: none;
 }
 .special-ability-icon {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   display: block;
+}
+
+#screen-game .minion-card .special-ability-badge {
+  bottom: -10px;
+  z-index: 35;
+  transform: translateX(-50%) translateZ(24px);
+  backface-visibility: hidden;
+  pointer-events: none;
 }
 
 .status-badge {
@@ -241,11 +279,14 @@
 .minion-card.rarity-rare,
 .hand-card.rarity-rare { border-color: var(--mana); box-shadow: 0 0 10px rgba(79, 195, 232, 0.35); }
 .minion-card.rarity-legendary,
-.hand-card.rarity-legendary { border-color: var(--gold); box-shadow: 0 0 14px rgba(232, 179, 79, 0.5); }
+.hand-card.rarity-legendary {
+  border-color: #ffa700;
+  box-shadow: 0 0 16px rgba(255, 167, 0, 0.82), 0 0 7px rgba(255, 222, 122, 0.46) inset;
+}
 .minion-card.rarity-mythic,
 .hand-card.rarity-mythic {
-  border-color: var(--mythic);
-  box-shadow: 0 0 18px var(--mythic-glow), 0 0 6px var(--mythic-glow) inset;
+  border-color: #df1500;
+  box-shadow: 0 0 20px rgba(255, 24, 0, 0.82), 0 0 8px rgba(255, 73, 40, 0.5) inset;
   animation: mythic-pulse 2.2s ease-in-out infinite alternate;
 }
 .minion-card.rarity-souvenir,
@@ -342,12 +383,13 @@
   .card-stat.val { left: -7px; }
   .card-stat.hp { right: -7px; }
   .card-art-icon { font-size: 24px; }
-  .keyword-badge { width: 16px; height: 16px; font-size: 8px; }
-  .special-ability-badge { width: 16px; height: 16px; }
-  .special-ability-icon { width: 10px; height: 10px; }
+  .keyword-badge { width: 30px; height: 15px; border-radius: 5px 5px 4px 4px; font-size: 8px; }
+  .special-ability-badge { width: 16px; height: 16px; bottom: 12px; border-radius: 4px; }
+  .special-ability-icon { width: 9px; height: 9px; }
   .status-badge { width: 16px; height: 16px; font-size: 8px; }
   .card-cost { width: 25px; height: 27px; top: -7px; left: -7px; font-size: 12px; }
-  .card-badges { top: 28px; left: -3px; width: 22px; }
+  .card-badges { top: -6px; max-width: calc(100% - 28px); gap: 2px; }
+  .card-status-badges { top: 28px; left: -3px; width: 22px; }
   .keyword-icon { width: 11px; height: 11px; }
   .hand-area {
     min-height: 122px;

@@ -301,11 +301,13 @@
 }
 
 .inventory-card .card-badges {
-  left: 3px;
+  left: 50%;
   right: auto;
-  top: 35px;
-  width: 24px;
+  top: -6px;
+  width: auto;
+  max-width: calc(100% - 30px);
   align-items: center;
+  justify-content: center;
 }
 
 /* ---- Scraping ---- */
@@ -845,9 +847,14 @@
   }
 
   .inventory-brand { font-size: 24px; }
-  .inventory-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+  .inventory-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    column-gap: 10px;
+    row-gap: 18px;
+  }
   .scraping-layout { grid-template-columns: 1fr; gap: 12px; }
   .scraping-summary-panel { position: static; order: -1; }
+  .scraping-list { row-gap: 16px; }
   .scraping-row {
     grid-template-columns: 74px minmax(0, 1fr);
     gap: 10px;

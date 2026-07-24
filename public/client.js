@@ -8,7 +8,10 @@ const KEYWORD_ICON = {
     '<svg class="keyword-icon keyword-icon-taunt" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v6c0 4.4 2.9 7.4 7 9 4.1-1.6 7-4.6 7-9V6l-7-3Z" fill="currentColor"/></svg>',
   charge:
     '<svg class="keyword-icon keyword-icon-charge" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" fill="currentColor"/></svg>',
+  divineShield:
+    '<svg class="keyword-icon keyword-icon-divine-shield" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 5.2 5.8v5.7c0 4.1 2.7 7.1 6.8 8.9 4.1-1.8 6.8-4.8 6.8-8.9V5.8L12 2.8Z" fill="currentColor"/><path d="M12 6.2v9.9M8.3 10.1h7.4" stroke="rgba(255,255,255,.82)" stroke-width="1.7" stroke-linecap="round"/></svg>',
 };
+const KEYWORD_SUMMON_EFFECT_ORDER = ["taunt", "charge", "divineShield"];
 const KEYWORD_FULL_LABEL = { taunt: "Taunt", charge: "Charge", divineShield: "Divine Shield" };
 const STATUS_LABEL = {
   weakened: "W",
@@ -78,6 +81,7 @@ let matchStatusTimer = null;
 let forfeitResultMessage = "";
 
 let lastAnimatedActionSeq = 0; // avoids replaying the same attack's animation
+let lastAnimatedSpecialAbilitySeq = 0;
 let lastRoundBannerKey = null;
 let stateQueue = [];
 let isApplyingStateQueue = false;
@@ -316,6 +320,7 @@ function startLocalMatch(playerName) {
   activeMatchMode = "singleplayer";
   myState = null;
   lastAnimatedActionSeq = 0;
+  lastAnimatedSpecialAbilitySeq = 0;
   lastRoundBannerKey = null;
   resetStateQueue();
   resetMatchIntro();
@@ -334,6 +339,7 @@ function startServerSingleplayer() {
   activeMatchMode = "singleplayer";
   myState = null;
   lastAnimatedActionSeq = 0;
+  lastAnimatedSpecialAbilitySeq = 0;
   lastRoundBannerKey = null;
   resetStateQueue();
   lastEconomyUpdate = null;
@@ -438,6 +444,7 @@ function resetStateQueue() {
   isApplyingStateQueue = false;
   stateQueueGeneration += 1;
   lastHandTurnKey = null;
+  lastAnimatedSpecialAbilitySeq = 0;
   handManualVisibility = null;
   clearLocalMulligan();
   resetMulliganOverlay();
@@ -448,6 +455,13 @@ function applyIncomingState(newState) {
   showMatchIntro(newState);
   stateQueue.push(newState);
   processStateQueue();
+}
+
+function latestSpecialAbilityActivationSeq(state) {
+  return (state?.specialAbilityActivations || []).reduce((maxSeq, activation) => {
+    const seq = Number(activation?.seq) || 0;
+    return Math.max(maxSeq, seq);
+  }, 0);
 }
 
 function resetMatchIntro() {
@@ -574,7 +588,8 @@ async function applyQueuedState(newState, generation) {
   }
 
   const prev = myState;
-  const diff = prev ? computeAndPlayImpactAnimations(prev, newState) : { anyImpact: false, newMinions: [] };
+  if (!prev) lastAnimatedSpecialAbilitySeq = latestSpecialAbilityActivationSeq(newState);
+  const diff = prev ? computeAndPlayImpactAnimations(prev, newState) : { anyImpact: false, newMinions: [], pendingSpecialActivations: [] };
   const roundKey = String(newState.turnNumber);
   const isRoundChange = prev && prev.turnNumber !== newState.turnNumber && roundKey !== lastRoundBannerKey;
   const delay = (diff.anyImpact ? SETTLE_DELAY : 0) + (isRoundChange ? ROUND_BANNER_DELAY : 0);
@@ -590,11 +605,19 @@ async function applyQueuedState(newState, generation) {
   myState = newState;
   clearSelection();
   render(myState);
-  diff.newMinions.forEach(({ id, isSelf, cardId }) => {
+  diff.newMinions.forEach(({ id, isSelf, cardId, keywords }) => {
     const el = findCardElement(id);
     if (!el) return;
-    if (isSelf && animateCardFromHand(el, cardId)) return;
+    const playedFromHand = isSelf && animateCardFromHand(el, cardId);
+    if (playedFromHand) {
+      setTimeout(() => spawnKeywordSummonEffect(el, keywords), 450);
+      return;
+    }
     el.classList.add("summoned");
+    requestAnimationFrame(() => spawnKeywordSummonEffect(el, keywords));
+  });
+  diff.pendingSpecialActivations.forEach((activation) => {
+    flashSpecialAbilityBadge(activation.instanceId);
   });
   if (myState.winner !== null) showEndOverlay(myState);
 }
@@ -675,6 +698,7 @@ function handleServerMessage(msg) {
       else forgetMultiplayerMatch();
       myState = null;
       lastAnimatedActionSeq = 0;
+      lastAnimatedSpecialAbilitySeq = 0;
       lastRoundBannerKey = null;
       resetStateQueue();
       resetMatchIntro();
@@ -816,6 +840,26 @@ function spawnFloatingNumber(targetEl, text, kind) {
   setTimeout(() => span.remove(), 1150);
 }
 
+function spawnKeywordSummonEffect(targetEl, keywords = []) {
+  const visibleKeywords = KEYWORD_SUMMON_EFFECT_ORDER.filter((keyword) => keywords.includes(keyword));
+  if (!targetEl?.isConnected || visibleKeywords.length === 0) return false;
+  const boardEl = document.querySelector(".board");
+  if (!boardEl) return false;
+  const targetRect = targetEl.getBoundingClientRect();
+  const boardRect = boardEl.getBoundingClientRect();
+  const effect = document.createElement("div");
+  effect.className = `keyword-summon-effect ${visibleKeywords.map((keyword) => `kw-${keyword}`).join(" ")}`;
+  effect.setAttribute("aria-hidden", "true");
+  effect.innerHTML = visibleKeywords
+    .map((keyword) => `<span class="keyword-summon-icon keyword-summon-icon-${keyword}">${keywordIconHTML(keyword)}</span>`)
+    .join("");
+  effect.style.left = `${targetRect.left - boardRect.left + targetRect.width / 2}px`;
+  effect.style.top = `${targetRect.top - boardRect.top + targetRect.height / 2}px`;
+  boardEl.appendChild(effect);
+  setTimeout(() => effect.remove(), 1150);
+  return true;
+}
+
 function flashDamage(el) {
   if (!el) return false;
   el.classList.remove("damage-impact");
@@ -843,6 +887,16 @@ function flashHeal(el) {
   if (!el) return false;
   el.classList.add("flash-heal");
   setTimeout(() => el.classList.remove("flash-heal"), 650);
+  return true;
+}
+
+function flashSpecialAbilityBadge(instanceId) {
+  const badge = findCardElement(instanceId)?.querySelector(".special-ability-badge");
+  if (!badge) return false;
+  badge.classList.remove("is-activating");
+  void badge.offsetWidth;
+  badge.classList.add("is-activating");
+  setTimeout(() => badge.classList.remove("is-activating"), 900);
   return true;
 }
 
@@ -1039,7 +1093,7 @@ function showSpellCastReveal(cardId) {
 
 function showMythicSummonReveal(cardId) {
   const card = TCGCards.getCardById(cardId);
-  if (!card || card.type !== "minion" || card.rarity !== "mythic") return Promise.resolve();
+  if (!card || card.type !== "minion" || !["legendary", "mythic"].includes(card.rarity)) return Promise.resolve();
 
   document.querySelector(".spell-cast-reveal")?.remove();
   const reveal = document.createElement("div");
@@ -1063,11 +1117,22 @@ function showMythicSummonReveal(cardId) {
 // settling the final state (and which minions deserve the summon pop).
 function computeAndPlayImpactAnimations(prev, next) {
   let anyImpact = false;
+  const pendingSpecialActivations = [];
 
   if (next.lastAction && next.lastAction.type === "attack" && next.lastAction.seq > lastAnimatedActionSeq) {
     lastAnimatedActionSeq = next.lastAction.seq;
     if (animateAttackLunge(prev, next.lastAction)) anyImpact = true;
   }
+
+  (next.specialAbilityActivations || []).forEach((activation) => {
+    if (!activation?.seq || activation.seq <= lastAnimatedSpecialAbilitySeq) return;
+    lastAnimatedSpecialAbilitySeq = Math.max(lastAnimatedSpecialAbilitySeq, activation.seq);
+    if (flashSpecialAbilityBadge(activation.instanceId)) {
+      anyImpact = true;
+    } else {
+      pendingSpecialActivations.push(activation);
+    }
+  });
 
   if (diffAndFlashHero(prev.me, next.me, $("selfHero"))) anyImpact = true;
   if (diffAndFlashHero(prev.opponent, next.opponent, $("oppHero"))) anyImpact = true;
@@ -1082,13 +1147,13 @@ function computeAndPlayImpactAnimations(prev, next) {
 
   const prevIds = new Set([...prev.me.board, ...prev.opponent.board].map((m) => m.instanceId));
   const newMinions = [
-    ...next.me.board.map((m) => ({ id: m.instanceId, cardId: m.cardId, isSelf: true })),
-    ...next.opponent.board.map((m) => ({ id: m.instanceId, cardId: m.cardId, isSelf: false })),
+    ...next.me.board.map((m) => ({ id: m.instanceId, cardId: m.cardId, isSelf: true, keywords: activeKeywords(m).filter((keyword) => KEYWORD_SUMMON_EFFECT_ORDER.includes(keyword)) })),
+    ...next.opponent.board.map((m) => ({ id: m.instanceId, cardId: m.cardId, isSelf: false, keywords: activeKeywords(m).filter((keyword) => KEYWORD_SUMMON_EFFECT_ORDER.includes(keyword)) })),
   ].filter((m) => !prevIds.has(m.id));
   const enemySummoned = next.opponent.board.some((m) => !prevIds.has(m.instanceId));
   if (enemySummoned) window.ArcaneAudio?.playSfx("cardPlay");
 
-  return { anyImpact, newMinions };
+  return { anyImpact, newMinions, pendingSpecialActivations };
 }
 
 function heroTookDamage(prevHero, nextHero) {
@@ -1533,10 +1598,18 @@ function render(state) {
   renderMulligan(state);
 
   // End turn button
-  $("btnEndTurn").disabled = !state.isYourTurn || Boolean(state.mulligan?.active);
-  $("btnEndTurn").classList.remove("action-pending");
+  updateEndTurnButtonState(state);
 
   updateTargetableHighlights(state);
+}
+
+function updateEndTurnButtonState(state) {
+  const button = $("btnEndTurn");
+  const disabled = !state.isYourTurn || Boolean(state.mulligan?.active);
+  const hasActions = !disabled && playerHasAvailableActions(state);
+  button.disabled = disabled;
+  button.classList.remove("action-pending", "has-actions", "no-actions");
+  if (!disabled) button.classList.add(hasActions ? "has-actions" : "no-actions");
 }
 
 function renderTurnTimer(state) {
@@ -1605,7 +1678,9 @@ function boardCardMarkup(minion) {
   return `
       ${cardArtHTML(minion)}
       ${cardCostHTML(minion)}
-      <div class="card-badges">${keywordBadgesHTML(minion)}${statusBadgesHTML(minion)}</div>
+      ${specialAbilityBadgeHTML(minion)}
+      <div class="card-badges">${keywordBadgesHTML(minion)}</div>
+      <div class="card-status-badges">${statusBadgesHTML(minion)}</div>
       <div class="card-footer">
         <span class="card-stat atk">${minion.attack}</span>
         <span class="card-name">${escapeHtml(minion.name)}</span>
@@ -1668,6 +1743,7 @@ function renderHand(state) {
     el.innerHTML = `
       ${cardArtHTML(card)}
       ${cardCostHTML(card)}
+      ${specialAbilityBadgeHTML(card)}
       <div class="card-badges">${keywordBadgesHTML(card)}</div>
       <div class="card-footer">
         ${
@@ -1688,6 +1764,7 @@ function mulliganCardHTML(card) {
   return `
     ${cardArtHTML(card)}
     ${cardCostHTML(card)}
+    ${specialAbilityBadgeHTML(card)}
     <div class="card-badges">${keywordBadgesHTML(card)}</div>
     <div class="card-footer">
       ${
@@ -2100,6 +2177,14 @@ function hasPlayableHandCard(state) {
   return Number.isFinite(mana) && Boolean(state?.me?.hand?.some((card) => Number(card.cost) <= mana && !getHandCardPlayBlockReason(state, card)));
 }
 
+function hasReadyAttacker(state) {
+  return Boolean(state?.me?.board?.some((minion) => minion.canAttack && (minion.attack || 0) > 0));
+}
+
+function playerHasAvailableActions(state) {
+  return hasPlayableHandCard(state) || hasReadyAttacker(state);
+}
+
 function hasBabuBoardLock(board) {
   return (board || []).some((minion) => minion.cardId === BABU2_CARD_ID);
 }
@@ -2331,14 +2416,17 @@ function keywordBadgesHTML(card) {
   const keywordBadges = activeKeywords(card)
     .map((k) => `<span class="keyword-badge kw-${k}">${keywordIconHTML(k)}</span>`)
     .join("");
-  const specialBadge = cardHasSpecialEffect(card)
-    ? '<span class="special-ability-badge" aria-label="Special ability" title="Special ability"><svg class="special-ability-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.7 6.3.8-4.6 4.4 1.2 6.1L12 17l-5.6 3 1.2-6.1L3 9.5l6.3-.8L12 3Z" fill="currentColor"/></svg></span>'
-    : "";
-  return `${keywordBadges}${specialBadge}`;
+  return keywordBadges;
 }
 
 function keywordIconHTML(keyword) {
   return KEYWORD_ICON[keyword] || KEYWORD_LABEL[keyword] || "?";
+}
+
+function specialAbilityBadgeHTML(card) {
+  return cardHasSpecialEffect(card)
+    ? '<span class="special-ability-badge" aria-label="Special ability" title="Special ability"><svg class="special-ability-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.7 6.3.8-4.6 4.4 1.2 6.1L12 17l-5.6 3 1.2-6.1L3 9.5l6.3-.8L12 3Z" fill="currentColor"/></svg></span>'
+    : "";
 }
 
 function cardHasSpecialEffect(card) {

@@ -515,6 +515,7 @@
       const p = game.players[ctx.casterIdx];
       const chargeBlocker = game._chargeSummonBlocker(cardDef);
       if (chargeBlocker) {
+        game._recordSpecialAbilityActivation(chargeBlocker, { effect: "blockChargeSummons", trigger: "passive" });
         game._addLog(`${chargeBlocker.name} prevents ${cardDef.name} from being summoned.`);
         return;
       }
@@ -536,6 +537,7 @@
       if (player.board.some((minion) => minion.cardId === cardDef.id)) return;
       const chargeBlocker = game._chargeSummonBlocker(cardDef);
       if (chargeBlocker) {
+        game._recordSpecialAbilityActivation(chargeBlocker, { effect: "blockChargeSummons", trigger: "passive" });
         game._addLog(`${chargeBlocker.name} prevents ${cardDef.name} from being summoned.`);
         return;
       }
@@ -905,6 +907,8 @@
       // purposes (who attacked whom). Doesn't affect game rules.
       this.actionSeq = 0;
       this.lastAction = null;
+      this.specialAbilitySeq = 0;
+      this.specialAbilityActivations = [];
 
       // Opening hands
       this._draw(0, START_HAND + (this.startingPlayerIdx === 1 ? 1 : 0));
@@ -925,6 +929,19 @@
     _recordAction(action) {
       this.actionSeq += 1;
       this.lastAction = { ...action, seq: this.actionSeq };
+    }
+
+    _recordSpecialAbilityActivation(source, ability = {}) {
+      if (!source?.instanceId && !source?.cardId) return;
+      this.specialAbilitySeq += 1;
+      this.specialAbilityActivations.push({
+        seq: this.specialAbilitySeq,
+        instanceId: source.instanceId || null,
+        cardId: source.cardId || null,
+        effect: ability.effect || null,
+        trigger: ability.trigger || "passive",
+      });
+      if (this.specialAbilityActivations.length > 20) this.specialAbilityActivations.shift();
     }
 
     _draw(playerIdx, n = 1) {
@@ -1102,7 +1119,11 @@
           console.warn(`Unknown ability "${ability.effect}" on "${cardDef.name}" (${trigger}) — skipping.`);
           return;
         }
+        const logLength = this.log.length;
         handler(this, ctx, ability);
+        if (this.log.length > logLength) {
+          this._recordSpecialAbilityActivation(ctx, ability);
+        }
         this._checkWin();
       });
     }
@@ -1295,10 +1316,12 @@
 
     _damageMinion(ownerIdx, minion, amount, options = {}) {
       if (options.adverseEffect && minionImmuneToAdverseEffects(minion)) {
+        this._recordSpecialAbilityActivation(minion, { effect: "immuneToAdverseEffects", trigger: "passive" });
         this._addLog(`${minion.name} ignores an adverse effect.`);
         return;
       }
       if (amount > 0 && minionPreventsDamageFromRace(minion, options.sourceRace)) {
+        this._recordSpecialAbilityActivation(minion, { effect: "preventDamageFromRace", trigger: "passive" });
         this._addLog(`${minion.name} takes no damage from ${options.sourceRace} cards.`);
         return;
       }
@@ -1364,6 +1387,7 @@
 
       const insertAt = Math.min(Math.max(boardIndex, 0), player.board.length);
       player.board.splice(insertAt, 0, revived);
+      this._recordSpecialAbilityActivation(aura, { effect: "reviveOtherFriendlyMinions", trigger: "passive" });
       this._addLog(`${aura.name} revives ${revived.name} with 1 Health and ${revived.attack} Attack.`);
     }
 
@@ -1398,6 +1422,7 @@
       const type = ability.status;
       if (!STATUS_TYPES.has(type)) throw new Error("Invalid status.");
       if (minionImmuneToAdverseEffects(minion)) {
+        this._recordSpecialAbilityActivation(minion, { effect: "immuneToAdverseEffects", trigger: "passive" });
         this._addLog(`${minion.name} ignores an adverse effect.`);
         return null;
       }
@@ -1558,6 +1583,11 @@
       if (this._hasStatus(attacker, "drunk") || this._isDrunkAuraActive()) {
         const target = this._randomDrunkTarget(attacker.instanceId);
         if (!target) throw new Error("No Drunk target available.");
+        this.players.forEach((player) => {
+          player.board.filter((minion) => minionAppliesDrunkAura(minion)).forEach((minion) => {
+            this._recordSpecialAbilityActivation(minion, { effect: "drunkAllMinions", trigger: "passive" });
+          });
+        });
         const targetCard = getCardById(target.minion.cardId);
         if (targetCard) {
           this._triggerAbilities(targetCard, "onAttacked", {
@@ -1782,6 +1812,7 @@
         winner: this.winner,
         log: this.log.slice(-15),
         lastAction: this.lastAction,
+        specialAbilityActivations: this.specialAbilityActivations.slice(-10),
         me: {
           name: me.name,
           health: me.health,

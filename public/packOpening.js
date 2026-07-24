@@ -19,6 +19,7 @@ function cardOpeningFaceHTML(card) {
   return `
     ${cardArtHTML(card)}
     ${cardCostHTML(card)}
+    ${specialAbilityBadgeHTML(card)}
     <div class="card-badges">${keywordBadgesHTML(card)}</div>
     <div class="card-footer">
       ${

@@ -367,8 +367,9 @@
   }
 
   .card-opening-front .keyword-badge {
-    width: 14px;
+    width: 28px;
     height: 14px;
+    border-radius: 5px 5px 4px 4px;
   }
 
   .card-opening-badge {

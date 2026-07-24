@@ -448,7 +448,7 @@ async function playCardWithReveal(room, playerIdx, handIndex, targetInstanceId) 
   if (card?.type === "spell") {
     broadcastSpellCast(room, playerIdx, card);
     await sleep(SPELL_REVEAL_MS);
-  } else if (card?.type === "minion" && card.rarity === "mythic") {
+  } else if (card?.type === "minion" && ["legendary", "mythic"].includes(card.rarity)) {
     broadcastMythicSummon(room, playerIdx, card);
     await sleep(SPELL_REVEAL_MS);
   }

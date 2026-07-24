@@ -255,6 +255,7 @@ function inventoryCardFaceHTML(card, lazy = false) {
   return `
     ${cardArtHTML(card, lazy)}
     ${cardCostHTML(card)}
+    ${specialAbilityBadgeHTML(card)}
     <div class="card-badges">${keywordBadgesHTML(card)}</div>
     <div class="card-footer">
       ${

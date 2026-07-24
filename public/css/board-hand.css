@@ -52,6 +52,30 @@
 
 #screen-game .hand-card:first-child { margin-left: 0; }
 
+#screen-game .hand-card.rarity-common {
+  border-color: var(--line);
+}
+
+#screen-game .hand-card.rarity-rare {
+  border-color: var(--mana);
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.54), 0 0 10px rgba(79, 195, 232, 0.35), inset 0 0 0 1px rgba(255, 226, 168, 0.11);
+}
+
+#screen-game .hand-card.rarity-legendary {
+  border-color: #ffa700;
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.54), 0 0 16px rgba(255, 167, 0, 0.82), 0 0 7px rgba(255, 222, 122, 0.46) inset;
+}
+
+#screen-game .hand-card.rarity-mythic {
+  border-color: #df1500;
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.54), 0 0 20px rgba(255, 24, 0, 0.82), 0 0 8px rgba(255, 73, 40, 0.5) inset;
+}
+
+#screen-game .hand-card.rarity-souvenir {
+  border-color: var(--souvenir);
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.54), 0 0 16px rgba(247, 215, 123, 0.5), 0 0 7px rgba(255, 247, 202, 0.28) inset;
+}
+
 #screen-game .hand-card:hover {
   transform: translateY(calc(var(--hand-rest-y) - 28px)) rotate(var(--hand-angle)) scale(1.08);
   z-index: 40;
@@ -78,13 +102,22 @@
   backface-visibility: hidden;
 }
 
+#screen-game .hand-card .special-ability-badge {
+  bottom: -10px;
+  z-index: 35;
+  transform: translateX(-50%) translateZ(24px);
+  backface-visibility: hidden;
+}
+
 #screen-game .hand-card .card-badges {
-  top: 27px;
-  left: -6px;
-  width: 25px;
+  top: -6px;
+  left: 50%;
+  width: auto;
+  max-width: calc(100% - 28px);
   align-items: center;
+  justify-content: center;
   z-index: 20;
-  transform: translateZ(12px);
+  transform: translateX(-50%) translateZ(12px);
   backface-visibility: hidden;
 }
 
@@ -110,7 +143,8 @@
   #screen-game .hand-area { width: min(62vw, 530px); min-height: 92px; margin-bottom: 10px; padding: 4px 9px 0; }
   #screen-game .hand-card { width: clamp(62px, 10vw, 88px); margin-left: clamp(-25px, -2.7vw, -11px); }
   #screen-game .hand-card .card-cost { width: 21px; height: 23px; top: -6px; left: -6px; font-size: 10px; }
-  #screen-game .hand-card .card-badges { top: 20px; left: -5px; width: 18px; }
+  #screen-game .hand-card .card-badges { top: -6px; left: 50%; max-width: calc(100% - 28px); }
+  #screen-game .hand-card .special-ability-badge { bottom: -10px; }
   #screen-game .hand-card .card-footer { min-height: 19px; padding: 3px 15px 3px; }
   #screen-game .hand-card .card-stat { width: 18px; height: 18px; bottom: -6px; font-size: 10px; }
   #screen-game .hand-card .card-stat.atk,
@@ -122,7 +156,8 @@
   #screen-game .hand-area { width: min(100%, 430px); min-height: 118px; margin-bottom: 4px; padding: 5px 8px 0; }
   #screen-game .hand-card { width: clamp(76px, 21vw, 102px); margin-left: clamp(-31px, -7.2vw, -17px); }
   #screen-game .hand-card .card-cost { width: 25px; height: 27px; top: -7px; left: -7px; font-size: 12px; }
-  #screen-game .hand-card .card-badges { top: 24px; left: -5px; width: 22px; }
+  #screen-game .hand-card .card-badges { top: -6px; left: 50%; max-width: calc(100% - 28px); }
+  #screen-game .hand-card .special-ability-badge { bottom: -10px; }
   #screen-game .hand-card .card-footer { min-height: 21px; padding: 3px 17px 3px; }
   #screen-game .hand-card .card-stat { width: 20px; height: 20px; bottom: -6px; font-size: 12px; }
   #screen-game .hand-card .card-stat.atk,
