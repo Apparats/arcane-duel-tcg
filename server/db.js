@@ -295,8 +295,8 @@ const DAILY_REWARD_LIMITS = {
 };
 
 const MATCH_REWARDS = {
-  singleplayer: { win: 10, loss: 1 },
-  multiplayer: { win: 10, loss: 4 },
+  singleplayer: { win: 10, loss: 5 },
+  multiplayer: { win: 10, loss: 5 },
 };
 
 const SURRENDER_GOLD_PENALTY = 10;

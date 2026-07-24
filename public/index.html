@@ -13,22 +13,22 @@
 <link rel="apple-touch-icon" href="pwa-icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css?v=1.6.3-v1" />
-  <link rel="stylesheet" href="css/menu.css?v=1.6.3-v1" />
-<link rel="stylesheet" href="css/account-profile.css?v=1.6.3-v1" />
-<link rel="stylesheet" href="css/lobby.css?v=1.6.3-v1" />
-<link rel="stylesheet" href="css/board.css?v=1.6.3-v1" />
-<link rel="stylesheet" href="css/cards.css?v=1.6.3-v1" />
-<link rel="stylesheet" href="css/board-arena.css?v=1.6.3-v1" />
-<link rel="stylesheet" href="css/board-hand.css?v=1.6.3-v1" />
-<link rel="stylesheet" href="css/inventory.css?v=1.6.3-v1" />
-<link rel="stylesheet" href="css/deck-builder.css?v=1.6.3-v1" />
-<link rel="stylesheet" href="css/shop.css?v=1.6.3-v1" />
-<link rel="stylesheet" href="css/trade.css?v=1.6.3-v1" />
-<link rel="stylesheet" href="css/pack-opening.css?v=1.6.3-v1" />
-<link rel="stylesheet" href="css/fx.css?v=1.6.3-v1" />
-<link rel="stylesheet" href="css/board-effects.css?v=1.6.3-v1" />
-<link rel="stylesheet" href="css/overlay.css?v=1.6.3-v1" />
+<link rel="stylesheet" href="css/base.css?v=1.6.3-v2" />
+  <link rel="stylesheet" href="css/menu.css?v=1.6.3-v2" />
+<link rel="stylesheet" href="css/account-profile.css?v=1.6.3-v2" />
+<link rel="stylesheet" href="css/lobby.css?v=1.6.3-v2" />
+<link rel="stylesheet" href="css/board.css?v=1.6.3-v2" />
+<link rel="stylesheet" href="css/cards.css?v=1.6.3-v2" />
+<link rel="stylesheet" href="css/board-arena.css?v=1.6.3-v2" />
+<link rel="stylesheet" href="css/board-hand.css?v=1.6.3-v2" />
+<link rel="stylesheet" href="css/inventory.css?v=1.6.3-v2" />
+<link rel="stylesheet" href="css/deck-builder.css?v=1.6.3-v2" />
+<link rel="stylesheet" href="css/shop.css?v=1.6.3-v2" />
+<link rel="stylesheet" href="css/trade.css?v=1.6.3-v2" />
+<link rel="stylesheet" href="css/pack-opening.css?v=1.6.3-v2" />
+<link rel="stylesheet" href="css/fx.css?v=1.6.3-v2" />
+<link rel="stylesheet" href="css/board-effects.css?v=1.6.3-v2" />
+<link rel="stylesheet" href="css/overlay.css?v=1.6.3-v2" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -1014,6 +1014,7 @@
         <p class="changelog-entry-intro">Deckbuilding is bigger, more cards have distinctive effects, and the match UI is clearer across desktop and mobile.</p>
         <ul class="changelog-list">
           <li>Decks now use 25 cards. New accounts start with 25 cards, and existing saved decks are expanded with owned cards while keeping deck rules valid.</li>
+          <li>Deck copy rules are clearer: Common, Rare, and Souvenir cards allow up to 2 copies, Legendary cards allow 1 copy each with 3 total per deck, and Mythic cards allow 1 total per deck.</li>
           <li>Matches now begin with a Mulligan phase, giving players a chance to keep their opening hand or replace selected cards before the first turn.</li>
           <li>The opening hand replacement screen now fits cards more reliably on small screens and keeps replacement cards visible before returning to the match.</li>
           <li>Turn actions are now compact square icon buttons. End Turn sits in the left action slot, turns green when available, and stays muted when it cannot be used.</li>
@@ -1025,6 +1026,7 @@
           <li>Warerita, V de Vendetta, SzczwanyLisek, Rin, Oil Bert, Mr Labubu, and Meow4glory now have updated abilities and clearer descriptions.</li>
           <li>Cardinal Severin, Chiorico, Jacque De Balsac, and Toy now apply their start-of-turn effects only once, matching their updated Legendary identity.</li>
           <li>Rarity balance has been updated across the roster, including new Legendary placements for Fanex, Mamaluteo, Athena, Babu, Overseer, GoldenWarerita, Humph, Zugzwang, and more.</li>
+          <li>Singleplayer losses now award 5 gold, matching multiplayer losses, while surrendering in singleplayer still gives no gold.</li>
           <li>Several cards moved into Common and Rare tiers to make collection growth smoother and pack openings more useful across more decks.</li>
         </ul>
       </article>
@@ -1337,7 +1339,7 @@
 
         <section>
           <h3>Build a Deck</h3>
-          <p>Every deck has exactly 25 cards. Common and Rare cards allow up to 2 copies of the same card. Legendary and Mythic cards allow 1 copy each; a deck can contain up to 3 Legendary cards and 1 Mythic card in total.</p>
+          <p>Every deck has exactly 25 cards. Common, Rare, and Souvenir cards allow up to 2 copies of the same card. Legendary cards allow 1 copy each and up to 3 total per deck. Mythic cards allow 1 copy total per deck.</p>
         </section>
 
         <section>
@@ -1481,25 +1483,25 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.6.3-v1"></script>
-  <script src="deckRules.js?v=1.6.3-v1"></script>
-  <script src="engine.js?v=1.6.3-v1"></script>
-  <script src="ai.js?v=1.6.3-v1"></script>
-  <script src="audioConfig.js?v=1.6.3-v1"></script>
-  <script src="audioManager.js?v=1.6.3-v1"></script>
-  <script src="packOpening.js?v=1.6.3-v1"></script>
-<script src="legalNotices.js?v=1.6.3-v1"></script>
-<script src="profileCatalog.js?v=1.6.3-v1"></script>
-<script src="profileBadges.js?v=1.6.3-v1"></script>
-<script src="accountProfile.js?v=1.6.3-v1"></script>
-<script src="client.js?v=1.6.3-v1"></script>
-<script src="shieldChallenge.js?v=1.6.3-v1"></script>
-<script src="boardInteractions.js?v=1.6.3-v1"></script>
-<script src="inventory.js?v=1.6.3-v1"></script>
-<script src="deckBuilder.js?v=1.6.3-v1"></script>
-<script src="shop.js?v=1.6.3-v1"></script>
-<script src="trade.js?v=1.6.3-v1"></script>
-<script src="tournaments.js?v=1.6.3-v1"></script>
-<script src="pwa.js?v=1.6.3-v1"></script>
+  <script src="cards.js?v=1.6.3-v2"></script>
+  <script src="deckRules.js?v=1.6.3-v2"></script>
+  <script src="engine.js?v=1.6.3-v2"></script>
+  <script src="ai.js?v=1.6.3-v2"></script>
+  <script src="audioConfig.js?v=1.6.3-v2"></script>
+  <script src="audioManager.js?v=1.6.3-v2"></script>
+  <script src="packOpening.js?v=1.6.3-v2"></script>
+<script src="legalNotices.js?v=1.6.3-v2"></script>
+<script src="profileCatalog.js?v=1.6.3-v2"></script>
+<script src="profileBadges.js?v=1.6.3-v2"></script>
+<script src="accountProfile.js?v=1.6.3-v2"></script>
+<script src="client.js?v=1.6.3-v2"></script>
+<script src="shieldChallenge.js?v=1.6.3-v2"></script>
+<script src="boardInteractions.js?v=1.6.3-v2"></script>
+<script src="inventory.js?v=1.6.3-v2"></script>
+<script src="deckBuilder.js?v=1.6.3-v2"></script>
+<script src="shop.js?v=1.6.3-v2"></script>
+<script src="trade.js?v=1.6.3-v2"></script>
+<script src="tournaments.js?v=1.6.3-v2"></script>
+<script src="pwa.js?v=1.6.3-v2"></script>
 </body>
 </html>

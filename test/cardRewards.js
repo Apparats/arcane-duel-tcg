@@ -61,8 +61,8 @@ function main() {
   try {
     const souvenirCollection = { cardCollection: { [souvenirFixture.id]: DECK_SIZE }, unlockedCards: [souvenirFixture.id] };
     const souvenirDeck = Array.from({ length: DECK_SIZE }, () => souvenirFixture.id);
-    assert(validateDeck(souvenirDeck, souvenirCollection).ok, "Souvenir cards should allow a full deck of copies.");
-    assert(buildAutoDeck(souvenirCollection).every((cardId) => cardId === souvenirFixture.id), "Auto deck should allow all owned Souvenir copies.");
+    assert(!validateDeck(souvenirDeck, souvenirCollection).ok, "Souvenir cards should not allow more than two copies.");
+    assert(buildAutoDeck(souvenirCollection).filter((cardId) => cardId === souvenirFixture.id).length === 2, "Auto deck should use at most two Souvenir copies.");
   } finally {
     CARDS.pop();
   }

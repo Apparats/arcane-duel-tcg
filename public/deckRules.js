@@ -19,7 +19,7 @@
     rare: 2,
     legendary: 1,
     mythic: 1,
-    souvenir: DECK_SIZE,
+    souvenir: 2,
   };
 
   function cardCopyLimit(rarity) {
@@ -154,7 +154,7 @@
       );
     }
 
-    const maxCopies = Math.max(0, ...candidates.map((entry) => Math.min(entry.owned, CARD_COPY_LIMITS[entry.card.rarity || "common"] || 2)));
+    const maxCopies = Math.max(0, ...candidates.map((entry) => Math.min(entry.owned, cardCopyLimit(entry.card.rarity))));
     for (let copyNumber = 1; copyNumber <= maxCopies && deck.length < DECK_SIZE; copyNumber += 1) {
       candidates.forEach((entry) => {
         if (deck.length >= DECK_SIZE || !canAdd(entry) || (counts[entry.card.id] || 0) >= copyNumber) return;
