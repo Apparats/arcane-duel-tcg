@@ -26,9 +26,10 @@ const CAMPAIGN_DEFINITIONS = Object.freeze([{
   npc: {
     name: "The Protector",
     avatarUrl: "art/Protector.webp",
-    health: 32,
+    health: 30,
     mana: { starting: 2, cap: 10 },
     deck: [...THE_GATES_MYTHICS, ...PROTECTOR_BASE_COMMONS],
+    uniqueMythicPlays: true,
     boardRules: { maxMinions: 4 },
   },
 }, {
@@ -62,27 +63,56 @@ const CAMPAIGN_DEFINITIONS = Object.freeze([{
     boardRules: { maxMinions: 4 },
   },
 }]);
-const encounters = new Map(CAMPAIGN_DEFINITIONS.map((definition) => {
-  const encounter = normalizeCampaignEncounter(definition);
-  return [encounter.id, encounter];
-}));
+const campaignEncounters = CAMPAIGN_DEFINITIONS.map((definition) => normalizeCampaignEncounter(definition));
+const encounters = new Map(campaignEncounters.map((encounter) => [encounter.id, encounter]));
+
+function campaignWins(progress, campaignId) {
+  return Math.max(0, Number(progress?.[campaignId]?.wins) || 0);
+}
+
+function campaignProgressionAccess(id, progress = {}) {
+  const index = campaignEncounters.findIndex((encounter) => encounter.id === id);
+  if (index < 0) return { unlocked: false, previousCampaign: null, reason: "Campaign not found." };
+  if (index === 0) return { unlocked: true, previousCampaign: null, reason: "" };
+
+  const previousCampaign = campaignEncounters[index - 1];
+  if (campaignWins(progress, previousCampaign.id) > 0) {
+    return { unlocked: true, previousCampaign, reason: "" };
+  }
+
+  return {
+    unlocked: false,
+    previousCampaign,
+    reason: `Complete ${previousCampaign.name} before challenging this stage.`,
+  };
+}
 
 function getCampaignEncounter(id) {
   return encounters.get(id) || null;
 }
 
-function listCampaignEncounters() {
-  return [...encounters.values()].map((encounter) => ({
-    id: encounter.id,
-    name: encounter.name,
-    lore: encounter.lore,
-    available: encounter.available,
-    npcName: encounter.npc.name,
-    rewardCardIds: encounter.rewards.cards,
-    rewardCount: encounter.rewards.count,
-    rewardGold: encounter.rewards.gold,
-    rewardGoldOnce: encounter.rewards.goldOnce,
-  }));
+function listCampaignEncounters(progress = {}) {
+  return campaignEncounters.map((encounter) => {
+    const access = campaignProgressionAccess(encounter.id, progress);
+    const locked = encounter.available && !access.unlocked;
+    return {
+      id: encounter.id,
+      name: encounter.name,
+      lore: encounter.lore,
+      available: encounter.available,
+      unlocked: encounter.available && access.unlocked,
+      locked,
+      lockReason: locked ? access.reason : "",
+      previousCampaignId: access.previousCampaign?.id || null,
+      previousCampaignName: access.previousCampaign?.name || null,
+      wins: campaignWins(progress, encounter.id),
+      npcName: encounter.npc.name,
+      rewardCardIds: encounter.rewards.cards,
+      rewardCount: encounter.rewards.count,
+      rewardGold: encounter.rewards.gold,
+      rewardGoldOnce: encounter.rewards.goldOnce,
+    };
+  });
 }
 
-module.exports = { createCampaignMatch, getCampaignEncounter, listCampaignEncounters, normalizeCampaignEncounter };
+module.exports = { createCampaignMatch, campaignProgressionAccess, getCampaignEncounter, listCampaignEncounters, normalizeCampaignEncounter };

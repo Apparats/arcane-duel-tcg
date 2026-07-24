@@ -8,6 +8,9 @@ module.exports = {
   race: "Human",
   rarity: "souvenir",
   country: "Arcana",
-  lore: "Batata.",
+  lore: "On play, draw 2 random cards from your deck.",
   image: "art/Vatou.webp",
+  abilities: [
+    { trigger: "onPlay", effect: "drawRandomDeckCards", value: 2 },
+  ],
 };

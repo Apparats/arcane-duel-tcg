@@ -7,7 +7,7 @@
 })(typeof self !== "undefined" ? self : this, function (CardsModule) {
   const { CARDS, getCardById, buildStarterDeck } = CardsModule;
 
-  const DECK_SIZE = 20;
+  const DECK_SIZE = 25;
   const MAX_BOARD = 4;
   const MAX_SPELLS = 3;
   const RARITY_TOTAL_LIMITS = {

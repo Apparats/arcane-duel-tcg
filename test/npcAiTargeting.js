@@ -53,6 +53,21 @@ async function main() {
 }
 
 {
+  const game = new Game("NPC_UNIQUE_MYTHIC", "Player", "The Protector", {
+    decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
+    playerConfigs: [{}, { uniqueMythicPlays: true }],
+  });
+  game.turn = 1;
+  game.players[1].hand = ["base:lolflame2", "base:aleex"];
+  game.players[1].playedCounts["base:lolflame2"] = 1;
+  game.players[1].manaCurrent = 10;
+  game.players[1].manaMax = 10;
+  const play = chooseNpcPlayable(game);
+  assert(play, "The Protector should still choose a valid non-Mythic play.");
+  assert.strictEqual(play.card.id, "base:aleex", "The Protector should skip a Mythic it already played.");
+}
+
+{
   const game = new Game("NPC_MULTI_PLAY", "Player", "NPC", {
     decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
   });

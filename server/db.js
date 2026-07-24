@@ -14,6 +14,7 @@ const { getCardById } = require("../public/cards");
 const { assertMongoKeySegment, assertPositiveInteger, sanitizeDiscordProfile, toObjectId } = require("./mongoSafety");
 const { withUserLock, withUserLocks } = require("./userLocks");
 const { getProgress } = require("../public/profileCatalog");
+const { migrateDecksToCurrentSize } = require("./deckMigration");
 
 let client = null;
 let db = null;
@@ -67,6 +68,11 @@ async function connectDB() {
       db.collection("tournaments").createIndex({ status: 1, updatedAt: -1 }),
       tournamentRewards.createIndex({ tournamentId: 1, place: 1 }, { unique: true }),
     ]);
+
+    const deckMigration = await migrateDecksToCurrentSize(db);
+    if (deckMigration.migratedDecks > 0) {
+      console.log(`Deck size migration updated ${deckMigration.migratedDecks} deck(s) for ${deckMigration.migratedUsers} user(s).`);
+    }
 
     console.log("MongoDB connected.");
     return db;

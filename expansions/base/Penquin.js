@@ -6,7 +6,7 @@ module.exports = {
   health: 6,
   keywords: [],
   race: "Monster",
-  rarity: "legendary",
+  rarity: "rare",
   country: "New Zealand",
   lore: "This card deals +2 damage to Human cards.",
   image: "art/Penquin.webp",

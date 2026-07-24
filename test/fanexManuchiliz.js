@@ -53,7 +53,7 @@ function main() {
   assert(stolenMinion.health === 2 && stolenMinion.statuses[0]?.type === "marked", "Fanex should preserve the stolen minion state.");
   assert(!fanexGame.players[1].board.some((card) => card.instanceId === "enemy-babu"), "Fanex should remove the stolen minion from the enemy board.");
   assert(fanexGame.players[1].board.some((card) => card.instanceId === "enemy-humph"), "Fanex should only steal one random enemy board minion.");
-  assert(getCardById("expansion1:fanex").rarity === "mythic", "Fanex should be Mythic.");
+  assert(getCardById("expansion1:fanex").rarity === "legendary", "Fanex should be Legendary.");
 
   const fullBoardGame = new Game("ABILITY", "Player", "Opponent", {
     decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],

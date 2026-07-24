@@ -6,7 +6,7 @@ module.exports = {
   health: 10,
   keywords: [],
   race: "Human",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Ireland",
   lore: "When this card dies, return every remaining minion on both boards to its owner's deck.",
   image: "art/Humph.webp",

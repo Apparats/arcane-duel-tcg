@@ -6,7 +6,7 @@ module.exports = {
   health: 3,
   keywords: [],
   race: "Monster",
-  rarity: "rare",
+  rarity: "common",
   country: "Finland",
   lore: "Kwak.",
   image: "art/Ancalego.webp",

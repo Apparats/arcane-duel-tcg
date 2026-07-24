@@ -7,7 +7,7 @@ module.exports = {
   health: 10,
   keywords: [],
   race: "Monster",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Belgium",
   lore: "Empress of Fire and Flame. Whenever this attacks a minion or hero, it applies Burning.",
   image: "art/Aslani2.webp",

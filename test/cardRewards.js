@@ -1,6 +1,6 @@
-const { buildPackOpening, buildStarterOpening, summarizeOpening, PACK_RARITY_WEIGHTS } = require("../server/cardRewards");
+const { buildPackOpening, buildStarterOpening, summarizeOpening, PACK_RARITY_WEIGHTS, STARTER_CARD_COUNT } = require("../server/cardRewards");
 const { getStarterCardPool } = require("../server/shopCatalog");
-const { buildAutoDeck, validateDeck } = require("../public/deckRules");
+const { DECK_SIZE, buildAutoDeck, validateDeck } = require("../public/deckRules");
 const { CARDS } = require("../public/cards");
 
 function assert(condition, message) {
@@ -23,7 +23,7 @@ function main() {
   for (let run = 0; run < 100; run += 1) {
     const starter = buildStarterOpening(pool);
     const counts = rarityCounts(starter);
-    assert(starter.length === 20, "Starter opening must contain 20 cards.");
+    assert(starter.length === STARTER_CARD_COUNT, `Starter opening must contain ${STARTER_CARD_COUNT} cards.`);
     assert(counts.mythic === 1, "Starter opening must contain exactly one mythic.");
     assert((counts.legendary || 0) <= 3, "Starter opening must stay within the legendary deck limit.");
 
@@ -59,8 +59,8 @@ function main() {
   };
   CARDS.push(souvenirFixture);
   try {
-    const souvenirCollection = { cardCollection: { [souvenirFixture.id]: 20 }, unlockedCards: [souvenirFixture.id] };
-    const souvenirDeck = Array.from({ length: 20 }, () => souvenirFixture.id);
+    const souvenirCollection = { cardCollection: { [souvenirFixture.id]: DECK_SIZE }, unlockedCards: [souvenirFixture.id] };
+    const souvenirDeck = Array.from({ length: DECK_SIZE }, () => souvenirFixture.id);
     assert(validateDeck(souvenirDeck, souvenirCollection).ok, "Souvenir cards should allow a full deck of copies.");
     assert(buildAutoDeck(souvenirCollection).every((cardId) => cardId === souvenirFixture.id), "Auto deck should allow all owned Souvenir copies.");
   } finally {

@@ -73,6 +73,70 @@ function fillSelect(selectEl, values) {
   });
 }
 
+function normalizeKeywordSearchText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_:-]+/g, " ")
+    .toLowerCase()
+    .trim();
+}
+
+function cardKeywordSearchText(card) {
+  const keywords = Array.isArray(card.keywords) ? card.keywords : [];
+  const abilities = Array.isArray(card.abilities) ? card.abilities : [];
+  const terms = [
+    card.id,
+    card.name,
+    card.type,
+    card.type === "spell" ? "spell magic" : "minion creature",
+    card.rarity,
+    RARITY_LABEL?.[card.rarity],
+    card.country,
+    card.race,
+    getCardExpansionId(card),
+    card.lore,
+    `${card.cost} mana`,
+    `cost ${card.cost}`,
+  ];
+
+  if (card.type === "minion") {
+    terms.push(`${card.attack} attack`, `atk ${card.attack}`, `${card.health} health`, `hp ${card.health}`);
+  }
+
+  if (keywords.length === 0) terms.push("normal no keyword");
+  keywords.forEach((keyword) => {
+    terms.push(keyword, KEYWORD_FULL_LABEL?.[keyword]);
+  });
+
+  abilities.forEach((ability) => {
+    terms.push(
+      ability.trigger,
+      ability.effect,
+      ability.status,
+      ability.target,
+      ability.race,
+      ability.cardId,
+      ability.firstDeathOnly ? "first death only" : "",
+      ability.firstPlayOnly ? "first play only" : ""
+    );
+  });
+
+  return normalizeKeywordSearchText(terms.filter(Boolean).join(" "));
+}
+
+function cardMatchesKeywordSearch(card, rawQuery) {
+  const query = normalizeKeywordSearchText(rawQuery);
+  if (!query) return true;
+  const haystack = cardKeywordSearchText(card);
+  return query
+    .split(/[,/;]+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .some((part) => part.split(/\s+/).every((word) => haystack.includes(word)));
+}
+
 async function populateInventoryFilters() {
   if (inventoryFiltersReady) return;
   const cards = getInventoryCards();
@@ -104,7 +168,7 @@ function cardMatchesFilters(card, filters) {
   // expansion remains compatible with older callers and means "All".
   const expansion = filters.expansion ?? "all";
   const name = String(filters.name || "").trim().toLowerCase();
-  if (name && !String(card.name || "").toLowerCase().includes(name)) return false;
+  if (name && !cardMatchesKeywordSearch(card, name)) return false;
   if (filters.type && filters.type !== "all" && card.type !== filters.type) return false;
   if (filters.rarity !== "all" && card.rarity !== filters.rarity) return false;
   if (filters.country !== "all" && card.country !== filters.country) return false;
@@ -243,6 +307,7 @@ function renderInventoryGrid() {
       if (!unlocked) return showToast("Unlock this card from packs.");
       openCardZoom(card);
     });
+    if (unlocked) attachCardTooltip(el, card);
     shell.appendChild(el);
     grid.appendChild(shell);
   });

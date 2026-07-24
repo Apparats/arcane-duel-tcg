@@ -6,7 +6,7 @@ module.exports = {
   health: 6,
   keywords: [],
   race: "Human",
-  rarity: "legendary",
+  rarity: "rare",
   country: "Romania",
   lore: "jocu asta mi-a mancat toti nervii. This card deals +2 damage to monsters.",
   image: "art/Radu.webp",

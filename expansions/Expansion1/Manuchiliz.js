@@ -6,7 +6,7 @@ module.exports = {
   health: 10,
   keywords: [],
   race: "Monster",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Argentina",
   lore: "Its arrival makes 4 of damage to all cards on the board, ally and enemy alike.",
   image: "art/Manuchiliz.webp",

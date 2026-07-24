@@ -24,7 +24,7 @@ const { discardActiveSingleplayerMatch } = require("./singleplayerMatchService")
 const { clearTurnTimer, ensureTurnTimer, turnKey } = require("./turnTimerService");
 const { cleanupExpiredWsTickets, consumeWsTicket } = require("./wsTicketService");
 const { secureRandomCode, secureRandomInt } = require("./random");
-const { createCampaignMatch, getCampaignEncounter, listCampaignEncounters } = require("./campaigns");
+const { createCampaignMatch, campaignProgressionAccess, getCampaignEncounter, listCampaignEncounters } = require("./campaigns");
 const { createShieldChallenge, recordShieldInput, resolveShieldChallenge, scaleShieldChallenge } = require("./campaigns/shieldChallenge");
 const { chooseNpcAttack, chooseNpcPlayable } = require("./npcAi");
 
@@ -55,6 +55,8 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const NPC_STEP_DELAY_MS = 1200;
 const SPELL_REVEAL_MS = 800;
 const MATCH_INTRO_DURATION_MS = 4200;
+const MULLIGAN_DURATION_MS = 25_000;
+const MULLIGAN_START_GRACE_MS = 750;
 const EMOTE_COOLDOWN_MS = 1_500;
 const ALLOWED_EMOTES = new Set(["😄", "😭", "😯", "😡", "🫄", "💀"]);
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
@@ -114,7 +116,7 @@ app.get("/campaigns", createRateLimiter({ max: 30, keyPrefix: "campaigns" }), as
   if (!user) return res.status(401).json({ error: "Login with Discord is required." });
   const progress = await getCampaignProgress(user.id);
   res.json({
-    campaigns: listCampaignEncounters().map((campaign) => ({
+    campaigns: listCampaignEncounters(progress).map((campaign) => ({
       ...campaign,
       cardDrops: progress[campaign.id]?.cardDrops || {},
       goldRewardClaimed: progress[campaign.id]?.goldRewardClaimed === true,
@@ -366,6 +368,68 @@ function broadcastState(room) {
   });
 }
 
+function publicMulliganState(room, viewerIdx) {
+  const mulligan = room.mulligan;
+  if (!mulligan?.active) return null;
+  const opponentIdx = viewerIdx === 0 ? 1 : 0;
+  return {
+    active: true,
+    startsAt: mulligan.startsAt,
+    deadline: mulligan.deadline,
+    remainingMs: Math.max(0, mulligan.deadline - Date.now()),
+    confirmed: mulligan.confirmed[viewerIdx] === true,
+    opponentConfirmed: mulligan.confirmed[opponentIdx] === true,
+  };
+}
+
+function finishMulligan(room) {
+  const mulligan = room.mulligan;
+  if (!mulligan?.active) return;
+  clearTimeout(mulligan.timer);
+  clearTimeout(mulligan.startTimer);
+  room.mulligan = null;
+  broadcastState(room);
+}
+
+function clearMulligan(room) {
+  if (room.mulligan?.timer) clearTimeout(room.mulligan.timer);
+  if (room.mulligan?.startTimer) clearTimeout(room.mulligan.startTimer);
+  room.mulligan = null;
+}
+
+function startMulligan(room, { players = [0, 1] } = {}) {
+  const requiredPlayers = new Set(players);
+  const startsAt = Math.max(Date.now(), room.introEndsAt || Date.now());
+  const deadline = startsAt + MULLIGAN_DURATION_MS;
+  room.mulligan = {
+    active: true,
+    startsAt,
+    deadline,
+    confirmed: [!requiredPlayers.has(0), !requiredPlayers.has(1)],
+    timer: null,
+    startTimer: null,
+  };
+  room.mulligan.startTimer = setTimeout(() => {
+    if (room.mulligan?.active) broadcastState(room);
+  }, Math.max(0, startsAt - Date.now()));
+  room.mulligan.timer = setTimeout(() => finishMulligan(room), Math.max(0, deadline - Date.now()));
+  room.mulligan.startTimer.unref?.();
+  room.mulligan.timer.unref?.();
+}
+
+function confirmMulligan(room, playerIdx, handIndexes = []) {
+  const mulligan = room.mulligan;
+  if (!mulligan?.active) throw new Error("Opening replacement is no longer available.");
+  if (Date.now() + MULLIGAN_START_GRACE_MS < mulligan.startsAt) {
+    throw new Error("Opening replacement has not started yet.");
+  }
+  if (mulligan.confirmed[playerIdx]) return;
+  room.game.replaceOpeningHandCards(playerIdx, handIndexes);
+  mulligan.confirmed[playerIdx] = true;
+  if (mulligan.confirmed.every(Boolean)) finishMulligan(room);
+  else broadcastState(room);
+}
+
 function broadcastSpellCast(room, playerIdx, card) {
   room.sockets.forEach((ws, viewerIdx) => {
     if (ws) send(ws, "spellCast", { cardId: card.id, isSelf: viewerIdx === playerIdx });
@@ -392,7 +456,7 @@ async function playCardWithReveal(room, playerIdx, handIndex, targetInstanceId) 
 }
 
 function shouldRunTurnTimer(room) {
-  return (!isNpcMatch(room) || room.game.turn === 0) && !room.reconnects?.some(Boolean);
+  return !room.mulligan?.active && (!isNpcMatch(room) || room.game.turn === 0) && !room.reconnects?.some(Boolean);
 }
 
 function isNpcMatch(room) {
@@ -441,6 +505,7 @@ function addPlayerVisuals(state, room, viewerIdx) {
     turnDeadline: room.turnTimer?.deadline || null,
     turnDurationMs: room.turnTimer?.durationMs || null,
     matchIntroRemainingMs: Math.max(0, (room.introEndsAt || 0) - Date.now()),
+    mulligan: publicMulliganState(room, viewerIdx),
     me: {
       ...state.me,
       avatarUrl: room.avatars?.[viewerIdx] || null,
@@ -522,6 +587,17 @@ function requireIntent(type, payload) {
   if (type === "attack") {
     if (!isInstanceId(data.attackerInstanceId)) throw new Error("Invalid attacker.");
     if (!isTargetId(data.targetInstanceId, ["face"])) throw new Error("Invalid target.");
+    return;
+  }
+
+  if (type === "replaceOpeningHand") {
+    const indexes = Array.isArray(data.handIndexes) ? data.handIndexes : [];
+    if (indexes.length > 10) throw new Error("Invalid replacement.");
+    const seen = new Set();
+    indexes.forEach((index) => {
+      if (!Number.isInteger(index) || index < 0 || index >= 10 || seen.has(index)) throw new Error("Invalid replacement.");
+      seen.add(index);
+    });
   }
 }
 
@@ -685,6 +761,7 @@ function cancelDisconnectedMatch(room, disconnectedIdx) {
 
   clearAllReconnectGraces(room);
   clearTurnTimer(room);
+  clearMulligan(room);
   room.sockets.forEach((socket) => {
     if (!socket) return;
     send(socket, "matchCancelled", { message: "Match cancelled because a player did not reconnect within one minute." });
@@ -747,6 +824,7 @@ function detachSocketFromRoom(ws, { notifyOpponent = false } = {}) {
   }
 
   if (room.sockets.every((socket) => socket === null) && !room.reconnects?.some(Boolean)) {
+    clearMulligan(room);
     rooms.delete(ws.roomCode);
   }
 
@@ -802,6 +880,7 @@ async function startMultiplayerMatch(playerA, playerB, { matchType = "quickplay"
     disconnectEvents: [null, null],
   };
 
+  startMulligan(room);
   rooms.set(code, room);
   playerA.ws.roomCode = code;
   playerA.ws.playerIdx = 0;
@@ -1110,7 +1189,7 @@ async function handleMessage(ws, msg) {
     if (singleplayerMatchStarts.has(startKey)) return;
     singleplayerMatchStarts.add(startKey);
     try {
-      discardActiveSingleplayerMatch(rooms, user.id, { clearTurnTimer, clearAllReconnectGraces });
+      discardActiveSingleplayerMatch(rooms, user.id, { clearTurnTimer, clearAllReconnectGraces, clearMulligan });
       assertUserCanStartOrPrepareMatch(user.id);
       detachSocketFromRoom(ws);
       const playerDeck = await getActiveDeckCardIds(user.id);
@@ -1137,6 +1216,7 @@ async function handleMessage(ws, msg) {
         reconnects: [null, null],
         disconnectEvents: [null, null],
       };
+      startMulligan(room, { players: [0] });
       rooms.set(code, room);
       ws.roomCode = code;
       ws.playerIdx = 0;
@@ -1153,7 +1233,12 @@ async function handleMessage(ws, msg) {
     const campaign = getCampaignEncounter(payload?.campaignId);
     if (!campaign) return broadcastError(ws, "Campaign not found.");
     if (!campaign.available) return broadcastError(ws, "This campaign is not available yet.");
-    discardActiveSingleplayerMatch(rooms, user.id, { clearTurnTimer, clearAllReconnectGraces });
+    const campaignProgress = await getCampaignProgress(user.id);
+    const campaignAccess = campaignProgressionAccess(campaign.id, campaignProgress);
+    if (!campaignAccess.unlocked) {
+      return broadcastError(ws, campaignAccess.reason || "Complete the previous campaign stage first.");
+    }
+    discardActiveSingleplayerMatch(rooms, user.id, { clearTurnTimer, clearAllReconnectGraces, clearMulligan });
     assertUserCanStartOrPrepareMatch(user.id);
     detachSocketFromRoom(ws);
     const playerDeck = await getActiveDeckCardIds(user.id);
@@ -1165,6 +1250,7 @@ async function handleMessage(ws, msg) {
       sockets: [ws, null], names: [user.username || "Player", match.npc.name], avatars: [user.avatarUrl || null, match.npc.avatarUrl], userIds: [user.id, null], profiles: [profile, null], introEndsAt: Date.now() + MATCH_INTRO_DURATION_MS,
       mode: "campaign", campaign, rewardGranted: false, surrenderedBy: null, reconnects: [null, null], disconnectEvents: [null, null],
     };
+    startMulligan(room, { players: [0] });
     rooms.set(code, room);
     ws.roomCode = code;
     ws.playerIdx = 0;
@@ -1227,6 +1313,7 @@ async function handleMessage(ws, msg) {
       startingPlayerIdx: secureRandomInt(2),
       grantSecondPlayerManaCard: true,
     });
+    startMulligan(room);
     send(room.sockets[0], "matchStarted", {});
     send(room.sockets[1], "matchStarted", {});
     broadcastState(room);
@@ -1321,9 +1408,21 @@ async function handleMessage(ws, msg) {
   // Everything past this point requires an active match
   const room = rooms.get(ws.roomCode);
   if (!room || !room.game) return broadcastError(ws, "You're not in an active match.");
-  if (room.introEndsAt && Date.now() < room.introEndsAt) return broadcastError(ws, "The duel is about to begin.");
   const game = room.game;
   const idx = ws.playerIdx;
+
+  if (type === "replaceOpeningHand") {
+    try {
+      requireIntent(type, payload);
+      confirmMulligan(room, idx, Array.isArray(payload?.handIndexes) ? payload.handIndexes : []);
+    } catch (err) {
+      broadcastError(ws, err.message || "Opening replacement failed.");
+    }
+    return;
+  }
+
+  if (room.introEndsAt && Date.now() < room.introEndsAt) return broadcastError(ws, "The duel is about to begin.");
+  if (room.mulligan?.active && type !== "surrender") return broadcastError(ws, "Choose your opening hand first.");
 
   if (type === "emote") {
     const emote = typeof payload?.emote === "string" ? payload.emote : "";

@@ -6,7 +6,7 @@ module.exports = {
   health: 6,
   keywords: [],
   race: "Human",
-  rarity: "legendary",
+  rarity: "rare",
   country: "Brazil",
   lore: "Takes no damage from Monster cards.",
   image: "art/Italo179.webp",

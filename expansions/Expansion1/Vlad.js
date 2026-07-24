@@ -6,7 +6,7 @@ module.exports = {
   health: 4,
   keywords: ["charge"],
   race: "Human",
-  rarity: "legendary",
+  rarity: "rare",
   country: "Cyprus",
   lore: "𝕳𝖔𝖓𝖔𝖗𝖆𝖇𝖑𝖊.",
   image: "art/Vlad.webp",

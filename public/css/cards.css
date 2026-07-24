@@ -22,6 +22,8 @@
   background: linear-gradient(160deg, var(--panel-2), var(--panel));
   perspective: 1000px;
   transform-style: preserve-3d;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .card-art {
@@ -32,6 +34,8 @@
   background-position: center;
   transition: transform 0.2s cubic-bezier(0.215, 0.61, 0.355, 1);
   will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 .card-art-placeholder {
   display: flex;
@@ -112,6 +116,23 @@
   background: radial-gradient(circle at 35% 30%, #d6f2fc, var(--mana) 70%);
   color: #04222c;
   box-shadow: 0 0 8px rgba(79, 195, 232, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+.special-ability-badge {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(238, 207, 255, 0.72);
+  background: radial-gradient(circle at 35% 28%, #d18cff 0%, #8547d6 58%, #3d176f 100%);
+  color: #fff3ff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.62), 0 0 8px rgba(148, 80, 214, 0.72), inset 0 1px 1px rgba(255, 255, 255, 0.34);
+}
+.special-ability-icon {
+  width: 11px;
+  height: 11px;
+  display: block;
 }
 
 .status-badge {
@@ -200,10 +221,10 @@
 }
 
 .card-stat.val.spell-effect-damage {
-  border-color: #ff9b91;
-  background: radial-gradient(circle at 33% 22%, #df604f 0%, #bd3638 58%, #6d1e2a 100%);
-  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.58), 0 0 9px rgba(245, 76, 66, 0.5);
-  color: #fff4ed;
+  border-color: #ffe69a;
+  background: radial-gradient(circle at 33% 22%, #f1cf62 0%, #bd811a 58%, #5d3907 100%);
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.58), 0 0 9px rgba(232, 179, 79, 0.5);
+  color: #fff9db;
 }
 
 .card-stat.val.spell-effect-heal {
@@ -322,6 +343,8 @@
   .card-stat.hp { right: -7px; }
   .card-art-icon { font-size: 24px; }
   .keyword-badge { width: 16px; height: 16px; font-size: 8px; }
+  .special-ability-badge { width: 16px; height: 16px; }
+  .special-ability-icon { width: 10px; height: 10px; }
   .status-badge { width: 16px; height: 16px; font-size: 8px; }
   .card-cost { width: 25px; height: 27px; top: -7px; left: -7px; font-size: 12px; }
   .card-badges { top: 28px; left: -3px; width: 22px; }

@@ -215,7 +215,7 @@ async function getActiveDeckCardIds(userId) {
       );
       return cardIds;
     } catch (err) {
-      const safeError = new Error("A valid 20-card deck is required before starting a match.");
+      const safeError = new Error(`A valid ${DECK_SIZE}-card deck is required before starting a match.`);
       safeError.code = "VALID_DECK_REQUIRED";
       throw safeError;
     }

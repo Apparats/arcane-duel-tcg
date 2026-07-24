@@ -29,8 +29,31 @@
     return String(cardRef || "").split("|")[0];
   }
 
+  function statModifiersFromRef(cardRef) {
+    return String(cardRef || "").split("|").slice(1).reduce((mods, segment) => {
+      if (segment.startsWith("attack:")) {
+        const value = Number(segment.slice("attack:".length));
+        if (Number.isInteger(value)) mods.attack = value;
+      }
+      if (segment.startsWith("health:")) {
+        const value = Number(segment.slice("health:".length));
+        if (Number.isInteger(value)) mods.health = value;
+      }
+      return mods;
+    }, { attack: 0, health: 0 });
+  }
+
   function cardFromHandRef(cardRef) {
-    return typeof cardRef === "string" ? getCardById(cardIdFromRef(cardRef)) : cardRef;
+    if (typeof cardRef !== "string") return cardRef;
+    const card = getCardById(cardIdFromRef(cardRef));
+    if (!card) return card;
+    const modifiers = statModifiersFromRef(cardRef);
+    if (!modifiers.attack && !modifiers.health) return card;
+    return {
+      ...card,
+      attack: card.type === "minion" ? Math.max(0, (card.attack || 0) + modifiers.attack) : card.attack,
+      health: card.type === "minion" ? Math.max(1, (card.health || 1) + modifiers.health) : card.health,
+    };
   }
 
   function cardCanTargetEnemyHero(card) {
@@ -52,12 +75,21 @@
     });
   }
 
+  function cardRequiresFriendlyMinionTarget(card) {
+    return (card?.abilities || []).some((ability) =>
+      ability.trigger === "onPlay" &&
+      ability.effect === "cleanseFriendlyMinion" &&
+      ability.target === "friendlyMinion"
+    );
+  }
+
   function cardRequiresPlayTarget(card) {
     if (card?.effect === "damage" || card?.effect === "heal") return true;
     return (card?.abilities || []).some((ability) =>
       ability.trigger === "onPlay" &&
       (
         ability.effect === "returnEnemyMinionToDeck" ||
+        (ability.effect === "cleanseFriendlyMinion" && ability.target === "friendlyMinion") ||
         (ability.effect === "applyStatus" && ["enemyMinion", "enemy", "enemyCharacter", "enemyHero"].includes(ability.target))
       )
     );
@@ -101,8 +133,13 @@
   }
 
   function npcCardTarget(game, card, playerIdx = 1) {
+    const player = game.players[playerIdx];
     const enemy = game.players[opponentIdx(game, playerIdx)];
     const target = strongestMinion(enemy.board || []);
+    if (cardRequiresFriendlyMinionTarget(card)) {
+      const negativeStatuses = new Set(["weakened", "frozen", "silenced", "poisoned", "marked", "burning", "drunk", "confused"]);
+      return (player.board || []).find((minion) => (minion.statuses || []).some((status) => negativeStatuses.has(status.type)))?.instanceId || null;
+    }
     if (cardRequiresEnemyMinionTarget(card)) return target?.instanceId || null;
     if (card?.effect === "damage") return bestDamageTarget(game, playerIdx, card);
     if (card?.effect === "heal") return bestHealTarget(game, playerIdx, card);
@@ -156,6 +193,14 @@
       }
       if (ability.effect === "damageEnemyHero") score += Math.max(1, ability.value || 1) * 2;
       if (ability.effect === "drawCards") score += Math.max(1, ability.value || 1) * 4;
+      if (ability.effect === "drawNonLegendaryNonMythicCard") score += 4;
+      if (ability.effect === "drawRandomDeckCards") score += Math.max(1, ability.value || 1) * 4;
+      if (ability.effect === "cleanseFriendlyMinion") score += target ? 8 : 0;
+      if (ability.effect === "grantChargeToRandomFriendlyNonCharge") score += (player.board || []).some((minion) => !(minion.keywords || []).includes("charge")) ? 6 : 0;
+      if (ability.effect === "gainTemporaryMana") score += Math.max(1, ability.value || 1) * 2;
+      if (ability.effect === "stealHealthFromRandomEnemyHandMinionAsAttack") score += (enemy.hand || []).length > 0 ? 5 : 0;
+      if (ability.effect === "startDelayedSelfBuff") score += ((ability.attack || 0) * 2 + (ability.health || 0)) * 0.5;
+      if (ability.effect === "swapSelfStatsIfBoardHasAtLeast") score += (player.board || []).length >= Math.max(1, ability.value || 1) - 1 ? 10 : 0;
       if (ability.effect === "buffAllFriendlyMinions") score += (player.board || []).length * ((ability.attack || 0) * 2 + (ability.health || 0));
     });
 
@@ -170,15 +215,17 @@
     player.hand.forEach((cardRef, handIndex) => {
       const card = cardFromHandRef(cardRef);
       if (!card || card.cost > player.manaCurrent) return;
+      if (typeof game.getCardPlayError === "function" && game.getCardPlayError(playerIdx, card)) return;
       if (card.type === "minion") {
         if (hasMythicInPlay && card.rarity === "mythic") return;
-        if (typeof game.getBoardLimitError === "function" && game.getBoardLimitError(playerIdx, card)) return;
+        if (typeof game.getCardPlayError !== "function" && typeof game.getBoardLimitError === "function" && game.getBoardLimitError(playerIdx, card)) return;
       } else if (card.type !== "spell") {
         return;
       }
 
       const target = npcCardTarget(game, card, playerIdx);
       if (cardRequiresEnemyMinionTarget(card) && !target) return;
+      if (cardRequiresFriendlyMinionTarget(card) && !target) return;
       if (cardRequiresPlayTarget(card) && target === null && card.type !== "spell" && !cardCanTargetEnemyHero(card)) return;
       if (card.type === "spell" && !hasUsefulSpellTarget(game, playerIdx, card, target)) return;
 
@@ -286,6 +333,7 @@
     npcCardTarget,
     cardCanTargetEnemyHero,
     cardRequiresEnemyMinionTarget,
+    cardRequiresFriendlyMinionTarget,
     cardRequiresPlayTarget,
   };
 });

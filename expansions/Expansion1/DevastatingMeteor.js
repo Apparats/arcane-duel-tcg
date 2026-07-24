@@ -4,7 +4,7 @@ module.exports = {
   type: "spell",
   effect: "damage",
   value: 8,
-  rarity: "legendary",
+  rarity: "rare",
   country: "Arcana",
   lore: "Deal 8 damage to a chosen target.",
   image: "art/DevastatingMeteor.webp",

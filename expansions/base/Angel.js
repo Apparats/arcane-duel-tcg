@@ -8,6 +8,9 @@ module.exports = {
   race: "Monster",
   rarity: "rare",
   country: "South Korea",
-  lore: "Do not be afraid.",
+  lore: "When Angel dies, it has a 30% chance to destroy a random enemy minion.",
   image: "art/Angel.webp",
+  abilities: [
+    { trigger: "onDeath", effect: "destroyRandomEnemyMinionChance", chance: 30 },
+  ],
 };

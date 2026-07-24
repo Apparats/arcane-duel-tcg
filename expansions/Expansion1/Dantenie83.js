@@ -8,6 +8,9 @@ module.exports = {
   race: "Human",
   rarity: "rare",
   country: "Romania",
-  lore: "Meme all or meme none!",
+  lore: "On play, cleanse negative effects from a friendly minion.",
   image: "art/Dantenie83.webp",
+  abilities: [
+    { trigger: "onPlay", effect: "cleanseFriendlyMinion", target: "friendlyMinion" },
+  ],
 };

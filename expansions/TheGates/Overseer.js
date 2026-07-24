@@ -6,7 +6,7 @@ module.exports = {
   health: 6,
   keywords: [],
   race: "Monster",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Oman",
   lore: "On its first death, deal 20 damage to all minions, then return with 1 Health.",
   image: "art/Overseer.webp",

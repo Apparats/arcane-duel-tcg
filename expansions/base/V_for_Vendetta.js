@@ -8,6 +8,9 @@ module.exports = {
   race: "Human",
   rarity: "rare",
   country: "Lithuania",
-  lore: "This card has attack priority above all.",
+  lore: "Taunt. This card is immune to adverse effects.",
   image: "art/V_for_Vendetta.webp",
+  abilities: [
+    { trigger: "passive", effect: "immuneToAdverseEffects" },
+  ],
 };

@@ -6,7 +6,7 @@ module.exports = {
   health: 9,
   keywords: ["taunt"],
   race: "Monster",
-  rarity: "rare",
+  rarity: "common",
   country: "Arcana",
   lore: "Chad is chad.",
   image: "art/Rock.webp",

@@ -13,22 +13,22 @@
 <link rel="apple-touch-icon" href="pwa-icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css?v=1.6.2-v2" />
-  <link rel="stylesheet" href="css/menu.css?v=1.6.2-v2" />
-<link rel="stylesheet" href="css/account-profile.css?v=1.6.2-v2" />
-<link rel="stylesheet" href="css/lobby.css?v=1.6.2-v2" />
-<link rel="stylesheet" href="css/board.css?v=1.6.2-v2" />
-<link rel="stylesheet" href="css/cards.css?v=1.6.2-v2" />
-<link rel="stylesheet" href="css/board-arena.css?v=1.6.2-v2" />
-<link rel="stylesheet" href="css/board-hand.css?v=1.6.2-v2" />
-<link rel="stylesheet" href="css/inventory.css?v=1.6.2-v2" />
-<link rel="stylesheet" href="css/deck-builder.css?v=1.6.2-v2" />
-<link rel="stylesheet" href="css/shop.css?v=1.6.2-v2" />
-<link rel="stylesheet" href="css/trade.css?v=1.6.2-v2" />
-<link rel="stylesheet" href="css/pack-opening.css?v=1.6.2-v2" />
-<link rel="stylesheet" href="css/fx.css?v=1.6.2-v2" />
-<link rel="stylesheet" href="css/board-effects.css?v=1.6.2-v2" />
-<link rel="stylesheet" href="css/overlay.css?v=1.6.2-v2" />
+<link rel="stylesheet" href="css/base.css?v=1.6.3-v1" />
+  <link rel="stylesheet" href="css/menu.css?v=1.6.3-v1" />
+<link rel="stylesheet" href="css/account-profile.css?v=1.6.3-v1" />
+<link rel="stylesheet" href="css/lobby.css?v=1.6.3-v1" />
+<link rel="stylesheet" href="css/board.css?v=1.6.3-v1" />
+<link rel="stylesheet" href="css/cards.css?v=1.6.3-v1" />
+<link rel="stylesheet" href="css/board-arena.css?v=1.6.3-v1" />
+<link rel="stylesheet" href="css/board-hand.css?v=1.6.3-v1" />
+<link rel="stylesheet" href="css/inventory.css?v=1.6.3-v1" />
+<link rel="stylesheet" href="css/deck-builder.css?v=1.6.3-v1" />
+<link rel="stylesheet" href="css/shop.css?v=1.6.3-v1" />
+<link rel="stylesheet" href="css/trade.css?v=1.6.3-v1" />
+<link rel="stylesheet" href="css/pack-opening.css?v=1.6.3-v1" />
+<link rel="stylesheet" href="css/fx.css?v=1.6.3-v1" />
+<link rel="stylesheet" href="css/board-effects.css?v=1.6.3-v1" />
+<link rel="stylesheet" href="css/overlay.css?v=1.6.3-v1" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -357,7 +357,7 @@
           <section class="trade-card-panel">
             <div class="trade-panel-header">
               <div><span class="trade-section-kicker">Your collection</span><h2>Choose your offer</h2></div>
-              <input id="tradeCardSearch" class="text-input trade-card-search" type="search" maxlength="48" autocomplete="off" placeholder="Search card" aria-label="Search cards by name" />
+              <input id="tradeCardSearch" class="text-input trade-card-search" type="search" maxlength="48" autocomplete="off" placeholder="Keyword" aria-label="Search cards by keyword" />
             </div>
             <div id="tradeCardGrid" class="trade-card-grid"></div>
             <nav id="tradeCardPagination" class="trade-card-pagination" aria-label="Trade card pages"></nav>
@@ -455,13 +455,23 @@
           </button>
         </div>
         <div id="campaignStagePanel" class="campaign-stage-panel hidden">
-          <button id="btnCampaignStagesBack" class="btn-link" type="button">Back</button>
-          <div id="campaignStageList" class="campaign-stage-list" role="list"></div>
-          <span id="campaignStageLabel" class="campaign-stage-label">Stage 1</span>
-          <h2 id="campaignStageName">The Gates</h2>
-          <p id="campaignStageLore">Beyond the frozen gates, The Protector awaits.</p>
-          <button id="btnCampaignInfo" class="campaign-info-button" type="button" aria-label="View campaign card progress" title="View card progress">?</button>
-          <button id="btnStartCampaignStage" class="btn btn-primary" type="button">Challenge The Protector</button>
+          <div class="campaign-stage-topbar">
+            <button id="btnCampaignStagesBack" class="btn-link" type="button">Back</button>
+            <span class="campaign-stage-heading">Campaigns</span>
+            <button id="btnCampaignInfo" class="campaign-info-button" type="button" aria-label="View campaign card progress" title="View card progress">?</button>
+          </div>
+          <div class="campaign-stage-layout">
+            <div id="campaignStageList" class="campaign-stage-list" role="list"></div>
+            <section class="campaign-stage-detail" aria-live="polite">
+              <div class="campaign-stage-meta">
+                <span id="campaignStageLabel" class="campaign-stage-label">Stage 1</span>
+                <span id="campaignStageStatus" class="campaign-stage-status">Available</span>
+              </div>
+              <h2 id="campaignStageName">The Gates</h2>
+              <p id="campaignStageLore">Beyond the frozen gates, The Protector awaits.</p>
+              <button id="btnStartCampaignStage" class="btn btn-primary" type="button">Challenge The Protector</button>
+            </section>
+          </div>
         </div>
       </div>
 
@@ -539,8 +549,8 @@
       <div id="inventorySummary" class="inventory-summary"></div>
       <div class="inventory-filters">
         <div class="filter-group">
-          <label for="filterName">Card name</label>
-          <input id="filterName" class="text-input filter-search-input" type="search" maxlength="48" autocomplete="off" placeholder="Search card" />
+          <label for="filterName">Keyword</label>
+          <input id="filterName" class="text-input filter-search-input" type="search" maxlength="48" autocomplete="off" placeholder="Keyword" />
         </div>
         <div class="filter-group">
           <label for="filterRarity">Rarity</label>
@@ -615,8 +625,8 @@
             </div>
             <div class="inventory-filters deck-filters">
               <div class="filter-group">
-                <label for="deckFilterName">Card name</label>
-                <input id="deckFilterName" class="text-input filter-search-input" type="search" maxlength="48" autocomplete="off" placeholder="Search card" />
+                <label for="deckFilterName">Keyword</label>
+                <input id="deckFilterName" class="text-input filter-search-input" type="search" maxlength="48" autocomplete="off" placeholder="Keyword" />
               </div>
               <div class="filter-group">
                 <label for="deckFilterRarity">Rarity</label>
@@ -669,7 +679,7 @@
           <aside class="deck-list-panel">
             <div class="deck-panel-header">
               <h2>Current deck</h2>
-              <span id="deckCount" class="deck-count-pill">0 / 20</span>
+              <span id="deckCount" class="deck-count-pill">0 / 25</span>
             </div>
             <div id="deckList" class="deck-list"></div>
           </aside>
@@ -685,8 +695,8 @@
             </div>
             <div class="inventory-filters deck-filters scraping-filters">
               <div class="filter-group">
-                <label for="scrapingFilterName">Card name</label>
-                <input id="scrapingFilterName" class="text-input filter-search-input" type="search" maxlength="48" autocomplete="off" placeholder="Search card" />
+                <label for="scrapingFilterName">Keyword</label>
+                <input id="scrapingFilterName" class="text-input filter-search-input" type="search" maxlength="48" autocomplete="off" placeholder="Keyword" />
               </div>
               <div class="filter-group">
                 <label for="scrapingFilterRarity">Rarity</label>
@@ -854,8 +864,19 @@
         <div id="gameLog" class="game-log"></div>
 
         <div class="turn-actions">
+          <button id="btnEndTurn" class="btn turn-action-button btn-end-turn" type="button" aria-label="End turn" title="End turn">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M5 6v12"/>
+              <path d="M8 6l9 6-9 6V6Z"/>
+            </svg>
+          </button>
           <div class="emote-control">
-            <button id="btnEmotes" class="btn-emotes" type="button" aria-label="Open emotes" aria-expanded="false">&#x263A;</button>
+            <button id="btnEmotes" class="turn-action-button btn-emotes" type="button" aria-label="Open emotes" title="Emotes" aria-expanded="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M5 11.5A6.5 6.5 0 0 1 11.5 5h1A6.5 6.5 0 0 1 19 11.5v.7a6.5 6.5 0 0 1-6.5 6.5h-1.1l-3.7 2.2a.8.8 0 0 1-1.2-.7v-2.6A6.48 6.48 0 0 1 5 12.2v-.7Z"/>
+                <path d="M9.1 10.4h.01M14.9 10.4h.01M9.4 13.9c1.5 1.4 3.7 1.4 5.2 0"/>
+              </svg>
+            </button>
             <div id="emotePanel" class="emote-panel hidden" role="menu" aria-label="Emotes">
               <button type="button" class="emote-choice" data-emote="&#x1F604;" aria-label="Happy">&#x1F604;</button>
               <button type="button" class="emote-choice" data-emote="&#x1F62D;" aria-label="Crying">&#x1F62D;</button>
@@ -865,8 +886,12 @@
               <button type="button" class="emote-choice" data-emote="&#x1F480;" aria-label="Skull">&#x1F480;</button>
             </div>
           </div>
-          <button id="btnEndTurn" class="btn btn-end-turn">End turn</button>
-          <button id="btnSurrender" class="btn btn-surrender">Surrender</button>
+          <button id="btnSurrender" class="btn turn-action-button btn-surrender" type="button" aria-label="Surrender" title="Surrender">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M6 21V4"/>
+              <path d="M6 5h10l-2 4 2 4H6V5Z"/>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -896,6 +921,23 @@
       <div id="matchIntroOpponent" class="match-intro-contender match-intro-opponent"></div>
       <div class="match-intro-versus" aria-hidden="true"><span>VS</span></div>
       <div id="matchIntroSelf" class="match-intro-contender match-intro-self"></div>
+    </div>
+
+    <div id="mulliganOverlay" class="mulligan-overlay hidden" aria-live="polite">
+      <div class="mulligan-panel">
+        <div class="mulligan-header">
+          <div>
+            <div class="mulligan-kicker" id="mulliganMatchup">Opening hand</div>
+            <h2>Choose your opening hand</h2>
+          </div>
+          <div class="mulligan-timer" id="mulliganTimer">25</div>
+        </div>
+        <div id="mulliganCards" class="mulligan-cards"></div>
+        <div class="mulligan-actions">
+          <div id="mulliganStatus" class="mulligan-status">Click cards to replace them.</div>
+          <button id="btnMulliganReplace" class="btn btn-primary" type="button">Ready</button>
+        </div>
+      </div>
     </div>
 
     <div id="targetHint" class="target-hint hidden">Choose a target (or click the enemy hero) &#x2014; <button id="cancelTarget" class="btn-link">cancel</button></div>
@@ -966,6 +1008,28 @@
       <div class="changelog-content">
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
+          <h3>Version 1.6.3</h3>
+          <span>25-Card Decks, Card Effects &amp; Board Polish</span>
+        </div>
+        <p class="changelog-entry-intro">Deckbuilding is bigger, more cards have distinctive effects, and the match UI is clearer across desktop and mobile.</p>
+        <ul class="changelog-list">
+          <li>Decks now use 25 cards. New accounts start with 25 cards, and existing saved decks are expanded with owned cards while keeping deck rules valid.</li>
+          <li>Matches now begin with a Mulligan phase, giving players a chance to keep their opening hand or replace selected cards before the first turn.</li>
+          <li>The opening hand replacement screen now fits cards more reliably on small screens and keeps replacement cards visible before returning to the match.</li>
+          <li>Turn actions are now compact square icon buttons. End Turn sits in the left action slot, turns green when available, and stays muted when it cannot be used.</li>
+          <li>Inventory cards now show their full card tip on hover, and mobile players can hold a card to see the same tip.</li>
+          <li>Cards with special minion abilities now show a purple star badge, making passive and triggered effects easier to spot at a glance.</li>
+          <li>Spell damage values now use the proper yellow combat-stat color, and card hover keeps its 3D shine while rendering card art more clearly.</li>
+          <li>Athena now brings Confusion: enemy minions cannot attack normally on their next turn and may strike one of their own allies instead.</li>
+          <li>Baaatus, Dantenie83, Tucuquere, Vatou, Weekly_Wackadoo, Angel, and Dog now have their own playable effects and updated descriptions.</li>
+          <li>Warerita, V de Vendetta, SzczwanyLisek, Rin, Oil Bert, Mr Labubu, and Meow4glory now have updated abilities and clearer descriptions.</li>
+          <li>Cardinal Severin, Chiorico, Jacque De Balsac, and Toy now apply their start-of-turn effects only once, matching their updated Legendary identity.</li>
+          <li>Rarity balance has been updated across the roster, including new Legendary placements for Fanex, Mamaluteo, Athena, Babu, Overseer, GoldenWarerita, Humph, Zugzwang, and more.</li>
+          <li>Several cards moved into Common and Rare tiers to make collection growth smoother and pack openings more useful across more decks.</li>
+        </ul>
+      </article>
+      <article class="changelog-entry">
+        <div class="changelog-entry-meta">
           <h3>Version 1.6.2</h3>
           <span>Smarter NPC &amp; Scraping Tuning</span>
         </div>
@@ -975,6 +1039,8 @@
           <li>The Protector now correctly plays Mamaluteo onto the board even when it targets the player hero with Poison.</li>
           <li>Status-focused Mythic cards from The Gates now keep pressuring the enemy board by applying their status to a random enemy minion at the start of each of your turns.</li>
           <li>Singleplayer start now ignores repeated taps while the NPC match is being prepared, preventing duplicate match creation on slow connections.</li>
+          <li>Campaign stages now unlock in order: higher stages require completing the previous stage first.</li>
+          <li>The Singleplayer campaign menu now scales better for more stages with a scrollable stage list and clearer locked/completed states.</li>
           <li>Scraping values have been tuned: Common and Rare cards give 1 gold, Legendary 2, Mythic 3, and Souvenir 10.</li>
           <li>Scrape all now keeps two copies of each card, or more if saved decks need them, before converting extras into gold.</li>
         </ul>
@@ -990,9 +1056,9 @@
           <li>Scraping values are now visible in-game for each rarity.</li>
           <li>Scraping now asks for confirmation, shows a compact animated stack preview, and finishes with a gold-earned result modal.</li>
           <li>Scrape all is available for the currently filtered duplicate list.</li>
-          <li>Collection, Deck Builder, Scraping, and Trade now support searching cards by name.</li>
-          <li>The old Type filter was removed from the Inventory tabs to make room for the faster card-name search.</li>
-          <li>The Trade card picker now uses card-name search in place of the selected-card text label, while the selected offer remains visible in the trade summary and card row.</li>
+          <li>Collection, Deck Builder, Scraping, and Trade now support keyword search across card name, race, type, rarity, combat keywords, expansion, and abilities.</li>
+          <li>The old Type filter was removed from the Inventory tabs to make room for the faster keyword search.</li>
+          <li>The Trade card picker now uses keyword search in place of the selected-card text label, while the selected offer remains visible in the trade summary and card row.</li>
           <li>Singleplayer victories now grant 10 gold, matching multiplayer wins.</li>
         </ul>
       </article>
@@ -1180,7 +1246,7 @@
         </div>
         <p class="changelog-entry-intro">Welcome to the first chapter of Arcana TCG.</p>
         <ul class="changelog-list">
-          <li>Build 20-card decks from your collection and shape a strategy around each card's abilities.</li>
+          <li>Build 25-card decks from your collection and shape a strategy around each card's abilities.</li>
           <li>Open packs, discover expansions, and grow your collection through starter rewards and the shop.</li>
           <li>Challenge the NPC in singleplayer or face other players in quickplay and private multiplayer matches.</li>
           <li>Earn daily gold, trade cards with other players, and climb the Quickplay Ranking.</li>
@@ -1271,7 +1337,7 @@
 
         <section>
           <h3>Build a Deck</h3>
-          <p>Every deck has exactly 20 cards. Common and Rare cards allow up to 2 copies of the same card. Legendary and Mythic cards allow 1 copy each; a deck can contain up to 3 Legendary cards and 1 Mythic card in total.</p>
+          <p>Every deck has exactly 25 cards. Common and Rare cards allow up to 2 copies of the same card. Legendary and Mythic cards allow 1 copy each; a deck can contain up to 3 Legendary cards and 1 Mythic card in total.</p>
         </section>
 
         <section>
@@ -1415,25 +1481,25 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.6.2-v2"></script>
-  <script src="deckRules.js?v=1.6.2-v2"></script>
-  <script src="engine.js?v=1.6.2-v2"></script>
-  <script src="ai.js?v=1.6.2-v2"></script>
-  <script src="audioConfig.js?v=1.6.2-v2"></script>
-  <script src="audioManager.js?v=1.6.2-v2"></script>
-  <script src="packOpening.js?v=1.6.2-v2"></script>
-<script src="legalNotices.js?v=1.6.2-v2"></script>
-<script src="profileCatalog.js?v=1.6.2-v2"></script>
-<script src="profileBadges.js?v=1.6.2-v2"></script>
-<script src="accountProfile.js?v=1.6.2-v2"></script>
-<script src="client.js?v=1.6.2-v2"></script>
-<script src="shieldChallenge.js?v=1.6.2-v2"></script>
-<script src="boardInteractions.js?v=1.6.2-v2"></script>
-<script src="inventory.js?v=1.6.2-v2"></script>
-<script src="deckBuilder.js?v=1.6.2-v2"></script>
-<script src="shop.js?v=1.6.2-v2"></script>
-<script src="trade.js?v=1.6.2-v2"></script>
-<script src="tournaments.js?v=1.6.2-v2"></script>
-<script src="pwa.js?v=1.6.2-v2"></script>
+  <script src="cards.js?v=1.6.3-v1"></script>
+  <script src="deckRules.js?v=1.6.3-v1"></script>
+  <script src="engine.js?v=1.6.3-v1"></script>
+  <script src="ai.js?v=1.6.3-v1"></script>
+  <script src="audioConfig.js?v=1.6.3-v1"></script>
+  <script src="audioManager.js?v=1.6.3-v1"></script>
+  <script src="packOpening.js?v=1.6.3-v1"></script>
+<script src="legalNotices.js?v=1.6.3-v1"></script>
+<script src="profileCatalog.js?v=1.6.3-v1"></script>
+<script src="profileBadges.js?v=1.6.3-v1"></script>
+<script src="accountProfile.js?v=1.6.3-v1"></script>
+<script src="client.js?v=1.6.3-v1"></script>
+<script src="shieldChallenge.js?v=1.6.3-v1"></script>
+<script src="boardInteractions.js?v=1.6.3-v1"></script>
+<script src="inventory.js?v=1.6.3-v1"></script>
+<script src="deckBuilder.js?v=1.6.3-v1"></script>
+<script src="shop.js?v=1.6.3-v1"></script>
+<script src="trade.js?v=1.6.3-v1"></script>
+<script src="tournaments.js?v=1.6.3-v1"></script>
+<script src="pwa.js?v=1.6.3-v1"></script>
 </body>
 </html>

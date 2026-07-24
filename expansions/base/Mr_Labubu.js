@@ -8,6 +8,9 @@ module.exports = {
   race: "Monster",
   rarity: "rare",
   country: "Germany",
-  lore: "I am the greatest Labubu.",
+  lore: "Whenever Mr Labubu destroys a minion and survives, it gains Charge.",
   image: "art/Mr_Labubu.webp",
+  abilities: [
+    { trigger: "onKillMinion", effect: "grantSelfCharge" },
+  ],
 };

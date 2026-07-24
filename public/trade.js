@@ -28,10 +28,10 @@ async function tradeRequest(path, options = {}) {
 }
 
 function ownTradeCards() {
-  const search = String($("tradeCardSearch")?.value || "").trim().toLowerCase();
+  const search = String($("tradeCardSearch")?.value || "").trim();
   return getInventoryCards()
     .filter((card) => getCardQuantity(card) > 0)
-    .filter((card) => !search || String(card.name || "").toLowerCase().includes(search))
+    .filter((card) => cardMatchesKeywordSearch(card, search))
     .sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name));
 }
 

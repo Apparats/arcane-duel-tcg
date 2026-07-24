@@ -6,7 +6,7 @@ module.exports = {
   health: 7,
   keywords: ["charge"],
   race: "Human",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Bolivia",
   lore: "At the start of each of your turns, add a Minor Spark to your hand. This card can instantly attack when prepared.",
   image: "art/Zugzwang.webp",

@@ -8,6 +8,9 @@ module.exports = {
   race: "Human",
   rarity: "rare",
   country: "Malaysia",
-  lore: "The strong arm of Malaysia.",
+  lore: "Whenever Rin attacks, it loses 1 Health.",
   image: "art/Rin.webp",
+  abilities: [
+    { trigger: "onAttack", effect: "damageSelfOnAttack", value: 1 },
+  ],
 };

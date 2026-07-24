@@ -8,6 +8,9 @@ module.exports = {
   race: "Monster",
   rarity: "rare",
   country: "South Africa",
-  lore: "This card can instantly attack when prepared.",
+  lore: "Charge. The first time Dog is played, a random friendly non-Charge minion gains Charge.",
   image: "art/Dog.webp",
+  abilities: [
+    { trigger: "onPlay", effect: "grantChargeToRandomFriendlyNonCharge", firstPlayOnly: true },
+  ],
 };

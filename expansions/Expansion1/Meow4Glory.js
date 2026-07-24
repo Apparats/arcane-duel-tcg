@@ -8,6 +8,9 @@ module.exports = {
   race: "Monster",
   rarity: "rare",
   country: "Ukraine",
-  lore: "Полковий писар Війська Запорізького.",
+  lore: "On play, if Meow4glory is joined by 3 other friendly minions, swap its stats.",
   image: "art/Meow4Glory.webp",
+  abilities: [
+    { trigger: "onPlay", effect: "swapSelfStatsIfBoardHasAtLeast", value: 4 },
+  ],
 };

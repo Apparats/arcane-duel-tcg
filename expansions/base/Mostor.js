@@ -6,7 +6,7 @@ module.exports = {
   health: 7,
   keywords: ["charge"],
   race: "Monster",
-  rarity: "legendary",
+  rarity: "rare",
   country: "Egypt",
   lore: "After dying, this card returns to the deck. This card can instantly attack when prepared.",
   image: "art/Mostor.webp",

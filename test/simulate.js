@@ -1,5 +1,5 @@
 const { Game } = require("../public/engine");
-const { buildFallbackDeck, validateDeck } = require("../public/deckRules");
+const { DECK_SIZE, buildFallbackDeck, validateDeck } = require("../public/deckRules");
 const { createCampaignMatch, normalizeCampaignEncounter } = require("../server/campaigns");
 const { discardActiveSingleplayerMatch } = require("../server/singleplayerMatchService");
 
@@ -33,7 +33,7 @@ function main() {
   assert(state0.turn === 0, "Player 0 should start.");
   assert(state0.me.hand.length === 4, "Player 0 should start with 4 cards after the first draw.");
   assert(state0.opponent.handCount === 4, "Player 1 should start with 4 cards.");
-  assert(state0.me.deckCount === 16, "Deck should have 20 cards before opening draws.");
+  assert(state0.me.deckCount === DECK_SIZE - 4, `Deck should have ${DECK_SIZE} cards before opening draws.`);
 
   const secondPlayerStarts = new Game("SECOND_STARTS", "First", "Second", { startingPlayerIdx: 1 });
   let secondStarterState = secondPlayerStarts.getStateFor(1);
@@ -61,12 +61,36 @@ function main() {
   manaSparkGame.endTurn(0);
   assert(manaSparkGame.players[1].manaCurrent === manaSparkGame.players[1].manaMax, "Mana Spark's Mana must expire at the next turn.");
 
+  const mulliganGame = new Game("MULLIGAN", "First", "Second", {
+    decks: [
+      [
+        "base:aleex", "base:barto", "base:beitsas", "base:capybara", "base:disappointmentpanda",
+        "base:eraserhead", "base:galileo-gunplay", "base:miyabi", "base:stormhazard", "base:archbishopmaximilian",
+        "base:babu", "base:dog", "base:kep", "base:lifelinker", "base:juniiya",
+        "base:jakal", "base:kysely", "base:humph", "base:kurzemnieks", "base:hazzard",
+      ],
+      Array(20).fill("base:aleex"),
+    ],
+    randomInt: () => 0,
+    startingPlayerIdx: 0,
+    grantSecondPlayerManaCard: true,
+  });
+  const firstOpeningCard = mulliganGame.players[0].hand[0];
+  const firstDeckCount = mulliganGame.players[0].deck.length;
+  const replaced = mulliganGame.replaceOpeningHandCards(0, [0]);
+  assert(replaced === 1, "Mulligan should replace the selected opening card.");
+  assert(mulliganGame.players[0].hand[0] !== firstOpeningCard, "Mulligan should draw a different card from the deck first.");
+  assert(mulliganGame.players[0].deck.length === firstDeckCount, "Mulligan should keep total deck size stable after replacement.");
+  const sparkIndex = mulliganGame.players[1].hand.indexOf("special:manaspark");
+  assert(sparkIndex >= 0, "The second player should have Mana Spark during mulligan.");
+  assertThrows(() => mulliganGame.replaceOpeningHandCards(1, [sparkIndex]), "Mana Spark should not be replaceable during mulligan.");
+
   const fallbackDeck = buildFallbackDeck();
   const fullCollection = fallbackDeck.reduce((collection, cardId) => {
     collection[cardId] = (collection[cardId] || 0) + 2;
     return collection;
   }, {});
-  assert(validateDeck(fallbackDeck, { cardCollection: fullCollection }).ok, "Fallback 20-card deck should be valid.");
+  assert(validateDeck(fallbackDeck, { cardCollection: fullCollection }).ok, `Fallback ${DECK_SIZE}-card deck should be valid.`);
 
   const p0CardIdx = firstPlayableMinion(state0);
   if (p0CardIdx !== -1) {
@@ -74,6 +98,18 @@ function main() {
     state0 = game.getStateFor(0);
     assert(state0.me.board.length === 1, "Player 0 should have played a minion.");
   }
+
+  const zeroAttackGame = new Game("ZERO_ATTACK", "Zero", "Target", {
+    decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
+  });
+  const zeroAttacker = testMinion("zero-attacker");
+  zeroAttacker.attack = 0;
+  zeroAttacker.canAttack = true;
+  zeroAttackGame.players[0].board = [zeroAttacker];
+  assertThrows(
+    () => zeroAttackGame.attack(0, zeroAttacker.instanceId, "face"),
+    "A minion with 0 Attack should not be able to attack."
+  );
 
   game.endTurn(0);
   let state1 = game.getStateFor(1);
@@ -149,7 +185,7 @@ function main() {
   assertThrows(() => boardTest.playCard(0, 0, null), "A full board should reject the fifth minion.");
 
   const campaignRulesTest = new Game("CAMPAIGN", "Player", "Campaign NPC", {
-    decks: [Array(20).fill("base:aleex"), Array(30).fill("base:aleex")],
+    decks: [Array(30).fill("base:aleex"), Array(30).fill("base:aleex")],
     playerConfigs: [
       {},
       {
@@ -163,6 +199,7 @@ function main() {
     ],
   });
   assert(campaignRulesTest.players[1].deck.length === 26, "Campaign NPC decks should keep every configured card.");
+  assert(campaignRulesTest.players[0].deck.length === DECK_SIZE - 4, "Player decks should use the current deck size limit.");
   campaignRulesTest.endTurn(0);
   assert(campaignRulesTest.players[1].health === 55, "Campaign NPC health should use its configured value.");
   assert(campaignRulesTest.players[1].manaCurrent === 7, "Campaign NPC should receive its configured starting mana.");
@@ -170,6 +207,18 @@ function main() {
   campaignRulesTest.players[1].hand = ["base:aleex"];
   campaignRulesTest.playCard(1, 0, null);
   assert(campaignRulesTest.players[1].board.length === 9, "Campaign board rules should allow unlimited NPC minions.");
+
+  const uniqueMythicTest = new Game("UNIQUE_MYTHIC", "Player", "Protector", {
+    decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
+    playerConfigs: [{}, { uniqueMythicPlays: true }],
+  });
+  uniqueMythicTest.turn = 1;
+  uniqueMythicTest.players[1].hand = ["base:lolflame2"];
+  uniqueMythicTest.players[1].manaCurrent = 10;
+  uniqueMythicTest.playCard(1, 0, null);
+  uniqueMythicTest.players[1].hand = ["base:lolflame2"];
+  uniqueMythicTest.players[1].manaCurrent = 10;
+  assertThrows(() => uniqueMythicTest.playCard(1, 0, null), "Unique Mythic players should not replay the same Mythic card.");
 
   const campaignEncounter = normalizeCampaignEncounter({
     id: "test-gatekeeper",

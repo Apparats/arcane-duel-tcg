@@ -33,9 +33,11 @@ const MAX_LORE_LENGTH = 180;
 // Must exactly mirror the effects implemented in the ABILITY_EFFECTS
 // object in public/engine.js. If you add a new effect there, add it
 // here too (and to the required-parameters list below).
-const VALID_TRIGGERS = ["passive", "onPlay", "onDeath", "onTurnStart", "onAnyTurnStart", "onAttack", "onAttackMinion"];
+const VALID_TRIGGERS = ["passive", "onPlay", "onDeath", "onTurnStart", "onAnyTurnStart", "onAttack", "onAttackMinion", "onAttacked", "onKillMinion"];
 const VALID_ABILITY_EFFECTS = [
   "drawCards",
+  "drawNonLegendaryNonMythicCard",
+  "drawRandomDeckCards",
   "gainTemporaryMana",
   "addCardToHand",
   "addRandomSpellToHand",
@@ -51,6 +53,13 @@ const VALID_ABILITY_EFFECTS = [
   "buffAllFriendlyMinions",
   "buffSelf",
   "grantDivineShieldToAllFriendlyMinions",
+  "grantSelfDivineShield",
+  "grantSelfCharge",
+  "grantChargeToRandomFriendlyNonCharge",
+  "stealHealthFromRandomEnemyHandMinionAsAttack",
+  "damageSelfOnAttack",
+  "startDelayedSelfBuff",
+  "swapSelfStatsIfBoardHasAtLeast",
   "healSelf",
   "returnToDeck",
   "returnEnemyMinionToDeck",
@@ -62,12 +71,18 @@ const VALID_ABILITY_EFFECTS = [
   "returnToDeckIfPlayedLessThan",
   "destroySelf",
   "destroySelfIfPlayedAtLeast",
+  "destroyRandomEnemyMinionChance",
   "applyStatus",
   "applyStatusToRandomEnemyMinion",
+  "applyDrunkToAttacker",
+  "applyConfusionToAllEnemyMinions",
+  "cleanseFriendlyMinion",
   "applyBurning",
   "preventDamageFromRace",
   "reviveOtherFriendlyMinions",
   "drunkAllMinions",
+  "blockChargeSummons",
+  "immuneToAdverseEffects",
 ];
 
 class BuildError extends Error {}
@@ -239,7 +254,7 @@ function validateAbilities(card, label) {
     if (!VALID_ABILITY_EFFECTS.includes(ability.effect)) {
       fail(`${abLabel}: unknown effect "${ability.effect}". Valid: ${VALID_ABILITY_EFFECTS.join(", ")}.`);
     }
-    if (ability.trigger === "passive" && !["preventDamageFromRace", "reviveOtherFriendlyMinions", "drunkAllMinions"].includes(ability.effect)) {
+    if (ability.trigger === "passive" && !["preventDamageFromRace", "reviveOtherFriendlyMinions", "drunkAllMinions", "blockChargeSummons", "immuneToAdverseEffects"].includes(ability.effect)) {
       fail(`${abLabel}: only passive effects can use trigger: "passive".`);
     }
 
@@ -267,6 +282,10 @@ function validateAbilities(card, label) {
       if (ability.trigger !== "onTurnStart") {
         fail(`${abLabel}: addRandomSpellToHand can only use the "onTurnStart" trigger.`);
       }
+    } else if (ability.effect === "drawRandomDeckCards") {
+      if (ability.trigger !== "onPlay" || !isIntegerInRange(ability.value, 1, 99)) {
+        fail(`${abLabel}: drawRandomDeckCards needs trigger: "onPlay" and a "value" between 1 and 99.`);
+      }
     } else if (["buffAllFriendlyMinions", "buffSelf"].includes(ability.effect)) {
       if (ability.attack === undefined && ability.health === undefined) {
         fail(`${abLabel}: ${ability.effect} needs at least "attack" or "health".`);
@@ -280,6 +299,12 @@ function validateAbilities(card, label) {
       if (ability.health !== undefined && !isIntegerInRange(ability.health, -99, 99)) {
         fail(`${abLabel}: "health" must be an integer between -99 and 99.`);
       }
+      if (ability.maxAttack !== undefined && !isIntegerInRange(ability.maxAttack, 0, 99)) {
+        fail(`${abLabel}: "maxAttack" must be an integer between 0 and 99.`);
+      }
+      if (ability.maxHealth !== undefined && !isIntegerInRange(ability.maxHealth, 1, 99)) {
+        fail(`${abLabel}: "maxHealth" must be an integer between 1 and 99.`);
+      }
     } else if (ability.effect === "grantDivineShieldToAllFriendlyMinions") {
       if (ability.trigger !== "onPlay") {
         fail(`${abLabel}: grantDivineShieldToAllFriendlyMinions can only use the "onPlay" trigger.`);
@@ -287,10 +312,25 @@ function validateAbilities(card, label) {
       if (ability.firstPlayOnly !== undefined && typeof ability.firstPlayOnly !== "boolean") {
         fail(`${abLabel}: "firstPlayOnly" must be true or false when included.`);
       }
+    } else if (ability.effect === "grantSelfDivineShield") {
+      if (ability.trigger !== "onKillMinion") {
+        fail(`${abLabel}: grantSelfDivineShield can only use the "onKillMinion" trigger.`);
+      }
+    } else if (ability.effect === "grantSelfCharge") {
+      if (ability.trigger !== "onKillMinion") {
+        fail(`${abLabel}: grantSelfCharge can only use the "onKillMinion" trigger.`);
+      }
+    } else if (ability.effect === "grantChargeToRandomFriendlyNonCharge") {
+      if (ability.trigger !== "onPlay") {
+        fail(`${abLabel}: grantChargeToRandomFriendlyNonCharge can only use the "onPlay" trigger.`);
+      }
+      if (ability.firstPlayOnly !== undefined && typeof ability.firstPlayOnly !== "boolean") {
+        fail(`${abLabel}: "firstPlayOnly" must be true or false when included.`);
+      }
     } else if (["applyStatus", "applyStatusToRandomEnemyMinion"].includes(ability.effect)) {
       const validStatuses = ability.effect === "applyStatusToRandomEnemyMinion"
-        ? ["weakened", "frozen", "silenced", "marked"]
-        : ["weakened", "frozen", "silenced", "poisoned", "marked"];
+        ? ["weakened", "frozen", "silenced", "marked", "confused"]
+        : ["weakened", "frozen", "silenced", "poisoned", "marked", "confused"];
       const validTargets = ability.status === "poisoned"
         ? ["enemyMinion", "enemy", "enemyCharacter", "enemyHero"]
         : ["enemyMinion"];
@@ -333,6 +373,10 @@ function validateAbilities(card, label) {
       if (ability.trigger !== "onPlay") {
         fail(`${abLabel}: returnOtherFriendlyMinionsToHand can only use the "onPlay" trigger.`);
       }
+    } else if (ability.effect === "cleanseFriendlyMinion") {
+      if (ability.trigger !== "onPlay" || ability.target !== "friendlyMinion") {
+        fail(`${abLabel}: cleanseFriendlyMinion needs trigger: "onPlay" and target: "friendlyMinion".`);
+      }
     } else if (ability.effect === "stealEnemyBoardNonMythicMinions") {
       if (ability.trigger !== "onPlay") {
         fail(`${abLabel}: stealEnemyBoardNonMythicMinions can only use the "onPlay" trigger.`);
@@ -352,7 +396,36 @@ function validateAbilities(card, label) {
       if (ability.trigger !== "passive") {
         fail(`${abLabel}: drunkAllMinions must use trigger: "passive".`);
       }
-    } else if (["returnToDeck", "returnAllMinionsToDeck", "rebirthWithHalfHealth", "stealRandomEnemyDeckCardToHand", "stealRandomEnemyBoardMinion", "destroySelf"].includes(ability.effect)) {
+    } else if (ability.effect === "blockChargeSummons") {
+      if (ability.trigger !== "passive") {
+        fail(`${abLabel}: blockChargeSummons must use trigger: "passive".`);
+      }
+    } else if (ability.effect === "immuneToAdverseEffects") {
+      if (ability.trigger !== "passive") {
+        fail(`${abLabel}: immuneToAdverseEffects must use trigger: "passive".`);
+      }
+    } else if (ability.effect === "applyDrunkToAttacker") {
+      if (ability.trigger !== "onAttacked") {
+        fail(`${abLabel}: applyDrunkToAttacker can only use the "onAttacked" trigger.`);
+      }
+      if (ability.turns !== undefined && !isIntegerInRange(ability.turns, 1, 9)) {
+        fail(`${abLabel}: "turns" must be an integer between 1 and 9 if you include it.`);
+      }
+    } else if (ability.effect === "applyConfusionToAllEnemyMinions") {
+      if (ability.trigger !== "onPlay") {
+        fail(`${abLabel}: applyConfusionToAllEnemyMinions can only use the "onPlay" trigger.`);
+      }
+      if (ability.turns !== undefined && !isIntegerInRange(ability.turns, 1, 9)) {
+        fail(`${abLabel}: "turns" must be an integer between 1 and 9 if you include it.`);
+      }
+      if (ability.chance !== undefined && !isIntegerInRange(ability.chance, 1, 100)) {
+        fail(`${abLabel}: "chance" must be an integer between 1 and 100 if you include it.`);
+      }
+    } else if (ability.effect === "destroyRandomEnemyMinionChance") {
+      if (ability.trigger !== "onDeath" || !isIntegerInRange(ability.chance, 1, 100)) {
+        fail(`${abLabel}: destroyRandomEnemyMinionChance needs trigger: "onDeath" and a "chance" between 1 and 100.`);
+      }
+    } else if (["returnToDeck", "returnAllMinionsToDeck", "rebirthWithHalfHealth", "drawNonLegendaryNonMythicCard", "stealRandomEnemyDeckCardToHand", "stealRandomEnemyBoardMinion", "destroySelf"].includes(ability.effect)) {
       // No extra params required.
     } else if (ability.effect === "rebirthWithHealth") {
       if (ability.trigger !== "onDeath" || !isIntegerInRange(ability.value, 1, 99)) {
@@ -361,6 +434,37 @@ function validateAbilities(card, label) {
     } else if (ability.effect === "gainTemporaryMana") {
       if (ability.trigger !== "onPlay" || !isIntegerInRange(ability.value, 1, 99)) {
         fail(`${abLabel}: gainTemporaryMana needs trigger: "onPlay" and a "value" between 1 and 99.`);
+      }
+      if (ability.firstPlayOnly !== undefined && typeof ability.firstPlayOnly !== "boolean") {
+        fail(`${abLabel}: "firstPlayOnly" must be true or false when included.`);
+      }
+    } else if (ability.effect === "stealHealthFromRandomEnemyHandMinionAsAttack") {
+      if (ability.trigger !== "onPlay") {
+        fail(`${abLabel}: stealHealthFromRandomEnemyHandMinionAsAttack can only use the "onPlay" trigger.`);
+      }
+    } else if (ability.effect === "damageSelfOnAttack") {
+      if (ability.trigger !== "onAttack" || !isIntegerInRange(ability.value, 1, 99)) {
+        fail(`${abLabel}: damageSelfOnAttack needs trigger: "onAttack" and a "value" between 1 and 99.`);
+      }
+    } else if (ability.effect === "startDelayedSelfBuff") {
+      if (ability.trigger !== "onPlay" || !isIntegerInRange(ability.turns, 1, 9)) {
+        fail(`${abLabel}: startDelayedSelfBuff needs trigger: "onPlay" and "turns" between 1 and 9.`);
+      }
+      if (ability.attack === undefined && ability.health === undefined) {
+        fail(`${abLabel}: startDelayedSelfBuff needs at least "attack" or "health".`);
+      }
+      if (ability.attack !== undefined && !isIntegerInRange(ability.attack, -99, 99)) {
+        fail(`${abLabel}: "attack" must be an integer between -99 and 99.`);
+      }
+      if (ability.health !== undefined && !isIntegerInRange(ability.health, -99, 99)) {
+        fail(`${abLabel}: "health" must be an integer between -99 and 99.`);
+      }
+      if (ability.firstPlayOnly !== undefined && typeof ability.firstPlayOnly !== "boolean") {
+        fail(`${abLabel}: "firstPlayOnly" must be true or false when included.`);
+      }
+    } else if (ability.effect === "swapSelfStatsIfBoardHasAtLeast") {
+      if (ability.trigger !== "onPlay" || !isIntegerInRange(ability.value, 1, 30)) {
+        fail(`${abLabel}: swapSelfStatsIfBoardHasAtLeast needs trigger: "onPlay" and a "value" between 1 and 30.`);
       }
     } else {
       // drawCards, damageAllEnemyMinions, damageAllMinions, damageEnemyHero,
@@ -372,6 +476,9 @@ function validateAbilities(card, label) {
     }
     if (ability.firstDeathOnly !== undefined && typeof ability.firstDeathOnly !== "boolean") {
       fail(`${abLabel}: "firstDeathOnly" must be a boolean when provided.`);
+    }
+    if (ability.oncePerMinion !== undefined && typeof ability.oncePerMinion !== "boolean") {
+      fail(`${abLabel}: "oncePerMinion" must be a boolean when provided.`);
     }
   });
 }

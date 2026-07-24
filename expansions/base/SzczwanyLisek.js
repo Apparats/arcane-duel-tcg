@@ -8,6 +8,9 @@ module.exports = {
   race: "Monster",
   rarity: "rare",
   country: "Poland",
-  lore: "CEO of Anti Sweden Social Club.",
+  lore: "On play, steal 1 Health from a random minion in the enemy hand and gain +1 Attack.",
   image: "art/SzczwanyLisek.webp",
+  abilities: [
+    { trigger: "onPlay", effect: "stealHealthFromRandomEnemyHandMinionAsAttack" },
+  ],
 };

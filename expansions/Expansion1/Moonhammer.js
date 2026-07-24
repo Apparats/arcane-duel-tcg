@@ -6,7 +6,7 @@ module.exports = {
   health: 8,
   keywords: ["charge"],
   race: "Monster",
-  rarity: "legendary",
+  rarity: "rare",
   country: "Croatia",
   lore: "Where the Moon rises, the Hammer falls.",
   image: "art/Moonhammer.webp",

@@ -8,9 +8,9 @@ module.exports = {
   race: "Human",
   rarity: "mythic",
   country: "Bolivia",
-  lore: "On play, move non-Mythic enemy board minions that can fit to your board. Does not affect Athena cards.",
+  lore: "On play, enemy minions gain Confusion for their next turn. They cannot attack normally and each has a 30% chance to attack an allied minion.",
   image: "art/Athena.webp",
   abilities: [
-    { trigger: "onPlay", effect: "stealEnemyBoardNonMythicMinions" },
+    { trigger: "onPlay", effect: "applyConfusionToAllEnemyMinions", turns: 1, chance: 30 },
   ],
 };

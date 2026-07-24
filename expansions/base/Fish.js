@@ -6,7 +6,7 @@ module.exports = {
   health: 7,
   keywords: ["taunt"],
   race: "Monster",
-  rarity: "rare",
+  rarity: "common",
   country: "Vanuatu",
   lore: "A horror on the sea. This card has attack priority above all.",
   image: "art/Fish.webp",

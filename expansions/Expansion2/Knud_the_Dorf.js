@@ -6,7 +6,7 @@ module.exports = {
   health: 6,
   keywords: [],
   race: "Monster",
-  rarity: "legendary",
+  rarity: "rare",
   country: "Denmark",
   lore: "Takes no damage from Human cards.",
   image: "art/Knud_the_Dorf.webp",

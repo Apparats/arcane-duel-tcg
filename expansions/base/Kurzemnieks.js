@@ -6,7 +6,7 @@ module.exports = {
   health: 5,
   keywords: ["charge"],
   race: "Human",
-  rarity: "rare",
+  rarity: "common",
   country: "Latvia",
   lore: "This card can instantly attack when prepared.",
   image: "art/Kurzemnieks.webp",

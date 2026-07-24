@@ -153,8 +153,20 @@
 
     const needsPlayTarget = typeof cardRequiresPlayTarget === "function" && cardRequiresPlayTarget(card);
     const needsEnemyMinionTarget = typeof cardRequiresEnemyMinionTarget === "function" && cardRequiresEnemyMinionTarget(card);
+    const needsFriendlyMinionTarget = typeof cardRequiresFriendlyMinionTarget === "function" && cardRequiresFriendlyMinionTarget(card);
     const needsEnemyHeroTarget = typeof cardRequiresEnemyHeroTarget === "function" && cardRequiresEnemyHeroTarget(card);
     const enemyOnlyTarget = typeof cardTargetsEnemyOnly === "function" && cardTargetsEnemyOnly(card);
+    if (needsPlayTarget && needsFriendlyMinionTarget) {
+      if (!target) return false;
+      const isFriendlyMinion = target?.minion?.parentElement?.id === "selfBoard";
+      if (!isFriendlyMinion) return false;
+      window.ArcaneAudio?.playSfx("cardPlay");
+      predictCardPlay(drag.source);
+      send("playCard", { handIndex, targetInstanceId: spellTargetId(target) });
+      selectedHandIndex = null;
+      hideTargetHint();
+      return true;
+    }
     if (needsPlayTarget && enemyOnlyTarget) {
       if (!target) return false;
       const isEnemyMinion = target?.minion?.parentElement?.id === "oppBoard";
@@ -217,7 +229,7 @@
     if (!minionCard) return;
     const instanceId = minionCard.dataset.instanceId;
     const minion = myState?.me?.board?.find((item) => item.instanceId === instanceId);
-    if (!myState?.isYourTurn || !minion?.canAttack) return;
+    if (!myState?.isYourTurn || !minion?.canAttack || (minion.attack || 0) <= 0) return;
     startDrag(event, minionCard, "attack", { instanceId });
   });
 

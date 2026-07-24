@@ -6,11 +6,11 @@ module.exports = {
   health: 1,
   keywords: [],
   race: "Monster",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Vatican",
-  lore: "At the start of each of your turns, this card gains +3/+3.",
+  lore: "At the start of each of your turns, this card gains up to +3/+3 until it becomes 10/13, after it stops winning stats.",
   image: "art/High_Inquisitor_KnkL.webp",
   abilities: [
-    { trigger: "onTurnStart", effect: "buffSelf", attack: 3, health: 3 },
+    { trigger: "onTurnStart", effect: "buffSelf", attack: 3, health: 3, maxAttack: 10, maxHealth: 13 },
   ],
 };

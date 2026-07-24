@@ -48,8 +48,8 @@ function testStatusCardsHaveTurnAuras() {
 
   cases.forEach(([cardId, status]) => {
     const card = getCardById(cardId);
-    assert(card.abilities.some((ability) => ability.effect === "applyStatus" && ability.status === status), `${card.name} should keep its on-play ${status}.`);
-    assert(card.abilities.some((ability) => ability.trigger === "onTurnStart" && ability.effect === "applyStatusToRandomEnemyMinion" && ability.status === status), `${card.name} should apply ${status} at turn start.`);
+    assert(!card.abilities.some((ability) => ability.effect === "applyStatus" && ability.status === status), `${card.name} should not apply ${status} on play anymore.`);
+    assert(card.abilities.some((ability) => ability.trigger === "onTurnStart" && ability.effect === "applyStatusToRandomEnemyMinion" && ability.status === status && ability.oncePerMinion === true), `${card.name} should apply ${status} once at turn start.`);
   });
 }
 
@@ -66,6 +66,10 @@ function testTurnAuraTargetsRandomEnemyMinion() {
   assert.strictEqual(firstTarget.statuses.length, 0, "The first target should be skipped by deterministic random choice.");
   assert(secondTarget.statuses.some((status) => status.type === "weakened" && status.value === 3), "Toy should weaken a random enemy minion at turn start.");
   assert.strictEqual(secondTarget.attack, 4, "Weakened should reduce the random target's attack immediately.");
+
+  advanceBackToPlayer(game);
+
+  assert.strictEqual(firstTarget.statuses.length, 0, "Toy should only apply its start-of-turn effect once.");
 }
 
 function testTurnAuraIgnoresEmptyEnemyBoard() {

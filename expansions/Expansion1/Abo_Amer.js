@@ -6,7 +6,7 @@ module.exports = {
   health: 1,
   keywords: [],
   race: "Human",
-  rarity: "rare",
+  rarity: "common",
   country: "Egypt",
   lore: "A daring opener who turns the first mana into immediate pressure.",
   image: "art/Abo_Amer.webp",

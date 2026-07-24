@@ -6,12 +6,11 @@ module.exports = {
   health: 10,
   keywords: [],
   race: "Human",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Portugal",
-  lore: "On play and at the start of each of your turns, weaken an enemy minion for two turns.",
+  lore: "At the start of your next turn, weaken 1 random enemy minion once for two turns.",
   image: "art/Toy.webp",
   abilities: [
-    { trigger: "onPlay", effect: "applyStatus", target: "enemyMinion", status: "weakened", value: 3, turns: 2 },
-    { trigger: "onTurnStart", effect: "applyStatusToRandomEnemyMinion", status: "weakened", value: 3, turns: 2 },
+    { trigger: "onTurnStart", effect: "applyStatusToRandomEnemyMinion", status: "weakened", value: 3, turns: 2, oncePerMinion: true },
   ],
 };

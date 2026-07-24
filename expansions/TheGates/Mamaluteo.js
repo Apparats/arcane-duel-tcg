@@ -6,7 +6,7 @@ module.exports = {
   health: 10,
   keywords: [],
   race: "Monster",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Bolivia",
   lore: "On play, poison an enemy minion or hero for six turns. Poison deals +2 damage.",
   image: "art/mamaluteo.webp",

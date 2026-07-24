@@ -95,6 +95,7 @@ function normalizeCampaignEncounter(definition) {
       deck: Object.freeze(normalizeDeck(npc.deck)),
       openingCardId,
       ignoreDeckSizeLimit: npc.ignoreDeckSizeLimit === true,
+      uniqueMythicPlays: npc.uniqueMythicPlays === true,
       boardRules: Object.freeze(normalizeBoardRules(npc.boardRules)),
     }),
   });
@@ -113,6 +114,7 @@ function createCampaignMatch(encounter, { roomCode, playerName, playerDeck, rand
         manaCap: npc.manaCap,
         startingMana: npc.startingMana,
         ignoreDeckSizeLimit: npc.ignoreDeckSizeLimit,
+        uniqueMythicPlays: npc.uniqueMythicPlays,
         boardRules: npc.boardRules,
       },
     ],

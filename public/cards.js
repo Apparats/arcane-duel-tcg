@@ -39,7 +39,7 @@
       "health": 1,
       "keywords": [],
       "race": "Human",
-      "rarity": "rare",
+      "rarity": "common",
       "country": "Egypt",
       "lore": "A daring opener who turns the first mana into immediate pressure.",
       "image": "art/Abo_Amer.webp",
@@ -88,8 +88,15 @@
       "race": "Monster",
       "rarity": "rare",
       "country": "Netherlands",
-      "lore": "Allround Incapabel.",
+      "lore": "Whenever a minion attacks Baatus, that attacker becomes Drunk until the end of its next turn.",
       "image": "art/Baatus.webp",
+      "abilities": [
+        {
+          "trigger": "onAttacked",
+          "effect": "applyDrunkToAttacker",
+          "turns": 2
+        }
+      ],
       "id": "expansion1:baatus",
       "_expansionId": "expansion1"
     },
@@ -103,7 +110,7 @@
         "charge"
       ],
       "race": "Human",
-      "rarity": "rare",
+      "rarity": "common",
       "country": "Germany",
       "lore": "Good boy!.",
       "image": "art/Biertierchen.webp",
@@ -120,7 +127,7 @@
         "taunt"
       ],
       "race": "Monster",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Vatican",
       "lore": "On its first play, Crowley shields every friendly minion from the next hit.",
       "image": "art/Crowley_THE_Penguin.webp",
@@ -159,8 +166,15 @@
       "race": "Human",
       "rarity": "rare",
       "country": "Romania",
-      "lore": "Meme all or meme none!",
+      "lore": "On play, cleanse negative effects from a friendly minion.",
       "image": "art/Dantenie83.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "cleanseFriendlyMinion",
+          "target": "friendlyMinion"
+        }
+      ],
       "id": "expansion1:dantenie83",
       "_expansionId": "expansion1"
     },
@@ -170,7 +184,7 @@
       "type": "spell",
       "effect": "damage",
       "value": 8,
-      "rarity": "legendary",
+      "rarity": "rare",
       "country": "Arcana",
       "lore": "Deal 8 damage to a chosen target.",
       "image": "art/DevastatingMeteor.webp",
@@ -213,7 +227,7 @@
       "health": 10,
       "keywords": [],
       "race": "Monster",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Rwanda",
       "lore": "On play, steal a random minion from the enemy board and deploy it to your board.",
       "image": "art/Fanex.webp",
@@ -241,7 +255,7 @@
     },
     {
       "name": "Greater Blessing",
-      "cost": 4,
+      "cost": 5,
       "type": "spell",
       "effect": "heal",
       "value": 6,
@@ -262,7 +276,7 @@
         "taunt"
       ],
       "race": "Human",
-      "rarity": "rare",
+      "rarity": "common",
       "country": "EEUU",
       "lore": "Spreader of Democracy.",
       "image": "art/Jeraxes.webp",
@@ -309,7 +323,7 @@
       "health": 10,
       "keywords": [],
       "race": "Monster",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Argentina",
       "lore": "Its arrival makes 4 of damage to all cards on the board, ally and enemy alike.",
       "image": "art/Manuchiliz.webp",
@@ -333,8 +347,15 @@
       "race": "Monster",
       "rarity": "rare",
       "country": "Ukraine",
-      "lore": "Полковий писар Війська Запорізького.",
+      "lore": "On play, if Meow4glory is joined by 3 other friendly minions, swap its stats.",
       "image": "art/Meow4Glory.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "swapSelfStatsIfBoardHasAtLeast",
+          "value": 4
+        }
+      ],
       "id": "expansion1:meow4glory",
       "_expansionId": "expansion1"
     },
@@ -374,7 +395,7 @@
         "charge"
       ],
       "race": "Monster",
-      "rarity": "legendary",
+      "rarity": "rare",
       "country": "Croatia",
       "lore": "Where the Moon rises, the Hammer falls.",
       "image": "art/Moonhammer.webp",
@@ -441,7 +462,7 @@
         "taunt"
       ],
       "race": "Monster",
-      "rarity": "rare",
+      "rarity": "common",
       "country": "Arcana",
       "lore": "Chad is chad.",
       "image": "art/Rock.webp",
@@ -471,10 +492,16 @@
       "health": 3,
       "keywords": [],
       "race": "Human",
-      "rarity": "common",
+      "rarity": "rare",
       "country": "Chile",
-      "lore": "Its watch lasts through the longest night in Arcana.",
+      "lore": "Whenever Tucuquere destroys a minion, it gains Divine Shield.",
       "image": "art/Tucuquere.webp",
+      "abilities": [
+        {
+          "trigger": "onKillMinion",
+          "effect": "grantSelfDivineShield"
+        }
+      ],
       "id": "expansion1:tucuquere",
       "_expansionId": "expansion1"
     },
@@ -488,7 +515,7 @@
         "charge"
       ],
       "race": "Human",
-      "rarity": "legendary",
+      "rarity": "rare",
       "country": "Cyprus",
       "lore": "𝕳𝖔𝖓𝖔𝖗𝖆𝖇𝖑𝖊.",
       "image": "art/Vlad.webp",
@@ -503,7 +530,7 @@
       "health": 3,
       "keywords": [],
       "race": "Monster",
-      "rarity": "rare",
+      "rarity": "common",
       "country": "Finland",
       "lore": "Kwak.",
       "image": "art/Ancalego.webp",
@@ -536,7 +563,7 @@
       "health": 10,
       "keywords": [],
       "race": "Monster",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Belgium",
       "lore": "Empress of Fire and Flame. Whenever this attacks a minion or hero, it applies Burning.",
       "image": "art/Aslani2.webp",
@@ -560,12 +587,14 @@
       "race": "Human",
       "rarity": "mythic",
       "country": "Bolivia",
-      "lore": "On play, move non-Mythic enemy board minions that can fit to your board. Does not affect Athena cards.",
+      "lore": "On play, enemy minions gain Confusion for their next turn. They cannot attack normally and each has a 30% chance to attack an allied minion.",
       "image": "art/Athena.webp",
       "abilities": [
         {
           "trigger": "onPlay",
-          "effect": "stealEnemyBoardNonMythicMinions"
+          "effect": "applyConfusionToAllEnemyMinions",
+          "turns": 1,
+          "chance": 30
         }
       ],
       "id": "expansion2:athena",
@@ -603,7 +632,7 @@
         "taunt"
       ],
       "race": "Monster",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Belgium",
       "lore": "On play, return your other board minions to your hand. While Babu is on your board, you cannot summon more minions, but you can still cast spells.",
       "image": "art/Babu2.webp",
@@ -640,7 +669,7 @@
         "charge"
       ],
       "race": "Human",
-      "rarity": "rare",
+      "rarity": "common",
       "country": "EEUU",
       "lore": "Yo soy Boba.",
       "image": "art/Boba.webp",
@@ -676,7 +705,7 @@
       "race": "Human",
       "rarity": "common",
       "country": "Honduras",
-      "lore": "Pending final tuning.",
+      "lore": "Honduras Lord.",
       "image": "art/Franysbel.webp",
       "id": "expansion2:franysbel",
       "_expansionId": "expansion2"
@@ -689,16 +718,18 @@
       "health": 1,
       "keywords": [],
       "race": "Monster",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Vatican",
-      "lore": "At the start of each of your turns, this card gains +3/+3.",
+      "lore": "At the start of each of your turns, this card gains up to +3/+3 until it becomes 10/13, after it stops winning stats.",
       "image": "art/High_Inquisitor_KnkL.webp",
       "abilities": [
         {
           "trigger": "onTurnStart",
           "effect": "buffSelf",
           "attack": 3,
-          "health": 3
+          "health": 3,
+          "maxAttack": 10,
+          "maxHealth": 13
         }
       ],
       "id": "expansion2:high-inquisitor-knkl",
@@ -712,7 +743,7 @@
       "health": 6,
       "keywords": [],
       "race": "Human",
-      "rarity": "legendary",
+      "rarity": "rare",
       "country": "Brazil",
       "lore": "Takes no damage from Monster cards.",
       "image": "art/Italo179.webp",
@@ -734,7 +765,7 @@
       "health": 8,
       "keywords": [],
       "race": "Human",
-      "rarity": "rare",
+      "rarity": "common",
       "country": "Sierra Leone",
       "lore": "Until the end...",
       "image": "art/Johnny_Sins.webp",
@@ -749,7 +780,7 @@
       "health": 6,
       "keywords": [],
       "race": "Monster",
-      "rarity": "legendary",
+      "rarity": "rare",
       "country": "Denmark",
       "lore": "Takes no damage from Human cards.",
       "image": "art/Knud_the_Dorf.webp",
@@ -771,7 +802,7 @@
       "health": 12,
       "keywords": [],
       "race": "Monster",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Yemen",
       "lore": "At the start of each of your turns, add a random spell card to your hand.",
       "image": "art/Lawrence-of-Arabia.webp",
@@ -809,7 +840,7 @@
       "health": 10,
       "keywords": [],
       "race": "Human",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Nigeria",
       "lore": "While this is on your board, non-Taunt allied minions revive once with 1 Health and half their Attack. This does not affect Michiel_op_Snuifari.",
       "image": "art/Michiel_op_Snuifari.webp",
@@ -849,8 +880,15 @@
       "race": "Human",
       "rarity": "souvenir",
       "country": "Arcana",
-      "lore": "Batata.",
+      "lore": "On play, draw 2 random cards from your deck.",
       "image": "art/Vatou.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "drawRandomDeckCards",
+          "value": 2
+        }
+      ],
       "id": "expansion2:vatou",
       "_expansionId": "expansion2"
     },
@@ -862,10 +900,16 @@
       "health": 6,
       "keywords": [],
       "race": "Human",
-      "rarity": "common",
+      "rarity": "rare",
       "country": "Netherlands",
-      "lore": "De aartsvader van de YOLO.",
+      "lore": "While Weekly_Wackadoo is on the board, Charge minions cannot be summoned.",
       "image": "art/Weekly_Wackadoo.webp",
+      "abilities": [
+        {
+          "trigger": "passive",
+          "effect": "blockChargeSummons"
+        }
+      ],
       "id": "expansion2:weekly-wackadoo",
       "_expansionId": "expansion2"
     },
@@ -886,10 +930,10 @@
     },
     {
       "name": "ArchMoth_Morlet",
-      "cost": 7,
+      "cost": 6,
       "type": "minion",
       "attack": 2,
-      "health": 7,
+      "health": 10,
       "keywords": [],
       "race": "Monster",
       "rarity": "mythic",
@@ -909,7 +953,7 @@
     },
     {
       "name": "Cardinal Severin",
-      "cost": 7,
+      "cost": 6,
       "type": "minion",
       "attack": 3,
       "health": 13,
@@ -917,21 +961,16 @@
         "taunt"
       ],
       "race": "Human",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Thailand",
-      "lore": "On play and at the start of each of your turns, silence an enemy minion.",
+      "lore": "At the start of your next turn, silence 1 random enemy minion once.",
       "image": "art/Cardinal_Severin.webp",
       "abilities": [
         {
-          "trigger": "onPlay",
-          "effect": "applyStatus",
-          "target": "enemyMinion",
-          "status": "silenced"
-        },
-        {
           "trigger": "onTurnStart",
           "effect": "applyStatusToRandomEnemyMinion",
-          "status": "silenced"
+          "status": "silenced",
+          "oncePerMinion": true
         }
       ],
       "id": "TheGates:cardinal-severin",
@@ -945,25 +984,18 @@
       "health": 10,
       "keywords": [],
       "race": "Human",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Malta",
-      "lore": "On play and at the start of each of your turns, mark an enemy minion. The next strike hits harder.",
+      "lore": "At the start of your next turn, mark 1 random enemy minion once. The next strike hits harder.",
       "image": "art/chiorico.webp",
       "abilities": [
-        {
-          "trigger": "onPlay",
-          "effect": "applyStatus",
-          "target": "enemyMinion",
-          "status": "marked",
-          "value": 3,
-          "turns": 2
-        },
         {
           "trigger": "onTurnStart",
           "effect": "applyStatusToRandomEnemyMinion",
           "status": "marked",
           "value": 3,
-          "turns": 2
+          "turns": 2,
+          "oncePerMinion": true
         }
       ],
       "id": "TheGates:chiorico",
@@ -977,23 +1009,17 @@
       "health": 10,
       "keywords": [],
       "race": "Human",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Belgium",
-      "lore": "On play and at the start of each of your turns, freeze an enemy minion.",
+      "lore": "At the start of your next turn, freeze 1 random enemy minion once.",
       "image": "art/JacqueDeBalsac.webp",
       "abilities": [
-        {
-          "trigger": "onPlay",
-          "effect": "applyStatus",
-          "target": "enemyMinion",
-          "status": "frozen",
-          "turns": 1
-        },
         {
           "trigger": "onTurnStart",
           "effect": "applyStatusToRandomEnemyMinion",
           "status": "frozen",
-          "turns": 1
+          "turns": 1,
+          "oncePerMinion": true
         }
       ],
       "id": "TheGates:jacquedebalsac",
@@ -1001,13 +1027,13 @@
     },
     {
       "name": "Kep",
-      "cost": 8,
+      "cost": 6,
       "type": "minion",
       "attack": 2,
       "health": 15,
       "keywords": [],
       "race": "Human",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Portugal",
       "lore": "Uzbekistan sympathizer. This card regenerates one of health on your side every turn.",
       "image": "art/Keps.webp",
@@ -1029,7 +1055,7 @@
       "health": 10,
       "keywords": [],
       "race": "Monster",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Bolivia",
       "lore": "On play, poison an enemy minion or hero for six turns. Poison deals +2 damage.",
       "image": "art/mamaluteo.webp",
@@ -1054,7 +1080,7 @@
       "health": 6,
       "keywords": [],
       "race": "Monster",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Oman",
       "lore": "On its first death, deal 20 damage to all minions, then return with 1 Health.",
       "image": "art/Overseer.webp",
@@ -1082,25 +1108,18 @@
       "health": 10,
       "keywords": [],
       "race": "Human",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Portugal",
-      "lore": "On play and at the start of each of your turns, weaken an enemy minion for two turns.",
+      "lore": "At the start of your next turn, weaken 1 random enemy minion once for two turns.",
       "image": "art/Toy.webp",
       "abilities": [
-        {
-          "trigger": "onPlay",
-          "effect": "applyStatus",
-          "target": "enemyMinion",
-          "status": "weakened",
-          "value": 3,
-          "turns": 2
-        },
         {
           "trigger": "onTurnStart",
           "effect": "applyStatusToRandomEnemyMinion",
           "status": "weakened",
           "value": 3,
-          "turns": 2
+          "turns": 2,
+          "oncePerMinion": true
         }
       ],
       "id": "TheGates:toy",
@@ -1176,7 +1195,7 @@
         "taunt"
       ],
       "race": "Human",
-      "rarity": "rare",
+      "rarity": "common",
       "country": "Sweden",
       "lore": "A mighty tank to carry others!. This card has attack priority above all.",
       "image": "art/Alfred-Longstocking.webp",
@@ -1193,8 +1212,15 @@
       "race": "Monster",
       "rarity": "rare",
       "country": "South Korea",
-      "lore": "Do not be afraid.",
+      "lore": "When Angel dies, it has a 30% chance to destroy a random enemy minion.",
       "image": "art/Angel.webp",
+      "abilities": [
+        {
+          "trigger": "onDeath",
+          "effect": "destroyRandomEnemyMinionChance",
+          "chance": 30
+        }
+      ],
       "id": "base:angel",
       "_expansionId": "base"
     },
@@ -1385,8 +1411,15 @@
       "race": "Monster",
       "rarity": "rare",
       "country": "South Africa",
-      "lore": "This card can instantly attack when prepared.",
+      "lore": "Charge. The first time Dog is played, a random friendly non-Charge minion gains Charge.",
       "image": "art/Dog.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "grantChargeToRandomFriendlyNonCharge",
+          "firstPlayOnly": true
+        }
+      ],
       "id": "base:dog",
       "_expansionId": "base"
     },
@@ -1415,7 +1448,7 @@
         "taunt"
       ],
       "race": "Monster",
-      "rarity": "rare",
+      "rarity": "common",
       "country": "Vanuatu",
       "lore": "A horror on the sea. This card has attack priority above all.",
       "image": "art/Fish.webp",
@@ -1470,7 +1503,7 @@
       "health": 8,
       "keywords": [],
       "race": "Monster",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Arcana",
       "lore": "When this card dies, transform it into a normal Warerita on the board.",
       "image": "art/GoldenWarerita.webp",
@@ -1509,7 +1542,7 @@
       "health": 10,
       "keywords": [],
       "race": "Human",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Ireland",
       "lore": "When this card dies, return every remaining minion on both boards to its owner's deck.",
       "image": "art/Humph.webp",
@@ -1530,7 +1563,7 @@
       "health": 11,
       "keywords": [],
       "race": "Monster",
-      "rarity": "legendary",
+      "rarity": "rare",
       "country": "Portugal",
       "lore": "The mighty god, when this card it's prepared, it will deal 1 of damage to every card of the board.",
       "image": "art/Jakal.webp",
@@ -1567,7 +1600,7 @@
       "health": 5,
       "keywords": [],
       "race": "Human",
-      "rarity": "rare",
+      "rarity": "common",
       "country": "Portugal",
       "lore": "Can you make my card the strongest in the game? thanks.",
       "image": "art/Kep.webp",
@@ -1584,7 +1617,7 @@
         "charge"
       ],
       "race": "Human",
-      "rarity": "rare",
+      "rarity": "common",
       "country": "Latvia",
       "lore": "This card can instantly attack when prepared.",
       "image": "art/Kurzemnieks.webp",
@@ -1702,7 +1735,7 @@
         "charge"
       ],
       "race": "Monster",
-      "rarity": "legendary",
+      "rarity": "rare",
       "country": "Egypt",
       "lore": "After dying, this card returns to the deck. This card can instantly attack when prepared.",
       "image": "art/Mostor.webp",
@@ -1726,8 +1759,14 @@
       "race": "Monster",
       "rarity": "rare",
       "country": "Germany",
-      "lore": "I am the greatest Labubu.",
+      "lore": "Whenever Mr Labubu destroys a minion and survives, it gains Charge.",
       "image": "art/Mr_Labubu.webp",
+      "abilities": [
+        {
+          "trigger": "onKillMinion",
+          "effect": "grantSelfCharge"
+        }
+      ],
       "id": "base:mr-labubu",
       "_expansionId": "base"
     },
@@ -1796,8 +1835,18 @@
       "race": "Human",
       "rarity": "rare",
       "country": "Germany",
-      "lore": "Bring back oil.",
+      "lore": "On play, if Oil Bert survives 2 turns, it gains +2/+2 once.",
       "image": "art/Oil-Bert.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "startDelayedSelfBuff",
+          "turns": 2,
+          "attack": 2,
+          "health": 2,
+          "firstPlayOnly": true
+        }
+      ],
       "id": "base:oil-bert",
       "_expansionId": "base"
     },
@@ -1809,7 +1858,7 @@
       "health": 6,
       "keywords": [],
       "race": "Monster",
-      "rarity": "legendary",
+      "rarity": "rare",
       "country": "New Zealand",
       "lore": "This card deals +2 damage to Human cards.",
       "image": "art/Penquin.webp",
@@ -1862,7 +1911,7 @@
       "health": 6,
       "keywords": [],
       "race": "Human",
-      "rarity": "legendary",
+      "rarity": "rare",
       "country": "Romania",
       "lore": "jocu asta mi-a mancat toti nervii. This card deals +2 damage to monsters.",
       "image": "art/Radu.webp",
@@ -1900,8 +1949,15 @@
       "race": "Human",
       "rarity": "rare",
       "country": "Malaysia",
-      "lore": "The strong arm of Malaysia.",
+      "lore": "Whenever Rin attacks, it loses 1 Health.",
       "image": "art/Rin.webp",
+      "abilities": [
+        {
+          "trigger": "onAttack",
+          "effect": "damageSelfOnAttack",
+          "value": 1
+        }
+      ],
       "id": "base:rin",
       "_expansionId": "base"
     },
@@ -1996,8 +2052,14 @@
       "race": "Monster",
       "rarity": "rare",
       "country": "Poland",
-      "lore": "CEO of Anti Sweden Social Club.",
+      "lore": "On play, steal 1 Health from a random minion in the enemy hand and gain +1 Attack.",
       "image": "art/SzczwanyLisek.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "stealHealthFromRandomEnemyHandMinionAsAttack"
+        }
+      ],
       "id": "base:szczwanylisek",
       "_expansionId": "base"
     },
@@ -2045,8 +2107,14 @@
       "race": "Human",
       "rarity": "rare",
       "country": "Lithuania",
-      "lore": "This card has attack priority above all.",
+      "lore": "Taunt. This card is immune to adverse effects.",
       "image": "art/V_for_Vendetta.webp",
+      "abilities": [
+        {
+          "trigger": "passive",
+          "effect": "immuneToAdverseEffects"
+        }
+      ],
       "id": "base:v-for-vendetta",
       "_expansionId": "base"
     },
@@ -2075,8 +2143,16 @@
       "race": "Monster",
       "rarity": "rare",
       "country": "Arcana",
-      "lore": "Wareritaaaa.",
+      "lore": "The first time Warerita is played, gain 1 temporary Mana crystal.",
       "image": "art/Warerita.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "gainTemporaryMana",
+          "value": 1,
+          "firstPlayOnly": true
+        }
+      ],
       "id": "base:warerita",
       "_expansionId": "base"
     },
@@ -2090,7 +2166,7 @@
         "charge"
       ],
       "race": "Human",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Bolivia",
       "lore": "At the start of each of your turns, add a Minor Spark to your hand. This card can instantly attack when prepared.",
       "image": "art/Zugzwang.webp",

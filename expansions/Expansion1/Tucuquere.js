@@ -6,8 +6,11 @@ module.exports = {
   health: 3,
   keywords: [],
   race: "Human",
-  rarity: "common",
+  rarity: "rare",
   country: "Chile",
-  lore: "Its watch lasts through the longest night in Arcana.",
+  lore: "Whenever Tucuquere destroys a minion, it gains Divine Shield.",
   image: "art/Tucuquere.webp",
+  abilities: [
+    { trigger: "onKillMinion", effect: "grantSelfDivineShield" },
+  ],
 };

@@ -6,7 +6,7 @@ module.exports = {
   health: 8,
   keywords: ["taunt"],
   race: "Human",
-  rarity: "rare",
+  rarity: "common",
   country: "Sweden",
   lore: "A mighty tank to carry others!. This card has attack priority above all.",
   image: "art/Alfred-Longstocking.webp",

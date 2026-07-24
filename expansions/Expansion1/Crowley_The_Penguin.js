@@ -6,7 +6,7 @@ module.exports = {
   health: 14,
   keywords: ["taunt"],
   race: "Monster",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Vatican",
   lore: "On its first play, Crowley shields every friendly minion from the next hit.",
   image: "art/Crowley_THE_Penguin.webp",

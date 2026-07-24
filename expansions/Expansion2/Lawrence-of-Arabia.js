@@ -6,7 +6,7 @@ module.exports = {
   health: 12,
   keywords: [],
   race: "Monster",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Yemen",
   lore: "At the start of each of your turns, add a random spell card to your hand.",
   image: "art/Lawrence-of-Arabia.webp",

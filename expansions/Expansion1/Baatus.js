@@ -8,6 +8,9 @@ module.exports = {
   race: "Monster",
   rarity: "rare",
   country: "Netherlands",
-  lore: "Allround Incapabel.",
+  lore: "Whenever a minion attacks Baatus, that attacker becomes Drunk until the end of its next turn.",
   image: "art/Baatus.webp",
+  abilities: [
+    { trigger: "onAttacked", effect: "applyDrunkToAttacker", turns: 2 },
+  ],
 };

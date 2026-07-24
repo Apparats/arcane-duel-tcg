@@ -18,6 +18,7 @@ const STATUS_LABEL = {
   marked: "!",
   burning: "B",
   drunk: "D",
+  confused: "?",
 };
 const STATUS_FULL_LABEL = {
   weakened: "Weakened",
@@ -27,11 +28,13 @@ const STATUS_FULL_LABEL = {
   marked: "Marked",
   burning: "Burning",
   drunk: "Drunk",
+  confused: "Confusion",
 };
 const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", mythic: "Mythic", souvenir: "Souvenir" };
 const BABU2_CARD_ID = "expansion2:Babu2";
+const SECOND_PLAYER_MANA_CARD_ID = "special:manaspark";
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.6.2-smarter-npc-scraping-status";
+const CHANGELOG_VERSION = "1.6.3-deck-effects-board-polish";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const TYPE_ICON = { minion: "⚔", spell: "✦" };
@@ -53,7 +56,7 @@ const ACTIVE_MULTIPLAYER_MATCH_KEY = "arcane_active_multiplayer_match";
 const RECONNECT_RETRY_MS = 3_000;
 const RECONNECT_WINDOW_MS = 60_000;
 const DISCORD_ACTIVITY_READY_TIMEOUT_MS = 12000;
-const SPELL_REVEAL_MS = 800;
+const SPELL_REVEAL_MS = 1100;
 const TOUCH_TOOLTIP_HOLD_MS = 500;
 const TOUCH_TOOLTIP_MOVE_TOLERANCE = 10;
 let quickplaySearching = false;
@@ -81,10 +84,28 @@ let isApplyingStateQueue = false;
 let stateQueueGeneration = 0;
 let roundBannerMode = null;
 let pendingHandPlayAnimation = null;
+let battleRevealGeneration = 0;
+let battleRevealTail = Promise.resolve();
+let activeBattleReveal = null;
 const predictedAttackKeys = new Set();
 let turnClockOffsetMs = 0;
 let turnTimerInterval = null;
 let lastHandTurnKey = null;
+let handManualVisibility = null;
+let mulliganRoomCode = null;
+let mulliganSelectedIndexes = new Set();
+let mulliganTimerInterval = null;
+let mulliganDeadline = 0;
+let mulliganStartsAt = 0;
+let mulliganClockOffsetMs = 0;
+let mulliganLastServerNow = null;
+let mulliganRenderTimer = null;
+let mulliganTransitionTimer = null;
+let mulliganReplacementIndexes = null;
+let mulliganReplacementState = null;
+let mulliganResultShownAt = 0;
+let localMulligan = null;
+let localMulliganTimer = null;
 const SETTLE_DELAY = 460;      // ms we wait after an impact before "settling" the final state
 const ROUND_BANNER_DELAY = 980;
 const ALLOWED_EMOTES = new Set(["😄", "😭", "😯", "😡", "🫄", "💀"]);
@@ -299,6 +320,7 @@ function startLocalMatch(playerName) {
   resetStateQueue();
   resetMatchIntro();
   localGame = new TCGEngine.Game("LOCAL", playerName || "You", "NPC");
+  startLocalMulligan();
   switchScreen("game");
   refreshLocalState();
 }
@@ -325,6 +347,14 @@ async function handleLocalAction(type, payload) {
     if (type === "emote") {
       showEmote(payload?.emote, true);
       return;
+    } else if (type === "replaceOpeningHand") {
+      if (!localMulligan?.active) return;
+      localGame.replaceOpeningHandCards(0, Array.isArray(payload?.handIndexes) ? payload.handIndexes : []);
+      finishLocalMulligan();
+      return;
+    } else if (localMulligan?.active && type !== "surrender") {
+      showToast("Choose your opening hand first.");
+      return;
     } else if (type === "playCard") {
       const card = localGame.getStateFor(0).me.hand[payload.handIndex];
       if (card?.type === "spell") await showSpellCastReveal(card.id);
@@ -338,6 +368,7 @@ async function handleLocalAction(type, payload) {
     }
   } catch (err) {
     if (type === "playCard") pendingHandPlayAnimation = null;
+    if (type === "replaceOpeningHand" && $("btnMulliganReplace")) $("btnMulliganReplace").disabled = false;
     showToast(err.message);
     return;
   }
@@ -349,7 +380,44 @@ async function handleLocalAction(type, payload) {
 }
 
 function refreshLocalState() {
-  applyIncomingState(localGame.getStateFor(0));
+  const state = localGame.getStateFor(0);
+  if (localMulligan?.active) {
+    state.serverNow = Date.now();
+    state.mulligan = {
+      active: true,
+      deadline: localMulligan.deadline,
+      startsAt: localMulligan.startsAt,
+      remainingMs: Math.max(0, localMulligan.deadline - Date.now()),
+      confirmed: false,
+      opponentConfirmed: true,
+    };
+  }
+  applyIncomingState(state);
+}
+
+function clearLocalMulligan() {
+  if (localMulliganTimer) {
+    clearTimeout(localMulliganTimer);
+    localMulliganTimer = null;
+  }
+  localMulligan = null;
+}
+
+function finishLocalMulligan() {
+  clearLocalMulligan();
+  refreshLocalState();
+}
+
+function startLocalMulligan() {
+  const startsAt = Date.now() + 4_200;
+  localMulligan = {
+    active: true,
+    startsAt,
+    deadline: startsAt + 25_000,
+  };
+  localMulliganTimer = setTimeout(() => {
+    finishLocalMulligan();
+  }, 29_200);
 }
 
 async function runNpcTurn() {
@@ -370,6 +438,10 @@ function resetStateQueue() {
   isApplyingStateQueue = false;
   stateQueueGeneration += 1;
   lastHandTurnKey = null;
+  handManualVisibility = null;
+  clearLocalMulligan();
+  resetMulliganOverlay();
+  resetBattleRevealQueue();
 }
 
 function applyIncomingState(newState) {
@@ -468,7 +540,10 @@ function showMatchIntro(state) {
   const fadeOutMs = 420;
   matchIntroTimer = setTimeout(() => {
     intro.classList.add("is-leaving");
-    matchIntroTimer = setTimeout(() => intro.classList.add("hidden"), fadeOutMs);
+    matchIntroTimer = setTimeout(() => {
+      intro.classList.add("hidden");
+      if (myState?.mulligan?.active) renderMulligan(myState);
+    }, fadeOutMs);
   }, Math.max(0, durationMs - fadeOutMs));
 }
 
@@ -492,6 +567,12 @@ async function processStateQueue() {
 }
 
 async function applyQueuedState(newState, generation) {
+  const reveal = activeBattleReveal;
+  if (reveal) {
+    await reveal;
+    if (generation !== stateQueueGeneration) return;
+  }
+
   const prev = myState;
   const diff = prev ? computeAndPlayImpactAnimations(prev, newState) : { anyImpact: false, newMinions: [] };
   const roundKey = String(newState.turnNumber);
@@ -610,10 +691,10 @@ function handleServerMessage(msg) {
       applyIncomingState(msg.payload);
       break;
     case "spellCast":
-      void showSpellCastReveal(msg.payload?.cardId);
+      queueBattleReveal(() => showSpellCastReveal(msg.payload?.cardId));
       break;
     case "mythicSummon":
-      void showMythicSummonReveal(msg.payload?.cardId);
+      queueBattleReveal(() => showMythicSummonReveal(msg.payload?.cardId));
       break;
     case "shieldChallengeStart":
       window.ArcaneShieldChallenge?.start(msg.payload, (challengeId, direction) => {
@@ -702,6 +783,7 @@ function handleServerMessage(msg) {
       break;
     case "error":
       pendingHandPlayAnimation = null;
+      if (myState?.mulligan?.active && $("btnMulliganReplace")) $("btnMulliganReplace").disabled = false;
       setQuickplaySearching(false);
       setSingleplayerStartPending(false);
       showToast(msg.payload.message);
@@ -908,6 +990,29 @@ function predictCardPlay(cardEl) {
   if (!cardEl) return;
   cardEl.classList.add("action-pending");
   setTimeout(() => cardEl.classList.remove("action-pending"), 1_500);
+}
+
+function resetBattleRevealQueue() {
+  battleRevealGeneration += 1;
+  battleRevealTail = Promise.resolve();
+  activeBattleReveal = null;
+  document.querySelector(".spell-cast-reveal")?.remove();
+}
+
+function queueBattleReveal(revealFactory) {
+  const generation = battleRevealGeneration;
+  const reveal = battleRevealTail
+    .catch(() => {})
+    .then(() => {
+      if (generation !== battleRevealGeneration) return null;
+      return revealFactory();
+    })
+    .catch(() => {});
+  activeBattleReveal = reveal;
+  battleRevealTail = reveal.finally(() => {
+    if (activeBattleReveal === reveal) activeBattleReveal = null;
+  });
+  return reveal;
 }
 
 function showSpellCastReveal(cardId) {
@@ -1269,12 +1374,23 @@ async function openCampaignStages() {
 
 function selectCampaignStage(campaign, index) {
   activeCampaignStage = campaign;
+  const unavailable = campaign.available === false;
+  const locked = !unavailable && (campaign.locked === true || campaign.unlocked === false);
+  const completed = Number(campaign.wins || 0) > 0;
+  const statusText = unavailable ? "Coming soon" : locked ? "Locked" : completed ? "Complete" : "Available";
   $("campaignStageLabel").textContent = `Stage ${index + 1}`;
+  const status = $("campaignStageStatus");
+  status.textContent = statusText;
+  status.dataset.state = unavailable ? "unavailable" : locked ? "locked" : completed ? "complete" : "available";
   $("campaignStageName").textContent = campaign.name;
-  $("campaignStageLore").textContent = campaign.lore;
-  $("btnStartCampaignStage").disabled = campaign.available === false;
-  $("btnStartCampaignStage").textContent = campaign.available === false
+  $("campaignStageLore").textContent = locked
+    ? campaign.lockReason || "Complete the previous stage first."
+    : campaign.lore;
+  $("btnStartCampaignStage").disabled = unavailable || locked;
+  $("btnStartCampaignStage").textContent = unavailable
     ? "Coming soon"
+    : locked
+      ? "Complete previous stage"
     : `Challenge ${campaign.npcName || campaign.name}`;
   const campaignInfo = $("btnCampaignInfo");
   const hasGoldReward = Number(campaign.rewardGold || 0) > 0;
@@ -1282,6 +1398,7 @@ function selectCampaignStage(campaign, index) {
   campaignInfo.title = hasGoldReward ? "View campaign rewards" : "View card progress";
   document.querySelectorAll(".campaign-stage-choice").forEach((button) => {
     button.classList.toggle("active", button.dataset.campaignId === campaign.id);
+    button.setAttribute("aria-selected", button.dataset.campaignId === campaign.id ? "true" : "false");
   });
 }
 
@@ -1293,13 +1410,24 @@ function renderCampaignStageList(campaigns) {
     button.type = "button";
     button.className = "campaign-stage-choice";
     button.dataset.campaignId = campaign.id;
-    button.textContent = `Stage ${index + 1}: ${campaign.name}`;
-    if (campaign.available === false) {
-      button.disabled = true;
+    button.setAttribute("role", "listitem");
+    const unavailable = campaign.available === false;
+    const locked = !unavailable && (campaign.locked === true || campaign.unlocked === false);
+    const completed = Number(campaign.wins || 0) > 0;
+    const statusText = unavailable ? "Soon" : locked ? "Locked" : completed ? "Done" : "Open";
+    button.dataset.state = unavailable ? "unavailable" : locked ? "locked" : completed ? "complete" : "available";
+    button.innerHTML = `
+      <span class="campaign-stage-choice-index">Stage ${index + 1}</span>
+      <span class="campaign-stage-choice-name">${escapeHtml(campaign.name)}</span>
+      <span class="campaign-stage-choice-state">${statusText}</span>
+    `;
+    button.addEventListener("click", () => selectCampaignStage(campaign, index));
+    if (unavailable) {
       button.classList.add("locked");
-      button.textContent += " (Coming soon)";
-    } else {
-      button.addEventListener("click", () => selectCampaignStage(campaign, index));
+      button.title = "This campaign is not available yet.";
+    } else if (locked) {
+      button.classList.add("locked");
+      button.title = campaign.lockReason || "Complete the previous stage first.";
     }
     list.appendChild(button);
   });
@@ -1324,6 +1452,9 @@ $("btnCampaignInfo").addEventListener("click", () => {
 
 $("btnStartCampaignStage").addEventListener("click", () => {
   if (!activeCampaignStage || !requireLoggedInForPlay()) return;
+  if (activeCampaignStage.locked === true || activeCampaignStage.unlocked === false) {
+    return showToast(activeCampaignStage.lockReason || "Complete the previous stage first.");
+  }
   setSingleplayerStartPending(false);
   clearMultiplayerReconnect();
   forgetMultiplayerMatch();
@@ -1399,9 +1530,10 @@ function render(state) {
   // Own hand
   renderHand(state);
   syncHandVisibility(state);
+  renderMulligan(state);
 
   // End turn button
-  $("btnEndTurn").disabled = !state.isYourTurn;
+  $("btnEndTurn").disabled = !state.isYourTurn || Boolean(state.mulligan?.active);
   $("btnEndTurn").classList.remove("action-pending");
 
   updateTargetableHighlights(state);
@@ -1501,7 +1633,7 @@ function updateBoardCard(el, minion, isSelf) {
   if ((minion.keywords || []).includes("taunt")) classNames.push("taunt");
   if (minion.divineShield) classNames.push("shield");
   activeStatuses(minion).forEach((status) => classNames.push(`status-${status.type}`));
-  if (isSelf && !minion.canAttack) classNames.push("exhausted");
+  if (isSelf && (!minion.canAttack || (minion.attack || 0) <= 0)) classNames.push("exhausted");
   if (isSelf && minion.instanceId === selectedAttackerId) classNames.push("selected");
   el.className = classNames.join(" ");
   el.dataset.instanceId = minion.instanceId;
@@ -1552,9 +1684,241 @@ function renderHand(state) {
   });
 }
 
+function mulliganCardHTML(card) {
+  return `
+    ${cardArtHTML(card)}
+    ${cardCostHTML(card)}
+    <div class="card-badges">${keywordBadgesHTML(card)}</div>
+    <div class="card-footer">
+      ${
+        card.type === "minion"
+          ? `<span class="card-stat atk">${card.attack}</span><span class="card-name">${escapeHtml(card.name)}</span><span class="card-stat hp">${card.health}</span>`
+          : `<span class="card-name">${escapeHtml(card.name)}</span>${spellEffectValueHTML(card)}`
+      }
+    </div>
+  `;
+}
+
+function resetMulliganOverlay({ immediate = false } = {}) {
+  const overlay = $("mulliganOverlay");
+  if (!immediate && overlay?.classList.contains("is-leaving")) return;
+  const finishReset = () => {
+    overlay?.classList.add("hidden");
+    overlay?.classList.remove("is-leaving");
+    $("mulliganCards")?.replaceChildren();
+  };
+  if (mulliganTransitionTimer) {
+    clearTimeout(mulliganTransitionTimer);
+    mulliganTransitionTimer = null;
+  }
+  if (!immediate && overlay && !overlay.classList.contains("hidden")) {
+    overlay.classList.add("is-leaving");
+    mulliganTransitionTimer = setTimeout(() => {
+      mulliganTransitionTimer = null;
+      finishReset();
+    }, 360);
+  } else {
+    finishReset();
+  }
+  mulliganRoomCode = null;
+  mulliganSelectedIndexes = new Set();
+  mulliganReplacementIndexes = null;
+  mulliganReplacementState = null;
+  mulliganResultShownAt = 0;
+  mulliganDeadline = 0;
+  mulliganStartsAt = 0;
+  mulliganLastServerNow = null;
+  if (mulliganRenderTimer) {
+    clearTimeout(mulliganRenderTimer);
+    mulliganRenderTimer = null;
+  }
+  if (mulliganTimerInterval) {
+    clearInterval(mulliganTimerInterval);
+    mulliganTimerInterval = null;
+  }
+}
+
+function updateMulliganTimer() {
+  const timer = $("mulliganTimer");
+  if (!timer || !mulliganDeadline) return;
+  const remaining = Math.max(0, Math.ceil((mulliganDeadline - (Date.now() + mulliganClockOffsetMs)) / 1_000));
+  timer.textContent = String(remaining);
+  timer.classList.toggle("warning", remaining <= 5);
+}
+
+function updateMulliganReplaceButtonLabel(confirmed = false) {
+  const replaceButton = $("btnMulliganReplace");
+  if (!replaceButton) return;
+  replaceButton.textContent = confirmed ? "Waiting" : (mulliganSelectedIndexes.size > 0 ? "Replace" : "Ready");
+}
+
+function revealMulliganReplacement(state, replacementIndexes) {
+  const cards = $("mulliganCards");
+  const overlay = $("mulliganOverlay");
+  if (!cards || !overlay) return;
+  overlay.querySelector(".mulligan-panel")?.classList.add("is-confirmed");
+  $("mulliganStatus").textContent = replacementIndexes.length > 0
+    ? "This is your new opening hand."
+    : "You kept your opening hand.";
+  const replaceButton = $("btnMulliganReplace");
+  replaceButton.disabled = true;
+  replaceButton.textContent = "Ready";
+  cards.replaceChildren();
+  state.me.hand.forEach((card, index) => {
+    const button = document.createElement("button");
+    const locked = card.id === SECOND_PLAYER_MANA_CARD_ID;
+    button.type = "button";
+    button.className = `mulligan-card minion-card ${rarityClass(card)}${locked ? " locked" : ""}`;
+    button.dataset.handIndex = String(index);
+    button.disabled = true;
+    button.setAttribute("aria-label", card.name);
+    button.innerHTML = mulliganCardHTML(card);
+    attachCardTooltip(button, card);
+    cards.appendChild(button);
+    if (replacementIndexes.includes(index)) button.classList.add("is-dealt");
+  });
+  mulliganResultShownAt = Date.now();
+}
+
+function renderMulligan(state) {
+  const overlay = $("mulliganOverlay");
+  if (!overlay) return;
+  const mulligan = state.mulligan;
+  if (!mulligan?.active) {
+    if (mulliganReplacementIndexes) {
+      if (mulliganTransitionTimer) return;
+      const replacementIndexes = [...mulliganReplacementIndexes];
+      mulliganTransitionTimer = setTimeout(() => {
+        mulliganTransitionTimer = null;
+        mulliganReplacementIndexes = null;
+        revealMulliganReplacement(state, replacementIndexes);
+        mulliganTransitionTimer = setTimeout(() => {
+          mulliganTransitionTimer = null;
+          resetMulliganOverlay();
+        }, 1_250);
+      }, 360);
+      return;
+    }
+    const resultDisplayRemaining = Math.max(0, 1_250 - (Date.now() - mulliganResultShownAt));
+    if (mulliganResultShownAt && resultDisplayRemaining > 0) {
+      if (!mulliganTransitionTimer) {
+        mulliganTransitionTimer = setTimeout(() => {
+          mulliganTransitionTimer = null;
+          resetMulliganOverlay();
+        }, resultDisplayRemaining);
+      }
+      return;
+    }
+    resetMulliganOverlay();
+    return;
+  }
+
+  if (mulliganRoomCode !== state.roomCode) {
+    if (mulliganTransitionTimer) {
+      clearTimeout(mulliganTransitionTimer);
+      mulliganTransitionTimer = null;
+    }
+    mulliganRoomCode = state.roomCode;
+    mulliganSelectedIndexes = new Set();
+    mulliganLastServerNow = null;
+  }
+
+  const incomingServerNow = Number.isFinite(state.serverNow) ? state.serverNow : null;
+  if (incomingServerNow !== null && incomingServerNow !== mulliganLastServerNow) {
+    mulliganClockOffsetMs = incomingServerNow - Date.now();
+    mulliganLastServerNow = incomingServerNow;
+  }
+  mulliganStartsAt = Number(mulligan.startsAt) || 0;
+  mulliganDeadline = Number(mulligan.deadline) || 0;
+  const now = Date.now() + mulliganClockOffsetMs;
+  const introVisible = !$("matchIntro")?.classList.contains("hidden");
+  if (mulliganStartsAt && now < mulliganStartsAt && introVisible) {
+    overlay.classList.add("hidden");
+    if (!mulliganRenderTimer) {
+      const pendingState = state;
+      mulliganRenderTimer = setTimeout(() => {
+        mulliganRenderTimer = null;
+        if (pendingState.mulligan?.active) renderMulligan(pendingState);
+      }, Math.max(0, mulliganStartsAt - now));
+    }
+    return;
+  }
+  if (mulliganRenderTimer) {
+    clearTimeout(mulliganRenderTimer);
+    mulliganRenderTimer = null;
+  }
+  if (!mulliganTimerInterval) mulliganTimerInterval = setInterval(updateMulliganTimer, 250);
+  updateMulliganTimer();
+
+  const confirmed = mulligan.confirmed === true;
+  const cards = $("mulliganCards");
+  overlay.classList.remove("is-leaving");
+  overlay.classList.remove("hidden");
+  overlay.querySelector(".mulligan-panel")?.classList.toggle("is-confirmed", confirmed);
+  $("mulliganMatchup").textContent = `${state.me.name} vs ${state.opponent.name}`;
+  $("mulliganStatus").textContent = confirmed
+    ? (mulligan.opponentConfirmed ? "Both players are ready." : "Waiting for opponent.")
+    : (mulliganSelectedIndexes.size > 0 ? `${mulliganSelectedIndexes.size} selected for replacement.` : "Click cards to replace them.");
+
+  const replaceButton = $("btnMulliganReplace");
+  replaceButton.disabled = confirmed;
+  updateMulliganReplaceButtonLabel(confirmed);
+
+  if (confirmed && mulliganReplacementIndexes && !mulliganTransitionTimer) {
+    mulliganReplacementState = state;
+    mulliganTransitionTimer = setTimeout(() => {
+      const replacementIndexes = mulliganReplacementIndexes;
+      const replacementState = mulliganReplacementState;
+      mulliganTransitionTimer = null;
+      mulliganReplacementIndexes = null;
+      mulliganReplacementState = null;
+      if (replacementState?.mulligan?.active) {
+        revealMulliganReplacement(replacementState, replacementIndexes);
+      }
+    }, 360);
+    return;
+  }
+  if (confirmed && mulliganReplacementIndexes) {
+    mulliganReplacementState = state;
+    return;
+  }
+
+  cards.replaceChildren();
+  state.me.hand.forEach((card, index) => {
+    const button = document.createElement("button");
+    const locked = card.id === SECOND_PLAYER_MANA_CARD_ID;
+    button.type = "button";
+    button.className = `mulligan-card minion-card ${rarityClass(card)}${mulliganSelectedIndexes.has(index) ? " selected" : ""}${locked ? " locked" : ""}`;
+    button.dataset.handIndex = String(index);
+    button.disabled = confirmed || locked;
+    button.setAttribute("aria-pressed", String(mulliganSelectedIndexes.has(index)));
+    button.setAttribute("aria-label", locked ? `${card.name} cannot be replaced` : `Toggle ${card.name} replacement`);
+    button.innerHTML = mulliganCardHTML(card);
+    button.addEventListener("click", () => {
+      if (confirmed || locked) return;
+      if (mulliganSelectedIndexes.has(index)) mulliganSelectedIndexes.delete(index);
+      else mulliganSelectedIndexes.add(index);
+      const selected = mulliganSelectedIndexes.has(index);
+      button.style.transform = "";
+      button.style.zIndex = "";
+      const art = button.querySelector(".card-art");
+      if (art) art.style.transform = "";
+      button.classList.toggle("selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+      $("mulliganStatus").textContent = mulliganSelectedIndexes.size > 0
+        ? `${mulliganSelectedIndexes.size} selected for replacement.`
+        : "Click cards to replace them.";
+      updateMulliganReplaceButtonLabel(false);
+    });
+    attachCardTooltip(button, card);
+    cards.appendChild(button);
+  });
+}
+
 // ---------------- INTERACTION ----------------
 
 function onHandCardClick(idx, card, state, cardEl = null) {
+  if (state.mulligan?.active) return;
   if (!state.isYourTurn) return showToast("It's not your turn.");
   if (card.cost > state.me.manaCurrent) return showToast("Not enough mana.");
   const blockReason = getHandCardPlayBlockReason(state, card);
@@ -1572,6 +1936,7 @@ function onHandCardClick(idx, card, state, cardEl = null) {
 
   const needsPlayTarget = cardRequiresPlayTarget(card);
   const needsEnemyMinionTarget = cardRequiresEnemyMinionTarget(card);
+  const needsFriendlyMinionTarget = cardRequiresFriendlyMinionTarget(card);
   const needsEnemyHeroTarget = cardRequiresEnemyHeroTarget(card);
   const enemyOnlyTarget = cardTargetsEnemyOnly(card);
 
@@ -1603,13 +1968,15 @@ function onHandCardClick(idx, card, state, cardEl = null) {
   collapseHandForSpellTargeting();
   showTargetHint(needsEnemyMinionTarget
     ? "Choose an enemy minion"
-    : needsEnemyHeroTarget
-      ? "Choose the enemy hero"
-      : enemyOnlyTarget
-        ? "Choose an enemy minion or the enemy hero"
-        : card.effect === "heal"
-          ? "Choose who to heal (or your own hero)"
-          : "Choose a target (or the enemy hero)");
+    : needsFriendlyMinionTarget
+      ? "Choose a friendly minion"
+      : needsEnemyHeroTarget
+        ? "Choose the enemy hero"
+        : enemyOnlyTarget
+          ? "Choose an enemy minion or the enemy hero"
+          : card.effect === "heal"
+            ? "Choose who to heal (or your own hero)"
+            : "Choose a target (or the enemy hero)");
   render(myState);
 }
 
@@ -1622,6 +1989,9 @@ function onMinionClick(minion, isSelf) {
     const selectedCard = state.me.hand[selectedHandIndex];
     if (cardRequiresEnemyMinionTarget(selectedCard) && isSelf) {
       return showToast("Choose an enemy minion.");
+    }
+    if (cardRequiresFriendlyMinionTarget(selectedCard) && !isSelf) {
+      return showToast("Choose a friendly minion.");
     }
     if (cardRequiresEnemyHeroTarget(selectedCard)) {
       return showToast("Choose the enemy hero.");
@@ -1649,6 +2019,7 @@ function onMinionClick(minion, isSelf) {
   // Case 3: I select one of my own minions to attack with
   if (isSelf) {
     if (!minion.canAttack) return showToast("That minion can't attack yet.");
+    if ((minion.attack || 0) <= 0) return showToast("Minions with 0 Attack can't attack.");
     selectedAttackerId = minion.instanceId;
     render(state);
   }
@@ -1663,6 +2034,9 @@ function onHeroClick(isSelf) {
     const selectedCard = state.me.hand[selectedHandIndex];
     if (cardRequiresEnemyMinionTarget(selectedCard)) {
       return showToast("Choose an enemy minion.");
+    }
+    if (cardRequiresFriendlyMinionTarget(selectedCard)) {
+      return showToast("Choose a friendly minion.");
     }
     if (cardTargetsEnemyOnly(selectedCard) && isSelf) {
       return showToast("Choose an enemy target.");
@@ -1705,19 +2079,20 @@ $("btnSurrender").addEventListener("click", () => {
 });
 
 $("btnToggleHand").addEventListener("click", () => {
-  if (shouldAutoHideHand(myState)) {
-    const gameScreen = $("screen-game");
-    if (!gameScreen.classList.contains("hand-collapsed")) {
-      setHandCollapsed(true);
-      return;
-    }
-    const previewOpen = gameScreen.classList.toggle("hand-preview-open");
-    const button = $("btnToggleHand");
-    button.setAttribute("aria-expanded", String(previewOpen));
-    button.setAttribute("aria-label", previewOpen ? "Hide hand" : "Show hand");
-    return;
-  }
-  setHandCollapsed(!$("screen-game").classList.contains("hand-collapsed"));
+  const collapsed = $("screen-game").classList.contains("hand-collapsed");
+  handManualVisibility = collapsed ? "shown" : "hidden";
+  setHandCollapsed(!collapsed);
+});
+
+$("btnMulliganReplace")?.addEventListener("click", () => {
+  const button = $("btnMulliganReplace");
+  button.disabled = true;
+  mulliganReplacementIndexes = [...mulliganSelectedIndexes].sort((left, right) => left - right);
+  mulliganReplacementIndexes.forEach((index) => {
+    $("mulliganCards")?.querySelector(`[data-hand-index="${index}"]`)?.classList.add("is-replacing");
+  });
+  $("mulliganStatus").textContent = mulliganReplacementIndexes.length > 0 ? "Replacing selected cards..." : "Keeping this hand...";
+  send("replaceOpeningHand", { handIndexes: mulliganReplacementIndexes });
 });
 
 function hasPlayableHandCard(state) {
@@ -1733,10 +2108,21 @@ function cardReturnsOtherFriendlyMinionsToHand(card) {
   return Boolean(card?.abilities?.some((ability) => ability.effect === "returnOtherFriendlyMinionsToHand"));
 }
 
+function boardHasChargeSummonBlocker(...boards) {
+  return boards.some((board) => (board || []).some((minion) => {
+    if ((minion.statuses || []).some((status) => status.type === "silenced")) return false;
+    const cardDef = TCGCards.getCardById(minion.cardId);
+    return Boolean(cardDef?.abilities?.some((ability) => ability.effect === "blockChargeSummons"));
+  }));
+}
+
 function getHandCardPlayBlockReason(state, card) {
   if (!state?.me || !card) return "";
   if (card.type === "minion" && hasBabuBoardLock(state.me.board)) {
     return "Babu prevents you from summoning more minions.";
+  }
+  if (card.type === "minion" && (card.keywords || []).includes("charge") && boardHasChargeSummonBlocker(state.me.board, state.opponent?.board)) {
+    return "Weekly_Wackadoo prevents Charge cards from being summoned.";
   }
   if (card.type === "minion" && cardReturnsOtherFriendlyMinionsToHand(card)) {
     const handCountAfterPlay = Math.max(0, (state.me.hand || []).length - 1);
@@ -1756,7 +2142,7 @@ function isMobileTouchLayout() {
 }
 
 function collapseHandForSpellTargeting() {
-  if (isMobileTouchLayout()) setHandCollapsed(true);
+  if (isMobileTouchLayout() && handManualVisibility !== "shown") setHandCollapsed(true);
 }
 
 document.addEventListener("arcana:spell-drag-start", () => {
@@ -1782,6 +2168,10 @@ function syncHandVisibility(state) {
   lastHandTurnKey = turnKey;
   $("screen-game").classList.remove("hand-preview-open");
   const selectedCard = selectedHandIndex === null ? null : state.me.hand[selectedHandIndex];
+  if (handManualVisibility === "shown" || handManualVisibility === "hidden") {
+    setHandCollapsed(handManualVisibility === "hidden");
+    return;
+  }
   if (isMobileTouchLayout() && selectedCard?.type === "spell" && selectedCard.effect && selectedCard.effect !== "draw") {
     setHandCollapsed(true);
     return;
@@ -1842,15 +2232,16 @@ function updateTargetableHighlights(state) {
   const targetingAttack = selectedAttackerId !== null;
   const selectedCard = targetingSpell ? state.me.hand[selectedHandIndex] : null;
   const enemyMinionOnly = cardRequiresEnemyMinionTarget(selectedCard);
+  const friendlyMinionOnly = cardRequiresFriendlyMinionTarget(selectedCard);
   const enemyHeroOnly = cardRequiresEnemyHeroTarget(selectedCard);
   const enemyOnlyTarget = cardTargetsEnemyOnly(selectedCard);
   const healingSpell = selectedCard?.effect === "heal";
 
-  $("oppHero").classList.toggle("targetable", targetingAttack || (targetingSpell && !enemyMinionOnly && !healingSpell));
-  $("selfHero").classList.toggle("targetable", targetingSpell && !enemyMinionOnly && !enemyOnlyTarget);
+  $("oppHero").classList.toggle("targetable", targetingAttack || (targetingSpell && !enemyMinionOnly && !friendlyMinionOnly && !healingSpell));
+  $("selfHero").classList.toggle("targetable", targetingSpell && !enemyMinionOnly && !friendlyMinionOnly && !enemyOnlyTarget);
 
   document.querySelectorAll("#oppBoard .minion-card").forEach((el) => {
-    el.classList.toggle("targetable", (targetingSpell && !enemyHeroOnly) || targetingAttack);
+    el.classList.toggle("targetable", (targetingSpell && !enemyHeroOnly && !friendlyMinionOnly) || targetingAttack);
   });
   document.querySelectorAll("#selfBoard .minion-card").forEach((el) => {
     el.classList.toggle("targetable", targetingSpell && !enemyMinionOnly && !enemyHeroOnly && !enemyOnlyTarget);
@@ -1937,13 +2328,27 @@ function activeKeywords(card) {
 }
 
 function keywordBadgesHTML(card) {
-  return activeKeywords(card)
+  const keywordBadges = activeKeywords(card)
     .map((k) => `<span class="keyword-badge kw-${k}">${keywordIconHTML(k)}</span>`)
     .join("");
+  const specialBadge = cardHasSpecialEffect(card)
+    ? '<span class="special-ability-badge" aria-label="Special ability" title="Special ability"><svg class="special-ability-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.7 6.3.8-4.6 4.4 1.2 6.1L12 17l-5.6 3 1.2-6.1L3 9.5l6.3-.8L12 3Z" fill="currentColor"/></svg></span>'
+    : "";
+  return `${keywordBadges}${specialBadge}`;
 }
 
 function keywordIconHTML(keyword) {
   return KEYWORD_ICON[keyword] || KEYWORD_LABEL[keyword] || "?";
+}
+
+function cardHasSpecialEffect(card) {
+  const cardDef = typeof TCGCards !== "undefined" && card?.cardId ? TCGCards.getCardById(card.cardId) : null;
+  const source = cardDef || card;
+  if (source?.type !== "minion") return false;
+  return Boolean(
+    (Array.isArray(source?.abilities) && source.abilities.length > 0) ||
+    (Array.isArray(source?.damageBonuses) && source.damageBonuses.length > 0)
+  );
 }
 
 function activeStatuses(card) {
@@ -1966,7 +2371,8 @@ function statusDescription(status) {
     case "poisoned": return `Poisoned: takes ${amount} damage at the start of its turn, ${duration}. Can affect minions and heroes; reapplying Poison refreshes it.`;
     case "marked": return `Marked: the next damage taken is increased by ${amount}, ${duration}.`;
     case "burning": return `Burning: takes ${amount} damage at the start of its turn, ${duration}. Further Burning adds damage and duration.`;
-    case "drunk": return "Drunk: attacks a random minion on either side instead of the chosen target.";
+    case "drunk": return `Drunk: attacks a random minion on either side instead of the chosen target${status.turnsRemaining == null ? "." : `, ${duration}.`}`;
+    case "confused": return `Confusion: cannot attack normally ${duration}; has ${amount}% chance to attack an allied minion at turn start.`;
     default: return "Status effect.";
   }
 }
@@ -1974,6 +2380,12 @@ function statusDescription(status) {
 function cardRequiresEnemyMinionTarget(card) {
   return Boolean(card?.abilities?.some((ability) =>
     ["applyStatus", "returnEnemyMinionToDeck"].includes(ability.effect) && ability.target === "enemyMinion"
+  ));
+}
+
+function cardRequiresFriendlyMinionTarget(card) {
+  return Boolean(card?.abilities?.some((ability) =>
+    ability.effect === "cleanseFriendlyMinion" && ability.target === "friendlyMinion"
   ));
 }
 
@@ -1996,7 +2408,7 @@ function cardTargetsEnemyOnly(card) {
 function cardRequiresPlayTarget(card) {
   if (!card) return false;
   if (card.type === "spell" && card.effect && card.effect !== "draw") return true;
-  return cardTargetsEnemyOnly(card);
+  return cardTargetsEnemyOnly(card) || cardRequiresFriendlyMinionTarget(card);
 }
 
 function cardCostHTML(card) {
@@ -2025,7 +2437,9 @@ function spellEffectValueHTML(card) {
 }
 
 function rarityClass(card) {
-  return `rarity-${card.rarity || "common"}`;
+  const cardId = card?.cardId || card?.id;
+  const catalogCard = typeof TCGCards !== "undefined" && cardId ? TCGCards.getCardById(cardId) : null;
+  return `rarity-${catalogCard?.rarity || card?.rarity || "common"}`;
 }
 
 // Returns the art layer's HTML: an image if the card has one, or a
@@ -2999,6 +3413,7 @@ function cardFreeTiltShell(card) {
 
 function cardCanUseParallax(card) {
   if (!card) return false;
+  if (card.classList.contains("mulligan-card")) return false;
   if (card.classList.contains("dying") || card.classList.contains("inventory-card-locked") || card.dataset.dragArmed) return false;
   if (card.closest(".card-opening-slot.is-face-down")) return false;
   return true;

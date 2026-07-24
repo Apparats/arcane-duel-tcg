@@ -6,7 +6,7 @@ module.exports = {
   health: 2,
   keywords: ["charge"],
   race: "Human",
-  rarity: "rare",
+  rarity: "common",
   country: "Germany",
   lore: "Good boy!.",
   image: "art/Biertierchen.webp",

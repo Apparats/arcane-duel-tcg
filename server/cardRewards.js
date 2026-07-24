@@ -6,7 +6,7 @@ const PACK_RARITY_WEIGHTS = {
   souvenir: 0.6,
 };
 
-const STARTER_CARD_COUNT = 20;
+const STARTER_CARD_COUNT = 25;
 const STARTER_GUARANTEED_RARITY = "mythic";
 const STARTER_RARITY_LIMITS = { legendary: 3, mythic: 1 };
 const STARTER_MAX_COPIES_PER_CARD = 2;
@@ -15,7 +15,7 @@ const { secureRandomFrom, secureRandomInt } = require("./random");
 const { MAX_SPELLS } = require("../public/deckRules");
 
 function assertDrawCount(count, label = "card count") {
-  if (!Number.isInteger(count) || count < 1 || count > 20) {
+  if (!Number.isInteger(count) || count < 1 || count > STARTER_CARD_COUNT) {
     throw new Error(`Invalid ${label}.`);
   }
   return count;

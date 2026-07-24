@@ -6,7 +6,7 @@ module.exports = {
   health: 10,
   keywords: [],
   race: "Monster",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Rwanda",
   lore: "On play, steal a random minion from the enemy board and deploy it to your board.",
   image: "art/Fanex.webp",

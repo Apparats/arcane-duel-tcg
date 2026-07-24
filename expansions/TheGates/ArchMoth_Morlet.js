@@ -1,9 +1,9 @@
 module.exports = {
   name: "ArchMoth_Morlet",
-  cost: 7,
+  cost: 6,
   type: "minion",
   attack: 2,
-  health: 7,
+  health: 10,
   keywords: [],
   race: "Monster",
   rarity: "mythic",

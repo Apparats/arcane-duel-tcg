@@ -6,7 +6,7 @@ module.exports = {
   health: 8,
   keywords: ["taunt"],
   race: "Human",
-  rarity: "rare",
+  rarity: "common",
   country: "EEUU",
   lore: "Spreader of Democracy.",
   image: "art/Jeraxes.webp",

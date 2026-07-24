@@ -6,7 +6,7 @@ module.exports = {
   health: 8,
   keywords: [],
   race: "Monster",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Arcana",
   lore: "When this card dies, transform it into a normal Warerita on the board.",
   image: "art/GoldenWarerita.webp",

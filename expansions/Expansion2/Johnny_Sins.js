@@ -6,7 +6,7 @@ module.exports = {
   health: 8,
   keywords: [],
   race: "Human",
-  rarity: "rare",
+  rarity: "common",
   country: "Sierra Leone",
   lore: "Until the end...",
   image: "art/Johnny_Sins.webp",

@@ -7,7 +7,7 @@ It has **two modes**, using the same rules engine:
    the event.
 2. **Online 1v1** — authoritative Node server (WebSocket) + room code
 
-`public/cards.js` already comes compiled with the 20 base cards, so
+`public/cards.js` already comes compiled with the base cards, so
 both modes work out of the box without touching anything. You only
 need to run the card compiler (see below) if you add or change cards
 in `expansions/`.
@@ -520,6 +520,7 @@ abilities: [
 | effect | parameters | what it does |
 |---|---|---|
 | `drawCards` | `value` | whoever played the card draws `value` cards |
+| `drawNonLegendaryNonMythicCard` | - | whoever controls the ability draws 1 card from their deck that is not Legendary or Mythic |
 | `damageAllEnemyMinions` | `value` | `value` damage to ALL enemy minions |
 | `damageAllMinions` | `value` | `value` damage to ALL minions, on both sides |
 | `damageEnemyHero` | `value` | `value` damage directly to the enemy hero, no target needed |
@@ -607,7 +608,7 @@ read its exact value and remaining duration.
 
 Campaign NPCs are configured server-side in `server/campaigns/`. The Campaign button remains locked until a campaign is intentionally added to `server/campaigns/index.js`.
 
-An encounter definition supports a custom NPC identity, avatar, health, starting mana, mana cap, and a prebuilt deck. `ignoreDeckSizeLimit: true` permits an NPC deck longer than 20 cards. Board rules can set `maxMinions: null` and `ignoreKeywordLimits: true` for boss encounters that bypass normal board limits.
+An encounter definition supports a custom NPC identity, avatar, health, starting mana, mana cap, and a prebuilt deck. `ignoreDeckSizeLimit: true` permits an NPC deck longer than 25 cards. Board rules can set `maxMinions: null` and `ignoreKeywordLimits: true` for boss encounters that bypass normal board limits.
 
 ```js
 {

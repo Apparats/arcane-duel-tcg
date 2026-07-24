@@ -6,8 +6,11 @@ module.exports = {
   health: 6,
   keywords: [],
   race: "Human",
-  rarity: "common",
+  rarity: "rare",
   country: "Netherlands",
-  lore: "De aartsvader van de YOLO.",
+  lore: "While Weekly_Wackadoo is on the board, Charge minions cannot be summoned.",
   image: "art/Weekly_Wackadoo.webp",
+  abilities: [
+    { trigger: "passive", effect: "blockChargeSummons" },
+  ],
 };
