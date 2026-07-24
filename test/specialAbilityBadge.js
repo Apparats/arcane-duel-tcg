@@ -27,9 +27,9 @@ assert(fs.readFileSync("public/packOpening.js", "utf8").includes("${specialAbili
 assert(cardsCss.includes(".special-ability-badge"), "Special ability badge must have CSS.");
 assert(cardsCss.includes("#8547d6") || cardsCss.includes("#3d176f"), "Special ability badge should use a purple palette.");
 assert(/\.special-ability-badge\s*\{[\s\S]*?position: absolute/.test(cardsCss), "Special ability badge should be positioned like an overhanging card marker.");
-assert(/\.special-ability-badge\s*\{[\s\S]*?bottom: 12px[\s\S]*?left: 50%/.test(cardsCss), "Special ability badge should sit at the bottom center of the card.");
+assert(/\.special-ability-badge\s*\{[\s\S]*?bottom: -12px[\s\S]*?left: 50%/.test(cardsCss), "Special ability badge should sit at the bottom center of the card.");
 assert(/\.special-ability-badge\s*\{[\s\S]*?width: 16px[\s\S]*?height: 16px/.test(cardsCss), "Special ability badge should be 16px square.");
-assert(/#screen-game \.minion-card \.special-ability-badge\s*\{[\s\S]*?bottom: -10px;[\s\S]*?z-index: 35;[\s\S]*?translateX\(-50%\) translateZ\(24px\)/.test(cardsCss), "Board special ability badge should sit on the lower edge above card UI layers.");
+assert(/#screen-game \.minion-card \.special-ability-badge\s*\{[\s\S]*?bottom: -12px;[\s\S]*?z-index: 35;[\s\S]*?translateX\(-50%\) translateZ\(24px\)/.test(cardsCss), "Board special ability badge should sit on the lower edge above card UI layers.");
 assert(/\.card-badges\s*\{[\s\S]*?top: -6px[\s\S]*?left: 50%[\s\S]*?flex-direction: row/.test(cardsCss), "Keyword badges should sit as top rectangular markers with limited overhang.");
 assert(/\.keyword-badge\s*\{[\s\S]*?width: 34px[\s\S]*?height: 16px[\s\S]*?border-radius: 6px 6px 4px 4px/.test(cardsCss), "Keyword badges should be longer compact rectangles.");
 assert(cardsCss.includes(".card-status-badges"), "Board statuses should stay separate from top keyword badges.");

@@ -10,7 +10,7 @@ assert(
 );
 assert(
   handCss.includes("#screen-game .hand-card .special-ability-badge") &&
-  /#screen-game \.hand-card \.special-ability-badge\s*\{[\s\S]*?bottom: -10px/.test(handCss) &&
+  /#screen-game \.hand-card \.special-ability-badge\s*\{[\s\S]*?bottom: -12px/.test(handCss) &&
   /#screen-game \.hand-card \.special-ability-badge\s*\{[\s\S]*?z-index: 35;[\s\S]*?translateX\(-50%\) translateZ\(24px\)/.test(handCss),
   "Hand special ability badge should sit on the lower edge and remain above card art during 3D hover."
 );
