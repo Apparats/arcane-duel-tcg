@@ -43,14 +43,22 @@
     }, { attack: 0, health: 0 });
   }
 
+  function costModifierFromRef(cardRef) {
+    const segment = String(cardRef || "").split("|").find((part) => part.startsWith("cost:"));
+    const value = Number(segment ? segment.slice("cost:".length) : 0);
+    return Number.isInteger(value) ? value : 0;
+  }
+
   function cardFromHandRef(cardRef) {
     if (typeof cardRef !== "string") return cardRef;
     const card = getCardById(cardIdFromRef(cardRef));
     if (!card) return card;
     const modifiers = statModifiersFromRef(cardRef);
-    if (!modifiers.attack && !modifiers.health) return card;
+    const costModifier = costModifierFromRef(cardRef);
+    if (!modifiers.attack && !modifiers.health && !costModifier) return card;
     return {
       ...card,
+      cost: Math.max(0, (card.cost || 0) + costModifier),
       attack: card.type === "minion" ? Math.max(0, (card.attack || 0) + modifiers.attack) : card.attack,
       health: card.type === "minion" ? Math.max(1, (card.health || 1) + modifiers.health) : card.health,
     };
@@ -111,6 +119,13 @@
       (right.attack || 0) - (left.attack || 0) ||
       (right.health || 0) - (left.health || 0)
     )[0] || null;
+  }
+
+  function eligibleEnemyHandStealTargets(game, playerIdx) {
+    const enemy = game.players[opponentIdx(game, playerIdx)];
+    return (enemy.hand || [])
+      .map((cardRef) => cardFromHandRef(cardRef))
+      .filter((card) => card && card.rarity !== "mythic" && card.rarity !== "legendary");
   }
 
   function bestDamageTarget(game, playerIdx, card) {
@@ -199,6 +214,12 @@
       if (ability.effect === "grantChargeToRandomFriendlyNonCharge") score += (player.board || []).some((minion) => !(minion.keywords || []).includes("charge")) ? 6 : 0;
       if (ability.effect === "gainTemporaryMana") score += Math.max(1, ability.value || 1) * 2;
       if (ability.effect === "stealHealthFromRandomEnemyHandMinionAsAttack") score += (enemy.hand || []).length > 0 ? 5 : 0;
+      if (ability.effect === "grantDodgeToFriendlyBoardFirstPlay") score += (player.board || []).length * 4 + 6;
+      if (ability.effect === "increaseSelfDodgeOnKill") score += 3;
+      if (ability.effect === "stealRandomEnemyHandNonMythicCardBuffed") {
+        const eligibleTargets = eligibleEnemyHandStealTargets(game, playerIdx);
+        score += player.hand.length < MAX_HAND && eligibleTargets.length > 0 ? 8 + eligibleTargets.length * 2 : 0;
+      }
       if (ability.effect === "startDelayedSelfBuff") score += ((ability.attack || 0) * 2 + (ability.health || 0)) * 0.5;
       if (ability.effect === "swapSelfStatsIfBoardHasAtLeast") score += (player.board || []).length >= Math.max(1, ability.value || 1) - 1 ? 10 : 0;
       if (ability.effect === "buffAllFriendlyMinions") score += (player.board || []).length * ((ability.attack || 0) * 2 + (ability.health || 0));

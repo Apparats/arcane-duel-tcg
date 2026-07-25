@@ -262,6 +262,7 @@
 .tooltip-kw.status-marked { background: rgba(255, 97, 72, 0.15); color: #ffc09d; border: 1px solid #ff895f; }
 .tooltip-kw.status-burning { background: rgba(239, 101, 28, 0.16); color: #ffd29c; border: 1px solid #ef7c35; }
 .tooltip-kw.status-drunk { background: rgba(214, 181, 95, 0.15); color: #f7dea0; border: 1px solid #c6a34b; }
+.tooltip-kw.status-dodge { background: rgba(127, 78, 207, 0.16); color: #e7d9ff; border: 1px solid #9a6bea; }
 
 .tooltip-lore {
   font-size: 12px;

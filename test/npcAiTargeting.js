@@ -81,6 +81,29 @@ async function main() {
 }
 
 {
+  const game = new Game("NPC_GRACHTVIPER", "Player", "NPC", {
+    decks: [Array(25).fill("base:aleex"), Array(25).fill("base:aleex")],
+    randomInt: () => 0,
+  });
+  game.turn = 1;
+  game.players[0].hand = ["expansion2:athena", "base:bloodgiver", "base:barto"];
+  game.players[1].hand = ["roads:grachtviper"];
+  game.players[1].manaCurrent = 8;
+  game.players[1].manaMax = 8;
+
+  const play = chooseNpcPlayable(game, { playerIdx: 1, limitMythics: false });
+  assert(play, "NPC should consider GrachtViper playable without a manual target.");
+  assert.strictEqual(play.card.id, "roads:grachtviper");
+  assert.strictEqual(play.target, null, "GrachtViper should not require a UI target.");
+
+  await npcTakeTurn(game, 1, { stepDelay: 0, limitMythics: false });
+  assert(game.players[1].board.some((card) => card.cardId === "roads:grachtviper"), "NPC should play GrachtViper.");
+  assert(game.players[1].board.some((card) => card.cardId === "base:barto" && card.cost === 2), "NPC should play the stolen discounted card when it has remaining mana.");
+  assert(game.players[0].hand.includes("expansion2:athena"), "NPC GrachtViper should not steal Mythic cards.");
+  assert(game.players[0].hand.includes("base:bloodgiver"), "NPC GrachtViper should not steal Legendary cards.");
+}
+
+{
   const game = new Game("NPC_TRADE", "Player", "NPC", {
     decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
   });

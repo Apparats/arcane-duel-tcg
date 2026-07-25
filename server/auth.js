@@ -21,6 +21,7 @@ const {
   findOrCreateUserFromDiscord,
   findUserById,
   getDailyRewardProgress,
+  grantDiscordActivityInviteReward,
   grantDailyLoginReward,
   isDbEnabled,
 } = require("./db");
@@ -304,6 +305,18 @@ router.get("/me", async (req, res) => {
     discordClientId: process.env.DISCORD_CLIENT_ID || null,
     discordInviteUrl: getDiscordInviteUrl(),
   });
+});
+
+router.post("/discord/activity-invite-reward", async (req, res) => {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Login with Discord is required." });
+  try {
+    const reward = await grantDiscordActivityInviteReward(user.id);
+    res.json({ ok: true, reward });
+  } catch (err) {
+    console.error("Discord Activity invite reward error:", err.message || err);
+    res.status(500).json({ error: "Could not claim the Discord Activity invite reward." });
+  }
 });
 
 router.post("/ws-ticket", async (req, res) => {

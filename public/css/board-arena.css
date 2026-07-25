@@ -38,13 +38,49 @@
   background: radial-gradient(ellipse at center, transparent 32%, rgba(0, 9, 18, 0.54) 100%);
 }
 
+#screen-game[data-campaign-theme="fire"] {
+  background: #150503;
+}
+
+#screen-game[data-campaign-theme="fire"] .board-frame {
+  background: linear-gradient(90deg, #ffd37a, #b33b14 14%, #4c1308 50%, #b33b14 86%, #ffd37a);
+  box-shadow: inset 0 0 0 1px rgba(38, 6, 1, 0.96), 0 18px 48px rgba(0, 0, 0, 0.64), 0 0 38px rgba(255, 91, 31, 0.2);
+}
+
+#screen-game[data-campaign-theme="fire"] .board {
+  background:
+    radial-gradient(circle at 50% 52%, rgba(255, 166, 64, 0.24), rgba(183, 50, 15, 0.12) 25%, transparent 49%),
+    radial-gradient(ellipse at 50% 8%, rgba(255, 112, 33, 0.2), transparent 42%),
+    linear-gradient(180deg, #4a1006 0%, #260904 48%, #100403 100%);
+}
+
+#screen-game[data-campaign-theme="fire"] .board::before {
+  inset: 6% 7%;
+  background: radial-gradient(circle at center, rgba(255, 218, 119, 0.64), rgba(255, 103, 28, 0.34) 26%, rgba(117, 24, 8, 0.12) 54%, transparent 74%);
+  filter: blur(23px);
+  opacity: 0.9;
+  animation: campaign-fire-breathe 2.15s ease-in-out infinite;
+}
+
+#screen-game[data-campaign-theme="fire"] .board::after {
+  background:
+    radial-gradient(ellipse at 50% 88%, rgba(255, 95, 24, 0.12), transparent 36%),
+    radial-gradient(ellipse at center, transparent 33%, rgba(10, 2, 1, 0.58) 100%);
+}
+
 @keyframes campaign-frost-breathe {
   0%, 100% { opacity: 0.48; transform: scale(0.94); }
   50% { opacity: 0.64; transform: scale(1.04); }
 }
 
+@keyframes campaign-fire-breathe {
+  0%, 100% { opacity: 0.52; transform: scale(0.95); }
+  50% { opacity: 0.72; transform: scale(1.05); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   #screen-game[data-campaign-theme="frost"] .board::before { animation: none; opacity: 0.74; transform: none; }
+  #screen-game[data-campaign-theme="fire"] .board::before { animation: none; opacity: 0.78; transform: none; }
 }
 
 .hand-toggle { display: none; }

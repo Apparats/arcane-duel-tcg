@@ -929,6 +929,117 @@
       "_expansionId": "expansion2"
     },
     {
+      "name": "Datapunkt",
+      "cost": 4,
+      "type": "minion",
+      "attack": 3,
+      "health": 5,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "legendary",
+      "country": "Austria",
+      "lore": "On play, choose an enemy minion and return it to the enemy deck.",
+      "image": "art/Datapunkt.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "returnEnemyMinionToDeck",
+          "target": "enemyMinion"
+        }
+      ],
+      "id": "roads:datapunkt",
+      "_expansionId": "roads"
+    },
+    {
+      "name": "GrachtViper",
+      "cost": 6,
+      "type": "minion",
+      "attack": 4,
+      "health": 10,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "legendary",
+      "country": "Netherlands",
+      "lore": "On play, steal a random non-Mythic, non-Legendary enemy hand card, halve its Cost, and buff minion stats by 30%.",
+      "image": "art/GrachtViper.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "stealRandomEnemyHandNonMythicCardBuffed",
+          "buffPercent": 30
+        }
+      ],
+      "id": "roads:grachtviper",
+      "_expansionId": "roads"
+    },
+    {
+      "name": "Johnny",
+      "cost": 1,
+      "type": "minion",
+      "attack": 1,
+      "health": 2,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "souvenir",
+      "country": "Chile",
+      "lore": "On play, gain 2 temporary Mana this turn.",
+      "image": "art/Johnny.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "gainTemporaryMana",
+          "value": 2
+        }
+      ],
+      "id": "roads:johnny",
+      "_expansionId": "roads"
+    },
+    {
+      "name": "Jubx4",
+      "cost": 5,
+      "type": "minion",
+      "attack": 4,
+      "health": 10,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "legendary",
+      "country": "Iraq",
+      "lore": "First play grants Dodge: 40% to Jubx4, 30% to allies. Whenever an enemy card dies from any source while Jubx4 is on your board, Jubx4's Dodge rises by 5%, up to 60%.",
+      "image": "art/Jubx4.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "grantDodgeToFriendlyBoardFirstPlay",
+          "selfValue": 40,
+          "value": 30,
+          "firstPlayOnly": true
+        },
+        {
+          "trigger": "onEnemyMinionDeath",
+          "effect": "increaseSelfDodgeOnEnemyDeath",
+          "value": 5,
+          "maxValue": 60
+        }
+      ],
+      "id": "roads:jubx4",
+      "_expansionId": "roads"
+    },
+    {
+      "name": "LouisG-Boulanger",
+      "cost": 3,
+      "type": "minion",
+      "attack": 3,
+      "health": 5,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "common",
+      "country": "Belgium",
+      "lore": "A steady road-builder who holds the line with disciplined force.",
+      "image": "art/LouisG-Boulanger.webp",
+      "id": "roads:louisg-boulanger",
+      "_expansionId": "roads"
+    },
+    {
       "name": "ArchMoth_Morlet",
       "cost": 6,
       "type": "minion",
@@ -963,14 +1074,14 @@
       "race": "Human",
       "rarity": "legendary",
       "country": "Thailand",
-      "lore": "At the start of your next turn, silence 1 random enemy minion once.",
+      "lore": "On first play, silence all enemy minions.",
       "image": "art/Cardinal_Severin.webp",
       "abilities": [
         {
-          "trigger": "onTurnStart",
-          "effect": "applyStatusToRandomEnemyMinion",
+          "trigger": "onPlay",
+          "effect": "applyStatusToAllEnemyMinions",
           "status": "silenced",
-          "oncePerMinion": true
+          "firstPlayOnly": true
         }
       ],
       "id": "TheGates:cardinal-severin",
@@ -986,16 +1097,23 @@
       "race": "Human",
       "rarity": "legendary",
       "country": "Malta",
-      "lore": "At the start of your next turn, mark 1 random enemy minion once. The next strike hits harder.",
+      "lore": "On play, mark an enemy minion. At the start of your turns, mark 1 random enemy minion.",
       "image": "art/chiorico.webp",
       "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "applyStatus",
+          "target": "enemyMinion",
+          "status": "marked",
+          "value": 3,
+          "turns": 2
+        },
         {
           "trigger": "onTurnStart",
           "effect": "applyStatusToRandomEnemyMinion",
           "status": "marked",
           "value": 3,
-          "turns": 2,
-          "oncePerMinion": true
+          "turns": 2
         }
       ],
       "id": "TheGates:chiorico",
@@ -1011,15 +1129,21 @@
       "race": "Human",
       "rarity": "legendary",
       "country": "Belgium",
-      "lore": "At the start of your next turn, freeze 1 random enemy minion once.",
+      "lore": "On play, freeze an enemy minion. At the start of your turns, freeze 1 random enemy minion.",
       "image": "art/JacqueDeBalsac.webp",
       "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "applyStatus",
+          "target": "enemyMinion",
+          "status": "frozen",
+          "turns": 1
+        },
         {
           "trigger": "onTurnStart",
           "effect": "applyStatusToRandomEnemyMinion",
           "status": "frozen",
-          "turns": 1,
-          "oncePerMinion": true
+          "turns": 1
         }
       ],
       "id": "TheGates:jacquedebalsac",
@@ -1057,13 +1181,20 @@
       "race": "Monster",
       "rarity": "legendary",
       "country": "Bolivia",
-      "lore": "On play, poison an enemy minion or hero for six turns. Poison deals +2 damage.",
+      "lore": "On play, poison an enemy minion or hero. At the start of your turns, poison 1 random enemy minion.",
       "image": "art/mamaluteo.webp",
       "abilities": [
         {
           "trigger": "onPlay",
           "effect": "applyStatus",
           "target": "enemy",
+          "status": "poisoned",
+          "value": 2,
+          "turns": 6
+        },
+        {
+          "trigger": "onTurnStart",
+          "effect": "applyStatusToRandomEnemyMinion",
           "status": "poisoned",
           "value": 2,
           "turns": 6
@@ -1110,16 +1241,23 @@
       "race": "Human",
       "rarity": "legendary",
       "country": "Portugal",
-      "lore": "At the start of your next turn, weaken 1 random enemy minion once for two turns.",
+      "lore": "On play, weaken an enemy minion. At the start of your turns, weaken 1 random enemy minion.",
       "image": "art/Toy.webp",
       "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "applyStatus",
+          "target": "enemyMinion",
+          "status": "weakened",
+          "value": 3,
+          "turns": 2
+        },
         {
           "trigger": "onTurnStart",
           "effect": "applyStatusToRandomEnemyMinion",
           "status": "weakened",
           "value": 3,
-          "turns": 2,
-          "oncePerMinion": true
+          "turns": 2
         }
       ],
       "id": "TheGates:toy",
@@ -1759,12 +1897,12 @@
       "race": "Monster",
       "rarity": "rare",
       "country": "Germany",
-      "lore": "Whenever Mr Labubu destroys a minion and survives, it gains Charge.",
+      "lore": "Whenever Mr Labubu destroys a minion and survives, it gains Taunt.",
       "image": "art/Mr_Labubu.webp",
       "abilities": [
         {
           "trigger": "onKillMinion",
-          "effect": "grantSelfCharge"
+          "effect": "grantSelfTaunt"
         }
       ],
       "id": "base:mr-labubu",

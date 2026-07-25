@@ -20,5 +20,11 @@ assert(
   clientSource.includes("updateMulliganReplaceButtonLabel(false)"),
   "Mulligan selection changes should refresh the button label."
 );
+assert(
+  clientSource.includes("function visibleMulliganHandEntries") &&
+  clientSource.includes("card?.id === SECOND_PLAYER_MANA_CARD_ID") &&
+  clientSource.includes("entries.push({ card, handIndex })"),
+  "Mulligan should render only replaceable opening cards while preserving real hand indexes."
+);
 
 console.log("--- MULLIGAN READY BUTTON TEST OK ---");

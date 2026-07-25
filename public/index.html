@@ -13,22 +13,22 @@
 <link rel="apple-touch-icon" href="pwa-icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css?v=1.6.3-v4" />
-  <link rel="stylesheet" href="css/menu.css?v=1.6.3-v4" />
-<link rel="stylesheet" href="css/account-profile.css?v=1.6.3-v4" />
-<link rel="stylesheet" href="css/lobby.css?v=1.6.3-v4" />
-<link rel="stylesheet" href="css/board.css?v=1.6.3-v4" />
-<link rel="stylesheet" href="css/cards.css?v=1.6.3-v4" />
-<link rel="stylesheet" href="css/board-arena.css?v=1.6.3-v4" />
-<link rel="stylesheet" href="css/board-hand.css?v=1.6.3-v4" />
-<link rel="stylesheet" href="css/inventory.css?v=1.6.3-v4" />
-<link rel="stylesheet" href="css/deck-builder.css?v=1.6.3-v4" />
-<link rel="stylesheet" href="css/shop.css?v=1.6.3-v4" />
-<link rel="stylesheet" href="css/trade.css?v=1.6.3-v4" />
-<link rel="stylesheet" href="css/pack-opening.css?v=1.6.3-v4" />
-<link rel="stylesheet" href="css/fx.css?v=1.6.3-v4" />
-<link rel="stylesheet" href="css/board-effects.css?v=1.6.3-v4" />
-<link rel="stylesheet" href="css/overlay.css?v=1.6.3-v4" />
+<link rel="stylesheet" href="css/base.css?v=1.6.5-v1" />
+  <link rel="stylesheet" href="css/menu.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/account-profile.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/lobby.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/board.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/cards.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/board-arena.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/board-hand.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/inventory.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/deck-builder.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/shop.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/trade.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/pack-opening.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/fx.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/board-effects.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/overlay.css?v=1.6.5-v1" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -117,14 +117,16 @@
       <button id="btnMoreOptions" class="btn menu-options-trigger" type="button" aria-expanded="false" aria-controls="menuOptionsPanel">
         More options
       </button>
+      <button id="btnInviteDiscordActivity" class="btn menu-options-trigger activity-invite-trigger" type="button">
+        Invite Activity <span id="activityInviteGoldBadge" class="activity-invite-gold-badge hidden">Gold!</span>
+      </button>
       <div id="menuOptionsPanel" class="menu-options-panel hidden">
-        <button id="btnInviteDiscordActivity" class="btn menu-option-button" type="button">Invite to server</button>
         <button id="btnRequestCard" class="btn menu-option-button" type="button">Request card</button>
         <button id="btnOpenTermsMenu" class="btn menu-option-button" type="button">Terms of Service</button>
         <button id="btnOpenPrivacyMenu" class="btn menu-option-button" type="button">Privacy Notice</button>
         <div class="menu-option-config">
           <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Config</button>
-          <span class="menu-version">Version 1.6</span>
+          <span class="menu-version">Version 1.6.5</span>
         </div>
       </div>
     </div>
@@ -940,6 +942,21 @@
       </div>
     </div>
 
+    <div id="handRevealOverlay" class="mulligan-overlay hand-reveal-overlay hidden" aria-live="polite">
+      <div class="mulligan-panel hand-reveal-panel">
+        <div class="mulligan-header">
+          <div>
+            <div class="mulligan-kicker" id="handRevealKicker">Enemy hand</div>
+            <h2 id="handRevealTitle">GrachtViper stole a card</h2>
+          </div>
+        </div>
+        <div id="handRevealCards" class="hand-reveal-cards"></div>
+        <div class="mulligan-actions">
+          <div id="handRevealStatus" class="mulligan-status">The stolen card was added to your hand.</div>
+        </div>
+      </div>
+    </div>
+
     <div id="targetHint" class="target-hint hidden">Choose a target (or click the enemy hero) &#x2014; <button id="cancelTarget" class="btn-link">cancel</button></div>
   </section>
 
@@ -1006,6 +1023,22 @@
         <button id="btnCloseChangelog" class="changelog-close" type="button" aria-label="Close patch notes">x</button>
       </div>
       <div class="changelog-content">
+      <article class="changelog-entry">
+        <div class="changelog-entry-meta">
+          <h3>Version 1.6.5</h3>
+          <span>FireElemental, Roads Rewards &amp; New Player Gold</span>
+        </div>
+        <p class="changelog-entry-intro">Campaign progression now reaches a fire-themed Stage 3, Roads cards become collectible rewards, and account rewards are clearer for new and returning players.</p>
+        <ul class="changelog-list">
+          <li>New accounts now start with 350 gold alongside their starter cards. Existing accounts also receive this 350 gold once.</li>
+          <li>Stage 3 is open: challenge FireElemental on a fire-themed board with a stronger high-rarity deck and 3 starting Mana.</li>
+          <li>Defeating FireElemental grants 150 gold the first time and awards a Roads card after each victory.</li>
+          <li>Roads card rewards avoid duplicates until you have collected the full Roads set. After that, repeat victories can award extra copies.</li>
+          <li>The board music rotation now includes a new song during matches.</li>
+          <li>The main menu now has a dedicated Discord Activity invite button. Confirming the invite explains how Activities work and grants 100 gold once per account.</li>
+          <li>New cards, some fixes, and QoL things that i forgot, sorry.</li>
+        </ul>
+      </article>
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
           <h3>Version 1.6.3</h3>
@@ -1350,6 +1383,25 @@
     </div>
   </div>
 
+  <!-- ---------- MODAL: DISCORD ACTIVITY INVITE ---------- -->
+  <div id="activityInviteModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="activityInviteTitle">
+    <div class="overlay-card activity-invite-card">
+      <div class="changelog-header">
+        <h2 id="activityInviteTitle">Invite Arcana Activity</h2>
+        <button id="btnCloseActivityInvite" class="changelog-close" type="button" aria-label="Close Discord Activity invite">x</button>
+      </div>
+      <div class="activity-invite-content">
+        <img class="activity-invite-image" src="assets/images/activity.jpg" alt="Discord Activity start button location" />
+        <p>Invite Arcana TCG as a Discord Activity to your server and claim 100 gold the first time you confirm.</p>
+        <p>This is not a Discord bot. Activities are started from the button shown in the image, letting you play inside your Discord server and announce the activity to people you know.</p>
+      </div>
+      <div class="activity-invite-actions">
+        <button id="btnCancelActivityInvite" class="btn" type="button">Cancel</button>
+        <button id="btnConfirmActivityInvite" class="btn btn-primary" type="button">Confirm and invite</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ---------- MODAL: CARD REQUEST ---------- -->
   <div id="cardRequestModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="cardRequestTitle">
     <div class="overlay-card card-request-card">
@@ -1483,25 +1535,25 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.6.3-v4"></script>
-  <script src="deckRules.js?v=1.6.3-v4"></script>
-  <script src="engine.js?v=1.6.3-v4"></script>
-  <script src="ai.js?v=1.6.3-v4"></script>
-  <script src="audioConfig.js?v=1.6.3-v4"></script>
-  <script src="audioManager.js?v=1.6.3-v4"></script>
-  <script src="packOpening.js?v=1.6.3-v4"></script>
-<script src="legalNotices.js?v=1.6.3-v4"></script>
-<script src="profileCatalog.js?v=1.6.3-v4"></script>
-<script src="profileBadges.js?v=1.6.3-v4"></script>
-<script src="accountProfile.js?v=1.6.3-v4"></script>
-<script src="client.js?v=1.6.3-v4"></script>
-<script src="shieldChallenge.js?v=1.6.3-v4"></script>
-<script src="boardInteractions.js?v=1.6.3-v4"></script>
-<script src="inventory.js?v=1.6.3-v4"></script>
-<script src="deckBuilder.js?v=1.6.3-v4"></script>
-<script src="shop.js?v=1.6.3-v4"></script>
-<script src="trade.js?v=1.6.3-v4"></script>
-<script src="tournaments.js?v=1.6.3-v4"></script>
-<script src="pwa.js?v=1.6.3-v4"></script>
+  <script src="cards.js?v=1.6.5-v1"></script>
+  <script src="deckRules.js?v=1.6.5-v1"></script>
+  <script src="engine.js?v=1.6.5-v1"></script>
+  <script src="ai.js?v=1.6.5-v1"></script>
+  <script src="audioConfig.js?v=1.6.5-v1"></script>
+  <script src="audioManager.js?v=1.6.5-v1"></script>
+  <script src="packOpening.js?v=1.6.5-v1"></script>
+<script src="legalNotices.js?v=1.6.5-v1"></script>
+<script src="profileCatalog.js?v=1.6.5-v1"></script>
+<script src="profileBadges.js?v=1.6.5-v1"></script>
+<script src="accountProfile.js?v=1.6.5-v1"></script>
+<script src="client.js?v=1.6.5-v1"></script>
+<script src="shieldChallenge.js?v=1.6.5-v1"></script>
+<script src="boardInteractions.js?v=1.6.5-v1"></script>
+<script src="inventory.js?v=1.6.5-v1"></script>
+<script src="deckBuilder.js?v=1.6.5-v1"></script>
+<script src="shop.js?v=1.6.5-v1"></script>
+<script src="trade.js?v=1.6.5-v1"></script>
+<script src="tournaments.js?v=1.6.5-v1"></script>
+<script src="pwa.js?v=1.6.5-v1"></script>
 </body>
 </html>

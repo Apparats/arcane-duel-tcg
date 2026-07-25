@@ -19,7 +19,7 @@ function collectionFor(card) {
   return { cardCollection: { [card.id]: DECK_SIZE }, unlockedCards: [card.id] };
 }
 
-for (const rarity of ["common", "rare", "souvenir"]) {
+for (const rarity of ["common", "rare"]) {
   const card = cardByRarity(rarity);
   assert.strictEqual(cardCopyLimit(rarity), 2, `${rarity} cards should allow two copies.`);
   assert(
@@ -27,6 +27,13 @@ for (const rarity of ["common", "rare", "souvenir"]) {
     `${rarity} cards should reject a third copy.`
   );
 }
+
+const souvenir = cardByRarity("souvenir");
+assert.strictEqual(cardCopyLimit("souvenir"), 1, "Souvenir cards should allow one copy per card.");
+assert(
+  validateDeck(oversizedDeck(souvenir), collectionFor(souvenir)).errors.includes(`${souvenir.name}: max 1 copy.`),
+  "Souvenir cards should reject duplicate copies."
+);
 
 const legendary = cardByRarity("legendary");
 assert.strictEqual(cardCopyLimit("legendary"), 1, "Legendary cards should allow one copy per card.");

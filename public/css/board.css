@@ -268,6 +268,101 @@
   min-width: 118px;
 }
 
+.hand-reveal-overlay {
+  z-index: 96;
+}
+
+.hand-reveal-panel {
+  width: min(100%, 760px);
+  max-height: min(86vh, 520px);
+}
+
+.hand-reveal-cards {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(2, minmax(0, 92px));
+  grid-auto-columns: 92px;
+  justify-content: start;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 4px 14px;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.hand-reveal-card {
+  position: relative;
+  display: grid;
+  width: 92px;
+  height: 92px;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(232, 179, 79, 0.28);
+  border-radius: 7px;
+  background: rgba(8, 6, 15, 0.74);
+  color: var(--cream);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.38);
+  animation: mulligan-card-deal 0.32s backwards;
+}
+
+.hand-reveal-card.is-stolen {
+  border-color: rgba(139, 238, 128, 0.92);
+  box-shadow: 0 0 0 2px rgba(139, 238, 128, 0.42), 0 0 24px rgba(139, 238, 128, 0.22);
+}
+
+.hand-reveal-card .card-art {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+
+.hand-reveal-card-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 12px 5px 5px;
+  background: linear-gradient(to top, rgba(8, 6, 12, 0.94), rgba(8, 6, 12, 0.62), transparent);
+  color: var(--cream);
+  font: 700 10px/1.1 "Cinzel", serif;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hand-reveal-card-cost {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 3;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 25%, #6fd8ff, #1264a8 70%);
+  color: #ecfbff;
+  font: 800 10px/1 "Cinzel", serif;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.55);
+}
+
+.hand-reveal-card-stats {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  z-index: 3;
+  padding: 3px 5px;
+  border-radius: 6px;
+  background: rgba(8, 6, 15, 0.78);
+  color: #f7e6b0;
+  font: 800 9px/1 "Cinzel", serif;
+}
+
 @keyframes mulligan-overlay-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes mulligan-overlay-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes mulligan-panel-in { from { opacity: 0; transform: translateY(18px) scale(0.98); } to { opacity: 1; transform: none; } }
@@ -303,6 +398,19 @@
     width: clamp(106px, 31vw, 132px);
     scroll-snap-align: center;
   }
+  .hand-reveal-panel { max-height: 88vh; }
+  .hand-reveal-cards {
+    grid-template-rows: repeat(2, minmax(0, 68px));
+    grid-auto-columns: 68px;
+    gap: 8px;
+  }
+  .hand-reveal-card {
+    width: 68px;
+    height: 68px;
+  }
+  .hand-reveal-card-name { font-size: 8px; padding: 10px 4px 4px; }
+  .hand-reveal-card-cost { width: 16px; height: 16px; font-size: 9px; }
+  .hand-reveal-card-stats { font-size: 8px; padding: 2px 4px; }
   .mulligan-actions { flex-direction: column; }
   .mulligan-actions .btn { width: 100%; min-height: 42px; }
 }

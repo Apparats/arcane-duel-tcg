@@ -81,9 +81,9 @@ game.players[0].manaCurrent = 10;
 game.playCard(0, 0, null);
 assert.strictEqual(game.players[0].hand.length, 2, "Arcane Reading should draw two cards.");
 
-const fillerIds = CARDS.filter((card) => card.type === "minion" && card.rarity === "common").slice(0, 9).map((card) => card.id);
-const validDeck = [...fillerIds.slice(0, 8), ...fillerIds.slice(0, 8), fillerIds[8], ...SPELL_IDS.slice(0, 3)];
-const invalidDeck = [...fillerIds.slice(0, 8), ...fillerIds.slice(0, 8), ...SPELL_IDS.slice(0, 4)];
+const fillerIds = CARDS.filter((card) => card.type === "minion" && card.rarity === "common").slice(0, 11).map((card) => card.id);
+const validDeck = [...fillerIds, ...fillerIds.slice(0, 11), ...SPELL_IDS.slice(0, 3)];
+const invalidDeck = [...fillerIds, ...fillerIds.slice(0, 10), ...SPELL_IDS.slice(0, 4)];
 const collection = [...new Set([...validDeck, ...invalidDeck])].reduce((counts, cardId) => {
   counts[cardId] = 2;
   return counts;

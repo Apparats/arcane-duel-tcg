@@ -287,6 +287,13 @@ function openExpansionContents(pack) {
 
   $("expansionContentsSummary").textContent = `${stats.owned} / ${stats.total} collected · ${pack.size} cards per pack.`;
 
+  const rewardUnit = pack.cardDrops ? "victory" : "pack";
+  const rewardNotes = [`${stats.owned} / ${stats.total} collected`, `${pack.size} cards per ${rewardUnit}`];
+  if (rewardGold > 0) {
+    rewardNotes.push(pack.goldRewardClaimed ? `${rewardGold} gold claimed` : `${rewardGold} one-time gold`);
+  }
+  $("expansionContentsSummary").textContent = rewardNotes.join(" · ");
+
   cards.forEach((card) => {
     const shell = document.createElement("div");
     shell.className = "card-tilt-shell shop-expansion-card-shell";

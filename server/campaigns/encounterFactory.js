@@ -57,6 +57,7 @@ function normalizeCampaignEncounter(definition) {
     : 0;
   const rewardGold = boundedInteger(definition.rewards?.gold, "gold reward", { min: 0, max: 100000, fallback: 0 });
   const rewardGoldOnce = definition.rewards?.goldOnce === true;
+  const duplicatePolicy = definition.rewards?.duplicatePolicy === "uniqueUntilComplete" ? "uniqueUntilComplete" : "default";
   if (rewardCards.length === 0 && rewardGold === 0) throw new Error("Campaign rewards are invalid.");
   const openingCardId = npc.openingCardId === undefined
     ? null
@@ -85,6 +86,7 @@ function normalizeCampaignEncounter(definition) {
       count: rewardCount,
       gold: rewardGold,
       goldOnce: rewardGoldOnce,
+      duplicatePolicy,
     }),
     npc: Object.freeze({
       name: requireText(npc.name, "NPC name", 48),

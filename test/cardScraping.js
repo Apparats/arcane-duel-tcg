@@ -27,7 +27,7 @@ assert.deepStrictEqual(
     { cardId: "expansion2:vatou", quantity: 1 },
   ]);
   assert.strictEqual(plan.totalCards, 5, "Scraping should count all selected copies.");
-  assert.strictEqual(plan.goldAwarded, 17, "Scraping should pay by rarity.");
+  assert.strictEqual(plan.goldAwarded, 16, "Scraping should pay by rarity.");
 }
 
 {

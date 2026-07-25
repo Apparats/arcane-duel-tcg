@@ -19,7 +19,7 @@
     rare: 2,
     legendary: 1,
     mythic: 1,
-    souvenir: 2,
+    souvenir: 1,
   };
 
   function cardCopyLimit(rarity) {

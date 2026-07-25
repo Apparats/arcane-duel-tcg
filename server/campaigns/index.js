@@ -1,4 +1,5 @@
 const { createCampaignMatch, normalizeCampaignEncounter } = require("./encounterFactory");
+const { CARDS } = require("../../public/cards");
 
 const THE_GATES_MYTHICS = [
   "TheGates:archmoth-morlet", "TheGates:cardinal-severin", "TheGates:chiorico", "TheGates:jacquedebalsac", "TheGates:kep",
@@ -13,6 +14,15 @@ const IRON_WATCH_DECK = [
   ...PROTECTOR_BASE_COMMONS,
   "base:aleex", "base:barto", "base:capybara", "base:stormhazard",
 ];
+const ROADS_CARDS = CARDS
+  .filter((card) => card._expansionId === "roads")
+  .map((card) => card.id);
+const FIRE_ELEMENTAL_DECK = CARDS
+  .filter((card) => ["legendary", "mythic"].includes(card.rarity))
+  .filter((card) => !["campaign2", "special"].includes(card._expansionId))
+  .slice(-20)
+  .map((card) => card.id);
+const OPEN_CAMPAIGN_COUNT = 3;
 
 const CAMPAIGN_DEFINITIONS = Object.freeze([{
   id: "the-gates",
@@ -62,6 +72,22 @@ const CAMPAIGN_DEFINITIONS = Object.freeze([{
     openingCardId: "campaign2:iron-sentinel",
     boardRules: { maxMinions: 4 },
   },
+}, {
+  id: "fire-elemental",
+  name: "FireElemental",
+  available: true,
+  lore: "A volcanic guardian burns through the Roads with Arcana's most recent legendary and mythic powers.",
+  theme: "fire",
+  audio: { boardMusic: "board" },
+  rewards: { cards: ROADS_CARDS, count: 1, gold: 150, goldOnce: true, duplicatePolicy: "uniqueUntilComplete" },
+  npc: {
+    name: "FireElemental",
+    avatarUrl: "art/FireElemental.webp",
+    health: 25,
+    mana: { starting: 3, cap: 10 },
+    deck: FIRE_ELEMENTAL_DECK,
+    boardRules: { maxMinions: 4 },
+  },
 }]);
 const campaignEncounters = CAMPAIGN_DEFINITIONS.map((definition) => normalizeCampaignEncounter(definition));
 const encounters = new Map(campaignEncounters.map((encounter) => [encounter.id, encounter]));
@@ -70,12 +96,12 @@ function campaignWins(progress, campaignId) {
   return Math.max(0, Number(progress?.[campaignId]?.wins) || 0);
 }
 
-function campaignProgressionAccess(id, progress = {}) {
-  const index = campaignEncounters.findIndex((encounter) => encounter.id === id);
+function campaignProgressionAccessForList(encounters, id, progress = {}) {
+  const index = encounters.findIndex((encounter) => encounter.id === id);
   if (index < 0) return { unlocked: false, previousCampaign: null, reason: "Campaign not found." };
-  if (index === 0) return { unlocked: true, previousCampaign: null, reason: "" };
+  if (index < OPEN_CAMPAIGN_COUNT) return { unlocked: true, previousCampaign: null, reason: "" };
 
-  const previousCampaign = campaignEncounters[index - 1];
+  const previousCampaign = encounters[index - 1];
   if (campaignWins(progress, previousCampaign.id) > 0) {
     return { unlocked: true, previousCampaign, reason: "" };
   }
@@ -85,6 +111,10 @@ function campaignProgressionAccess(id, progress = {}) {
     previousCampaign,
     reason: `Complete ${previousCampaign.name} before challenging this stage.`,
   };
+}
+
+function campaignProgressionAccess(id, progress = {}) {
+  return campaignProgressionAccessForList(campaignEncounters, id, progress);
 }
 
 function getCampaignEncounter(id) {
@@ -111,8 +141,9 @@ function listCampaignEncounters(progress = {}) {
       rewardCount: encounter.rewards.count,
       rewardGold: encounter.rewards.gold,
       rewardGoldOnce: encounter.rewards.goldOnce,
+      rewardDuplicatePolicy: encounter.rewards.duplicatePolicy,
     };
   });
 }
 
-module.exports = { createCampaignMatch, campaignProgressionAccess, getCampaignEncounter, listCampaignEncounters, normalizeCampaignEncounter };
+module.exports = { createCampaignMatch, campaignProgressionAccess, campaignProgressionAccessForList, getCampaignEncounter, listCampaignEncounters, normalizeCampaignEncounter };

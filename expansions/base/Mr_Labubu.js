@@ -8,9 +8,9 @@ module.exports = {
   race: "Monster",
   rarity: "rare",
   country: "Germany",
-  lore: "Whenever Mr Labubu destroys a minion and survives, it gains Charge.",
+  lore: "Whenever Mr Labubu destroys a minion and survives, it gains Taunt.",
   image: "art/Mr_Labubu.webp",
   abilities: [
-    { trigger: "onKillMinion", effect: "grantSelfCharge" },
+    { trigger: "onKillMinion", effect: "grantSelfTaunt" },
   ],
 };

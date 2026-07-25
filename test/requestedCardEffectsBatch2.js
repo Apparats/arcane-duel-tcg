@@ -112,15 +112,15 @@ function testOilBertDelayedBuff() {
   assert.strictEqual(oil.attack, 6, "Oil Bert's delayed buff should happen only once.");
 }
 
-function testMrLabubuGainsChargeOnKill() {
+function testMrLabubuGainsTauntOnKill() {
   const game = makeGame();
   const labubu = minion("labubu", "base:mr-labubu", { canAttack: true });
   const target = minion("target", "base:aleex", { attack: 0, health: 1, maxHealth: 1 });
   game.players[0].board = [labubu];
   game.players[1].board = [target];
   game.attack(0, "labubu", "target");
-  assert(labubu.keywords.includes("charge"), "Mr Labubu should gain Charge after killing and surviving.");
-  assert.strictEqual(labubu.canAttack, true, "Gaining Charge should ready Mr Labubu.");
+  assert(labubu.keywords.includes("taunt"), "Mr Labubu should gain Taunt after killing and surviving.");
+  assert(!labubu.keywords.includes("charge"), "Mr Labubu should not gain Charge anymore.");
 }
 
 function testMeow4glorySwapsStatsWithThreeAllies() {
@@ -156,7 +156,7 @@ testVendettaIgnoresAdverseEffects();
 testSzczwanyLisekDrainsEnemyHand();
 testRinLosesHealthOnlyWhenAttacking();
 testOilBertDelayedBuff();
-testMrLabubuGainsChargeOnKill();
+testMrLabubuGainsTauntOnKill();
 testMeow4glorySwapsStatsWithThreeAllies();
 
 console.log("--- REQUESTED CARD EFFECTS BATCH 2 TEST OK ---");

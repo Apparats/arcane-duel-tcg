@@ -27,7 +27,7 @@
     taunt: 2,
     charge: 1,
   };
-  const STATUS_TYPES = new Set(["weakened", "frozen", "silenced", "poisoned", "marked", "burning", "drunk", "confused"]);
+  const STATUS_TYPES = new Set(["weakened", "frozen", "silenced", "poisoned", "marked", "burning", "drunk", "confused", "dodge"]);
   const ENEMY_CHARACTER_TARGETS = new Set(["enemy", "enemyCharacter"]);
   const BABU2_CARD_ID = "expansion2:Babu2";
 
@@ -50,6 +50,7 @@
   const CARD_REF_RETURN_PREFIX = "returns:";
   const CARD_REF_ATTACK_PREFIX = "attack:";
   const CARD_REF_HEALTH_PREFIX = "health:";
+  const CARD_REF_COST_PREFIX = "cost:";
 
   function cardIdFromRef(cardRef) {
     return String(cardRef || "").split(CARD_REF_SEPARATOR)[0];
@@ -75,6 +76,12 @@
     }, { attack: 0, health: 0 });
   }
 
+  function costModifierFromRef(cardRef) {
+    const segment = String(cardRef || "").split(CARD_REF_SEPARATOR).find((part) => part.startsWith(CARD_REF_COST_PREFIX));
+    const value = Number(segment ? segment.slice(CARD_REF_COST_PREFIX.length) : 0);
+    return Number.isInteger(value) ? value : 0;
+  }
+
   function cardRefWithReturnCount(cardId, returnCount) {
     return returnCount > 0 ? `${cardId}${CARD_REF_SEPARATOR}${CARD_REF_RETURN_PREFIX}${returnCount}` : cardId;
   }
@@ -83,12 +90,27 @@
     const cardId = cardIdFromRef(cardRef);
     const returnCount = returnCountFromRef(cardRef);
     const current = statModifiersFromRef(cardRef);
+    const cost = costModifierFromRef(cardRef);
     const attack = current.attack + (modifiers.attack || 0);
     const health = current.health + (modifiers.health || 0);
     const parts = [cardId];
     if (returnCount > 0) parts.push(`${CARD_REF_RETURN_PREFIX}${returnCount}`);
     if (attack !== 0) parts.push(`${CARD_REF_ATTACK_PREFIX}${attack}`);
     if (health !== 0) parts.push(`${CARD_REF_HEALTH_PREFIX}${health}`);
+    if (cost !== 0) parts.push(`${CARD_REF_COST_PREFIX}${cost}`);
+    return parts.join(CARD_REF_SEPARATOR);
+  }
+
+  function cardRefWithCostModifier(cardRef, modifier = 0) {
+    const cardId = cardIdFromRef(cardRef);
+    const returnCount = returnCountFromRef(cardRef);
+    const current = statModifiersFromRef(cardRef);
+    const cost = costModifierFromRef(cardRef) + (modifier || 0);
+    const parts = [cardId];
+    if (returnCount > 0) parts.push(`${CARD_REF_RETURN_PREFIX}${returnCount}`);
+    if (current.attack !== 0) parts.push(`${CARD_REF_ATTACK_PREFIX}${current.attack}`);
+    if (current.health !== 0) parts.push(`${CARD_REF_HEALTH_PREFIX}${current.health}`);
+    if (cost !== 0) parts.push(`${CARD_REF_COST_PREFIX}${cost}`);
     return parts.join(CARD_REF_SEPARATOR);
   }
 
@@ -96,9 +118,11 @@
     const card = getCardById(cardIdFromRef(cardRef));
     if (!card) return card;
     const modifiers = statModifiersFromRef(cardRef);
-    if (!modifiers.attack && !modifiers.health) return card;
+    const costModifier = costModifierFromRef(cardRef);
+    if (!modifiers.attack && !modifiers.health && !costModifier) return card;
     return {
       ...card,
+      cost: Math.max(0, (card.cost || 0) + costModifier),
       attack: card.type === "minion" ? Math.max(0, (card.attack || 0) + modifiers.attack) : card.attack,
       health: card.type === "minion" ? Math.max(1, (card.health || 1) + modifiers.health) : card.health,
     };
@@ -600,6 +624,13 @@
       game._addLog(`${ctx.sourceName} gains Charge.`);
     },
 
+    grantSelfTaunt(game, ctx) {
+      const target = game._findMinion(ctx.instanceId);
+      if (!target || target.playerIdx !== ctx.casterIdx) return;
+      game._addKeyword(target.minion, "taunt");
+      game._addLog(`${ctx.sourceName} gains Taunt.`);
+    },
+
     grantChargeToRandomFriendlyNonCharge(game, ctx, ability) {
       if (ability.firstPlayOnly && ctx.playedCount !== 1) return;
       const player = game.players[ctx.casterIdx];
@@ -812,6 +843,17 @@
       if (applied) game._addLog(`${ctx.sourceName} applies ${applied.type} to ${target.name}.`);
     },
 
+    applyStatusToAllEnemyMinions(game, ctx, ability) {
+      if (ability.firstPlayOnly && ctx.playedCount !== 1) return;
+      const opponentIdx = game._opponentIdx(ctx.casterIdx);
+      let appliedCount = 0;
+      game.players[opponentIdx].board.forEach((minion) => {
+        const applied = game._applyStatus(opponentIdx, minion, { ...ability, sourceRace: ctx.sourceRace });
+        if (applied) appliedCount += 1;
+      });
+      if (appliedCount > 0) game._addLog(`${ctx.sourceName} applies ${ability.status} to ${appliedCount} enemy minion(s).`);
+    },
+
     applyBurning(game, ctx, ability) {
       const value = Math.max(1, Number.isInteger(ability.value) ? ability.value : 1);
       const turns = Math.max(1, Number.isInteger(ability.turns) ? ability.turns : 1);
@@ -852,6 +894,77 @@
       self.minion.attack += 1;
       game._addLog(`${ctx.sourceName} drains 1 Health from an enemy hand card and gains +1 Attack.`);
       if (card) game._addLog(`${card.name} loses 1 Health in hand.`);
+    },
+
+    grantDodgeToFriendlyBoardFirstPlay(game, ctx, ability) {
+      if (ability.firstPlayOnly && ctx.playedCount !== 1) return;
+      const player = game.players[ctx.casterIdx];
+      let appliedCount = 0;
+      player.board.forEach((minion) => {
+        const value = minion.instanceId === ctx.instanceId ? ability.selfValue || ability.value || 40 : ability.value || 30;
+        const applied = game._applyStatus(ctx.casterIdx, minion, { status: "dodge", value });
+        if (applied) appliedCount += 1;
+      });
+      if (appliedCount > 0) game._addLog(`${ctx.sourceName} grants Dodge to ${appliedCount} friendly minion(s).`);
+    },
+
+    increaseSelfDodgeOnEnemyDeath(game, ctx, ability) {
+      const target = game._findMinion(ctx.instanceId);
+      if (!target || target.playerIdx !== ctx.casterIdx) return;
+      const existing = (target.minion.statuses || []).find((status) => status.type === "dodge");
+      const maxValue = Math.max(1, ability.maxValue || 60);
+      const increase = Math.max(1, ability.value || 5);
+      const nextValue = Math.min(maxValue, (existing?.value || 0) + increase);
+      const applied = game._applyStatus(ctx.casterIdx, target.minion, { status: "dodge", value: nextValue });
+      if (applied) game._addLog(`${ctx.sourceName}'s Dodge rises to ${applied.value}%.`);
+    },
+
+    stealRandomEnemyHandNonMythicCardBuffed(game, ctx, ability) {
+      const player = game.players[ctx.casterIdx];
+      const opponent = game.players[game._opponentIdx(ctx.casterIdx)];
+      if (player.hand.length >= MAX_HAND) {
+        game._addLog(`${ctx.sourceName} cannot steal a card: hand is full.`);
+        return;
+      }
+
+      const eligibleIndexes = opponent.hand.reduce((indexes, cardRef, index) => {
+        const card = getCardById(cardIdFromRef(cardRef));
+        if (card && card.rarity !== "mythic" && card.rarity !== "legendary") indexes.push(index);
+        return indexes;
+      }, []);
+      if (eligibleIndexes.length === 0) {
+        game._addLog(`${ctx.sourceName} finds no non-Mythic, non-Legendary enemy hand card to steal.`);
+        return;
+      }
+
+      const choicePosition = game.randomInt(eligibleIndexes.length);
+      const handIndex = eligibleIndexes[choicePosition];
+      const choices = eligibleIndexes.map((index) => cardWithRefModifiers(opponent.hand[index])).filter(Boolean);
+      const [stolenRef] = opponent.hand.splice(handIndex, 1);
+      const stolenCard = cardWithRefModifiers(stolenRef);
+      let buffedRef = stolenRef;
+      if (stolenCard?.type === "minion") {
+        const percent = Math.max(1, ability.buffPercent || 30);
+        const attackBuff = stolenCard.attack > 0 ? Math.ceil(stolenCard.attack * percent / 100) : 0;
+        const healthBuff = stolenCard.health > 0 ? Math.ceil(stolenCard.health * percent / 100) : 0;
+        buffedRef = cardRefWithStatModifiers(stolenRef, { attack: attackBuff, health: healthBuff });
+      }
+      const reducedCost = Math.floor(Math.max(0, stolenCard?.cost || 0) / 2);
+      buffedRef = cardRefWithCostModifier(buffedRef, reducedCost - Math.max(0, stolenCard?.cost || 0));
+      player.hand.push(buffedRef);
+      const buffedCard = cardWithRefModifiers(buffedRef);
+      game._pendingAbilityActivation = {
+        visibleTo: ctx.casterIdx,
+        handReveal: {
+          sourceName: ctx.sourceName,
+          cards: choices,
+          selectedIndex: choicePosition,
+          stolenCard: buffedCard,
+        },
+      };
+      game._addLog(`${ctx.sourceName} steals ${stolenCard?.name || "a card"} from the enemy hand.`);
+      if (buffedCard?.type === "minion") game._addLog(`${buffedCard.name} is buffed and discounted in hand.`);
+      else if (buffedCard) game._addLog(`${buffedCard.name} is discounted in hand.`);
     },
 
     damageSelfOnAttack(game, ctx, ability) {
@@ -934,13 +1047,16 @@
     _recordSpecialAbilityActivation(source, ability = {}) {
       if (!source?.instanceId && !source?.cardId) return;
       this.specialAbilitySeq += 1;
-      this.specialAbilityActivations.push({
+      const activation = {
         seq: this.specialAbilitySeq,
         instanceId: source.instanceId || null,
         cardId: source.cardId || null,
         effect: ability.effect || null,
         trigger: ability.trigger || "passive",
-      });
+      };
+      if (ability.handReveal) activation.handReveal = ability.handReveal;
+      if (Number.isInteger(ability.visibleTo)) activation.visibleTo = ability.visibleTo;
+      this.specialAbilityActivations.push(activation);
       if (this.specialAbilityActivations.length > 20) this.specialAbilityActivations.shift();
     }
 
@@ -1120,9 +1236,12 @@
           return;
         }
         const logLength = this.log.length;
+        this._pendingAbilityActivation = null;
         handler(this, ctx, ability);
         if (this.log.length > logLength) {
-          this._recordSpecialAbilityActivation(ctx, ability);
+          const activationDetails = this._pendingAbilityActivation || {};
+          this._pendingAbilityActivation = null;
+          this._recordSpecialAbilityActivation(ctx, { ...ability, ...activationDetails });
         }
         this._checkWin();
       });
@@ -1136,10 +1255,9 @@
       const cardRef = p.hand[handIndex];
       const cardId = cardIdFromRef(cardRef);
       const returnCount = returnCountFromRef(cardRef);
-      const statModifiers = statModifiersFromRef(cardRef);
       if (!cardRef) throw new Error("Invalid card.");
-      const card = getCardById(cardId);
-      if (!card) throw new Error("Unknown card.");
+      if (!getCardById(cardId)) throw new Error("Unknown card.");
+      const card = cardWithRefModifiers(cardRef);
       if (card.cost > p.manaCurrent) throw new Error("Not enough mana.");
       const playRuleError = cardPlayRuleError(p, card);
       if (playRuleError) throw new Error(playRuleError);
@@ -1161,8 +1279,6 @@
         const minion = makeMinionInstance(card, {
           playedCount,
           returnCount,
-          attackModifier: statModifiers.attack,
-          healthModifier: statModifiers.health,
         });
         p.board.push(minion);
         this._addLog(`${p.name} plays ${card.name}.`);
@@ -1325,6 +1441,13 @@
         this._addLog(`${minion.name} takes no damage from ${options.sourceRace} cards.`);
         return;
       }
+      const dodge = amount > 0 ? (minion.statuses || []).find((status) => status.type === "dodge") : null;
+      const dodgeChance = Math.max(0, Math.min(100, dodge?.value || 0));
+      if (dodgeChance > 0 && this.randomInt(100) < dodgeChance) {
+        this._recordSpecialAbilityActivation(minion, { effect: "dodgeDamage", trigger: "passive" });
+        this._addLog(`${minion.name} dodges the damage.`);
+        return;
+      }
       if (minion.divineShield && amount > 0) {
         minion.divineShield = false;
         return;
@@ -1358,6 +1481,25 @@
         });
       }
       this._reviveWithFriendlyAuras(ownerIdx, minion, boardIndex);
+      const opponentIdx = this._opponentIdx(ownerIdx);
+      const enemyDeathContext = {
+        targetInstanceId: minion.instanceId,
+        targetCardId: minion.cardId,
+        targetRace: minion.race,
+      };
+      [...this.players[opponentIdx].board].forEach((source) => {
+        const sourceCard = getCardById(source.cardId);
+        if (!sourceCard) return;
+        this._triggerAbilities(sourceCard, "onEnemyMinionDeath", {
+          casterIdx: opponentIdx,
+          sourceName: source.name,
+          instanceId: source.instanceId,
+          cardId: source.cardId,
+          playedCount: source.playedCount || 0,
+          silenced: this._hasStatus(source, "silenced"),
+          ...enemyDeathContext,
+        });
+      });
     }
 
     _reviveWithFriendlyAuras(ownerIdx, minion, boardIndex) {
@@ -1434,7 +1576,7 @@
 
       const value = Math.max(1, Number.isInteger(ability.value) ? ability.value : 1);
       const turns = Math.max(1, Number.isInteger(ability.turns) ? ability.turns : type === "poisoned" || type === "marked" ? 2 : 1);
-      const status = { type, value, turnsRemaining: type === "silenced" ? null : turns };
+      const status = { type, value, turnsRemaining: type === "silenced" || type === "dodge" ? null : turns };
       setStatusSourceRace(status, ability.sourceRace);
 
       if (type === "weakened") {
@@ -1812,7 +1954,10 @@
         winner: this.winner,
         log: this.log.slice(-15),
         lastAction: this.lastAction,
-        specialAbilityActivations: this.specialAbilityActivations.slice(-10),
+        specialAbilityActivations: this.specialAbilityActivations
+          .filter((activation) => activation.visibleTo == null || activation.visibleTo === viewerIdx)
+          .map(({ visibleTo, ...activation }) => activation)
+          .slice(-10),
         me: {
           name: me.name,
           health: me.health,

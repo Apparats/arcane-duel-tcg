@@ -9,5 +9,7 @@ assert(serverSource.includes("max-age=31536000, immutable"), "Audio assets need 
 assert(serverSource.includes("assets\\/audio"), "The server must target audio files specifically.");
 assert(configSource.includes("assetVersion"), "Audio URLs need a version for safe cache invalidation.");
 assert(managerSource.includes("config.assetVersion"), "Audio manager must append the audio asset version.");
+assert(fs.existsSync("public/assets/audio/music/Board3.ogg"), "The new board music asset should exist.");
+assert(configSource.includes("music/Board3.ogg"), "Audio config should include the new board music track.");
 
 console.log("--- AUDIO DELIVERY TEST OK ---");

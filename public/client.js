@@ -22,6 +22,7 @@ const STATUS_LABEL = {
   burning: "B",
   drunk: "D",
   confused: "?",
+  dodge: "DG",
 };
 const STATUS_FULL_LABEL = {
   weakened: "Weakened",
@@ -32,14 +33,16 @@ const STATUS_FULL_LABEL = {
   burning: "Burning",
   drunk: "Drunk",
   confused: "Confusion",
+  dodge: "Dodge",
 };
 const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", mythic: "Mythic", souvenir: "Souvenir" };
 const BABU2_CARD_ID = "expansion2:Babu2";
 const SECOND_PLAYER_MANA_CARD_ID = "special:manaspark";
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.6.3-deck-effects-board-polish";
+const CHANGELOG_VERSION = "1.6.5-campaign-roads-activity-rewards";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
+const ACTIVITY_INVITE_SEEN_STORAGE_KEY = "arcane_activity_invite_seen_v1";
 const TYPE_ICON = { minion: "⚔", spell: "✦" };
 
 let ws = null;
@@ -108,6 +111,7 @@ let mulliganTransitionTimer = null;
 let mulliganReplacementIndexes = null;
 let mulliganReplacementState = null;
 let mulliganResultShownAt = 0;
+let handRevealTimer = null;
 let localMulligan = null;
 let localMulliganTimer = null;
 const SETTLE_DELAY = 460;      // ms we wait after an impact before "settling" the final state
@@ -687,6 +691,7 @@ function handleServerMessage(msg) {
       showToast(`Tournament ${msg.payload?.place || "prize"}: +${msg.payload?.gold || 0} gold`);
       break;
     case "matchStarted":
+      if (quickplaySearching) window.ArcaneAudio?.playSfx("matchFound");
       window.ArcaneTournaments?.clearQueuedMatch();
       window.ArcaneTournaments?.setVisible(false);
       forfeitResultMessage = "";
@@ -748,12 +753,13 @@ function handleServerMessage(msg) {
       });
       const cards = msg.payload?.cards || [];
       if (activeCampaignStage) activeCampaignStage.cardDrops = msg.payload?.cardDrops || activeCampaignStage.cardDrops;
+      if (msg.payload?.goldAwarded > 0) {
+        showToast(`Campaign reward: +${msg.payload.goldAwarded} gold.`);
+      }
       if (cards.length > 0) {
         queueCardOpening({ title: `${activeCampaignStage?.name || "Campaign"} reward`, summary: `${cards.length} random card revealed.`, cards });
-      } else if (msg.payload?.goldAwarded > 0) {
-        showToast(`Campaign reward: +${msg.payload.goldAwarded} gold.`);
       } else if (msg.payload?.goldAlreadyClaimed) {
-        showToast("TheUnchained is defeated. Its gold reward was already claimed.");
+        showToast(`${activeCampaignStage?.name || "Campaign"} gold reward was already claimed.`);
       }
       break;
     }
@@ -1127,6 +1133,7 @@ function computeAndPlayImpactAnimations(prev, next) {
   (next.specialAbilityActivations || []).forEach((activation) => {
     if (!activation?.seq || activation.seq <= lastAnimatedSpecialAbilitySeq) return;
     lastAnimatedSpecialAbilitySeq = Math.max(lastAnimatedSpecialAbilitySeq, activation.seq);
+    if (activation.handReveal) showHandStealReveal(activation.handReveal);
     if (flashSpecialAbilityBadge(activation.instanceId)) {
       anyImpact = true;
     } else {
@@ -1187,6 +1194,7 @@ function showToast(text) {
 
 function switchScreen(name) {
   hideCardTooltip();
+  hideHandStealReveal();
   const screenIds = ["auth", "enter", "menu", "lobby", "inventory", "shop", "trade", "profile", "game"];
   const loading = $("loadingScreen");
   if (!loading) {
@@ -1776,6 +1784,64 @@ function mulliganCardHTML(card) {
   `;
 }
 
+function compactHandRevealCardHTML(card) {
+  const stats = card?.type === "minion"
+    ? `<span class="hand-reveal-card-stats">${card.attack}/${card.health}</span>`
+    : "";
+  return `
+    ${cardArtHTML(card)}
+    <span class="hand-reveal-card-cost">${card.cost}</span>
+    ${stats}
+    <span class="hand-reveal-card-name">${escapeHtml(card.name)}</span>
+  `;
+}
+
+function hideHandStealReveal() {
+  clearTimeout(handRevealTimer);
+  handRevealTimer = null;
+  const overlay = $("handRevealOverlay");
+  if (!overlay) return;
+  overlay.classList.add("hidden");
+  overlay.classList.remove("is-leaving");
+  $("handRevealCards")?.replaceChildren();
+}
+
+function showHandStealReveal(reveal) {
+  const overlay = $("handRevealOverlay");
+  const cards = $("handRevealCards");
+  if (!overlay || !cards) return;
+  const sourceName = reveal?.sourceName || "GrachtViper";
+  const stolenCard = reveal?.stolenCard || null;
+  $("handRevealTitle").textContent = `${sourceName} stole ${stolenCard?.name || "a card"}`;
+  $("handRevealStatus").textContent = stolenCard
+    ? stolenCard.type === "minion"
+      ? `${stolenCard.name} was discounted, buffed, and added to your hand.`
+      : `${stolenCard.name} was discounted and added to your hand.`
+    : "The stolen card was added to your hand.";
+  cards.replaceChildren();
+  (reveal?.cards || []).forEach((card, index) => {
+    const item = document.createElement("div");
+    item.className = `hand-reveal-card ${rarityClass(card)}${index === reveal.selectedIndex ? " is-stolen" : ""}`;
+    item.setAttribute("aria-label", `${card.name}${index === reveal.selectedIndex ? " stolen" : ""}`);
+    item.innerHTML = compactHandRevealCardHTML(card);
+    cards.appendChild(item);
+  });
+  overlay.classList.remove("hidden", "is-leaving");
+  clearTimeout(handRevealTimer);
+  handRevealTimer = setTimeout(() => {
+    overlay.classList.add("is-leaving");
+    handRevealTimer = setTimeout(hideHandStealReveal, 360);
+  }, 2_400);
+}
+
+function visibleMulliganHandEntries(state) {
+  return (state?.me?.hand || []).reduce((entries, card, handIndex) => {
+    if (card?.id === SECOND_PLAYER_MANA_CARD_ID) return entries;
+    entries.push({ card, handIndex });
+    return entries;
+  }, []);
+}
+
 function resetMulliganOverlay({ immediate = false } = {}) {
   const overlay = $("mulliganOverlay");
   if (!immediate && overlay?.classList.contains("is-leaving")) return;
@@ -1841,18 +1907,17 @@ function revealMulliganReplacement(state, replacementIndexes) {
   replaceButton.disabled = true;
   replaceButton.textContent = "Ready";
   cards.replaceChildren();
-  state.me.hand.forEach((card, index) => {
+  visibleMulliganHandEntries(state).forEach(({ card, handIndex }) => {
     const button = document.createElement("button");
-    const locked = card.id === SECOND_PLAYER_MANA_CARD_ID;
     button.type = "button";
-    button.className = `mulligan-card minion-card ${rarityClass(card)}${locked ? " locked" : ""}`;
-    button.dataset.handIndex = String(index);
+    button.className = `mulligan-card minion-card ${rarityClass(card)}`;
+    button.dataset.handIndex = String(handIndex);
     button.disabled = true;
     button.setAttribute("aria-label", card.name);
     button.innerHTML = mulliganCardHTML(card);
     attachCardTooltip(button, card);
     cards.appendChild(button);
-    if (replacementIndexes.includes(index)) button.classList.add("is-dealt");
+    if (replacementIndexes.includes(handIndex)) button.classList.add("is-dealt");
   });
   mulliganResultShownAt = Date.now();
 }
@@ -1961,21 +2026,20 @@ function renderMulligan(state) {
   }
 
   cards.replaceChildren();
-  state.me.hand.forEach((card, index) => {
+  visibleMulliganHandEntries(state).forEach(({ card, handIndex }) => {
     const button = document.createElement("button");
-    const locked = card.id === SECOND_PLAYER_MANA_CARD_ID;
     button.type = "button";
-    button.className = `mulligan-card minion-card ${rarityClass(card)}${mulliganSelectedIndexes.has(index) ? " selected" : ""}${locked ? " locked" : ""}`;
-    button.dataset.handIndex = String(index);
-    button.disabled = confirmed || locked;
-    button.setAttribute("aria-pressed", String(mulliganSelectedIndexes.has(index)));
-    button.setAttribute("aria-label", locked ? `${card.name} cannot be replaced` : `Toggle ${card.name} replacement`);
+    button.className = `mulligan-card minion-card ${rarityClass(card)}${mulliganSelectedIndexes.has(handIndex) ? " selected" : ""}`;
+    button.dataset.handIndex = String(handIndex);
+    button.disabled = confirmed;
+    button.setAttribute("aria-pressed", String(mulliganSelectedIndexes.has(handIndex)));
+    button.setAttribute("aria-label", `Toggle ${card.name} replacement`);
     button.innerHTML = mulliganCardHTML(card);
     button.addEventListener("click", () => {
-      if (confirmed || locked) return;
-      if (mulliganSelectedIndexes.has(index)) mulliganSelectedIndexes.delete(index);
-      else mulliganSelectedIndexes.add(index);
-      const selected = mulliganSelectedIndexes.has(index);
+      if (confirmed) return;
+      if (mulliganSelectedIndexes.has(handIndex)) mulliganSelectedIndexes.delete(handIndex);
+      else mulliganSelectedIndexes.add(handIndex);
+      const selected = mulliganSelectedIndexes.has(handIndex);
       button.style.transform = "";
       button.style.zIndex = "";
       const art = button.querySelector(".card-art");
@@ -2461,6 +2525,7 @@ function statusDescription(status) {
     case "burning": return `Burning: takes ${amount} damage at the start of its turn, ${duration}. Further Burning adds damage and duration.`;
     case "drunk": return `Drunk: attacks a random minion on either side instead of the chosen target${status.turnsRemaining == null ? "." : `, ${duration}.`}`;
     case "confused": return `Confusion: cannot attack normally ${duration}; has ${amount}% chance to attack an allied minion at turn start.`;
+    case "dodge": return `Dodge: has ${amount}% chance to avoid damage.`;
     default: return "Status effect.";
   }
 }
@@ -3162,6 +3227,27 @@ function syncChangelogNewBadge() {
   badge.classList.toggle("hidden", seenVersion === CHANGELOG_VERSION);
 }
 
+function markActivityInviteSeen() {
+  try {
+    localStorage.setItem(ACTIVITY_INVITE_SEEN_STORAGE_KEY, "true");
+  } catch (err) {
+    // The badge remains visible if storage is unavailable.
+  }
+  syncActivityInviteBadge();
+}
+
+function syncActivityInviteBadge() {
+  const badge = $("activityInviteGoldBadge");
+  if (!badge) return;
+  let seen = false;
+  try {
+    seen = localStorage.getItem(ACTIVITY_INVITE_SEEN_STORAGE_KEY) === "true";
+  } catch (err) {
+    // The badge remains visible if storage is unavailable.
+  }
+  badge.classList.toggle("hidden", seen);
+}
+
 function setHowToPlayOpen(open) {
   const modal = $("howToPlayModal");
   if (!modal) return;
@@ -3258,6 +3344,48 @@ function inviteDiscordActivity() {
     return;
   }
   window.open(inviteUrl, "_blank", "noopener,noreferrer");
+}
+
+function setActivityInviteOpen(open) {
+  const modal = $("activityInviteModal");
+  if (!modal) return;
+  modal.classList.toggle("hidden", !open);
+  if (open) setMenuOptionsOpen(false);
+}
+
+function openActivityInviteModal() {
+  if (!accountState?.discordInviteUrl) {
+    showToast("Discord activity invite is not configured yet.");
+    return;
+  }
+  if (!accountState?.loggedIn || !accountState?.user) {
+    showToast("Login with Discord to claim the invite reward.");
+    return;
+  }
+  markActivityInviteSeen();
+  setActivityInviteOpen(true);
+}
+
+async function confirmActivityInvite() {
+  const button = $("btnConfirmActivityInvite");
+  if (button) button.disabled = true;
+  inviteDiscordActivity();
+  try {
+    const response = await apiFetch("/auth/discord/activity-invite-reward", { method: "POST" });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Could not claim the invite reward.");
+    if (data.reward?.gold != null) updateAccountDisplay({ ...(accountState?.user || {}), gold: data.reward.gold });
+    if (data.reward?.goldAwarded > 0) {
+      showToast(`Discord Activity invite reward: +${data.reward.goldAwarded} gold.`);
+    } else {
+      showToast("Discord Activity invite reward was already claimed.");
+    }
+    setActivityInviteOpen(false);
+  } catch (err) {
+    showToast(err.message || "Could not claim the invite reward.");
+  } finally {
+    if (button) button.disabled = false;
+  }
 }
 
 async function loadEnabledExpansions() {
@@ -3435,7 +3563,7 @@ $("btnMoreOptions").addEventListener("click", (event) => {
   toggleMenuOptions();
 });
 
-$("btnInviteDiscordActivity").addEventListener("click", inviteDiscordActivity);
+$("btnInviteDiscordActivity").addEventListener("click", openActivityInviteModal);
 
 $("btnOpenAudioConfig").addEventListener("click", () => {
   setMenuOptionsOpen(false);
@@ -3444,9 +3572,17 @@ $("btnOpenAudioConfig").addEventListener("click", () => {
 
 $("btnOpenChangelog").addEventListener("click", () => setChangelogOpen(true));
 syncChangelogNewBadge();
+syncActivityInviteBadge();
 $("btnCloseChangelog").addEventListener("click", () => setChangelogOpen(false));
 $("changelogModal").addEventListener("click", (event) => {
   if (event.target === event.currentTarget) setChangelogOpen(false);
+});
+
+$("btnCloseActivityInvite").addEventListener("click", () => setActivityInviteOpen(false));
+$("btnCancelActivityInvite").addEventListener("click", () => setActivityInviteOpen(false));
+$("btnConfirmActivityInvite").addEventListener("click", confirmActivityInvite);
+$("activityInviteModal").addEventListener("click", (event) => {
+  if (event.target === event.currentTarget) setActivityInviteOpen(false);
 });
 
 $("btnOpenHowToPlay").addEventListener("click", () => setHowToPlayOpen(true));

@@ -8,9 +8,9 @@ module.exports = {
   race: "Human",
   rarity: "legendary",
   country: "Thailand",
-  lore: "At the start of your next turn, silence 1 random enemy minion once.",
+  lore: "On first play, silence all enemy minions.",
   image: "art/Cardinal_Severin.webp",
   abilities: [
-    { trigger: "onTurnStart", effect: "applyStatusToRandomEnemyMinion", status: "silenced", oncePerMinion: true },
+    { trigger: "onPlay", effect: "applyStatusToAllEnemyMinions", status: "silenced", firstPlayOnly: true },
   ],
 };

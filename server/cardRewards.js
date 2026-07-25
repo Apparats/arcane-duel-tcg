@@ -10,7 +10,7 @@ const STARTER_CARD_COUNT = 25;
 const STARTER_GUARANTEED_RARITY = "mythic";
 const STARTER_RARITY_LIMITS = { legendary: 3, mythic: 1 };
 const STARTER_MAX_COPIES_PER_CARD = 2;
-const STARTER_CARD_COPY_LIMITS = { legendary: 1, mythic: 1 };
+const STARTER_CARD_COPY_LIMITS = { legendary: 1, mythic: 1, souvenir: 1 };
 const { secureRandomFrom, secureRandomInt } = require("./random");
 const { MAX_SPELLS } = require("../public/deckRules");
 
@@ -144,6 +144,21 @@ function buildPackOpening(cards, packSize) {
   return drawWeightedCards(cards, packSize);
 }
 
+function drawUniqueUntilCompleteCards(cards, count, existingCollection = {}) {
+  assertDrawCount(count, "draw count");
+  if (!Array.isArray(cards) || cards.length === 0) {
+    throw new Error("Reward card pool is empty.");
+  }
+
+  const counts = { ...existingCollection };
+  return Array.from({ length: count }, () => {
+    const missingCards = cards.filter((card) => (counts[card.id] || 0) <= 0);
+    const card = randomFrom(missingCards.length > 0 ? missingCards : cards);
+    counts[card.id] = (counts[card.id] || 0) + 1;
+    return card;
+  });
+}
+
 function buildStarterOpening(cards) {
   const opening = drawStarterCards(cards);
   const rarityCounts = opening.reduce((counts, card) => {
@@ -167,6 +182,7 @@ function buildStarterOpening(cards) {
 module.exports = {
   buildPackOpening,
   buildStarterOpening,
+  drawUniqueUntilCompleteCards,
   summarizeOpening,
   PACK_RARITY_WEIGHTS,
   STARTER_CARD_COUNT,

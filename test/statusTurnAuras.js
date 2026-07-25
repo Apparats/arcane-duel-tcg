@@ -40,21 +40,66 @@ function advanceBackToPlayer(game) {
 
 function testStatusCardsHaveTurnAuras() {
   const cases = [
+    ["TheGates:toy", "weakened", "enemyMinion"],
+    ["TheGates:jacquedebalsac", "frozen", "enemyMinion"],
+    ["TheGates:chiorico", "marked", "enemyMinion"],
+    ["TheGates:mamaluteo", "poisoned", "enemy"],
+  ];
+
+  cases.forEach(([cardId, status, target]) => {
+    const card = getCardById(cardId);
+    assert(card.abilities.some((ability) => ability.trigger === "onPlay" && ability.effect === "applyStatus" && ability.target === target && ability.status === status), `${card.name} should apply ${status} on play.`);
+    assert(card.abilities.some((ability) => ability.trigger === "onTurnStart" && ability.effect === "applyStatusToRandomEnemyMinion" && ability.status === status && ability.oncePerMinion !== true), `${card.name} should apply ${status} repeatedly to a random enemy minion at turn start.`);
+  });
+}
+
+function testStatusCardsApplyInitialTargetedEffect() {
+  const cases = [
     ["TheGates:toy", "weakened"],
     ["TheGates:jacquedebalsac", "frozen"],
-    ["TheGates:cardinal-severin", "silenced"],
     ["TheGates:chiorico", "marked"],
   ];
 
   cases.forEach(([cardId, status]) => {
-    const card = getCardById(cardId);
-    assert(!card.abilities.some((ability) => ability.effect === "applyStatus" && ability.status === status), `${card.name} should not apply ${status} on play anymore.`);
-    assert(card.abilities.some((ability) => ability.trigger === "onTurnStart" && ability.effect === "applyStatusToRandomEnemyMinion" && ability.status === status && ability.oncePerMinion === true), `${card.name} should apply ${status} once at turn start.`);
+    const game = makeGame();
+    const target = minion(`${status}-target`, "base:aleex", { attack: 6 });
+    game.players[1].board = [target];
+    game.players[0].hand.unshift(cardId);
+    game.players[0].manaCurrent = 20;
+
+    game.playCard(0, 0, target.instanceId);
+
+    assert(target.statuses.some((item) => item.type === status), `${getCardById(cardId).name} should apply ${status} when played.`);
   });
 }
 
+function testCardinalSeverinSilencesAllEnemyMinionsOnFirstPlay() {
+  const game = makeGame();
+  const firstTarget = minion("target-1", "base:aleex", { keywords: ["charge"], canAttack: true });
+  const secondTarget = minion("target-2", "base:babu", { keywords: ["taunt"], divineShield: true });
+  game.players[1].board = [firstTarget, secondTarget];
+  game.players[0].hand.unshift("TheGates:cardinal-severin", "TheGates:cardinal-severin");
+  game.players[0].manaCurrent = 20;
+
+  game.playCard(0, 0, null);
+
+  assert(firstTarget.statuses.some((status) => status.type === "silenced"), "Cardinal Severin should silence the first enemy minion on first play.");
+  assert(secondTarget.statuses.some((status) => status.type === "silenced"), "Cardinal Severin should silence the second enemy minion on first play.");
+  assert.deepStrictEqual(firstTarget.keywords, [], "Silenced enemy minions should lose keywords.");
+  assert.strictEqual(secondTarget.divineShield, false, "Silenced enemy minions should lose Divine Shield.");
+
+  firstTarget.statuses = [];
+  secondTarget.statuses = [];
+  game.playCard(0, 0, null);
+
+  assert.strictEqual(firstTarget.statuses.length, 0, "A second Cardinal Severin play should not silence again.");
+  assert.strictEqual(secondTarget.statuses.length, 0, "Cardinal Severin's silence should be first-play only.");
+}
+
 function testTurnAuraTargetsRandomEnemyMinion() {
-  const game = makeGame(() => 1);
+  const picks = [1, 0];
+  const game = makeGame();
+  game.randomInt = () => picks.shift() ?? 0;
   const toy = minion("toy", "TheGates:toy");
   const firstTarget = minion("target-1", "base:aleex", { attack: 6 });
   const secondTarget = minion("target-2", "base:babu", { attack: 7 });
@@ -69,7 +114,7 @@ function testTurnAuraTargetsRandomEnemyMinion() {
 
   advanceBackToPlayer(game);
 
-  assert.strictEqual(firstTarget.statuses.length, 0, "Toy should only apply its start-of-turn effect once.");
+  assert(firstTarget.statuses.some((status) => status.type === "weakened" && status.value === 3), "Toy should keep weakening a random enemy minion on later turn starts.");
 }
 
 function testTurnAuraIgnoresEmptyEnemyBoard() {
@@ -95,6 +140,8 @@ function testSilencedSourceDoesNotApplyTurnAura() {
 }
 
 testStatusCardsHaveTurnAuras();
+testStatusCardsApplyInitialTargetedEffect();
+testCardinalSeverinSilencesAllEnemyMinionsOnFirstPlay();
 testTurnAuraTargetsRandomEnemyMinion();
 testTurnAuraIgnoresEmptyEnemyBoard();
 testSilencedSourceDoesNotApplyTurnAura();

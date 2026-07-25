@@ -1,4 +1,4 @@
-const { buildPackOpening, buildStarterOpening, summarizeOpening, PACK_RARITY_WEIGHTS, STARTER_CARD_COUNT } = require("../server/cardRewards");
+const { buildPackOpening, buildStarterOpening, drawUniqueUntilCompleteCards, summarizeOpening, PACK_RARITY_WEIGHTS, STARTER_CARD_COUNT } = require("../server/cardRewards");
 const { getStarterCardPool } = require("../server/shopCatalog");
 const { DECK_SIZE, buildAutoDeck, validateDeck } = require("../public/deckRules");
 const { CARDS } = require("../public/cards");
@@ -61,8 +61,8 @@ function main() {
   try {
     const souvenirCollection = { cardCollection: { [souvenirFixture.id]: DECK_SIZE }, unlockedCards: [souvenirFixture.id] };
     const souvenirDeck = Array.from({ length: DECK_SIZE }, () => souvenirFixture.id);
-    assert(!validateDeck(souvenirDeck, souvenirCollection).ok, "Souvenir cards should not allow more than two copies.");
-    assert(buildAutoDeck(souvenirCollection).filter((cardId) => cardId === souvenirFixture.id).length === 2, "Auto deck should use at most two Souvenir copies.");
+    assert(!validateDeck(souvenirDeck, souvenirCollection).ok, "Souvenir cards should not allow duplicate copies.");
+    assert(buildAutoDeck(souvenirCollection).filter((cardId) => cardId === souvenirFixture.id).length === 1, "Auto deck should use at most one Souvenir copy.");
   } finally {
     CARDS.pop();
   }
@@ -82,6 +82,29 @@ function main() {
   }
   const souvenirRate = souvenirCount / souvenirDraws;
   assert(souvenirRate > 0.0035 && souvenirRate < 0.009, "Souvenir pack rate should stay near 0.6%.");
+
+  const uniquePool = [
+    { id: "roads:datapunkt" },
+    { id: "roads:grachtviper" },
+    { id: "roads:jubx4" },
+  ];
+  const missingOnlyDrops = Array.from({ length: 20 }, () => drawUniqueUntilCompleteCards(uniquePool, 1, {
+    "roads:datapunkt": 1,
+    "roads:grachtviper": 1,
+  })[0].id);
+  assert(
+    missingOnlyDrops.every((cardId) => cardId === "roads:jubx4"),
+    "Unique-until-complete rewards should draw only missing cards before the pool is complete."
+  );
+  const completeDrops = Array.from({ length: 20 }, () => drawUniqueUntilCompleteCards(uniquePool, 1, {
+    "roads:datapunkt": 1,
+    "roads:grachtviper": 1,
+    "roads:jubx4": 1,
+  })[0].id);
+  assert(
+    completeDrops.every((cardId) => uniquePool.some((card) => card.id === cardId)),
+    "Unique-until-complete rewards should return to the full pool after completion."
+  );
   console.log("--- CARD REWARDS TEST OK ---");
 }
 

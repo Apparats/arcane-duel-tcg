@@ -8,9 +8,10 @@ module.exports = {
   race: "Human",
   rarity: "legendary",
   country: "Malta",
-  lore: "At the start of your next turn, mark 1 random enemy minion once. The next strike hits harder.",
+  lore: "On play, mark an enemy minion. At the start of your turns, mark 1 random enemy minion.",
   image: "art/chiorico.webp",
   abilities: [
-    { trigger: "onTurnStart", effect: "applyStatusToRandomEnemyMinion", status: "marked", value: 3, turns: 2, oncePerMinion: true },
+    { trigger: "onPlay", effect: "applyStatus", target: "enemyMinion", status: "marked", value: 3, turns: 2 },
+    { trigger: "onTurnStart", effect: "applyStatusToRandomEnemyMinion", status: "marked", value: 3, turns: 2 },
   ],
 };

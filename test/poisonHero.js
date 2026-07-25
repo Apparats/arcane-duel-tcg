@@ -39,7 +39,9 @@ function testMamaluteoCanPoisonHero() {
   const game = makeGame();
   const mamaluteo = getCardById("TheGates:mamaluteo");
   const poison = mamaluteo.abilities.find((ability) => ability.effect === "applyStatus" && ability.status === "poisoned");
+  const randomPoison = mamaluteo.abilities.find((ability) => ability.effect === "applyStatusToRandomEnemyMinion" && ability.status === "poisoned");
   assert(poison, "Mamaluteo should have a Poison ability.");
+  assert(randomPoison, "Mamaluteo should Poison a random enemy minion at turn start.");
   assert.strictEqual(poison.target, "enemy", "Mamaluteo should target enemy minions or the enemy hero.");
 
   game.playCard(0, 0, "faceEnemy");
@@ -71,6 +73,19 @@ function testMamaluteoCanPoisonHero() {
   );
 }
 
+function testMamaluteoPoisonsRandomEnemyMinionAtTurnStart() {
+  const game = makeGame();
+  const target = minion("random-poison-target", "base:aleex");
+  const mamaluteo = minion("mamaluteo", "TheGates:mamaluteo");
+  game.players[0].board = [mamaluteo];
+  game.players[1].board = [target];
+
+  game.endTurn(0);
+  game.endTurn(1);
+
+  assert(target.statuses.some((status) => status.type === "poisoned"), "Mamaluteo should Poison a random enemy minion at the start of its controller's turns.");
+}
+
 function testPoisonRefreshesInsteadOfStacking() {
   const game = makeGame();
   game._applyHeroStatus(1, { status: "poisoned", value: 2, turns: 2 });
@@ -99,4 +114,5 @@ function testMamaluteoStillPoisonsMinions() {
 testMamaluteoCanPoisonHero();
 testPoisonRefreshesInsteadOfStacking();
 testMamaluteoStillPoisonsMinions();
+testMamaluteoPoisonsRandomEnemyMinionAtTurnStart();
 console.log("--- POISON HERO TEST OK ---");

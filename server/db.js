@@ -8,7 +8,7 @@
 // ============================================================
 
 const { MongoClient } = require("mongodb");
-const { buildPackOpening, summarizeOpening } = require("./cardRewards");
+const { buildPackOpening, drawUniqueUntilCompleteCards, summarizeOpening } = require("./cardRewards");
 const { buildAutoDeck, validateDeck } = require("../public/deckRules");
 const { getCardById } = require("../public/cards");
 const { assertMongoKeySegment, assertPositiveInteger, sanitizeDiscordProfile, toObjectId } = require("./mongoSafety");
@@ -72,6 +72,11 @@ async function connectDB() {
     const deckMigration = await migrateDecksToCurrentSize(db);
     if (deckMigration.migratedDecks > 0) {
       console.log(`Deck size migration updated ${deckMigration.migratedDecks} deck(s) for ${deckMigration.migratedUsers} user(s).`);
+    }
+
+    const starterGoldMigration = await grantStarterGoldToExistingUsers(db);
+    if (starterGoldMigration.modifiedCount > 0) {
+      console.log(`Starter gold bonus granted to ${starterGoldMigration.modifiedCount} existing user(s).`);
     }
 
     console.log("MongoDB connected.");
@@ -160,7 +165,9 @@ async function findOrCreateUserFromDiscord(discordProfile, starterOpening = null
         purchasedAchievementIds: [],
         purchasedTitleIds: [],
         supporter: false,
-        gold: 0,
+        gold: STARTER_GOLD_BONUS,
+        [STARTER_GOLD_GRANTED_FIELD]: true,
+        [STARTER_GOLD_GRANTED_AT_FIELD]: now,
         warnings: [],
         economy: {
           dailyRewards: {},
@@ -169,6 +176,10 @@ async function findOrCreateUserFromDiscord(discordProfile, starterOpening = null
     },
     { upsert: true }
   );
+
+  if (!result.upsertedCount) {
+    await grantStarterGoldToUserByDiscordId(users, profile.id, now);
+  }
 
   const user = await users.findOne({ discordId: profile.id });
   user.wasCreated = Boolean(result.upsertedCount);
@@ -198,6 +209,7 @@ async function grantCampaignReward(userId, campaignId, rewards = {}) {
   const rewardCount = safeCardIds.length > 0 ? rewards.count : 0;
   const rewardGold = Number.isInteger(rewards.gold) && rewards.gold >= 0 && rewards.gold <= 100000 ? rewards.gold : 0;
   const goldOnce = rewards.goldOnce === true;
+  const duplicatePolicy = rewards.duplicatePolicy || "default";
   if (safeCardIds.length === 0 && rewardGold === 0) throw new Error("Campaign reward is invalid.");
   if (safeCardIds.length > 0 && (!Number.isInteger(rewardCount) || rewardCount < 1 || rewardCount > safeCardIds.length)) {
     throw new Error("Campaign reward count is invalid.");
@@ -209,10 +221,15 @@ async function grantCampaignReward(userId, campaignId, rewards = {}) {
 
     const rewardPool = safeCardIds.map((id) => getCardById(id));
     if (rewardPool.some((card) => !card)) throw new Error("Campaign reward contains an unknown card.");
-    // Campaign card rewards are repeatable: every victory rolls only the configured
-    // amount from its pool, so duplicates remain useful for trading.
+    // Most campaign card rewards are repeatable. Some pools first fill missing
+    // cards, then become farmable for extra copies after the collection is complete.
     const opening = rewardPool.length > 0
-      ? summarizeOpening(buildPackOpening(rewardPool, rewardCount), user.cardCollection || {})
+      ? summarizeOpening(
+        duplicatePolicy === "uniqueUntilComplete"
+          ? drawUniqueUntilCompleteCards(rewardPool, rewardCount, user.cardCollection || {})
+          : buildPackOpening(rewardPool, rewardCount),
+        user.cardCollection || {}
+      )
       : { cards: [], collectionIncrements: {}, newCardIds: [] };
     const increments = Object.fromEntries(Object.entries(opening.collectionIncrements).map(([cardId, amount]) => [`cardCollection.${cardId}`, amount]));
     const campaignDrops = Object.fromEntries(Object.entries(opening.collectionIncrements).map(([cardId, amount]) => [`campaignProgress.${safeCampaignId}.cardDrops.${cardId}`, amount]));
@@ -303,6 +320,10 @@ const SURRENDER_GOLD_PENALTY = 10;
 const DISCONNECT_GOLD_PENALTY = 20;
 const DISCONNECT_PENALTY_THRESHOLD = 4;
 const DAILY_LOGIN_GOLD = 50;
+const DISCORD_ACTIVITY_INVITE_GOLD = 100;
+const STARTER_GOLD_BONUS = 350;
+const STARTER_GOLD_GRANTED_FIELD = "starterGoldGranted";
+const STARTER_GOLD_GRANTED_AT_FIELD = "starterGoldGrantedAt";
 const PACK_PRICE_GOLD = 20;
 const PACK_SIZE = 5;
 const SCRAP_GOLD_VALUES = {
@@ -528,6 +549,37 @@ async function grantMatchEconomy(userId, { mode, result, surrendered = false, qu
     quickplayBestRank: rankProgress.bestQuickplayRank,
   };
   });
+}
+
+function buildStarterGoldGrantFilter(extra = {}) {
+  return {
+    ...extra,
+    [STARTER_GOLD_GRANTED_FIELD]: { $ne: true },
+  };
+}
+
+function buildStarterGoldGrantUpdate(now = new Date()) {
+  return {
+    $inc: { gold: STARTER_GOLD_BONUS },
+    $set: {
+      [STARTER_GOLD_GRANTED_FIELD]: true,
+      [STARTER_GOLD_GRANTED_AT_FIELD]: now,
+      updatedAt: now,
+    },
+  };
+}
+
+async function grantStarterGoldToExistingUsers(targetDb = getDB(), now = new Date()) {
+  return targetDb
+    .collection("users")
+    .updateMany(buildStarterGoldGrantFilter(), buildStarterGoldGrantUpdate(now));
+}
+
+async function grantStarterGoldToUserByDiscordId(users, discordId, now = new Date()) {
+  return users.updateOne(
+    buildStarterGoldGrantFilter({ discordId }),
+    buildStarterGoldGrantUpdate(now)
+  );
 }
 
 function normalizeScrapeRequests(items) {
@@ -1035,6 +1087,32 @@ async function grantDailyLoginReward(userId, date = new Date()) {
   };
 }
 
+async function grantDiscordActivityInviteReward(userId, targetDb = getDB(), now = new Date()) {
+  const users = targetDb.collection("users");
+  const _id = toObjectId(userId, "user id");
+  const claimedField = "economy.discordActivityInviteRewardClaimed";
+  const claimedAtField = "economy.discordActivityInviteRewardClaimedAt";
+
+  const result = await users.updateOne(
+    { _id, [claimedField]: { $ne: true } },
+    {
+      $inc: { gold: DISCORD_ACTIVITY_INVITE_GOLD },
+      $set: {
+        [claimedField]: true,
+        [claimedAtField]: now,
+        updatedAt: now,
+      },
+    }
+  );
+
+  const updated = await users.findOne({ _id }, { projection: { gold: 1 } });
+  return {
+    claimed: result.modifiedCount > 0,
+    goldAwarded: result.modifiedCount > 0 ? DISCORD_ACTIVITY_INVITE_GOLD : 0,
+    gold: updated?.gold || 0,
+  };
+}
+
 async function buyPack(userId, pack) {
   const users = getDB().collection("users");
   const _id = toObjectId(userId, "user id");
@@ -1230,6 +1308,8 @@ module.exports = {
   DAILY_REWARD_LIMITS,
   MATCH_REWARDS,
   DAILY_LOGIN_GOLD,
+  DISCORD_ACTIVITY_INVITE_GOLD,
+  STARTER_GOLD_BONUS,
   SURRENDER_GOLD_PENALTY,
   DISCONNECT_GOLD_PENALTY,
   DISCONNECT_PENALTY_THRESHOLD,
@@ -1242,4 +1322,6 @@ module.exports = {
   scrapeDuplicateCards,
   submitCardRequest,
   normalizeDisplayName,
+  grantStarterGoldToExistingUsers,
+  grantDiscordActivityInviteReward,
 };

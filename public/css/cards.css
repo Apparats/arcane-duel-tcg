@@ -196,6 +196,7 @@
 .status-badge.status-marked { background: radial-gradient(circle at 35% 25%, #ffd5a6, #c34b22 70%); }
 .status-badge.status-burning { background: radial-gradient(circle at 35% 25%, #fff0a8, #e36b1f 48%, #7e1712 78%); }
 .status-badge.status-drunk { background: radial-gradient(circle at 35% 25%, #fff3a6, #b6842c 48%, #236b68 82%); color: #171109; }
+.status-badge.status-dodge { background: radial-gradient(circle at 35% 25%, #e9ddff, #7f4ecf 48%, #34205f 82%); }
 
 .card-footer {
   position: absolute;

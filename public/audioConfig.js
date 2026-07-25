@@ -4,7 +4,7 @@ window.ArcaneAudioConfig = {
   musicVolume: 0.15,
   sfxVolume: 0.24,
   assetsBasePath: "assets/audio/",
-  assetVersion: "1.6.0-audio-v1",
+  assetVersion: "1.6.5-audio-v1",
 
   music: {
     mainMenu: {
@@ -24,6 +24,7 @@ window.ArcaneAudioConfig = {
       src: [
         "music/Board1.ogg",
         "music/Board2.ogg",
+        "music/Board3.ogg",
         "music/Board5.ogg",
         "music/Board6.ogg",
         "music/Board7.ogg",
@@ -41,6 +42,7 @@ window.ArcaneAudioConfig = {
     shieldHit: "sfx/hit.wav",
     victory: "sfx/winner.wav",
     defeat: "sfx/loses.wav",
+    matchFound: "sfx/find.wav",
     cardPlay: "sfx/card.wav",
     attack: "",
     endTurn: "",
