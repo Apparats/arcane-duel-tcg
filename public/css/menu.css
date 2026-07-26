@@ -1241,7 +1241,8 @@
     max(24px, env(safe-area-inset-left));
   background:
     linear-gradient(90deg, rgba(4, 6, 15, .96) 0%, rgba(7, 8, 18, .83) 30%, rgba(7, 7, 16, .22) 61%, rgba(3, 4, 10, .4) 100%),
-    url("../art/menu-arcane-sanctuary.png?v=2") center / cover no-repeat;
+    url("../art/menu-arcane-sanctuary.webp?v=3") center / cover no-repeat;
+  background-color: #050711;
 }
 
 #screen-menu::before {
@@ -1630,7 +1631,7 @@
       max(12px, env(safe-area-inset-left));
     background:
       linear-gradient(180deg, rgba(3, 4, 11, .2) 0%, rgba(4, 5, 13, .25) 26%, rgba(4, 5, 14, .91) 59%, #050611 100%),
-      url("../art/menu-arcane-sanctuary.png?v=2") 65% center / cover no-repeat;
+      url("../art/menu-arcane-sanctuary.webp?v=3") 65% center / cover no-repeat;
     overflow: hidden;
     overscroll-behavior: none;
     touch-action: manipulation;
@@ -1760,5 +1761,64 @@
 
   #screen-menu .menu-wrap {
     padding-top: clamp(158px, 24dvh, 190px);
+  }
+}
+
+@media (min-width: 761px) {
+  #screen-menu .menu-wrap {
+    width: min(530px, 47vw);
+  }
+
+  #screen-menu .menu-grid {
+    gap: 10px;
+  }
+
+  #screen-menu .menu-tile-primary {
+    min-height: 88px;
+    padding: 15px 64px 15px 78px;
+  }
+
+  #screen-menu .menu-tile-primary::before {
+    left: 61px;
+    top: 17px;
+    bottom: 17px;
+  }
+
+  #screen-menu .menu-tile-primary .menu-tile-icon {
+    left: 17px;
+    width: 34px;
+    height: 34px;
+  }
+
+  #screen-menu .menu-tile-primary .menu-tile-label {
+    font-size: 19px;
+  }
+
+  #screen-menu .menu-tile-primary .menu-tile-sub {
+    font-size: 11px;
+  }
+
+  #screen-menu .menu-grid-secondary {
+    gap: 9px;
+    margin-top: 15px;
+  }
+
+  #screen-menu .menu-tile-secondary-active {
+    min-height: 96px;
+    padding: 12px 8px 10px;
+    gap: 5px;
+  }
+
+  #screen-menu .menu-tile-secondary-active .menu-tile-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  #screen-menu .menu-tile-secondary-active .menu-tile-label {
+    font-size: 11px;
+  }
+
+  #screen-menu .menu-tile-secondary-active .menu-tile-sub {
+    font-size: 9px;
   }
 }
