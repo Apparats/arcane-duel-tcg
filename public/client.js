@@ -1202,25 +1202,24 @@ function switchScreen(name) {
     .map((screen) => $(`screen-${screen}`))
     .find((screen) => screen && !screen.classList.contains("hidden"));
   const incomingScreen = $(`screen-${name}`);
-  const isArcanaLobbyTransition =
+  const interfaceScreenIds = [
+    "screen-enter",
+    "screen-menu",
+    "screen-lobby",
+    "screen-inventory",
+    "screen-shop",
+    "screen-trade",
+    "screen-profile",
+  ];
+  const isInterfaceTransition =
     currentScreen &&
     incomingScreen &&
-    (
-      (currentScreen.id === "screen-menu" && name === "lobby" &&
-        (incomingScreen.classList.contains("lobby-singleplayer") || incomingScreen.classList.contains("lobby-multiplayer"))) ||
-      (currentScreen.id === "screen-lobby" && name === "menu" &&
-        (currentScreen.classList.contains("lobby-singleplayer") || currentScreen.classList.contains("lobby-multiplayer")))
-    );
-  const featureScreenIds = ["screen-inventory", "screen-shop", "screen-trade", "screen-profile"];
-  const isFeatureMenuTransition =
-    currentScreen &&
-    incomingScreen &&
-    (
-      (currentScreen.id === "screen-menu" && featureScreenIds.includes(incomingScreen.id)) ||
-      (featureScreenIds.includes(currentScreen.id) && name === "menu")
-    );
+    interfaceScreenIds.includes(currentScreen.id) &&
+    interfaceScreenIds.includes(incomingScreen.id);
 
-  if (isArcanaLobbyTransition || isFeatureMenuTransition) {
+  // Internal navigation is already loaded. Preserve the cinematic screen
+  // transitions and reserve the loading seal for auth and real match setup.
+  if (isInterfaceTransition) {
     clearTimeout(screenTransitionTimer);
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     const swapDelay = reduceMotion ? 0 : 150;
