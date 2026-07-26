@@ -1896,3 +1896,49 @@
   #screen-lobby.lobby-multiplayer .lobby-tab-panel { animation: none; }
   #screen-lobby.lobby-multiplayer .lobby-tab { transition: none; }
 }
+
+/* Lightweight full-screen motion for mobile GPUs. */
+@media (max-width: 760px) {
+  #screen-menu.screen-transition-in,
+  #screen-menu.screen-transition-out,
+  #screen-lobby.screen-transition-in,
+  #screen-lobby.screen-transition-out,
+  #screen-inventory.screen-transition-in,
+  #screen-inventory.screen-transition-out,
+  #screen-shop.screen-transition-in,
+  #screen-shop.screen-transition-out,
+  #screen-trade.screen-transition-in,
+  #screen-trade.screen-transition-out,
+  #screen-profile.screen-transition-in,
+  #screen-profile.screen-transition-out {
+    filter: none !important;
+    will-change: opacity, transform;
+  }
+
+  #screen-menu.screen-transition-in,
+  #screen-lobby.screen-transition-in,
+  #screen-inventory.screen-transition-in,
+  #screen-shop.screen-transition-in,
+  #screen-trade.screen-transition-in,
+  #screen-profile.screen-transition-in {
+    animation: arcana-mobile-screen-enter 180ms ease-out both;
+  }
+
+  #screen-menu.screen-transition-out,
+  #screen-lobby.screen-transition-out,
+  #screen-inventory.screen-transition-out,
+  #screen-shop.screen-transition-out,
+  #screen-trade.screen-transition-out,
+  #screen-profile.screen-transition-out {
+    animation: arcana-mobile-screen-leave 90ms ease-in both;
+  }
+
+  @keyframes arcana-mobile-screen-enter {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes arcana-mobile-screen-leave {
+    to { opacity: 0; transform: translateY(2px); }
+  }
+}

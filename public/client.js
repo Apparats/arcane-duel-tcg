@@ -1222,7 +1222,9 @@ function switchScreen(name) {
   if (isInterfaceTransition) {
     clearTimeout(screenTransitionTimer);
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    const swapDelay = reduceMotion ? 0 : 150;
+    const compactMotion = window.matchMedia?.("(max-width: 760px)")?.matches;
+    const swapDelay = reduceMotion ? 0 : compactMotion ? 90 : 150;
+    const enterDuration = reduceMotion ? 0 : compactMotion ? 180 : 360;
     currentScreen.classList.add("screen-transition-out");
     screenTransitionTimer = setTimeout(() => {
       screenIds.forEach((screen) => {
@@ -1234,7 +1236,7 @@ function switchScreen(name) {
       window.ArcaneAudio?.onScreenChange(name);
       screenTransitionTimer = setTimeout(() => {
         incomingScreen.classList.remove("screen-transition-in");
-      }, reduceMotion ? 0 : 360);
+      }, enterDuration);
     }, swapDelay);
     return;
   }

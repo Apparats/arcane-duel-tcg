@@ -1245,6 +1245,7 @@
 }
 
 @media (max-width: 660px) {
+  #screen-profile.profile-screen { background-attachment: scroll; }
   #screen-profile .profile-page-shell {
     padding:
       max(12px, env(safe-area-inset-top))

@@ -1822,3 +1822,9 @@
     font-size: 9px;
   }
 }
+
+@media (max-width: 760px) {
+  #screen-menu > .fireflies {
+    display: none !important;
+  }
+}
