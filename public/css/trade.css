@@ -1,3 +1,26 @@
+#screen-trade.screen-transition-in {
+  animation: trade-screen-enter 360ms cubic-bezier(.2, .75, .25, 1) both;
+}
+
+#screen-trade.screen-transition-out {
+  animation: trade-screen-leave 150ms ease-in both;
+  pointer-events: none;
+}
+
+@keyframes trade-screen-enter {
+  from { opacity: 0; transform: translateX(20px); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes trade-screen-leave {
+  to { opacity: 0; transform: translateX(16px); filter: blur(3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #screen-trade.screen-transition-in,
+  #screen-trade.screen-transition-out { animation: none; }
+}
+
 #screen-trade {
   --trade-accent: #e8b34f;
   --trade-green: #7fb069;

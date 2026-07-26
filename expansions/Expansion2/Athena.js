@@ -6,7 +6,7 @@ module.exports = {
   health: 10,
   keywords: [],
   race: "Human",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Bolivia",
   lore: "On play, enemy minions gain Confusion for their next turn. They cannot attack normally and each has a 30% chance to attack an allied minion.",
   image: "art/Athena.webp",

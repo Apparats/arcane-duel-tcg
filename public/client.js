@@ -39,7 +39,7 @@ const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", m
 const BABU2_CARD_ID = "expansion2:Babu2";
 const SECOND_PLAYER_MANA_CARD_ID = "special:manaspark";
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.6.5-campaign-roads-activity-rewards";
+const CHANGELOG_VERSION = "1.6.6-menu-visual-rework-mythic-balance";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const ACTIVITY_INVITE_SEEN_STORAGE_KEY = "arcane_activity_invite_seen_v1";
@@ -67,6 +67,7 @@ const TOUCH_TOOLTIP_HOLD_MS = 500;
 const TOUCH_TOOLTIP_MOVE_TOLERANCE = 10;
 let quickplaySearching = false;
 let singleplayerStartPending = false;
+let screenTransitionTimer = null;
 let enabledExpansionIds = null;
 let activeMatchMode = null;
 let matchIntroTimer = null;
@@ -1197,6 +1198,48 @@ function switchScreen(name) {
   hideHandStealReveal();
   const screenIds = ["auth", "enter", "menu", "lobby", "inventory", "shop", "trade", "profile", "game"];
   const loading = $("loadingScreen");
+  const currentScreen = screenIds
+    .map((screen) => $(`screen-${screen}`))
+    .find((screen) => screen && !screen.classList.contains("hidden"));
+  const incomingScreen = $(`screen-${name}`);
+  const isArcanaLobbyTransition =
+    currentScreen &&
+    incomingScreen &&
+    (
+      (currentScreen.id === "screen-menu" && name === "lobby" &&
+        (incomingScreen.classList.contains("lobby-singleplayer") || incomingScreen.classList.contains("lobby-multiplayer"))) ||
+      (currentScreen.id === "screen-lobby" && name === "menu" &&
+        (currentScreen.classList.contains("lobby-singleplayer") || currentScreen.classList.contains("lobby-multiplayer")))
+    );
+  const featureScreenIds = ["screen-inventory", "screen-shop", "screen-trade", "screen-profile"];
+  const isFeatureMenuTransition =
+    currentScreen &&
+    incomingScreen &&
+    (
+      (currentScreen.id === "screen-menu" && featureScreenIds.includes(incomingScreen.id)) ||
+      (featureScreenIds.includes(currentScreen.id) && name === "menu")
+    );
+
+  if (isArcanaLobbyTransition || isFeatureMenuTransition) {
+    clearTimeout(screenTransitionTimer);
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    const swapDelay = reduceMotion ? 0 : 150;
+    currentScreen.classList.add("screen-transition-out");
+    screenTransitionTimer = setTimeout(() => {
+      screenIds.forEach((screen) => {
+        const el = $(`screen-${screen}`);
+        if (el) el.classList.toggle("hidden", name !== screen);
+      });
+      currentScreen.classList.remove("screen-transition-out");
+      incomingScreen.classList.add("screen-transition-in");
+      window.ArcaneAudio?.onScreenChange(name);
+      screenTransitionTimer = setTimeout(() => {
+        incomingScreen.classList.remove("screen-transition-in");
+      }, reduceMotion ? 0 : 360);
+    }, swapDelay);
+    return;
+  }
+
   if (!loading) {
     screenIds.forEach((screen) => {
       const el = $(`screen-${screen}`);
@@ -1275,6 +1318,7 @@ function openLobby(mode) {
   $("lobbyEmbers").classList.toggle("hidden", !["singleplayer", "multiplayer"].includes(mode));
   $("singleplayerActions").classList.toggle("hidden", mode !== "singleplayer");
   $("multiplayerActions").classList.toggle("hidden", mode !== "multiplayer");
+  $("lobbyKicker").textContent = mode === "singleplayer" ? "Choose your path" : "Enter the arena";
   $("lobbySubtitle").textContent =
     mode === "singleplayer"
       ? "Practice against the NPC or play a Campaign for rewards"
@@ -1380,7 +1424,11 @@ function setSingleplayerStartPending(pending) {
   button.disabled = pending;
   button.setAttribute("aria-busy", pending ? "true" : "false");
   const subtitle = button.querySelector(".singleplayer-mode-subtitle");
-  if (subtitle) subtitle.textContent = pending ? "Preparing match..." : "Earn gold on Fastplay!";
+  if (subtitle) {
+    subtitle.textContent = pending
+      ? "Preparing your opponent and the battlefield..."
+      : "Enter Fastplay with your active deck and earn daily gold.";
+  }
 }
 
 $("tabRoomCode").addEventListener("click", () => setLobbyTab("room"));

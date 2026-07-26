@@ -1122,3 +1122,776 @@
   #screen-lobby.lobby-singleplayer::after,
   #screen-lobby.lobby-multiplayer::after { animation: none; opacity: 0.62; }
 }
+
+/* ============================================================
+   SINGLEPLAYER — cinematic continuation of the Arcana menu
+   Multiplayer intentionally keeps the established lobby layout.
+   ============================================================ */
+
+#screen-menu.screen-transition-out {
+  animation: arcana-menu-leave 150ms ease-in both;
+  pointer-events: none;
+}
+
+#screen-lobby.lobby-singleplayer.screen-transition-in {
+  animation: arcana-singleplayer-enter 360ms cubic-bezier(.2, .75, .25, 1) both;
+}
+
+#screen-lobby.lobby-singleplayer.screen-transition-out,
+#screen-lobby.lobby-multiplayer.screen-transition-out {
+  animation: arcana-singleplayer-leave 150ms ease-in both;
+  pointer-events: none;
+}
+
+#screen-lobby.lobby-multiplayer.screen-transition-in {
+  animation: arcana-multiplayer-enter 360ms cubic-bezier(.2, .75, .25, 1) both;
+}
+
+#screen-menu.screen-transition-in {
+  animation: arcana-menu-return 360ms cubic-bezier(.2, .75, .25, 1) both;
+}
+
+@keyframes arcana-menu-leave {
+  to { opacity: 0; transform: scale(1.015); filter: blur(3px); }
+}
+
+@keyframes arcana-singleplayer-enter {
+  from { opacity: 0; transform: translateX(22px) scale(1.012); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes arcana-multiplayer-enter {
+  from { opacity: 0; transform: translateX(-22px) scale(1.012); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes arcana-singleplayer-leave {
+  to { opacity: 0; transform: translateX(18px); filter: blur(3px); }
+}
+
+@keyframes arcana-menu-return {
+  from { opacity: 0; transform: translateX(-18px) scale(1.01); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+.singleplayer-kicker { display: none; }
+
+#screen-lobby.lobby-singleplayer {
+  align-items: stretch;
+  justify-content: flex-start;
+  isolation: isolate;
+  padding:
+    max(22px, env(safe-area-inset-top))
+    max(24px, env(safe-area-inset-right))
+    max(22px, env(safe-area-inset-bottom))
+    max(24px, env(safe-area-inset-left));
+  background:
+    linear-gradient(90deg, rgba(4, 6, 15, .97) 0%, rgba(7, 8, 18, .86) 38%, rgba(6, 7, 16, .34) 72%, rgba(3, 4, 10, .5) 100%),
+    url("../art/menu-arcane-sanctuary.png?v=2") center / cover no-repeat;
+}
+
+#screen-lobby.lobby-singleplayer::before {
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(2, 3, 9, .54), transparent 22%, transparent 70%, rgba(2, 3, 9, .88)),
+    radial-gradient(ellipse at 73% 46%, rgba(136, 86, 224, .2), transparent 34%);
+  filter: none;
+  animation: none;
+}
+
+#screen-lobby.lobby-singleplayer::after {
+  inset: 0;
+  opacity: .15;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.2'/%3E%3C/svg%3E");
+  filter: none;
+  animation: none;
+  mix-blend-mode: soft-light;
+}
+
+#screen-lobby.lobby-singleplayer .lobby-snow .firefly {
+  background: #d8c4ff;
+  filter: drop-shadow(0 0 5px #9b71ff) drop-shadow(0 0 12px rgba(117, 78, 214, .6));
+}
+
+#screen-lobby.lobby-singleplayer .lobby-card {
+  display: flex;
+  width: min(760px, 57vw);
+  min-height: 100%;
+  margin-left: clamp(18px, 5vw, 82px);
+  padding: clamp(76px, 12vh, 122px) 0 34px;
+  flex-direction: column;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+}
+
+#screen-lobby.lobby-singleplayer .back-link {
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  min-height: 36px;
+  padding: 8px 13px;
+  align-items: center;
+  border: 1px solid rgba(215, 187, 123, .3);
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(34, 31, 48, .94), rgba(9, 10, 21, .94));
+  box-shadow: 0 7px 18px rgba(0,0,0,.35), inset 0 1px rgba(255,255,255,.05);
+  color: #e8deca;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+#screen-lobby.lobby-singleplayer .back-link:hover,
+#screen-lobby.lobby-singleplayer .back-link:focus-visible {
+  border-color: rgba(220, 193, 134, .65);
+  color: #f3dfaa;
+}
+
+#screen-lobby.lobby-singleplayer .singleplayer-kicker {
+  display: block;
+  margin-bottom: 8px;
+  color: #bca6e8;
+  font: 700 10px "Cinzel", serif;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+}
+
+#screen-lobby.lobby-singleplayer .brand {
+  background: none;
+  color: #f1dfad;
+  font-family: "Cinzel Decorative", "Cinzel", serif;
+  font-size: clamp(36px, 4vw, 58px);
+  font-weight: 900;
+  letter-spacing: -.04em;
+  line-height: .96;
+  text-shadow: 0 2px 0 #72542a, 0 8px 32px rgba(0,0,0,.9);
+}
+
+#screen-lobby.lobby-singleplayer .brand-sub {
+  max-width: 530px;
+  margin: 10px 0 28px;
+  color: rgba(225, 218, 205, .64);
+  font-size: 12px;
+  letter-spacing: .035em;
+  line-height: 1.5;
+}
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  animation: arcana-modes-enter 260ms ease-out both;
+}
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode {
+  display: grid;
+  min-height: 244px;
+  padding: 0;
+  grid-template-rows: 104px 1fr auto;
+  overflow: hidden;
+  border: 1px solid rgba(194, 169, 118, .24);
+  border-radius: 2px;
+  background: linear-gradient(180deg, rgba(25, 24, 42, .93), rgba(8, 9, 20, .96));
+  box-shadow: 0 18px 38px rgba(0,0,0,.36), inset 0 1px rgba(255,255,255,.045);
+  text-align: left;
+  cursor: pointer;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-top: 2px solid transparent;
+  transition: border-color .2s ease;
+}
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: #c8a5ff;
+  background:
+    radial-gradient(circle at 50% 74%, rgba(137, 88, 224, .34), transparent 48%),
+    linear-gradient(135deg, rgba(61, 46, 91, .48), rgba(10, 11, 25, .82));
+}
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode-art::before,
+#screen-lobby.lobby-singleplayer .singleplayer-mode-art::after {
+  content: "";
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  border: 1px solid rgba(192, 157, 255, .13);
+  transform: rotate(45deg);
+}
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode-art::after {
+  width: 88px;
+  height: 88px;
+  border-color: rgba(222, 190, 119, .16);
+}
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode-art svg {
+  position: relative;
+  z-index: 1;
+  width: 60px;
+  height: 60px;
+  filter: drop-shadow(0 0 14px rgba(164, 113, 255, .42));
+}
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode-npc .singleplayer-mode-art {
+  color: #dfc47f;
+  background:
+    radial-gradient(circle at 50% 74%, rgba(221, 178, 78, .24), transparent 48%),
+    linear-gradient(135deg, rgba(74, 61, 42, .45), rgba(10, 11, 24, .84));
+}
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode-copy {
+  display: block;
+  padding: 18px 19px 10px;
+}
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode-eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  color: #a992d1;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode-npc .singleplayer-mode-eyebrow { color: #cbb371; }
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode-title {
+  color: #f1eadc;
+  font-size: 18px;
+  letter-spacing: .025em;
+}
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode-subtitle {
+  margin-top: 7px;
+  color: rgba(225,218,205,.58);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode-enter {
+  display: flex;
+  min-height: 39px;
+  padding: 9px 18px;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(194,169,118,.14);
+  color: #cbb7e9;
+  font: 700 9px "Cinzel", serif;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode-npc .singleplayer-mode-enter { color: #d9bf79; }
+#screen-lobby.lobby-singleplayer .singleplayer-mode-enter b { font: 24px/1 Georgia, serif; }
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode:hover,
+#screen-lobby.lobby-singleplayer .singleplayer-mode:focus-visible {
+  transform: translateY(-5px);
+  border-color: rgba(222, 198, 143, .58);
+  box-shadow: 0 24px 46px rgba(0,0,0,.5), 0 0 28px rgba(116,77,203,.14);
+  outline: none;
+}
+
+#screen-lobby.lobby-singleplayer .singleplayer-mode:hover::after,
+#screen-lobby.lobby-singleplayer .singleplayer-mode:focus-visible::after { border-top-color: #9e79d8; }
+#screen-lobby.lobby-singleplayer .singleplayer-mode-npc:hover::after,
+#screen-lobby.lobby-singleplayer .singleplayer-mode-npc:focus-visible::after { border-top-color: #d3b76e; }
+
+#screen-lobby.lobby-singleplayer .campaign-stage-panel {
+  padding: 16px;
+  border-color: rgba(194,169,118,.25);
+  border-radius: 2px;
+  background: linear-gradient(145deg, rgba(23,22,40,.95), rgba(7,8,19,.97));
+  box-shadow: 0 18px 42px rgba(0,0,0,.42), inset 0 1px rgba(255,255,255,.04);
+  animation: arcana-campaign-enter 260ms ease-out both;
+}
+
+@keyframes arcana-campaign-enter {
+  from { opacity: 0; transform: translateX(16px); }
+}
+
+@keyframes arcana-modes-enter {
+  from { opacity: 0; transform: translateX(-14px); }
+}
+
+#screen-lobby.lobby-singleplayer .campaign-stage-heading,
+#screen-lobby.lobby-singleplayer .campaign-stage-label { color: #c6a7ef; }
+#screen-lobby.lobby-singleplayer .campaign-info-button {
+  border-color: rgba(186,143,235,.55);
+  background: rgba(52,35,76,.75);
+  color: #d8c0f5;
+}
+#screen-lobby.lobby-singleplayer .campaign-stage-choice {
+  border-color: rgba(184,153,221,.22);
+  background: rgba(13,13,29,.74);
+}
+#screen-lobby.lobby-singleplayer .campaign-stage-choice:hover,
+#screen-lobby.lobby-singleplayer .campaign-stage-choice:focus-visible,
+#screen-lobby.lobby-singleplayer .campaign-stage-choice.active {
+  border-color: #b998e4;
+  background: rgba(79,54,111,.58);
+}
+#screen-lobby.lobby-singleplayer .campaign-stage-choice.active {
+  box-shadow: inset 3px 0 #bd9be9, 0 0 18px rgba(126,82,198,.2);
+}
+#screen-lobby.lobby-singleplayer .campaign-stage-choice-index { color: #c2a0eb; }
+#screen-lobby.lobby-singleplayer .campaign-stage-detail {
+  border-color: rgba(212,181,112,.22);
+  background:
+    radial-gradient(circle at 70% 0%, rgba(126,80,205,.14), transparent 55%),
+    linear-gradient(180deg, rgba(36,30,52,.72), rgba(12,12,26,.84));
+}
+
+@media (max-width: 760px) {
+  #screen-lobby.lobby-singleplayer {
+    align-items: flex-end;
+    padding:
+      max(12px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      max(14px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+    background:
+      linear-gradient(180deg, rgba(3,4,11,.22), rgba(4,5,14,.94) 54%, #050611),
+      url("../art/menu-arcane-sanctuary.png?v=2") 65% center / cover no-repeat;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  #screen-lobby.lobby-singleplayer .lobby-card {
+    width: 100%;
+    min-height: 0;
+    max-height: 100%;
+    margin: 0;
+    padding: 66px 0 0;
+  }
+  #screen-lobby.lobby-singleplayer .back-link { top: 0; min-height: 32px; padding: 6px 9px; font-size: 9px; }
+  #screen-lobby.lobby-singleplayer .singleplayer-kicker { margin-bottom: 5px; font-size: 8px; text-align: center; }
+  #screen-lobby.lobby-singleplayer .brand { font-size: clamp(30px, 10vw, 44px); text-align: center; }
+  #screen-lobby.lobby-singleplayer .brand-sub { margin: 6px auto 14px; font-size: 9px; text-align: center; }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode-grid { gap: 7px; }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode { min-height: 190px; grid-template-rows: 72px 1fr auto; }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode-art svg { width: 43px; height: 43px; }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode-copy { padding: 12px 12px 7px; }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode-title { font-size: 14px; }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode-subtitle { font-size: 9px; }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode-enter { min-height: 32px; padding: 6px 11px; font-size: 8px; }
+}
+
+@media (max-width: 440px) {
+  #screen-lobby.lobby-singleplayer .singleplayer-mode-grid { grid-template-columns: 1fr; }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode {
+    min-height: 118px;
+    grid-template-columns: 92px minmax(0, 1fr);
+    grid-template-rows: 1fr 32px;
+  }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode-art { grid-column: 1; grid-row: 1 / span 2; }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode-copy { grid-column: 2; grid-row: 1; padding: 13px 12px 5px; }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode-enter { grid-column: 2; grid-row: 2; }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode-eyebrow { margin-bottom: 3px; font-size: 7px; }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode-subtitle { margin-top: 4px; line-height: 1.3; }
+  #screen-lobby.lobby-singleplayer .campaign-stage-panel { max-height: calc(100dvh - 78px); overflow-y: auto; }
+}
+
+@media (max-height: 600px) and (orientation: landscape) {
+  #screen-lobby.lobby-singleplayer .lobby-card { width: min(680px, 70vw); padding-top: 44px; }
+  #screen-lobby.lobby-singleplayer .singleplayer-kicker { display: none; }
+  #screen-lobby.lobby-singleplayer .brand { font-size: 28px; }
+  #screen-lobby.lobby-singleplayer .brand-sub { margin: 4px 0 9px; }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode { min-height: 150px; grid-template-rows: 54px 1fr 29px; }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode-art svg { width: 38px; height: 38px; }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode-copy { padding: 9px 12px 5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #screen-menu.screen-transition-out,
+  #screen-menu.screen-transition-in,
+  #screen-lobby.lobby-singleplayer.screen-transition-in,
+  #screen-lobby.lobby-singleplayer.screen-transition-out,
+  #screen-lobby.lobby-multiplayer.screen-transition-in,
+  #screen-lobby.lobby-multiplayer.screen-transition-out,
+  #screen-lobby.lobby-singleplayer .campaign-stage-panel,
+  #screen-lobby.lobby-singleplayer .singleplayer-mode-grid { animation: none; }
+  #screen-lobby.lobby-singleplayer .singleplayer-mode { transition: none; }
+}
+
+/* ============================================================
+   MULTIPLAYER — competitive arcane arena
+   ============================================================ */
+
+#screen-lobby.lobby-multiplayer {
+  align-items: stretch;
+  justify-content: flex-start;
+  isolation: isolate;
+  padding:
+    max(22px, env(safe-area-inset-top))
+    max(24px, env(safe-area-inset-right))
+    max(22px, env(safe-area-inset-bottom))
+    max(24px, env(safe-area-inset-left));
+  background:
+    linear-gradient(90deg, rgba(4,6,15,.97), rgba(7,8,18,.88) 42%, rgba(6,7,16,.38) 75%, rgba(3,4,10,.54)),
+    url("../art/menu-arcane-sanctuary.png?v=2") center / cover no-repeat;
+}
+
+#screen-lobby.lobby-multiplayer::before {
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(2,3,9,.56), transparent 22%, transparent 68%, rgba(2,3,9,.9)),
+    radial-gradient(ellipse at 72% 45%, rgba(82,132,202,.15), transparent 34%);
+  filter: none;
+  animation: none;
+}
+
+#screen-lobby.lobby-multiplayer::after {
+  inset: 0;
+  opacity: .15;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.2'/%3E%3C/svg%3E");
+  filter: none;
+  animation: none;
+  mix-blend-mode: soft-light;
+}
+
+#screen-lobby.lobby-multiplayer .lobby-snow .firefly {
+  background: #b9dcff;
+  filter: drop-shadow(0 0 5px #6daee8) drop-shadow(0 0 12px rgba(79,146,207,.56));
+}
+
+#screen-lobby.lobby-multiplayer .lobby-card {
+  display: flex;
+  width: min(820px, 62vw);
+  min-height: 100%;
+  margin-left: clamp(18px, 5vw, 82px);
+  padding: clamp(70px, 10vh, 106px) 0 26px;
+  flex-direction: column;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+}
+
+#screen-lobby.lobby-multiplayer .back-link {
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  min-height: 36px;
+  padding: 8px 13px;
+  align-items: center;
+  border: 1px solid rgba(157,194,226,.28);
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(29,36,51,.96), rgba(8,11,22,.96));
+  box-shadow: 0 7px 18px rgba(0,0,0,.38), inset 0 1px rgba(255,255,255,.05);
+  color: #dce9f2;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+#screen-lobby.lobby-multiplayer .back-link:hover,
+#screen-lobby.lobby-multiplayer .back-link:focus-visible {
+  border-color: rgba(152,205,241,.64);
+  color: #d9efff;
+}
+
+#screen-lobby.lobby-multiplayer .singleplayer-kicker {
+  display: block;
+  margin-bottom: 8px;
+  color: #8fbfe0;
+  font: 700 10px "Cinzel", serif;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+}
+
+#screen-lobby.lobby-multiplayer .brand {
+  background: none;
+  color: #f1dfad;
+  font-family: "Cinzel Decorative", "Cinzel", serif;
+  font-size: clamp(36px, 4vw, 58px);
+  font-weight: 900;
+  letter-spacing: -.04em;
+  line-height: .96;
+  text-shadow: 0 2px #72542a, 0 8px 32px rgba(0,0,0,.9);
+}
+
+#screen-lobby.lobby-multiplayer .brand-sub {
+  max-width: 550px;
+  margin: 9px 0 20px;
+  color: rgba(216,229,237,.62);
+  font-size: 11px;
+  line-height: 1.45;
+  letter-spacing: .035em;
+}
+
+#screen-lobby.lobby-multiplayer .online-player-count {
+  top: 2px;
+  right: 0;
+  padding: 8px 11px;
+  border: 1px solid rgba(104,176,221,.28);
+  border-radius: 3px;
+  background: rgba(7,14,25,.72);
+  color: #bfe7ff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+#screen-lobby.lobby-multiplayer .online-player-count::before {
+  background: #70d6aa;
+  box-shadow: 0 0 8px rgba(112,214,170,.8);
+}
+
+#screen-lobby.lobby-multiplayer .lobby-actions { min-height: 0; gap: 10px; }
+
+#screen-lobby.lobby-multiplayer .lobby-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  padding: 5px;
+  border: 1px solid rgba(134,177,207,.18);
+  border-radius: 3px;
+  background: rgba(6,10,21,.74);
+  box-shadow: inset 0 1px rgba(255,255,255,.03);
+}
+
+#screen-lobby.lobby-multiplayer .lobby-tab {
+  display: flex;
+  min-width: 0;
+  min-height: 52px;
+  padding: 7px 6px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  border-radius: 2px;
+  color: rgba(206,222,232,.58);
+  font: 700 9px "Inter", sans-serif;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  transition: border-color .18s ease, background .18s ease, color .18s ease;
+}
+
+#screen-lobby.lobby-multiplayer .lobby-tab svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+#screen-lobby.lobby-multiplayer .lobby-tab:hover,
+#screen-lobby.lobby-multiplayer .lobby-tab:focus-visible {
+  border-color: rgba(120,181,222,.3);
+  background: rgba(62,105,139,.16);
+  color: #dceef9;
+  outline: none;
+}
+
+#screen-lobby.lobby-multiplayer .lobby-tab.active {
+  border-color: rgba(133,194,234,.54);
+  background:
+    linear-gradient(180deg, rgba(77,134,173,.28), rgba(20,43,66,.22));
+  color: #bfe8ff;
+  box-shadow: inset 0 2px #78b8df, 0 0 18px rgba(72,142,187,.1);
+}
+
+#screen-lobby.lobby-multiplayer .lobby-tab-panel {
+  position: relative;
+  min-height: 176px;
+  padding: 22px;
+  justify-content: center;
+  border: 1px solid rgba(134,177,207,.2);
+  border-radius: 3px;
+  background:
+    radial-gradient(circle at 78% 0%, rgba(73,126,166,.13), transparent 52%),
+    linear-gradient(145deg, rgba(20,25,42,.94), rgba(7,9,20,.97));
+  box-shadow: 0 18px 38px rgba(0,0,0,.36), inset 0 1px rgba(255,255,255,.035);
+  animation: multiplayer-panel-enter 240ms ease-out both;
+}
+
+@keyframes multiplayer-panel-enter {
+  from { opacity: 0; transform: translateY(8px); }
+}
+
+#screen-lobby.lobby-multiplayer #quickplayPanel {
+  min-height: 205px;
+  padding-right: min(38%, 250px);
+  overflow: hidden;
+}
+
+#screen-lobby.lobby-multiplayer #quickplayPanel::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: clamp(34px, 8vw, 100px);
+  width: 112px;
+  height: 142px;
+  border: 1px solid rgba(135,196,234,.32);
+  border-radius: 5px;
+  background:
+    linear-gradient(145deg, transparent 45%, rgba(112,181,225,.13)),
+    rgba(8,16,30,.78);
+  box-shadow: -9px 8px 0 rgba(15,27,45,.82), -9px 8px 0 1px rgba(135,196,234,.14), 0 0 30px rgba(86,153,197,.12);
+  transform: translateY(-50%) rotate(7deg);
+  pointer-events: none;
+}
+
+#screen-lobby.lobby-multiplayer #quickplayPanel::before {
+  content: "VS";
+  position: absolute;
+  top: 50%;
+  right: clamp(66px, calc(8vw + 32px), 132px);
+  z-index: 1;
+  color: rgba(182,222,247,.72);
+  font: 700 22px "Cinzel", serif;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+#screen-lobby.lobby-multiplayer #quickplayPanel .btn {
+  width: min(100%, 310px);
+  min-height: 48px;
+}
+
+#screen-lobby.lobby-multiplayer #quickplayPanel .btn-primary,
+#screen-lobby.lobby-multiplayer #roomCodePanel .btn-primary {
+  border-color: rgba(134,201,241,.62);
+  background: linear-gradient(180deg, #39769c, #173e5d);
+  color: #eff9ff;
+  box-shadow: inset 0 1px rgba(255,255,255,.15), 0 10px 24px rgba(9,34,52,.34);
+}
+
+#screen-lobby.lobby-multiplayer .quickplay-status {
+  max-width: 310px;
+  color: rgba(211,225,234,.62);
+  font-size: 11px;
+}
+
+#screen-lobby.lobby-multiplayer #roomCodePanel {
+  display: grid;
+  grid-template-columns: minmax(150px, .8fr) auto minmax(220px, 1.2fr);
+  align-items: center;
+  gap: 18px;
+}
+
+#screen-lobby.lobby-multiplayer #roomCodePanel.hidden { display: none; }
+#screen-lobby.lobby-multiplayer #roomCodePanel .divider { flex-direction: column; align-self: stretch; }
+#screen-lobby.lobby-multiplayer #roomCodePanel .divider::before,
+#screen-lobby.lobby-multiplayer #roomCodePanel .divider::after { width: 1px; height: auto; flex: 1; }
+#screen-lobby.lobby-multiplayer #roomCodePanel .divider span { padding: 6px 0; }
+#screen-lobby.lobby-multiplayer .text-input {
+  border-color: rgba(123,183,221,.3);
+  background: rgba(5,12,24,.76);
+}
+
+#screen-lobby.lobby-multiplayer .ranking-panel {
+  max-height: min(390px, calc(100dvh - 330px));
+  justify-content: flex-start;
+}
+
+#screen-lobby.lobby-multiplayer .ranking-header {
+  border-color: rgba(123,183,221,.22);
+}
+#screen-lobby.lobby-multiplayer .ranking-header h2,
+#screen-lobby.lobby-multiplayer .ranking-rank { color: #9dd3f3; }
+#screen-lobby.lobby-multiplayer .ranking-row {
+  border-color: rgba(126,177,210,.13);
+  background: rgba(5,11,22,.54);
+}
+
+#screen-lobby.lobby-multiplayer .tournament-panel {
+  min-height: 0;
+  max-height: min(470px, calc(100dvh - 286px));
+  padding: 14px;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+#screen-lobby.lobby-multiplayer .tournament-list {
+  max-height: 100%;
+  padding-right: 4px;
+}
+#screen-lobby.lobby-multiplayer .tournament-card {
+  border-color: rgba(124,179,214,.22);
+  border-radius: 3px;
+  background: rgba(5,11,23,.62);
+}
+#screen-lobby.lobby-multiplayer .tournament-card h2,
+#screen-lobby.lobby-multiplayer .tournament-countdown { color: #aedcf7; }
+
+@media (max-width: 760px) {
+  #screen-lobby.lobby-multiplayer {
+    align-items: flex-end;
+    padding:
+      max(12px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      max(14px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+    background:
+      linear-gradient(180deg, rgba(3,4,11,.22), rgba(4,5,14,.94) 52%, #050611),
+      url("../art/menu-arcane-sanctuary.png?v=2") 65% center / cover no-repeat;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  #screen-lobby.lobby-multiplayer .lobby-card {
+    width: 100%;
+    min-height: 0;
+    max-height: 100%;
+    margin: 0;
+    padding: 62px 0 0;
+  }
+  #screen-lobby.lobby-multiplayer .back-link { top: 0; min-height: 32px; padding: 6px 9px; font-size: 9px; }
+  #screen-lobby.lobby-multiplayer .online-player-count { top: 0; padding: 7px 8px; font-size: 8px; }
+  #screen-lobby.lobby-multiplayer .singleplayer-kicker { margin-bottom: 4px; font-size: 8px; text-align: center; }
+  #screen-lobby.lobby-multiplayer .brand { font-size: clamp(29px, 9vw, 42px); text-align: center; }
+  #screen-lobby.lobby-multiplayer .brand-sub { margin: 5px auto 11px; font-size: 9px; text-align: center; }
+  #screen-lobby.lobby-multiplayer .lobby-tabs { gap: 4px; padding: 4px; }
+  #screen-lobby.lobby-multiplayer .lobby-tab { min-height: 44px; gap: 3px; padding: 5px 2px; font-size: clamp(7px, 2.1vw, 9px); }
+  #screen-lobby.lobby-multiplayer .lobby-tab svg { width: 15px; height: 15px; }
+  #screen-lobby.lobby-multiplayer .lobby-tab-panel { min-height: 160px; padding: 16px; }
+  #screen-lobby.lobby-multiplayer #quickplayPanel { min-height: 178px; padding-right: min(35%, 140px); }
+  #screen-lobby.lobby-multiplayer #quickplayPanel::after { right: 25px; width: 78px; height: 108px; }
+  #screen-lobby.lobby-multiplayer #quickplayPanel::before { right: 47px; font-size: 17px; }
+  #screen-lobby.lobby-multiplayer #roomCodePanel { grid-template-columns: 1fr; gap: 10px; }
+  #screen-lobby.lobby-multiplayer #roomCodePanel .divider { flex-direction: row; align-self: auto; }
+  #screen-lobby.lobby-multiplayer #roomCodePanel .divider::before,
+  #screen-lobby.lobby-multiplayer #roomCodePanel .divider::after { width: auto; height: 1px; }
+  #screen-lobby.lobby-multiplayer #roomCodePanel .divider span { padding: 0 9px; }
+  #screen-lobby.lobby-multiplayer .ranking-panel,
+  #screen-lobby.lobby-multiplayer .tournament-panel { max-height: calc(100dvh - 240px); }
+}
+
+@media (max-width: 420px) {
+  #screen-lobby.lobby-multiplayer .lobby-tab span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  #screen-lobby.lobby-multiplayer .lobby-tab-panel { padding: 13px; }
+  #screen-lobby.lobby-multiplayer #quickplayPanel { padding-right: 112px; }
+  #screen-lobby.lobby-multiplayer #quickplayPanel .btn { min-height: 42px; font-size: 11px; }
+  #screen-lobby.lobby-multiplayer .join-row { gap: 6px; }
+}
+
+@media (max-height: 600px) and (orientation: landscape) {
+  #screen-lobby.lobby-multiplayer .lobby-card { width: min(760px, 76vw); padding-top: 42px; }
+  #screen-lobby.lobby-multiplayer .singleplayer-kicker { display: none; }
+  #screen-lobby.lobby-multiplayer .brand { font-size: 27px; }
+  #screen-lobby.lobby-multiplayer .brand-sub { display: none; }
+  #screen-lobby.lobby-multiplayer .lobby-tab { min-height: 38px; flex-direction: row; }
+  #screen-lobby.lobby-multiplayer .lobby-tab-panel { min-height: 132px; padding-block: 12px; }
+  #screen-lobby.lobby-multiplayer #quickplayPanel { min-height: 132px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #screen-lobby.lobby-multiplayer .lobby-tab-panel { animation: none; }
+  #screen-lobby.lobby-multiplayer .lobby-tab { transition: none; }
+}

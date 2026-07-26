@@ -6,7 +6,7 @@ module.exports = {
   health: 7,
   keywords: ["charge"],
   race: "Monster",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Italy",
   lore: "Corruption is only bad if I am not involved. At the start of your turn, clone this card.",
   image: "art/Gabibbo_Ardito.webp",

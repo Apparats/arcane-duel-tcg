@@ -772,8 +772,15 @@ $("tileInventory").addEventListener("click", () => openInventory());
 
 // ---- Card zoom ----
 
+function setCardZoomArtFocus(active) {
+  const zoomContent = document.querySelector(".card-zoom-content");
+  if (!zoomContent) return;
+  zoomContent.classList.toggle("is-art-focus", Boolean(active));
+}
+
 function openCardZoom(card) {
   hideCardTooltip(); // it could still be showing from the hover/tap that triggered this click
+  setCardZoomArtFocus(false);
 
   const zoomPanel = document.querySelector(".card-zoom-panel");
   if (zoomPanel) {
@@ -808,10 +815,17 @@ function openCardZoom(card) {
 }
 
 function closeCardZoom() {
+  setCardZoomArtFocus(false);
   $("cardZoomOverlay").classList.add("hidden");
 }
 
 $("btnCloseZoom").addEventListener("click", closeCardZoom);
+$("cardZoomArt").addEventListener("pointerenter", (event) => {
+  if (event.pointerType === "touch") return;
+  setCardZoomArtFocus(true);
+});
+$("cardZoomArt").addEventListener("pointerleave", () => setCardZoomArtFocus(false));
+$("cardZoomArt").addEventListener("pointercancel", () => setCardZoomArtFocus(false));
 $("cardZoomOverlay").addEventListener("click", (e) => {
   if (e.target.id === "cardZoomOverlay") closeCardZoom();
 });

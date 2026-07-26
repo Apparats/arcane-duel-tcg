@@ -6,7 +6,7 @@ module.exports = {
   health: 15,
   keywords: [],
   race: "Human",
-  rarity: "legendary",
+  rarity: "mythic",
   country: "Portugal",
   lore: "Uzbekistan sympathizer. This card regenerates one of health on your side every turn.",
   image: "art/Keps.webp",

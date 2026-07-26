@@ -7,7 +7,7 @@ module.exports = {
   health: 10,
   keywords: [],
   race: "Human",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Netherlands",
   lore: "While Baatus is on the board, all board minions are Drunk. Drunk minions attack a random minion on either side instead of the chosen target.",
   image: "art/Baatus2.webp",

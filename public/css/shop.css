@@ -2,6 +2,29 @@
    SHOP - buy packs and profile unlocks.
    ============================================================ */
 
+#screen-shop.screen-transition-in {
+  animation: shop-screen-enter 360ms cubic-bezier(.2, .75, .25, 1) both;
+}
+
+#screen-shop.screen-transition-out {
+  animation: shop-screen-leave 150ms ease-in both;
+  pointer-events: none;
+}
+
+@keyframes shop-screen-enter {
+  from { opacity: 0; transform: translateY(18px) scale(.992); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes shop-screen-leave {
+  to { opacity: 0; transform: translateY(12px) scale(.994); filter: blur(3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #screen-shop.screen-transition-in,
+  #screen-shop.screen-transition-out { animation: none; }
+}
+
 #screen-shop {
   display: flex;
   justify-content: center;

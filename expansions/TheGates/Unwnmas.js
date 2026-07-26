@@ -6,7 +6,7 @@ module.exports = {
   health: 7,
   keywords: ["charge"],
   race: "Monster",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Chile",
   lore: "Whenever this attacks a minion or the enemy hero, deal 3 damage to the enemy hero. This card can instantly attack when prepared.",
   image: "art/Unwnmas.webp",

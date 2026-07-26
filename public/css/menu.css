@@ -485,7 +485,7 @@
   font-size: 56px;
   text-shadow: 0 4px 16px rgba(0, 0, 0, 0.8), 0 0 25px rgba(255, 87, 28, 0.54);
   margin-bottom: 8px;
-  background: linear-gradient(to bottom, #fff4cf, #ffc24b 48%, #ff7b31);
+  background: linear-gradient(180deg, var(--gold), #000);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
@@ -1222,4 +1222,543 @@
 @keyframes rune-pulse {
   0%, 100% { opacity: 0.62; }
   50% { opacity: 1; }
+}
+
+/* ============================================================
+   ARCANA MAIN MENU — cinematic game shell
+   The legacy selectors above remain available to auth/modals.
+   These scoped rules turn only the main menu into a game HUD.
+   ============================================================ */
+
+#screen-menu {
+  align-items: stretch;
+  justify-content: flex-start;
+  isolation: isolate;
+  padding:
+    max(22px, env(safe-area-inset-top))
+    max(24px, env(safe-area-inset-right))
+    max(22px, env(safe-area-inset-bottom))
+    max(24px, env(safe-area-inset-left));
+  background:
+    linear-gradient(90deg, rgba(4, 6, 15, .96) 0%, rgba(7, 8, 18, .83) 30%, rgba(7, 7, 16, .22) 61%, rgba(3, 4, 10, .4) 100%),
+    url("../art/menu-arcane-sanctuary.png?v=2") center / cover no-repeat;
+}
+
+#screen-menu::before {
+  background:
+    linear-gradient(180deg, rgba(2, 3, 9, .5) 0%, transparent 18%, transparent 72%, rgba(2, 3, 9, .88) 100%),
+    radial-gradient(ellipse at 74% 48%, transparent 0 22%, rgba(3, 4, 12, .18) 54%, rgba(2, 3, 9, .62) 100%);
+}
+
+#screen-menu::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .16;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.2'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
+}
+
+#screen-menu .menu-glow {
+  inset: auto 3% -35% 46%;
+  height: 80%;
+  opacity: .65;
+}
+
+#screen-menu .menu-glow::before {
+  background: radial-gradient(ellipse at 50% 70%, rgba(123, 75, 226, .35), transparent 63%);
+  filter: blur(42px);
+}
+
+#screen-menu .menu-glow::after {
+  background: radial-gradient(ellipse at 52% 55%, rgba(228, 181, 85, .12), transparent 46%);
+  filter: blur(55px);
+}
+
+#screen-menu .firefly {
+  background: #d8c4ff;
+  filter: drop-shadow(0 0 5px #9b71ff) drop-shadow(0 0 12px rgba(117, 78, 214, .6));
+}
+
+#screen-menu .menu-wrap {
+  display: flex;
+  width: min(470px, 43vw);
+  min-height: 100%;
+  margin-left: clamp(16px, 5.5vw, 92px);
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+}
+
+#screen-menu .logo-container {
+  position: absolute;
+  top: clamp(34px, 5vh, 64px);
+  left: 0;
+  justify-content: flex-start;
+  margin: 0;
+}
+
+#screen-menu .mystic-logo {
+  width: clamp(72px, 7.8vw, 104px);
+  height: clamp(72px, 7.8vw, 104px);
+  filter: drop-shadow(0 0 18px rgba(158, 112, 255, .38));
+}
+
+#screen-menu .logo-stone { fill: rgba(5, 7, 15, .82); stroke: rgba(202, 164, 90, .55); }
+#screen-menu .logo-ring { stroke: #ddbf76; }
+#screen-menu .logo-runes { stroke: #9d7fe0; }
+#screen-menu .logo-card { fill: rgba(7, 6, 18, .88); stroke: #d9b96e; }
+#screen-menu .logo-glyph { stroke: #c8a5ff; }
+
+#screen-menu .menu-kicker {
+  margin: 36px 0 8px;
+  color: #bca6e8;
+  font-family: "Cinzel", serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+}
+
+#screen-menu .menu-brand {
+  margin: 0;
+  background: linear-gradient(180deg, var(--gold), #000);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  font-family: "Cinzel Decorative", "Cinzel", serif;
+  font-size: clamp(38px, 4.5vw, 68px);
+  font-weight: 900;
+  letter-spacing: -.045em;
+  line-height: .94;
+  text-align: left;
+  text-shadow: 0 2px 0 #72542a, 0 8px 32px rgba(0, 0, 0, .9), 0 0 30px rgba(194, 151, 255, .16);
+}
+
+#screen-menu .menu-tagline {
+  margin: 10px 0 24px;
+  color: rgba(225, 218, 205, .64);
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  letter-spacing: .08em;
+}
+
+#screen-menu .menu-info-actions {
+  position: absolute;
+  right: 0;
+  bottom: 2px;
+  margin: 0;
+}
+
+#screen-menu .changelog-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 7px 10px;
+  border-color: transparent;
+  background: transparent;
+  color: rgba(235, 229, 217, .66);
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+#screen-menu .changelog-button svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+
+#screen-menu .changelog-button:hover,
+#screen-menu .changelog-button:focus-visible {
+  border-color: rgba(213, 184, 113, .35);
+  background: rgba(8, 9, 20, .62);
+  color: #f1dfad;
+}
+
+#screen-menu .menu-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin: 0;
+}
+
+#screen-menu .menu-tile-wrap { width: 100%; }
+
+#screen-menu .menu-tile {
+  position: relative;
+  min-height: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+}
+
+#screen-menu .menu-tile::before,
+#screen-menu .menu-tile::after {
+  pointer-events: none;
+}
+
+#screen-menu .menu-tile-secondary-active::after {
+  content: none;
+}
+
+#screen-menu .menu-tile-primary {
+  display: grid;
+  width: 100%;
+  min-height: 76px;
+  padding: 13px 58px 13px 72px;
+  aspect-ratio: auto;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  gap: 1px 10px;
+  border: 1px solid rgba(194, 169, 118, .22);
+  background:
+    linear-gradient(90deg, rgba(27, 23, 43, .94), rgba(12, 13, 27, .78) 68%, rgba(13, 12, 27, .34)),
+    linear-gradient(180deg, rgba(255,255,255,.045), transparent);
+  box-shadow: inset 3px 0 0 #8c68cf, inset 0 1px rgba(255,255,255,.04), 0 8px 24px rgba(0,0,0,.22);
+  clip-path: polygon(0 0, calc(100% - 17px) 0, 100% 50%, calc(100% - 17px) 100%, 0 100%);
+  transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+#screen-menu .menu-tile-primary::before {
+  content: "";
+  position: absolute;
+  left: 55px;
+  top: 16px;
+  bottom: 16px;
+  width: 1px;
+  background: linear-gradient(transparent, rgba(209, 185, 127, .48), transparent);
+}
+
+#screen-menu .menu-tile-primary::after {
+  content: "›";
+  position: absolute;
+  left: auto;
+  right: 24px;
+  top: 50%;
+  width: auto;
+  height: auto;
+  background: none;
+  color: rgba(226, 202, 145, .7);
+  font-family: Georgia, serif;
+  font-size: 26px;
+  transform: translateY(-54%);
+  transition: color .18s ease, transform .18s ease;
+  pointer-events: none;
+}
+
+#screen-menu .menu-tile-primary:hover::after,
+#screen-menu .menu-tile-primary:focus-visible::after {
+  left: auto;
+  color: #f1d895;
+  transform: translate(2px, -54%);
+}
+
+#screen-menu .menu-tile-primary:hover,
+#screen-menu .menu-tile-primary:focus-visible {
+  transform: translateX(9px);
+  border-color: rgba(226, 199, 137, .6);
+  background:
+    linear-gradient(90deg, rgba(74, 49, 111, .95), rgba(25, 20, 47, .84) 70%, rgba(15, 13, 31, .44)),
+    linear-gradient(180deg, rgba(255,255,255,.08), transparent);
+  box-shadow: inset 4px 0 0 #e0c477, 0 0 0 1px rgba(127, 91, 204, .18), 0 12px 35px rgba(0,0,0,.4), 0 0 28px rgba(112, 74, 200, .16);
+}
+
+#screen-menu .menu-tile-primary .menu-tile-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  color: #d2b976;
+  transform: translateY(-50%);
+}
+
+#screen-menu .menu-tile-primary:hover .menu-tile-icon,
+#screen-menu .menu-tile-primary:focus-visible .menu-tile-icon {
+  transform: translateY(-50%) scale(1.08);
+  filter: drop-shadow(0 0 9px rgba(202, 168, 255, .55));
+}
+
+#screen-menu .menu-tile-primary .menu-tile-label {
+  grid-column: 1;
+  color: #f3ead7;
+  font-size: 17px;
+  letter-spacing: .045em;
+  line-height: 1.05;
+}
+
+#screen-menu .menu-tile-primary .menu-tile-sub {
+  grid-column: 1;
+  color: rgba(225, 218, 205, .58);
+  font-size: 10px;
+}
+
+#screen-menu .menu-tile-primary .menu-tile-gold {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  align-self: center;
+  margin: 0 12px 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #cdb874;
+  font-size: 9px;
+  text-align: right;
+}
+
+#screen-menu .tournament-incoming {
+  top: -6px;
+  right: 6px;
+  z-index: 3;
+}
+
+#screen-menu .menu-grid-secondary {
+  display: grid;
+  margin-top: 13px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+}
+
+#screen-menu .menu-tile-secondary-active {
+  display: flex;
+  min-width: 0;
+  min-height: 82px;
+  padding: 10px 7px 9px;
+  aspect-ratio: auto;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid rgba(189, 166, 117, .17);
+  background: linear-gradient(180deg, rgba(24, 24, 40, .8), rgba(9, 10, 21, .8));
+  box-shadow: inset 0 1px rgba(255,255,255,.035);
+}
+
+#screen-menu .menu-tile-secondary-active .menu-tile-icon {
+  width: 24px;
+  height: 24px;
+  color: #a992d1;
+}
+
+#screen-menu .menu-tile-secondary-active .menu-tile-label {
+  color: rgba(237, 229, 214, .86);
+  font-family: "Inter", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  line-height: 1.05;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+#screen-menu .menu-tile-secondary-active .menu-tile-sub {
+  display: block;
+  max-width: 100%;
+  color: rgba(225, 218, 205, .48);
+  font-size: 8px;
+  line-height: 1.25;
+  text-align: center;
+  text-wrap: balance;
+}
+
+#screen-menu .menu-tile-support .menu-tile-sub {
+  color: rgba(241, 215, 183, .68);
+}
+
+#screen-menu .menu-tile-secondary-active:hover,
+#screen-menu .menu-tile-secondary-active:focus-visible {
+  transform: translateY(-3px);
+  border-color: rgba(219, 192, 130, .52);
+  background: linear-gradient(180deg, rgba(58, 44, 79, .9), rgba(18, 17, 35, .92));
+  box-shadow: inset 0 2px #a17bdc, 0 10px 22px rgba(0,0,0,.34);
+}
+
+#screen-menu .menu-tile-support {
+  border-color: rgba(185, 141, 87, .34);
+  background: linear-gradient(180deg, rgba(66, 43, 39, .86), rgba(25, 17, 24, .88));
+}
+
+#screen-menu .menu-tile-support .menu-tile-icon { color: #d0a56e; }
+
+#screen-menu .account-widget {
+  top: max(22px, env(safe-area-inset-top));
+  right: max(24px, env(safe-area-inset-right));
+}
+
+#screen-menu .account-profile {
+  border-color: rgba(215, 187, 123, .25);
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(11, 12, 24, .88), rgba(21, 18, 34, .76));
+  box-shadow: 0 10px 30px rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.04);
+}
+
+#screen-menu .menu-options {
+  top: auto;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: max(24px, env(safe-area-inset-left));
+}
+
+#screen-menu .menu-options-trigger,
+#screen-menu .menu-option-button {
+  border-radius: 3px;
+  border-color: rgba(215, 187, 123, .36);
+  background: linear-gradient(180deg, rgba(34, 31, 48, .97), rgba(9, 10, 21, .97));
+  box-shadow: 0 7px 18px rgba(0, 0, 0, .38), inset 0 1px rgba(255, 255, 255, .06);
+}
+
+#screen-menu .activity-invite-trigger {
+  background: linear-gradient(180deg, rgba(83, 55, 104, .97), rgba(35, 24, 51, .97));
+  border-color: rgba(177, 136, 233, .58);
+}
+
+@media (max-width: 760px) {
+  #screen-menu {
+    align-items: flex-end;
+    padding:
+      max(14px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      max(16px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+    background:
+      linear-gradient(180deg, rgba(3, 4, 11, .2) 0%, rgba(4, 5, 13, .25) 26%, rgba(4, 5, 14, .91) 59%, #050611 100%),
+      url("../art/menu-arcane-sanctuary.png?v=2") 65% center / cover no-repeat;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+  }
+
+  #screen-menu .menu-wrap {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    padding-top: clamp(116px, 20dvh, 155px);
+    justify-content: flex-end;
+  }
+
+  #screen-menu .logo-container {
+    top: max(20px, env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  #screen-menu .mystic-logo { width: 70px; height: 70px; }
+  #screen-menu .menu-kicker { display: none; }
+  #screen-menu .menu-brand {
+    font-size: clamp(34px, 11vw, 50px);
+    text-align: center;
+  }
+  #screen-menu .menu-tagline {
+    margin: 6px 0 14px;
+    font-size: 9px;
+    text-align: center;
+  }
+  #screen-menu .menu-info-actions {
+    position: static;
+    justify-content: center;
+    order: 5;
+    margin-top: 6px;
+  }
+  #screen-menu .menu-tile-primary {
+    min-height: 62px;
+    padding: 10px 45px 10px 59px;
+  }
+  #screen-menu .menu-tile-primary::before { left: 47px; top: 12px; bottom: 12px; }
+  #screen-menu .menu-tile-primary::after { right: 17px; }
+  #screen-menu .menu-tile-primary .menu-tile-icon { left: 12px; width: 25px; height: 25px; }
+  #screen-menu .menu-tile-primary .menu-tile-label { font-size: 14px; }
+  #screen-menu .menu-tile-primary .menu-tile-sub { font-size: 9px; }
+  #screen-menu .menu-tile-primary .menu-tile-gold { margin-right: 4px; font-size: 8px; }
+  #screen-menu .menu-grid-secondary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 8px;
+    gap: 5px;
+  }
+  #screen-menu .menu-tile-secondary-active { min-height: 67px; padding: 7px 6px 6px; }
+  #screen-menu .menu-tile-secondary-active .menu-tile-icon { width: 20px; height: 20px; }
+  #screen-menu .menu-tile-secondary-active .menu-tile-label { font-size: clamp(8px, 2.5vw, 10px); }
+  #screen-menu .menu-tile-secondary-active .menu-tile-sub {
+    font-size: clamp(7px, 2.1vw, 9px);
+    line-height: 1.2;
+  }
+  #screen-menu .account-widget { top: max(10px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); }
+  #screen-menu .account-profile { max-width: 142px; padding: 5px 7px; }
+  #screen-menu .account-chip-label,
+  #screen-menu .account-gold { font-size: 8px; }
+  #screen-menu .account-avatar { width: 28px; height: 28px; }
+  #screen-menu .menu-options {
+    top: max(10px, env(safe-area-inset-top));
+    bottom: auto;
+    left: max(10px, env(safe-area-inset-left));
+  }
+  #screen-menu .menu-options-trigger {
+    min-height: 30px;
+    padding: 6px 9px;
+    border-color: rgba(220, 193, 134, .5);
+    background: linear-gradient(180deg, rgba(42, 38, 57, .99), rgba(10, 11, 23, .99));
+    color: #f2ead9;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .025em;
+    box-shadow: 0 7px 18px rgba(0, 0, 0, .52), inset 0 1px rgba(255, 255, 255, .08);
+  }
+  #screen-menu .activity-invite-trigger {
+    display: block;
+    margin-top: 5px;
+    border-color: rgba(177, 136, 233, .66);
+    background: linear-gradient(180deg, rgba(84, 56, 105, .99), rgba(34, 23, 50, .99));
+  }
+  #screen-menu .menu-options-panel { top: 69px; bottom: auto; }
+}
+
+@media (max-height: 680px) and (max-width: 760px) {
+  #screen-menu .logo-container { display: none; }
+  #screen-menu .menu-wrap { padding-top: 82px; }
+  #screen-menu .menu-brand { font-size: 31px; }
+  #screen-menu .menu-tagline { margin-bottom: 8px; }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  #screen-menu .menu-wrap {
+    width: min(450px, 62vw);
+    margin-left: 34px;
+    padding-top: 0;
+  }
+  #screen-menu .logo-container,
+  #screen-menu .menu-kicker,
+  #screen-menu .menu-tagline { display: none; }
+  #screen-menu .menu-brand { margin-bottom: 10px; font-size: 30px; text-align: left; }
+  #screen-menu .menu-tile-primary { min-height: 54px; }
+  #screen-menu .menu-grid-secondary { margin-top: 6px; }
+  #screen-menu .menu-grid-secondary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  #screen-menu .menu-tile-secondary-active { min-height: 48px; flex-direction: row; }
+  #screen-menu .menu-tile-secondary-active .menu-tile-sub { display: none; }
+  #screen-menu .menu-info-actions { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #screen-menu .menu-tile,
+  #screen-menu .menu-tile-icon { transition: none; }
+}
+
+/* Keep the mobile brand clear of the top-corner controls. */
+@media (max-width: 760px) and (min-height: 681px) {
+  #screen-menu .logo-container {
+    top: max(78px, calc(env(safe-area-inset-top) + 68px));
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  #screen-menu .menu-wrap {
+    padding-top: clamp(158px, 24dvh, 190px);
+  }
 }

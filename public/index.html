@@ -12,19 +12,19 @@
 <link rel="icon" href="pwa-icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="pwa-icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/base.css?v=1.6.5-v1" />
-  <link rel="stylesheet" href="css/menu.css?v=1.6.5-v1" />
-<link rel="stylesheet" href="css/account-profile.css?v=1.6.5-v1" />
-<link rel="stylesheet" href="css/lobby.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/menu.css?v=1.6.6-v6" />
+<link rel="stylesheet" href="css/account-profile.css?v=1.6.6-v3" />
+<link rel="stylesheet" href="css/lobby.css?v=1.6.5-v3" />
 <link rel="stylesheet" href="css/board.css?v=1.6.5-v1" />
 <link rel="stylesheet" href="css/cards.css?v=1.6.5-v1" />
 <link rel="stylesheet" href="css/board-arena.css?v=1.6.5-v1" />
 <link rel="stylesheet" href="css/board-hand.css?v=1.6.5-v1" />
-<link rel="stylesheet" href="css/inventory.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/inventory.css?v=1.6.5-v2" />
 <link rel="stylesheet" href="css/deck-builder.css?v=1.6.5-v1" />
-<link rel="stylesheet" href="css/shop.css?v=1.6.5-v1" />
-<link rel="stylesheet" href="css/trade.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/shop.css?v=1.6.5-v2" />
+<link rel="stylesheet" href="css/trade.css?v=1.6.5-v2" />
 <link rel="stylesheet" href="css/pack-opening.css?v=1.6.5-v1" />
 <link rel="stylesheet" href="css/fx.css?v=1.6.5-v1" />
 <link rel="stylesheet" href="css/board-effects.css?v=1.6.5-v1" />
@@ -126,7 +126,7 @@
         <button id="btnOpenPrivacyMenu" class="btn menu-option-button" type="button">Privacy Notice</button>
         <div class="menu-option-config">
           <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Config</button>
-          <span class="menu-version">Version 1.6.5</span>
+          <span class="menu-version">Version 1.6.6</span>
         </div>
       </div>
     </div>
@@ -168,14 +168,20 @@
         </svg>
         Login with Discord
       </button>
-      <button id="accountProfile" class="account-profile hidden" type="button" aria-controls="screen-profile">
-        <img id="accountAvatar" class="account-avatar hidden" alt="" />
-        <span id="accountAvatarFallback" class="account-avatar account-avatar-fallback" aria-hidden="true">?</span>
+      <button id="accountProfile" class="account-profile hidden" type="button" aria-controls="screen-profile" aria-label="Open your player profile">
+        <span class="account-avatar-frame" aria-hidden="true">
+          <img id="accountAvatar" class="account-avatar hidden" alt="" />
+          <span id="accountAvatarFallback" class="account-avatar account-avatar-fallback">?</span>
+        </span>
         <span class="account-chip-main">
+          <span class="account-chip-kicker">Your duelist</span>
           <span id="accountName" class="account-name"></span>
-          <span class="account-chip-label">Player Profile</span>
+          <span class="account-chip-label">Open player profile</span>
         </span>
         <span id="accountGold" class="account-gold">0 gold</span>
+        <span class="account-profile-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg>
+        </span>
         <span id="accountProfileProgressDot" class="account-profile-progress-dot hidden" aria-label="New profile progression"></span>
       </button>
     </div>
@@ -214,9 +220,23 @@
         </svg>
       </div>
       <h1 class="brand menu-brand">ARCANA TCG</h1>
+      <p class="menu-tagline">Choose your path. Command the arcane.</p>
       <div class="menu-info-actions">
-        <button id="btnOpenHowToPlay" class="changelog-button" type="button">How to Play</button>
-        <button id="btnOpenChangelog" class="changelog-button" type="button">Patch Notes <span id="changelogNewBadge" class="changelog-new-badge hidden">NEW!</span></button>
+        <button id="btnOpenHowToPlay" class="changelog-button" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z" />
+            <path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5v-16Z" />
+          </svg>
+          <span>How to Play</span>
+        </button>
+        <button id="btnOpenChangelog" class="changelog-button" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 3h9l4 4v14H6V3Z" />
+            <path d="M14 3v5h5M9 12h7M9 16h7" />
+          </svg>
+          <span>Patch Notes</span>
+          <span id="changelogNewBadge" class="changelog-new-badge hidden">NEW!</span>
+        </button>
       </div>
 
       <div class="menu-grid">
@@ -260,6 +280,7 @@
             </svg>
           </span>
           <span class="menu-tile-label">Inventory</span>
+          <span class="menu-tile-sub">Browse your collection</span>
         </button>
         <button class="menu-tile menu-tile-secondary-active" id="tileShop">
           <span class="menu-tile-icon">
@@ -293,7 +314,7 @@
             </svg>
           </span>
           <span class="menu-tile-label">Support Arcana</span>
-          <span class="menu-tile-sub">And make yourself a mythical card</span>
+          <span class="menu-tile-sub">Get a Legendary/Mythical card of you and a badge!</span>
         </button>
       </div>
     </div>
@@ -442,18 +463,41 @@
       <button id="btnBackToMenu" class="btn-link back-link">&#x2190; Back to menu</button>
 
       <span id="onlinePlayerCount" class="online-player-count hidden" aria-live="polite"></span>
+      <span id="lobbyKicker" class="singleplayer-kicker">Choose your path</span>
       <h1 class="brand">ARCANA TCG</h1>
       <p class="brand-sub" id="lobbySubtitle">Fast TCG</p>
 
       <div id="singleplayerActions" class="lobby-actions hidden">
         <div class="singleplayer-mode-grid">
           <button id="btnStartTheGatesCampaign" class="singleplayer-mode singleplayer-mode-campaign" type="button">
-            <span class="singleplayer-mode-title">Campaign</span>
-            <span class="singleplayer-mode-subtitle">Earn special rewards!</span>
+            <span class="singleplayer-mode-art" aria-hidden="true">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M13 54V22l19-12 19 12v32" />
+                <path d="M21 54V27l11-7 11 7v27M27 54V35h10v19" />
+                <path d="M9 54h46M32 10V4M25 7h14" />
+              </svg>
+            </span>
+            <span class="singleplayer-mode-copy">
+              <span class="singleplayer-mode-eyebrow">Story battles</span>
+              <span class="singleplayer-mode-title">Campaign</span>
+              <span class="singleplayer-mode-subtitle">Cross the Gates, defeat their guardians and claim unique rewards.</span>
+            </span>
+            <span class="singleplayer-mode-enter" aria-hidden="true">Explore <b>›</b></span>
           </button>
           <button id="btnStartSingle" class="singleplayer-mode singleplayer-mode-npc" type="button">
-            <span class="singleplayer-mode-title">Random NPC matchup</span>
-            <span class="singleplayer-mode-subtitle">Earn gold on Fastplay!</span>
+            <span class="singleplayer-mode-art" aria-hidden="true">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 13h24l5 39H15l5-39Z" />
+                <path d="m32 21 9 12-9 12-9-12 9-12Z" />
+                <path d="M25 33h14M32 25v16" />
+              </svg>
+            </span>
+            <span class="singleplayer-mode-copy">
+              <span class="singleplayer-mode-eyebrow">Instant duel</span>
+              <span class="singleplayer-mode-title">Random NPC</span>
+              <span class="singleplayer-mode-subtitle">Enter Fastplay with your active deck and earn daily gold.</span>
+            </span>
+            <span class="singleplayer-mode-enter" aria-hidden="true">Duel now <b>›</b></span>
           </button>
         </div>
         <div id="campaignStagePanel" class="campaign-stage-panel hidden">
@@ -479,10 +523,22 @@
 
       <div id="multiplayerActions" class="lobby-actions hidden">
         <div class="lobby-tabs" role="tablist" aria-label="Multiplayer modes">
-          <button id="tabRoomCode" class="lobby-tab" type="button">Room Code</button>
-          <button id="tabQuickplay" class="lobby-tab active" type="button">Quickplay</button>
-          <button id="tabTournaments" class="lobby-tab" type="button">Tournaments</button>
-          <button id="tabRanking" class="lobby-tab" type="button">Ranking</button>
+          <button id="tabRoomCode" class="lobby-tab" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M5 4h14v16H5zM9 8h6M9 12h6M9 16h3" /></svg>
+            <span>Room Code</span>
+          </button>
+          <button id="tabQuickplay" class="lobby-tab active" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 2-8 11h7l-1 9 8-12h-7l1-8Z" /></svg>
+            <span>Quickplay</span>
+          </button>
+          <button id="tabTournaments" class="lobby-tab" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0V4ZM8 6H4v2a4 4 0 0 0 4 4M16 6h4v2a4 4 0 0 1-4 4M12 13v4M8 21h8M9 17h6" /></svg>
+            <span>Tournaments</span>
+          </button>
+          <button id="tabRanking" class="lobby-tab" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-7h4v7M10 20V4h4v16M15 20v-11h4v11M3 20h18" /></svg>
+            <span>Ranking</span>
+          </button>
         </div>
 
         <div id="roomCodePanel" class="lobby-tab-panel hidden">
@@ -534,6 +590,7 @@
         <div class="inventory-title-block">
           <span>Card archive</span>
           <h1 class="brand inventory-brand">Inventory</h1>
+          <p>Study your collection. Shape the deck that carries you into battle.</p>
         </div>
         <div class="inventory-count-card">
           <span>Collection</span>
@@ -542,9 +599,18 @@
       </div>
 
       <div class="inventory-tabs">
-        <button id="tabCollection" class="inventory-tab active">Collection</button>
-        <button id="tabDeckBuilder" class="inventory-tab">Deck Builder</button>
-        <button id="tabScraping" class="inventory-tab">Scraping</button>
+        <button id="tabCollection" class="inventory-tab active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="6" y="3" width="12" height="17" rx="1.5" /><path d="M9 7h6M9 11h6M9 15h4" /></svg>
+          <span>Collection</span>
+        </button>
+        <button id="tabDeckBuilder" class="inventory-tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M7 5h11v15H7zM4 8v12h10M10 9h5M10 13h5" /></svg>
+          <span>Deck Builder</span>
+        </button>
+        <button id="tabScraping" class="inventory-tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.2 5.3L20 10l-4.5 3.7.7 5.8L12 16.4l-4.2 3.1.7-5.8L4 10l5.8-1.7L12 3Z" /></svg>
+          <span>Scraping</span>
+        </button>
       </div>
 
       <div id="collectionPanel">
@@ -1023,6 +1089,17 @@
         <button id="btnCloseChangelog" class="changelog-close" type="button" aria-label="Close patch notes">x</button>
       </div>
       <div class="changelog-content">
+      <article class="changelog-entry">
+        <div class="changelog-entry-meta">
+          <h3>Version 1.6.6</h3>
+          <span>Menus Reforged &amp; Mythic Balance</span>
+        </div>
+        <p class="changelog-entry-intro">Arcana's menus have been visually reforged into a more immersive, cohesive experience, accompanied by a focused balance pass for selected Mythic cards.</p>
+        <ul class="changelog-list">
+          <li>The main menu and its major sections now share a stronger identity, smoother transitions, clearer navigation, and improved layouts across desktop and mobile.</li>
+          <li>Changed Mythical cards to Legendaries, in the future Mythics will be redefined with a stronger identity.</li>
+        </ul>
+      </article>
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
           <h3>Version 1.6.5</h3>
