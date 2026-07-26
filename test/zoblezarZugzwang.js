@@ -24,11 +24,13 @@ let revived = rebirthGame.players[0].board[0];
 rebirthGame._damageMinion(0, revived, 99);
 assert(rebirthGame.players[0].board.length === 1, "Zoblezar must revive after its first death.");
 revived = rebirthGame.players[0].board[0];
-assert(revived.health === 5 && revived.maxHealth === 10, "Zoblezar must revive at half of its maximum Health.");
+assert(revived.health === Math.ceil(zoblezar.health / 2) && revived.maxHealth === zoblezar.health, "Zoblezar must revive at half of its maximum Health.");
 rebirthGame._damageMinion(0, revived, 99);
 assert(rebirthGame.players[0].board.length === 0, "Zoblezar must only revive once.");
 
 const overseerGame = gameWithDecks();
+const overseerCard = getCardById("TheGates:overseer");
+assert(overseerCard.keywords.includes("charge"), "Overseer must have Charge.");
 overseerGame.players[0].deck = [];
 overseerGame.players[0].hand = ["TheGates:overseer"];
 overseerGame.players[0].manaCurrent = 10;

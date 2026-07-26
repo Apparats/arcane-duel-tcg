@@ -39,7 +39,7 @@ const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", m
 const BABU2_CARD_ID = "expansion2:Babu2";
 const SECOND_PLAYER_MANA_CARD_ID = "special:manaspark";
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.6.6-menu-visual-rework-mythic-balance";
+const CHANGELOG_VERSION = "1.6.7-expansion-2-cards";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const ACTIVITY_INVITE_SEEN_STORAGE_KEY = "arcane_activity_invite_seen_v1";
@@ -2127,6 +2127,7 @@ function onHandCardClick(idx, card, state, cardEl = null) {
   const needsPlayTarget = cardRequiresPlayTarget(card);
   const needsEnemyMinionTarget = cardRequiresEnemyMinionTarget(card);
   const needsFriendlyMinionTarget = cardRequiresFriendlyMinionTarget(card);
+  const needsMinionTarget = cardRequiresMinionTarget(card);
   const needsEnemyHeroTarget = cardRequiresEnemyHeroTarget(card);
   const enemyOnlyTarget = cardTargetsEnemyOnly(card);
 
@@ -2160,13 +2161,15 @@ function onHandCardClick(idx, card, state, cardEl = null) {
     ? "Choose an enemy minion"
     : needsFriendlyMinionTarget
       ? "Choose a friendly minion"
-      : needsEnemyHeroTarget
-        ? "Choose the enemy hero"
-        : enemyOnlyTarget
-          ? "Choose an enemy minion or the enemy hero"
-          : card.effect === "heal"
-            ? "Choose who to heal (or your own hero)"
-            : "Choose a target (or the enemy hero)");
+      : needsMinionTarget
+        ? "Choose a minion to heal"
+        : needsEnemyHeroTarget
+          ? "Choose the enemy hero"
+          : enemyOnlyTarget
+            ? "Choose an enemy minion or the enemy hero"
+            : card.effect === "heal"
+              ? "Choose who to heal (or your own hero)"
+              : "Choose a target (or the enemy hero)");
   render(myState);
 }
 
@@ -2199,6 +2202,7 @@ function onMinionClick(minion, isSelf) {
 
   // Case 2: I have an attacker selected and I click an enemy minion
   if (selectedAttackerId && !isSelf) {
+    if (minionCannotBeAttacked(minion)) return showToast(`${minion.name} cannot be attacked.`);
     window.ArcaneAudio?.playSfx("attack");
     predictAttack(selectedAttackerId, minion.instanceId);
     send("attack", { attackerInstanceId: selectedAttackerId, targetInstanceId: minion.instanceId });
@@ -2227,6 +2231,9 @@ function onHeroClick(isSelf) {
     }
     if (cardRequiresFriendlyMinionTarget(selectedCard)) {
       return showToast("Choose a friendly minion.");
+    }
+    if (cardRequiresMinionTarget(selectedCard)) {
+      return showToast("Choose a minion to heal.");
     }
     if (cardTargetsEnemyOnly(selectedCard) && isSelf) {
       return showToast("Choose an enemy target.");
@@ -2306,12 +2313,31 @@ function cardReturnsOtherFriendlyMinionsToHand(card) {
   return Boolean(card?.abilities?.some((ability) => ability.effect === "returnOtherFriendlyMinionsToHand"));
 }
 
-function boardHasChargeSummonBlocker(...boards) {
-  return boards.some((board) => (board || []).some((minion) => {
-    if ((minion.statuses || []).some((status) => status.type === "silenced")) return false;
-    const cardDef = TCGCards.getCardById(minion.cardId);
-    return Boolean(cardDef?.abilities?.some((ability) => ability.effect === "blockChargeSummons"));
+function minionBlocksKeywordSummons(minion, keywords = []) {
+  if ((minion.statuses || []).some((status) => status.type === "silenced")) return false;
+  const cardDef = TCGCards.getCardById(minion.cardId);
+  return Boolean(cardDef?.abilities?.some((ability) => {
+    if (ability.effect === "blockChargeSummons") return keywords.includes("charge");
+    if (ability.effect !== "blockKeywordSummons") return false;
+    const blocked = Array.isArray(ability.keywords) ? ability.keywords : [];
+    return keywords.some((keyword) => blocked.includes(keyword));
   }));
+}
+
+function boardKeywordSummonBlocker(card, ...boards) {
+  const keywords = card?.type === "minion" ? card.keywords || [] : [];
+  if (keywords.length === 0) return null;
+  for (const board of boards) {
+    const blocker = (board || []).find((minion) => minionBlocksKeywordSummons(minion, keywords));
+    if (blocker) return blocker;
+  }
+  return null;
+}
+
+function minionCannotBeAttacked(minion) {
+  if ((minion?.statuses || []).some((status) => status.type === "silenced")) return false;
+  const cardDef = TCGCards.getCardById(minion?.cardId);
+  return Boolean(cardDef?.abilities?.some((ability) => ability.effect === "unattackable"));
 }
 
 function getHandCardPlayBlockReason(state, card) {
@@ -2319,8 +2345,9 @@ function getHandCardPlayBlockReason(state, card) {
   if (card.type === "minion" && hasBabuBoardLock(state.me.board)) {
     return "Babu prevents you from summoning more minions.";
   }
-  if (card.type === "minion" && (card.keywords || []).includes("charge") && boardHasChargeSummonBlocker(state.me.board, state.opponent?.board)) {
-    return "Weekly_Wackadoo prevents Charge cards from being summoned.";
+  const keywordBlocker = boardKeywordSummonBlocker(card, state.me.board, state.opponent?.board);
+  if (keywordBlocker) {
+    return `${keywordBlocker.name} prevents keyword cards from being summoned.`;
   }
   if (card.type === "minion" && cardReturnsOtherFriendlyMinionsToHand(card)) {
     const handCountAfterPlay = Math.max(0, (state.me.hand || []).length - 1);
@@ -2431,15 +2458,16 @@ function updateTargetableHighlights(state) {
   const selectedCard = targetingSpell ? state.me.hand[selectedHandIndex] : null;
   const enemyMinionOnly = cardRequiresEnemyMinionTarget(selectedCard);
   const friendlyMinionOnly = cardRequiresFriendlyMinionTarget(selectedCard);
+  const minionOnly = cardRequiresMinionTarget(selectedCard);
   const enemyHeroOnly = cardRequiresEnemyHeroTarget(selectedCard);
   const enemyOnlyTarget = cardTargetsEnemyOnly(selectedCard);
   const healingSpell = selectedCard?.effect === "heal";
 
-  $("oppHero").classList.toggle("targetable", targetingAttack || (targetingSpell && !enemyMinionOnly && !friendlyMinionOnly && !healingSpell));
-  $("selfHero").classList.toggle("targetable", targetingSpell && !enemyMinionOnly && !friendlyMinionOnly && !enemyOnlyTarget);
+  $("oppHero").classList.toggle("targetable", targetingAttack || (targetingSpell && !enemyMinionOnly && !friendlyMinionOnly && !minionOnly && !healingSpell));
+  $("selfHero").classList.toggle("targetable", targetingSpell && !enemyMinionOnly && !friendlyMinionOnly && !minionOnly && !enemyOnlyTarget);
 
   document.querySelectorAll("#oppBoard .minion-card").forEach((el) => {
-    el.classList.toggle("targetable", (targetingSpell && !enemyHeroOnly && !friendlyMinionOnly) || targetingAttack);
+    el.classList.toggle("targetable", (targetingSpell && !enemyHeroOnly && !friendlyMinionOnly) || (targetingAttack && !minionCannotBeAttacked(el._minion)));
   });
   document.querySelectorAll("#selfBoard .minion-card").forEach((el) => {
     el.classList.toggle("targetable", targetingSpell && !enemyMinionOnly && !enemyHeroOnly && !enemyOnlyTarget);
@@ -2591,6 +2619,12 @@ function cardRequiresFriendlyMinionTarget(card) {
   ));
 }
 
+function cardRequiresMinionTarget(card) {
+  return Boolean(card?.abilities?.some((ability) =>
+    ability.effect === "healTargetMinion" && ability.target === "minion"
+  ));
+}
+
 function cardRequiresEnemyHeroTarget(card) {
   return Boolean(card?.abilities?.some((ability) =>
     ability.effect === "applyStatus" && ability.target === "enemyHero"
@@ -2610,7 +2644,7 @@ function cardTargetsEnemyOnly(card) {
 function cardRequiresPlayTarget(card) {
   if (!card) return false;
   if (card.type === "spell" && card.effect && card.effect !== "draw") return true;
-  return cardTargetsEnemyOnly(card) || cardRequiresFriendlyMinionTarget(card);
+  return cardTargetsEnemyOnly(card) || cardRequiresFriendlyMinionTarget(card) || cardRequiresMinionTarget(card);
 }
 
 function cardCostHTML(card) {

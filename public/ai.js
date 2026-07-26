@@ -91,16 +91,31 @@
     );
   }
 
+  function cardRequiresMinionTarget(card) {
+    return (card?.abilities || []).some((ability) =>
+      ability.trigger === "onPlay" &&
+      ability.effect === "healTargetMinion" &&
+      ability.target === "minion"
+    );
+  }
+
   function cardRequiresPlayTarget(card) {
     if (card?.effect === "damage" || card?.effect === "heal") return true;
     return (card?.abilities || []).some((ability) =>
       ability.trigger === "onPlay" &&
       (
         ability.effect === "returnEnemyMinionToDeck" ||
+        (ability.effect === "healTargetMinion" && ability.target === "minion") ||
         (ability.effect === "cleanseFriendlyMinion" && ability.target === "friendlyMinion") ||
         (ability.effect === "applyStatus" && ["enemyMinion", "enemy", "enemyCharacter", "enemyHero"].includes(ability.target))
       )
     );
+  }
+
+  function minionCannotBeAttacked(minion) {
+    if ((minion?.statuses || []).some((status) => status.type === "silenced")) return false;
+    const cardDef = getCardById(minion?.cardId);
+    return Boolean(cardDef?.abilities?.some((ability) => ability.effect === "unattackable"));
   }
 
   function minionValue(minion) {
@@ -154,6 +169,12 @@
     if (cardRequiresFriendlyMinionTarget(card)) {
       const negativeStatuses = new Set(["weakened", "frozen", "silenced", "poisoned", "marked", "burning", "drunk", "confused"]);
       return (player.board || []).find((minion) => (minion.statuses || []).some((status) => negativeStatuses.has(status.type)))?.instanceId || null;
+    }
+    if (cardRequiresMinionTarget(card)) {
+      const damagedAlly = (player.board || [])
+        .filter((minion) => minion.health < minion.maxHealth)
+        .sort((left, right) => (right.maxHealth - right.health) - (left.maxHealth - left.health) || minionValue(right) - minionValue(left))[0];
+      return damagedAlly?.instanceId || strongestMinion(player.board || [])?.instanceId || target?.instanceId || null;
     }
     if (cardRequiresEnemyMinionTarget(card)) return target?.instanceId || null;
     if (card?.effect === "damage") return bestDamageTarget(game, playerIdx, card);
@@ -211,6 +232,7 @@
       if (ability.effect === "drawNonLegendaryNonMythicCard") score += 4;
       if (ability.effect === "drawRandomDeckCards") score += Math.max(1, ability.value || 1) * 4;
       if (ability.effect === "cleanseFriendlyMinion") score += target ? 8 : 0;
+      if (ability.effect === "healTargetMinion") score += target ? Math.max(1, ability.value || 1) * 2 + 2 : 0;
       if (ability.effect === "grantChargeToRandomFriendlyNonCharge") score += (player.board || []).some((minion) => !(minion.keywords || []).includes("charge")) ? 6 : 0;
       if (ability.effect === "gainTemporaryMana") score += Math.max(1, ability.value || 1) * 2;
       if (ability.effect === "stealHealthFromRandomEnemyHandMinionAsAttack") score += (enemy.hand || []).length > 0 ? 5 : 0;
@@ -247,6 +269,7 @@
       const target = npcCardTarget(game, card, playerIdx);
       if (cardRequiresEnemyMinionTarget(card) && !target) return;
       if (cardRequiresFriendlyMinionTarget(card) && !target) return;
+      if (cardRequiresMinionTarget(card) && !target) return;
       if (cardRequiresPlayTarget(card) && target === null && card.type !== "spell" && !cardCanTargetEnemyHero(card)) return;
       if (card.type === "spell" && !hasUsefulSpellTarget(game, playerIdx, card, target)) return;
 
@@ -265,7 +288,8 @@
     const attackers = (player.board || []).filter((minion) => minion.canAttack && minion.attack > 0);
     if (attackers.length === 0) return null;
 
-    const taunts = (enemy.board || []).filter((minion) => (minion.keywords || []).includes("taunt"));
+    const attackableEnemyBoard = (enemy.board || []).filter((minion) => !minionCannotBeAttacked(minion));
+    const taunts = attackableEnemyBoard.filter((minion) => (minion.keywords || []).includes("taunt"));
     const totalReadyAttack = attackers.reduce((sum, minion) => sum + Math.max(0, minion.attack || 0), 0);
     const lethalAvailable = taunts.length === 0 && totalReadyAttack >= enemy.health;
     let best = null;
@@ -276,7 +300,7 @@
         return;
       }
 
-      const candidates = taunts.length > 0 ? taunts : (enemy.board || []);
+      const candidates = taunts.length > 0 ? taunts : attackableEnemyBoard;
       candidates.forEach((target) => {
         const killsTarget = attacker.attack >= target.health || target.divineShield;
         const survives = target.divineShield ? true : attacker.health > (target.attack || 0);

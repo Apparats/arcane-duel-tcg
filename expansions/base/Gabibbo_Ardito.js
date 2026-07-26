@@ -1,6 +1,6 @@
 module.exports = {
   name: "Gabibbo Ardito",
-  cost: 6,
+  cost: 5,
   type: "minion",
   attack: 2,
   health: 7,

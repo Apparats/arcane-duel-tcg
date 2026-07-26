@@ -8,9 +8,9 @@ module.exports = {
   race: "Human",
   rarity: "legendary",
   country: "Poland",
-  lore: "The mighty powerful. This card heals itself by 2 every time it attacks.",
+  lore: "The mighty powerful. This card heals itself by 3 every time it attacks.",
   image: "art/Bloodgiver.webp",
   abilities: [
-    { trigger: "onAttackMinion", effect: "healSelf", value: 2 },
+    { trigger: "onAttackMinion", effect: "healSelf", value: 3 },
   ],
 };

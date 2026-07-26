@@ -1,9 +1,9 @@
 module.exports = {
   name: "Cardinal Severin",
-  cost: 6,
+  cost: 4,
   type: "minion",
   attack: 3,
-  health: 13,
+  health: 10,
   keywords: ["taunt"],
   race: "Human",
   rarity: "legendary",

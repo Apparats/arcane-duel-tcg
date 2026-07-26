@@ -48,6 +48,7 @@ const VALID_ABILITY_EFFECTS = [
   "damageAllMinions",
   "damageEnemyHero",
   "healAllFriendlyMinions",
+  "healTargetMinion",
   "summonMinion",
   "summonMinionIfMissing",
   "buffAllFriendlyMinions",
@@ -62,6 +63,7 @@ const VALID_ABILITY_EFFECTS = [
   "stealRandomEnemyHandNonMythicCardBuffed",
   "stealHealthFromRandomEnemyHandMinionAsAttack",
   "damageSelfOnAttack",
+  "damageSelfOnTurnStart",
   "startDelayedSelfBuff",
   "swapSelfStatsIfBoardHasAtLeast",
   "healSelf",
@@ -80,6 +82,7 @@ const VALID_ABILITY_EFFECTS = [
   "applyStatusToRandomEnemyMinion",
   "applyStatusToAllEnemyMinions",
   "applyDrunkToAttacker",
+  "applyBurningToAttacker",
   "applyConfusionToAllEnemyMinions",
   "cleanseFriendlyMinion",
   "applyBurning",
@@ -87,6 +90,8 @@ const VALID_ABILITY_EFFECTS = [
   "reviveOtherFriendlyMinions",
   "drunkAllMinions",
   "blockChargeSummons",
+  "blockKeywordSummons",
+  "unattackable",
   "immuneToAdverseEffects",
 ];
 
@@ -259,7 +264,7 @@ function validateAbilities(card, label) {
     if (!VALID_ABILITY_EFFECTS.includes(ability.effect)) {
       fail(`${abLabel}: unknown effect "${ability.effect}". Valid: ${VALID_ABILITY_EFFECTS.join(", ")}.`);
     }
-    if (ability.trigger === "passive" && !["preventDamageFromRace", "reviveOtherFriendlyMinions", "drunkAllMinions", "blockChargeSummons", "immuneToAdverseEffects"].includes(ability.effect)) {
+    if (ability.trigger === "passive" && !["preventDamageFromRace", "reviveOtherFriendlyMinions", "drunkAllMinions", "blockChargeSummons", "blockKeywordSummons", "unattackable", "immuneToAdverseEffects"].includes(ability.effect)) {
       fail(`${abLabel}: only passive effects can use trigger: "passive".`);
     }
 
@@ -416,6 +421,10 @@ function validateAbilities(card, label) {
       if (ability.trigger !== "onPlay" || ability.target !== "friendlyMinion") {
         fail(`${abLabel}: cleanseFriendlyMinion needs trigger: "onPlay" and target: "friendlyMinion".`);
       }
+    } else if (ability.effect === "healTargetMinion") {
+      if (ability.trigger !== "onPlay" || ability.target !== "minion" || !isIntegerInRange(ability.value, 1, 99)) {
+        fail(`${abLabel}: healTargetMinion needs trigger: "onPlay", target: "minion", and a "value" between 1 and 99.`);
+      }
     } else if (ability.effect === "stealEnemyBoardNonMythicMinions") {
       if (ability.trigger !== "onPlay") {
         fail(`${abLabel}: stealEnemyBoardNonMythicMinions can only use the "onPlay" trigger.`);
@@ -439,6 +448,22 @@ function validateAbilities(card, label) {
       if (ability.trigger !== "passive") {
         fail(`${abLabel}: blockChargeSummons must use trigger: "passive".`);
       }
+    } else if (ability.effect === "blockKeywordSummons") {
+      if (ability.trigger !== "passive") {
+        fail(`${abLabel}: blockKeywordSummons must use trigger: "passive".`);
+      }
+      if (!Array.isArray(ability.keywords) || ability.keywords.length === 0) {
+        fail(`${abLabel}: blockKeywordSummons needs a non-empty "keywords" array.`);
+      }
+      ability.keywords.forEach((keyword) => {
+        if (!VALID_KEYWORDS.includes(keyword)) {
+          fail(`${abLabel}: unknown blocked keyword "${keyword}". Valid: ${VALID_KEYWORDS.join(", ")}.`);
+        }
+      });
+    } else if (ability.effect === "unattackable") {
+      if (ability.trigger !== "passive") {
+        fail(`${abLabel}: unattackable must use trigger: "passive".`);
+      }
     } else if (ability.effect === "immuneToAdverseEffects") {
       if (ability.trigger !== "passive") {
         fail(`${abLabel}: immuneToAdverseEffects must use trigger: "passive".`);
@@ -446,6 +471,16 @@ function validateAbilities(card, label) {
     } else if (ability.effect === "applyDrunkToAttacker") {
       if (ability.trigger !== "onAttacked") {
         fail(`${abLabel}: applyDrunkToAttacker can only use the "onAttacked" trigger.`);
+      }
+      if (ability.turns !== undefined && !isIntegerInRange(ability.turns, 1, 9)) {
+        fail(`${abLabel}: "turns" must be an integer between 1 and 9 if you include it.`);
+      }
+    } else if (ability.effect === "applyBurningToAttacker") {
+      if (ability.trigger !== "onAttacked") {
+        fail(`${abLabel}: applyBurningToAttacker can only use the "onAttacked" trigger.`);
+      }
+      if (ability.value !== undefined && !isIntegerInRange(ability.value, 1, 99)) {
+        fail(`${abLabel}: "value" must be an integer between 1 and 99 if you include it.`);
       }
       if (ability.turns !== undefined && !isIntegerInRange(ability.turns, 1, 9)) {
         fail(`${abLabel}: "turns" must be an integer between 1 and 9 if you include it.`);
@@ -484,6 +519,10 @@ function validateAbilities(card, label) {
     } else if (ability.effect === "damageSelfOnAttack") {
       if (ability.trigger !== "onAttack" || !isIntegerInRange(ability.value, 1, 99)) {
         fail(`${abLabel}: damageSelfOnAttack needs trigger: "onAttack" and a "value" between 1 and 99.`);
+      }
+    } else if (ability.effect === "damageSelfOnTurnStart") {
+      if (ability.trigger !== "onTurnStart" || !isIntegerInRange(ability.value, 1, 99)) {
+        fail(`${abLabel}: damageSelfOnTurnStart needs trigger: "onTurnStart" and a "value" between 1 and 99.`);
       }
     } else if (ability.effect === "startDelayedSelfBuff") {
       if (ability.trigger !== "onPlay" || !isIntegerInRange(ability.turns, 1, 9)) {

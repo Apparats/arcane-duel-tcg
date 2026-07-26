@@ -2,7 +2,7 @@ module.exports = {
   name: "Athena",
   cost: 5,
   type: "minion",
-  attack: 5,
+  attack: 4,
   health: 10,
   keywords: [],
   race: "Human",

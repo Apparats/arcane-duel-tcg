@@ -188,6 +188,23 @@
     return Boolean(cardDef?.abilities?.some((ability) => ability.effect === "blockChargeSummons"));
   }
 
+  function minionBlocksKeywordSummons(minion, keywords = []) {
+    if ((minion.statuses || []).some((status) => status.type === "silenced")) return false;
+    const cardDef = getCardById(minion.cardId);
+    return Boolean(cardDef?.abilities?.some((ability) => {
+      if (ability.effect === "blockChargeSummons") return keywords.includes("charge");
+      if (ability.effect !== "blockKeywordSummons") return false;
+      const blocked = Array.isArray(ability.keywords) ? ability.keywords : [];
+      return keywords.some((keyword) => blocked.includes(keyword));
+    }));
+  }
+
+  function minionCannotBeAttacked(minion) {
+    if ((minion.statuses || []).some((status) => status.type === "silenced")) return false;
+    const cardDef = getCardById(minion.cardId);
+    return Boolean(cardDef?.abilities?.some((ability) => ability.effect === "unattackable"));
+  }
+
   function minionImmuneToAdverseEffects(minion) {
     if ((minion.statuses || []).some((status) => status.type === "silenced")) return false;
     const cardDef = getCardById(minion.cardId);
@@ -537,10 +554,10 @@
       }
       const count = ability.count || 1;
       const p = game.players[ctx.casterIdx];
-      const chargeBlocker = game._chargeSummonBlocker(cardDef);
-      if (chargeBlocker) {
-        game._recordSpecialAbilityActivation(chargeBlocker, { effect: "blockChargeSummons", trigger: "passive" });
-        game._addLog(`${chargeBlocker.name} prevents ${cardDef.name} from being summoned.`);
+      const keywordBlocker = game._keywordSummonBlocker(cardDef);
+      if (keywordBlocker) {
+        game._recordSpecialAbilityActivation(keywordBlocker, { effect: "blockKeywordSummons", trigger: "passive" });
+        game._addLog(`${keywordBlocker.name} prevents ${cardDef.name} from being summoned.`);
         return;
       }
       let summoned = 0;
@@ -559,10 +576,10 @@
       if (!cardDef || cardDef.type !== "minion") return;
       const player = game.players[ctx.casterIdx];
       if (player.board.some((minion) => minion.cardId === cardDef.id)) return;
-      const chargeBlocker = game._chargeSummonBlocker(cardDef);
-      if (chargeBlocker) {
-        game._recordSpecialAbilityActivation(chargeBlocker, { effect: "blockChargeSummons", trigger: "passive" });
-        game._addLog(`${chargeBlocker.name} prevents ${cardDef.name} from being summoned.`);
+      const keywordBlocker = game._keywordSummonBlocker(cardDef);
+      if (keywordBlocker) {
+        game._recordSpecialAbilityActivation(keywordBlocker, { effect: "blockKeywordSummons", trigger: "passive" });
+        game._addLog(`${keywordBlocker.name} prevents ${cardDef.name} from being summoned.`);
         return;
       }
       if (boardLimitError(player, cardDef, { summoned: true })) return;
@@ -803,6 +820,20 @@
       if (applied) game._addLog(`${ctx.sourceName} makes ${target.minion.name} Drunk.`);
     },
 
+    applyBurningToAttacker(game, ctx, ability) {
+      const target = game._findMinion(ctx.attackerInstanceId);
+      if (!target || target.playerIdx !== ctx.attackerPlayerIdx) return;
+      const value = Math.max(1, Number.isInteger(ability.value) ? ability.value : 1);
+      const turns = Math.max(1, Number.isInteger(ability.turns) ? ability.turns : 1);
+      const applied = game._applyStatus(target.playerIdx, target.minion, {
+        status: "burning",
+        value,
+        turns,
+        sourceRace: ctx.sourceRace,
+      });
+      if (applied) game._addLog(`${ctx.sourceName} burns ${target.minion.name} for ${applied.value} damage.`);
+    },
+
     applyConfusionToAllEnemyMinions(game, ctx, ability) {
       const opponentIdx = game._opponentIdx(ctx.casterIdx);
       const turns = Math.max(1, ability.turns || 1);
@@ -868,6 +899,14 @@
       if (!target || target.playerIdx === ctx.casterIdx) return;
       const applied = game._applyStatus(target.playerIdx, target.minion, status);
       if (applied) game._addLog(`${ctx.sourceName} burns ${target.minion.name} for ${applied.value} damage.`);
+    },
+
+    healTargetMinion(game, ctx, ability) {
+      const target = game._findMinion(ctx.targetInstanceId);
+      if (!target) throw new Error("Choose a minion to heal.");
+      const value = Math.max(1, Number.isInteger(ability.value) ? ability.value : 1);
+      applyOverflowHeal(target.minion, value);
+      game._addLog(`${ctx.sourceName} heals ${target.minion.name} for ${value}.`);
     },
 
     stealHealthFromRandomEnemyHandMinionAsAttack(game, ctx) {
@@ -968,6 +1007,12 @@
     },
 
     damageSelfOnAttack(game, ctx, ability) {
+      const target = game._findMinion(ctx.instanceId);
+      if (!target || target.playerIdx !== ctx.casterIdx) return;
+      game._damageMinion(target.playerIdx, target.minion, Math.max(1, ability.value || 1));
+    },
+
+    damageSelfOnTurnStart(game, ctx, ability) {
       const target = game._findMinion(ctx.instanceId);
       if (!target || target.playerIdx !== ctx.casterIdx) return;
       game._damageMinion(target.playerIdx, target.minion, Math.max(1, ability.value || 1));
@@ -1185,11 +1230,12 @@
       return playerIdx === 0 ? 1 : 0;
     }
 
-    _chargeSummonBlocker(cardDef) {
-      if (!cardDef || cardDef.type !== "minion" || !(cardDef.keywords || []).includes("charge")) return null;
+    _keywordSummonBlocker(cardDef) {
+      const keywords = cardDef?.type === "minion" ? cardDef.keywords || [] : [];
+      if (keywords.length === 0) return null;
       return this.players
         .flatMap((player) => player.board)
-        .find((minion) => minionBlocksChargeSummons(minion)) || null;
+        .find((minion) => minionBlocksKeywordSummons(minion, keywords)) || null;
     }
 
     _addKeyword(minion, keyword) {
@@ -1261,8 +1307,8 @@
       if (card.cost > p.manaCurrent) throw new Error("Not enough mana.");
       const playRuleError = cardPlayRuleError(p, card);
       if (playRuleError) throw new Error(playRuleError);
-      const chargeBlocker = this._chargeSummonBlocker(card);
-      if (chargeBlocker) throw new Error(`${chargeBlocker.name} prevents Charge cards from being summoned.`);
+      const keywordBlocker = this._keywordSummonBlocker(card);
+      if (keywordBlocker) throw new Error(`${keywordBlocker.name} prevents keyword cards from being summoned.`);
       this._validateAbilityTargets(playerIdx, card, targetInstanceId);
 
       if (card.type === "minion") {
@@ -1364,8 +1410,8 @@
       const player = this.players[playerIdx];
       const playRuleError = cardPlayRuleError(player, cardDef);
       if (playRuleError) return playRuleError;
-      const chargeBlocker = this._chargeSummonBlocker(cardDef);
-      if (chargeBlocker) return `${chargeBlocker.name} prevents Charge cards from being summoned.`;
+      const keywordBlocker = this._keywordSummonBlocker(cardDef);
+      if (keywordBlocker) return `${keywordBlocker.name} prevents keyword cards from being summoned.`;
       if (cardDef?.type === "minion") return boardLimitError(player, cardDef, options);
       return null;
     }
@@ -1419,6 +1465,11 @@
           if (!target || target.playerIdx === playerIdx || !abilityCanTargetEnemyMinion(ability)) {
             throw new Error("Choose an enemy minion.");
           }
+        }
+
+        if (ability.effect === "healTargetMinion") {
+          const target = this._findMinion(targetInstanceId);
+          if (!target) throw new Error("Choose a minion to heal.");
         }
 
         if (ability.effect === "cleanseFriendlyMinion") {
@@ -1687,7 +1738,7 @@
       const candidates = [];
       this.players.forEach((player, playerIdx) => {
         player.board.forEach((minion) => {
-          if (minion.instanceId !== attackerInstanceId) candidates.push({ playerIdx, minion });
+          if (minion.instanceId !== attackerInstanceId && !minionCannotBeAttacked(minion)) candidates.push({ playerIdx, minion });
         });
       });
       if (candidates.length === 0) return null;
@@ -1695,7 +1746,7 @@
     }
 
     _randomFriendlyConfusionTarget(ownerIdx, attackerInstanceId) {
-      const candidates = this.players[ownerIdx].board.filter((minion) => minion.instanceId !== attackerInstanceId);
+      const candidates = this.players[ownerIdx].board.filter((minion) => minion.instanceId !== attackerInstanceId && !minionCannotBeAttacked(minion));
       if (candidates.length === 0) return null;
       return candidates[this.randomInt(candidates.length)];
     }
@@ -1819,6 +1870,7 @@
 
       const target = opp.board.find((m) => m.instanceId === targetInstanceId);
       if (!target) throw new Error("Invalid target.");
+      if (minionCannotBeAttacked(target)) throw new Error(`${target.name} cannot be attacked.`);
       if (tauntMinions.length > 0 && !target.keywords.includes("taunt")) {
         throw new Error("There's a Taunt minion in the way: you must attack it first.");
       }
@@ -1839,7 +1891,9 @@
       }
       const attackDamage = this._attackDamageAgainst(attacker, target);
       this._damageMinion(this._opponentIdx(playerIdx), target, attackDamage, { sourceRace: attacker.race });
-      this._damageMinion(playerIdx, attacker, target.attack, { sourceRace: target.race });
+      if (!minionCannotBeAttacked(attacker)) {
+        this._damageMinion(playerIdx, attacker, target.attack, { sourceRace: target.race });
+      }
       attacker.canAttack = false;
       this._addLog(`${attacker.name} fights ${target.name}.`);
       const attackerCard = getCardById(attacker.cardId);

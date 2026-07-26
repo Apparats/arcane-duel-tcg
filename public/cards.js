@@ -119,15 +119,15 @@
     },
     {
       "name": "Crowley_The_Penguin",
-      "cost": 8,
+      "cost": 6,
       "type": "minion",
       "attack": 2,
-      "health": 14,
+      "health": 12,
       "keywords": [
         "taunt"
       ],
       "race": "Monster",
-      "rarity": "legendary",
+      "rarity": "mythic",
       "country": "Vatican",
       "lore": "On its first play, Crowley shields every friendly minion from the next hit.",
       "image": "art/Crowley_THE_Penguin.webp",
@@ -387,7 +387,7 @@
     },
     {
       "name": "Moonhammer",
-      "cost": 10,
+      "cost": 7,
       "type": "minion",
       "attack": 4,
       "health": 8,
@@ -507,7 +507,7 @@
     },
     {
       "name": "Vlad",
-      "cost": 10,
+      "cost": 8,
       "type": "minion",
       "attack": 8,
       "health": 4,
@@ -521,6 +521,32 @@
       "image": "art/Vlad.webp",
       "id": "expansion1:vlad",
       "_expansionId": "expansion1"
+    },
+    {
+      "name": "10",
+      "cost": 3,
+      "type": "minion",
+      "attack": 2,
+      "health": 4,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "rare",
+      "country": "Norway",
+      "lore": "Cannot be attacked. Takes no retaliation damage when attacking, but loses 1 Health at the start of each of your turns.",
+      "image": "art/10.webp",
+      "abilities": [
+        {
+          "trigger": "passive",
+          "effect": "unattackable"
+        },
+        {
+          "trigger": "onTurnStart",
+          "effect": "damageSelfOnTurnStart",
+          "value": 1
+        }
+      ],
+      "id": "expansion2:10",
+      "_expansionId": "expansion2"
     },
     {
       "name": "Ancalego",
@@ -555,6 +581,38 @@
       "_expansionId": "expansion2"
     },
     {
+      "id": "expansion2:Antichristjesus2",
+      "name": "Antichristjesus",
+      "cost": 4,
+      "type": "minion",
+      "attack": 3,
+      "health": 8,
+      "keywords": [
+        "taunt"
+      ],
+      "race": "Human",
+      "rarity": "legendary",
+      "country": "Sri Lanka",
+      "lore": "While on the board, Taunt, Charge, and Divine Shield minions cannot be summoned. When this kills an enemy minion, it gains Divine Shield.",
+      "image": "art/Antichristjesus2.webp",
+      "abilities": [
+        {
+          "trigger": "passive",
+          "effect": "blockKeywordSummons",
+          "keywords": [
+            "taunt",
+            "charge",
+            "divineShield"
+          ]
+        },
+        {
+          "trigger": "onKillMinion",
+          "effect": "grantSelfDivineShield"
+        }
+      ],
+      "_expansionId": "expansion2"
+    },
+    {
       "id": "expansion2:Aslani2",
       "name": "Aslani",
       "cost": 6,
@@ -581,7 +639,7 @@
       "name": "Athena",
       "cost": 5,
       "type": "minion",
-      "attack": 5,
+      "attack": 4,
       "health": 10,
       "keywords": [],
       "race": "Human",
@@ -603,9 +661,9 @@
     {
       "id": "expansion2:Baatus2",
       "name": "Baatus",
-      "cost": 5,
+      "cost": 4,
       "type": "minion",
-      "attack": 4,
+      "attack": 3,
       "health": 10,
       "keywords": [],
       "race": "Human",
@@ -626,7 +684,7 @@
       "name": "Babu",
       "cost": 10,
       "type": "minion",
-      "attack": 4,
+      "attack": 5,
       "health": 20,
       "keywords": [
         "taunt"
@@ -642,6 +700,21 @@
           "effect": "returnOtherFriendlyMinionsToHand"
         }
       ],
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "Babun",
+      "cost": 5,
+      "type": "minion",
+      "attack": 4,
+      "health": 7,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "common",
+      "country": "Lithuania",
+      "lore": "The Destroyer",
+      "image": "art/Babun.webp",
+      "id": "expansion2:babun",
       "_expansionId": "expansion2"
     },
     {
@@ -677,6 +750,21 @@
       "_expansionId": "expansion2"
     },
     {
+      "name": "Chewakkka",
+      "cost": 7,
+      "type": "minion",
+      "attack": 5,
+      "health": 8,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "common",
+      "country": "Spain",
+      "lore": "Chewakkka",
+      "image": "art/Chewakkka.webp",
+      "id": "expansion2:chewakkka",
+      "_expansionId": "expansion2"
+    },
+    {
       "name": "DaVoskDocta",
       "cost": 5,
       "type": "minion",
@@ -691,6 +779,23 @@
       "lore": "Triplebeam. This card avoids the first hit against him.",
       "image": "art/DaVoskDocta.webp",
       "id": "expansion2:davoskdocta",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "Deus_Inu",
+      "cost": 4,
+      "type": "minion",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "charge"
+      ],
+      "race": "Monster",
+      "rarity": "common",
+      "country": "Tanzania",
+      "lore": "For tanzania!",
+      "image": "art/Deus_Inu.webp",
+      "id": "expansion2:deus-inu",
       "_expansionId": "expansion2"
     },
     {
@@ -715,12 +820,12 @@
       "cost": 3,
       "type": "minion",
       "attack": 0,
-      "health": 1,
+      "health": 3,
       "keywords": [],
       "race": "Monster",
       "rarity": "legendary",
       "country": "Vatican",
-      "lore": "At the start of each of your turns, this card gains up to +3/+3 until it becomes 10/13, after it stops winning stats.",
+      "lore": "At the start of each of your turns, this card gains up to +3/+3 until it becomes 10/16, after it stops winning stats.",
       "image": "art/High_Inquisitor_KnkL.webp",
       "abilities": [
         {
@@ -729,7 +834,7 @@
           "attack": 3,
           "health": 3,
           "maxAttack": 10,
-          "maxHealth": 13
+          "maxHealth": 16
         }
       ],
       "id": "expansion2:high-inquisitor-knkl",
@@ -796,10 +901,10 @@
     },
     {
       "name": "Lawrence-of-Arabia",
-      "cost": 6,
+      "cost": 5,
       "type": "minion",
-      "attack": 2,
-      "health": 12,
+      "attack": 3,
+      "health": 9,
       "keywords": [],
       "race": "Monster",
       "rarity": "legendary",
@@ -833,11 +938,51 @@
       "_expansionId": "expansion2"
     },
     {
-      "name": "Michiel_op_Snuifari",
+      "name": "LordGattoRosso",
+      "cost": 1,
+      "type": "minion",
+      "attack": 2,
+      "health": 2,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "common",
+      "country": "Italy",
+      "lore": "Sette vite, una più di merda dell'altra.",
+      "image": "art/LordGattoRosso.webp",
+      "id": "expansion2:lordgattorosso",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "Madamgoth",
       "cost": 6,
       "type": "minion",
+      "attack": 2,
+      "health": 9,
+      "keywords": [
+        "taunt"
+      ],
+      "race": "Monster",
+      "rarity": "rare",
+      "country": "South Africa",
+      "lore": "Taunt. When a card attacks Madamgoth, the attacker receives Burning.",
+      "image": "art/MadamGoth.webp",
+      "abilities": [
+        {
+          "trigger": "onAttacked",
+          "effect": "applyBurningToAttacker",
+          "value": 1,
+          "turns": 1
+        }
+      ],
+      "id": "expansion2:madamgoth",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "Michiel_op_Snuifari",
+      "cost": 5,
+      "type": "minion",
       "attack": 4,
-      "health": 10,
+      "health": 9,
       "keywords": [],
       "race": "Human",
       "rarity": "legendary",
@@ -851,6 +996,29 @@
         }
       ],
       "id": "expansion2:michiel-op-snuifari",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "Napalmerino",
+      "cost": 3,
+      "type": "minion",
+      "attack": 3,
+      "health": 3,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "rare",
+      "country": "Germany",
+      "lore": "On play, choose a minion and heal it for 2. This healing can exceed maximum Health.",
+      "image": "art/Napalmerino.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "healTargetMinion",
+          "target": "minion",
+          "value": 2
+        }
+      ],
+      "id": "expansion2:napalmerino",
       "_expansionId": "expansion2"
     },
     {
@@ -926,6 +1094,38 @@
       "lore": "Pending final tuning.",
       "image": "art/XiaoMao.webp",
       "id": "expansion2:xiaomao",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "ZaFuriousAK",
+      "cost": 2,
+      "type": "minion",
+      "attack": 1,
+      "health": 5,
+      "keywords": [
+        "taunt"
+      ],
+      "race": "Monster",
+      "rarity": "common",
+      "country": "South Africa",
+      "lore": "Vigilance, Competence, Supremacy",
+      "image": "art/ZaFuriousAK.webp",
+      "id": "expansion2:zafuriousak",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "excelsior97",
+      "cost": 3,
+      "type": "minion",
+      "attack": 3,
+      "health": 4,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "common",
+      "country": "Portugal",
+      "lore": "meow",
+      "image": "art/excelsior97.webp",
+      "id": "expansion2:excelsior97",
       "_expansionId": "expansion2"
     },
     {
@@ -1064,10 +1264,10 @@
     },
     {
       "name": "Cardinal Severin",
-      "cost": 6,
+      "cost": 4,
       "type": "minion",
       "attack": 3,
-      "health": 13,
+      "health": 10,
       "keywords": [
         "taunt"
       ],
@@ -1173,7 +1373,7 @@
     },
     {
       "name": "Mamaluteo",
-      "cost": 7,
+      "cost": 5,
       "type": "minion",
       "attack": 5,
       "health": 10,
@@ -1209,11 +1409,13 @@
       "type": "minion",
       "attack": 4,
       "health": 6,
-      "keywords": [],
+      "keywords": [
+        "charge"
+      ],
       "race": "Monster",
       "rarity": "legendary",
       "country": "Oman",
-      "lore": "On its first death, deal 20 damage to all minions, then return with 1 Health.",
+      "lore": "Charge. On its first death, deal 20 damage to all minions, then return with 1 Health.",
       "image": "art/Overseer.webp",
       "abilities": [
         {
@@ -1233,10 +1435,10 @@
     },
     {
       "name": "Toy",
-      "cost": 5,
+      "cost": 4,
       "type": "minion",
       "attack": 5,
-      "health": 10,
+      "health": 8,
       "keywords": [],
       "race": "Human",
       "rarity": "legendary",
@@ -1438,13 +1640,13 @@
       "race": "Human",
       "rarity": "legendary",
       "country": "Poland",
-      "lore": "The mighty powerful. This card heals itself by 2 every time it attacks.",
+      "lore": "The mighty powerful. This card heals itself by 3 every time it attacks.",
       "image": "art/Bloodgiver.webp",
       "abilities": [
         {
           "trigger": "onAttackMinion",
           "effect": "healSelf",
-          "value": 2
+          "value": 3
         }
       ],
       "id": "base:bloodgiver",
@@ -1578,7 +1780,7 @@
     },
     {
       "name": "Fish",
-      "cost": 6,
+      "cost": 5,
       "type": "minion",
       "attack": 3,
       "health": 7,
@@ -1595,7 +1797,7 @@
     },
     {
       "name": "Gabibbo Ardito",
-      "cost": 6,
+      "cost": 5,
       "type": "minion",
       "attack": 2,
       "health": 7,
@@ -1674,9 +1876,9 @@
     },
     {
       "name": "Humph",
-      "cost": 5,
+      "cost": 6,
       "type": "minion",
-      "attack": 8,
+      "attack": 7,
       "health": 10,
       "keywords": [],
       "race": "Human",
@@ -1910,7 +2112,7 @@
     },
     {
       "name": "Multimaker",
-      "cost": 7,
+      "cost": 6,
       "type": "minion",
       "attack": 1,
       "health": 8,

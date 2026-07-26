@@ -35,9 +35,9 @@ assert(card.abilities.some((ability) =>
   ability.attack === 3 &&
   ability.health === 3 &&
   ability.maxAttack === 10 &&
-  ability.maxHealth === 13
-), "High_Inquisitor_KnkL should buff only itself up to 10/13.");
-assert(card.lore.includes("10/13"), "High_Inquisitor_KnkL should describe its stat cap.");
+  ability.maxHealth === 16
+), "High_Inquisitor_KnkL should buff only itself up to 10/16.");
+assert(card.lore.includes("10/16"), "High_Inquisitor_KnkL should describe its stat cap.");
 
 const game = new Game("INQUISITOR", "Inquisitor", "Opponent", {
   decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
@@ -62,7 +62,7 @@ for (let i = 0; i < 5; i += 1) {
   game.endTurn(1);
 }
 assert.strictEqual(inquisitor.attack, 10, "High_Inquisitor_KnkL should stop gaining Attack at 10.");
-assert.strictEqual(inquisitor.health, 13, "High_Inquisitor_KnkL should stop gaining Health at 13.");
-assert.strictEqual(inquisitor.maxHealth, 13, "High_Inquisitor_KnkL should stop gaining max Health at 13.");
+assert.strictEqual(inquisitor.health, 16, "High_Inquisitor_KnkL should stop gaining Health at 16.");
+assert.strictEqual(inquisitor.maxHealth, 16, "High_Inquisitor_KnkL should stop gaining max Health at 16.");
 
 console.log("--- HIGH INQUISITOR TEST OK ---");

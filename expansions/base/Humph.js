@@ -1,8 +1,8 @@
 module.exports = {
   name: "Humph",
-  cost: 5,
+  cost: 6,
   type: "minion",
-  attack: 8,
+  attack: 7,
   health: 10,
   keywords: [],
   race: "Human",

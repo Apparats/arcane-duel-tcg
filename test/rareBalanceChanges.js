@@ -14,4 +14,7 @@ const { getCardById } = require("../public/cards");
   assert.strictEqual(getCardById(cardId).rarity, "rare", `${cardId} should be Rare.`);
 });
 
+assert.strictEqual(getCardById("expansion1:moonhammer").cost, 7, "Moonhammer should cost 7 Mana.");
+assert.strictEqual(getCardById("expansion1:vlad").cost, 8, "Vlad should cost 8 Mana.");
+
 console.log("--- RARE BALANCE CHANGES TEST OK ---");

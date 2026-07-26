@@ -1,9 +1,9 @@
 module.exports = {
   id: "expansion2:Baatus2",
   name: "Baatus",
-  cost: 5,
+  cost: 4,
   type: "minion",
-  attack: 4,
+  attack: 3,
   health: 10,
   keywords: [],
   race: "Human",

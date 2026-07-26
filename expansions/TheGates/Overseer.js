@@ -4,11 +4,11 @@ module.exports = {
   type: "minion",
   attack: 4,
   health: 6,
-  keywords: [],
+  keywords: ["charge"],
   race: "Monster",
   rarity: "legendary",
   country: "Oman",
-  lore: "On its first death, deal 20 damage to all minions, then return with 1 Health.",
+  lore: "Charge. On its first death, deal 20 damage to all minions, then return with 1 Health.",
   image: "art/Overseer.webp",
   abilities: [
     { trigger: "onDeath", effect: "damageAllMinions", value: 20, firstDeathOnly: true },

@@ -58,8 +58,8 @@ async function main() {
     playerConfigs: [{}, { uniqueMythicPlays: true }],
   });
   game.turn = 1;
-  game.players[1].hand = ["base:lolflame2", "base:aleex"];
-  game.players[1].playedCounts["base:lolflame2"] = 1;
+  game.players[1].hand = ["expansion1:crowley-the-penguin", "base:aleex"];
+  game.players[1].playedCounts["expansion1:crowley-the-penguin"] = 1;
   game.players[1].manaCurrent = 10;
   game.players[1].manaMax = 10;
   const play = chooseNpcPlayable(game);

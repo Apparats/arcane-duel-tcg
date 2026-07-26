@@ -1,9 +1,9 @@
 module.exports = {
   name: "Lawrence-of-Arabia",
-  cost: 6,
+  cost: 5,
   type: "minion",
-  attack: 2,
-  health: 12,
+  attack: 3,
+  health: 9,
   keywords: [],
   race: "Monster",
   rarity: "legendary",

@@ -1,8 +1,15 @@
 const assert = require("assert");
 const { getCardById } = require("../public/cards");
 
+function assertCardStats(cardId, expected) {
+  const card = getCardById(cardId);
+  assert(card, `${cardId} should exist.`);
+  Object.entries(expected).forEach(([field, value]) => {
+    assert.deepStrictEqual(card[field], value, `${card.name} should have ${field}=${JSON.stringify(value)}.`);
+  });
+}
+
 [
-  "expansion1:crowley-the-penguin",
   "expansion1:manuchiliz",
   "expansion2:Aslani2",
   "expansion2:Babu2",
@@ -12,7 +19,6 @@ const { getCardById } = require("../public/cards");
   "TheGates:cardinal-severin",
   "TheGates:chiorico",
   "TheGates:jacquedebalsac",
-  "TheGates:kep",
   "TheGates:overseer",
   "TheGates:toy",
   "base:goldenwarerita",
@@ -22,9 +28,32 @@ const { getCardById } = require("../public/cards");
   assert.strictEqual(getCardById(cardId).rarity, "legendary", `${cardId} should be Legendary.`);
 });
 
+assert.strictEqual(getCardById("expansion1:crowley-the-penguin").rarity, "mythic", "Crowley_The_Penguin should be Mythic.");
+assert.strictEqual(getCardById("TheGates:kep").rarity, "mythic", "The Gates Kep should be Mythic.");
 assert.strictEqual(getCardById("expansion1:aslani").rarity, "common", "The original Aslani should keep its rarity.");
 assert.strictEqual(getCardById("base:babu").rarity, "rare", "The original Babu should keep its rarity.");
 assert.strictEqual(getCardById("base:kep").rarity, "common", "The base Kep should keep its rarity.");
+
+assertCardStats("expansion1:crowley-the-penguin", { cost: 6, health: 12, rarity: "mythic" });
+assertCardStats("base:multimaker", { cost: 6 });
+assertCardStats("base:humph", { cost: 6, attack: 7 });
+assertCardStats("base:gabibbo-ardito", { cost: 5 });
+assertCardStats("TheGates:toy", { cost: 4, health: 8 });
+assertCardStats("TheGates:overseer", { keywords: ["charge"] });
+assertCardStats("TheGates:mamaluteo", { cost: 5 });
+assertCardStats("TheGates:cardinal-severin", { cost: 4, health: 10 });
+assertCardStats("expansion2:michiel-op-snuifari", { cost: 5, health: 9 });
+assertCardStats("expansion2:lawrence-of-arabia", { cost: 5, attack: 3, health: 9 });
+assertCardStats("expansion2:high-inquisitor-knkl", { health: 3 });
+assertCardStats("expansion2:Babu2", { attack: 5 });
+assertCardStats("expansion2:Baatus2", { cost: 4, attack: 3 });
+assertCardStats("expansion2:athena", { attack: 4 });
+
+assert.strictEqual(
+  getCardById("base:bloodgiver").abilities.find((ability) => ability.effect === "healSelf")?.value,
+  3,
+  "Bloodgiver should heal itself by 3."
+);
 
 ["TheGates:chiorico", "TheGates:jacquedebalsac", "TheGates:toy"].forEach((cardId) => {
   const card = getCardById(cardId);

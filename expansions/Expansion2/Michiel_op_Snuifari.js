@@ -1,9 +1,9 @@
 module.exports = {
   name: "Michiel_op_Snuifari",
-  cost: 6,
+  cost: 5,
   type: "minion",
   attack: 4,
-  health: 10,
+  health: 9,
   keywords: [],
   race: "Human",
   rarity: "legendary",

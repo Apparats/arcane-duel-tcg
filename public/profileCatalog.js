@@ -43,7 +43,7 @@
     { id: "campaign-veteran", name: "Campaign Veteran", description: "Complete campaigns 3 times.", metric: "campaignWins", target: 3 },
     { id: "bot-bane", name: "Bot Bane", description: "Defeat the NPC 3 times.", metric: "npcWins", target: 3 },
     { id: "collectors-sigil", name: "Collector's Sigil", description: "Open 25 card packs.", metric: "packsOpened", target: 25 },
-    { id: "mythic-constellation", name: "Mythic Constellation", description: "Collect 10 different Mythic cards.", metric: "mythicCards", target: 10 },
+    { id: "mythic-constellation", name: "Mythic Constellation", description: "Collect 5 different Mythic cards.", metric: "mythicCards", target: 5 },
     { id: "ranking-elite", name: "Ranking Elite", description: "Reach the top 5 of the quickplay ranking.", metric: "quickplayTop5", target: 1 },
     { id: "ranking-apex", name: "Ranking Apex", description: "Reach #1 in the quickplay ranking.", metric: "quickplayTop1", target: 1 },
     { id: "base-archivist", name: "Base Archivist", description: "Collect every card from the base expansion.", expansionId: "base" },

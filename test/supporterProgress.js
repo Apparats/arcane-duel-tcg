@@ -49,14 +49,14 @@ function main() {
   assert(tournamentChampion.selectedTitle.id === "tournament-sovereign", "Tournament champion title should be selectable.");
   assert(tournamentChampion.equippedBadges[0]?.id === "crown-of-arcana", "Tournament champion badge should be equipable.");
 
-  const mythicIds = CARDS.filter((card) => card.rarity === "mythic").slice(0, 10).map((card) => card.id);
-  assert(mythicIds.length === 10, "The test requires at least 10 Mythic cards.");
-  const nineMythics = getProgress({}, null, [], { unlockedCards: mythicIds.slice(0, 9) });
-  assert(!find(nineMythics.achievements, "mythic-constellation").unlocked, "Nine different Mythic cards must not unlock the achievement.");
+  const mythicIds = CARDS.filter((card) => card.rarity === "mythic").slice(0, 5).map((card) => card.id);
+  assert(mythicIds.length === 5, "The test requires at least 5 Mythic cards.");
+  const fourMythics = getProgress({}, null, [], { unlockedCards: mythicIds.slice(0, 4) });
+  assert(!find(fourMythics.achievements, "mythic-constellation").unlocked, "Four different Mythic cards must not unlock the achievement.");
   const duplicateMythic = getProgress({}, null, [], { cardCollection: { [mythicIds[0]]: 10 } });
   assert(find(duplicateMythic.achievements, "mythic-constellation").current === 1, "Duplicate Mythic copies must count as one card.");
   const mythicCollector = getProgress({}, null, ["mythic-constellation"], { unlockedCards: mythicIds });
-  assert(find(mythicCollector.achievements, "mythic-constellation").unlocked, "Ten different Mythic cards should unlock the achievement.");
+  assert(find(mythicCollector.achievements, "mythic-constellation").unlocked, "Five different Mythic cards should unlock the achievement.");
   assert(mythicCollector.equippedBadges[0]?.id === "mythic-constellation", "Mythic collector badge should be equipable.");
 
   const unranked = getProgress({}, "quickplay-apex", ["ranking-elite", "ranking-apex"], { quickplayRank: 0 });

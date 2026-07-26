@@ -98,7 +98,7 @@ function testWeeklyBlocksChargeSummons() {
   g.players[1].board = [minion("weekly", "expansion2:weekly-wackadoo")];
   g.players[0].hand = ["base:dog"];
 
-  assert.throws(() => g.playCard(0, 0, null), /prevents Charge cards/, "Weekly_Wackadoo should block Charge minions while on board.");
+  assert.throws(() => g.playCard(0, 0, null), /prevents keyword cards/, "Weekly_Wackadoo should block Charge minions while on board.");
 }
 
 function testAngelCanDestroyRandomEnemyOnDeath() {
