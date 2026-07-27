@@ -39,7 +39,7 @@ const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", m
 const BABU2_CARD_ID = "expansion2:Babu2";
 const SECOND_PLAYER_MANA_CARD_ID = "special:manaspark";
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.6.7-expansion-2-cards";
+const CHANGELOG_VERSION = "1.6.8-card-balance-deck-builder";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const ACTIVITY_INVITE_SEEN_STORAGE_KEY = "arcane_activity_invite_seen_v1";
@@ -2598,7 +2598,7 @@ function statusDescription(status) {
     case "frozen": return `Frozen: cannot attack ${duration}.`;
     case "silenced": return "Silenced: abilities and keywords are removed permanently.";
     case "poisoned": return `Poisoned: takes ${amount} damage at the start of its turn, ${duration}. Can affect minions and heroes; reapplying Poison refreshes it.`;
-    case "marked": return `Marked: the next damage taken is increased by ${amount}, ${duration}.`;
+    case "marked": return `Marked: the next hit deals +${amount} extra damage, then Marked is removed. Expires ${duration}.`;
     case "burning": return `Burning: takes ${amount} damage at the start of its turn, ${duration}. Further Burning adds damage and duration.`;
     case "drunk": return `Drunk: attacks a random minion on either side instead of the chosen target${status.turnsRemaining == null ? "." : `, ${duration}.`}`;
     case "confused": return `Confusion: cannot attack normally ${duration}; has ${amount}% chance to attack an allied minion at turn start.`;

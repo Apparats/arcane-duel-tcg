@@ -47,6 +47,7 @@ const VALID_ABILITY_EFFECTS = [
   "damageAllEnemyMinions",
   "damageAllMinions",
   "damageEnemyHero",
+  "damageRandomOtherEnemyMinionOrHero",
   "healAllFriendlyMinions",
   "healTargetMinion",
   "summonMinion",
@@ -378,8 +379,8 @@ function validateAbilities(card, label) {
       if (ability.effect === "applyStatusToRandomEnemyMinion" && ability.trigger !== "onTurnStart") {
         fail(`${abLabel}: applyStatusToRandomEnemyMinion can only use the "onTurnStart" trigger.`);
       }
-      if (ability.effect === "applyStatusToAllEnemyMinions" && ability.trigger !== "onPlay") {
-        fail(`${abLabel}: applyStatusToAllEnemyMinions can only use the "onPlay" trigger.`);
+      if (ability.effect === "applyStatusToAllEnemyMinions" && !["onPlay", "onTurnStart"].includes(ability.trigger)) {
+        fail(`${abLabel}: applyStatusToAllEnemyMinions can only use the "onPlay" or "onTurnStart" trigger.`);
       }
       if (!validStatuses.includes(ability.status)) {
         fail(`${abLabel}: "status" must be one of ${validStatuses.join(", ")}.`);
@@ -498,6 +499,10 @@ function validateAbilities(card, label) {
     } else if (ability.effect === "destroyRandomEnemyMinionChance") {
       if (ability.trigger !== "onDeath" || !isIntegerInRange(ability.chance, 1, 100)) {
         fail(`${abLabel}: destroyRandomEnemyMinionChance needs trigger: "onDeath" and a "chance" between 1 and 100.`);
+      }
+    } else if (ability.effect === "damageRandomOtherEnemyMinionOrHero") {
+      if (ability.trigger !== "onAttackMinion") {
+        fail(`${abLabel}: damageRandomOtherEnemyMinionOrHero can only use the "onAttackMinion" trigger.`);
       }
     } else if (["returnToDeck", "returnAllMinionsToDeck", "rebirthWithHalfHealth", "drawNonLegendaryNonMythicCard", "stealRandomEnemyDeckCardToHand", "stealRandomEnemyBoardMinion", "destroySelf"].includes(ability.effect)) {
       // No extra params required.

@@ -6,7 +6,7 @@ module.exports = {
   health: 10,
   keywords: [],
   race: "Human",
-  rarity: "mythic",
+  rarity: "legendary",
   country: "Vatican",
   lore: "At the start of each of your turns, Red calls RedWolf if the pack is gone.",
   image: "art/Red.webp",

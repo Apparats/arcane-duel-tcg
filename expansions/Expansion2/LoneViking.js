@@ -7,7 +7,7 @@ module.exports = {
   keywords: ["charge"],
   race: "Human",
   rarity: "common",
-  country: "Arcana",
-  lore: "Pending final tuning.",
+  country: "Norway",
+  lore: "Certified Kloppen-remover..",
   image: "art/LoneViking.webp",
 };

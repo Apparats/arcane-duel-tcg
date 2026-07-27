@@ -536,6 +536,19 @@
       game._addLog(`${ctx.sourceName} deals ${amount} damage directly to the enemy hero.`);
     },
 
+    damageRandomOtherEnemyMinionOrHero(game, ctx, ability) {
+      const amount = Math.max(1, ctx.attackDamage || ability.value || 1);
+      const opponentIdx = game._opponentIdx(ctx.casterIdx);
+      const targets = game.players[opponentIdx].board.filter((minion) => minion.instanceId !== ctx.targetInstanceId);
+      if (targets.length === 0) {
+        game.applyHeroDamage(opponentIdx, amount, ctx.sourceName);
+        return;
+      }
+      const target = targets[game.randomInt(targets.length)];
+      game._damageMinion(opponentIdx, target, amount, { sourceRace: ctx.sourceRace, adverseEffect: true });
+      game._addLog(`${ctx.sourceName} repeats ${amount} damage to ${target.name}.`);
+    },
+
     // Heals all friendly minions.
     healAllFriendlyMinions(game, ctx, ability) {
       const amount = ability.value || 1;
@@ -1820,8 +1833,9 @@
             cardId: attacker.cardId,
             playedCount: attacker.playedCount || 0,
             targetInstanceId: target.minion.instanceId,
-            targetPlayerIdx: null,
+            targetPlayerIdx: target.playerIdx,
             targetRace: target.minion.race,
+            attackDamage,
             silenced: this._hasStatus(attacker, "silenced"),
           });
           if (
@@ -1916,8 +1930,9 @@
           cardId: attacker.cardId,
           playedCount: attacker.playedCount || 0,
           targetInstanceId: target.instanceId,
-          targetPlayerIdx: null,
+          targetPlayerIdx: this._opponentIdx(playerIdx),
           targetRace: target.race,
+          attackDamage,
           silenced: this._hasStatus(attacker, "silenced"),
         });
         if (

@@ -438,7 +438,7 @@
       "health": 10,
       "keywords": [],
       "race": "Human",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Vatican",
       "lore": "At the start of each of your turns, Red calls RedWolf if the pack is gone.",
       "image": "art/Red.webp",
@@ -463,7 +463,7 @@
       ],
       "race": "Monster",
       "rarity": "common",
-      "country": "Arcana",
+      "country": "Chad",
       "lore": "Chad is chad.",
       "image": "art/Rock.webp",
       "id": "expansion1:rock",
@@ -574,7 +574,7 @@
       ],
       "race": "Human",
       "rarity": "common",
-      "country": "Arcana",
+      "country": "Sri Lanka",
       "lore": "I'm sorry, brothers. So sorry, lover..",
       "image": "art/AntichristJesus.webp",
       "id": "expansion2:antichristjesus",
@@ -931,8 +931,8 @@
       ],
       "race": "Human",
       "rarity": "common",
-      "country": "Arcana",
-      "lore": "Pending final tuning.",
+      "country": "Norway",
+      "lore": "Certified Kloppen-remover..",
       "image": "art/LoneViking.webp",
       "id": "expansion2:loneviking",
       "_expansionId": "expansion2"
@@ -1264,24 +1264,28 @@
     },
     {
       "name": "Cardinal Severin",
-      "cost": 4,
+      "cost": 5,
       "type": "minion",
       "attack": 3,
-      "health": 10,
+      "health": 12,
       "keywords": [
         "taunt"
       ],
       "race": "Human",
-      "rarity": "legendary",
+      "rarity": "mythic",
       "country": "Thailand",
-      "lore": "On first play, silence all enemy minions.",
+      "lore": "On play and at the start of your turns, silence all enemy minions.",
       "image": "art/Cardinal_Severin.webp",
       "abilities": [
         {
           "trigger": "onPlay",
           "effect": "applyStatusToAllEnemyMinions",
-          "status": "silenced",
-          "firstPlayOnly": true
+          "status": "silenced"
+        },
+        {
+          "trigger": "onTurnStart",
+          "effect": "applyStatusToAllEnemyMinions",
+          "status": "silenced"
         }
       ],
       "id": "TheGates:cardinal-severin",
@@ -1297,7 +1301,7 @@
       "race": "Human",
       "rarity": "legendary",
       "country": "Malta",
-      "lore": "On play, mark an enemy minion. At the start of your turns, mark 1 random enemy minion.",
+      "lore": "Marked enemies take 3 extra damage from the next hit, then Marked is removed. Applies on play and each turn.",
       "image": "art/chiorico.webp",
       "abilities": [
         {
@@ -1324,7 +1328,7 @@
       "cost": 5,
       "type": "minion",
       "attack": 4,
-      "health": 10,
+      "health": 6,
       "keywords": [],
       "race": "Human",
       "rarity": "legendary",
@@ -1353,19 +1357,18 @@
       "name": "Kep",
       "cost": 6,
       "type": "minion",
-      "attack": 2,
-      "health": 15,
+      "attack": 5,
+      "health": 8,
       "keywords": [],
       "race": "Human",
-      "rarity": "mythic",
+      "rarity": "legendary",
       "country": "Portugal",
-      "lore": "Uzbekistan sympathizer. This card regenerates one of health on your side every turn.",
+      "lore": "When Kep attacks a minion, it repeats that damage to another random enemy minion, or the enemy hero if none remain.",
       "image": "art/Keps.webp",
       "abilities": [
         {
-          "trigger": "onTurnStart",
-          "effect": "healAllFriendlyMinions",
-          "value": 1
+          "trigger": "onAttackMinion",
+          "effect": "damageRandomOtherEnemyMinionOrHero"
         }
       ],
       "id": "TheGates:kep",
@@ -2561,11 +2564,13 @@
       "type": "minion",
       "attack": 2,
       "health": 3,
-      "keywords": [],
+      "keywords": [
+        "divineShield"
+      ],
       "race": "Monster",
       "rarity": "mythic",
       "country": "Arcana",
-      "lore": "A moth! Every turn this card heals your board by 2!",
+      "lore": "A shielded moth! Every turn this card heals your board by 2!",
       "image": "art/Moths.webp",
       "showInInventory": false,
       "abilities": [

@@ -65,6 +65,19 @@ function renderSavedDeckSelect() {
   $("btnDeleteDeck").disabled = !deckBuilderState.currentDeckId || deckBuilderState.decks.length <= 1;
 }
 
+function renderActiveDeckSummary() {
+  const summary = $("deckActiveSummary");
+  const current = deckBuilderState.decks.find((deck) => deck.id === deckBuilderState.currentDeckId);
+  const active = deckBuilderState.decks.find((deck) => deck.id === deckBuilderState.activeDeckId);
+  const currentName = $("deckNameInput").value.trim() || "New Deck";
+  const isActive = Boolean(current && current.id === deckBuilderState.activeDeckId);
+  summary.classList.toggle("is-active", isActive);
+  summary.classList.toggle("is-new", !current);
+  summary.innerHTML = isActive
+    ? `<span class="deck-active-mark" aria-hidden="true"></span><span><strong>Active deck</strong><b>${escapeHtml(current.name)}</b><small>Used for your next match</small></span>`
+    : `<span class="deck-active-mark" aria-hidden="true"></span><span><strong>Editing</strong><b>${escapeHtml(currentName)}</b><small>Active deck: ${escapeHtml(active?.name || "None")}</small></span>`;
+}
+
 function loadDeck(deckId) {
   const deck = deckBuilderState.decks.find((item) => item.id === deckId);
   if (!deck) return;
@@ -242,10 +255,35 @@ function renderDeckStatus() {
   $("btnSaveDeck").disabled = !validation.ok;
 }
 
+function renderDeckLimits() {
+  const counts = currentDeckCounts();
+  const rarityTotals = {};
+  let spellTotal = 0;
+  Object.keys(counts).forEach((cardId) => {
+    const card = TCGCards.getCardById(cardId);
+    if (!card) return;
+    const rarity = card.rarity || "common";
+    rarityTotals[rarity] = (rarityTotals[rarity] || 0) + counts[cardId];
+    if (card.type === "spell") spellTotal += counts[cardId];
+  });
+
+  const limits = [
+    { label: "Spells", value: spellTotal, max: TCGDeckRules.MAX_SPELLS, className: "spell" },
+    { label: "Legendary", value: rarityTotals.legendary || 0, max: TCGDeckRules.RARITY_TOTAL_LIMITS.legendary, className: "legendary" },
+    { label: "Mythic", value: rarityTotals.mythic || 0, max: TCGDeckRules.RARITY_TOTAL_LIMITS.mythic, className: "mythic" },
+  ];
+  $("deckLimitsSummary").innerHTML = limits.map(({ label, value, max, className }) => {
+    const full = value >= max;
+    return `<div class="deck-limit-item ${className}${full ? " is-full" : ""}"><span>${label}</span><b>${value}<small> / ${max}</small></b></div>`;
+  }).join("");
+}
+
 function renderDeckBuilder() {
   renderSavedDeckSelect();
+  renderActiveDeckSummary();
   renderDeckPool();
   renderDeckList();
+  renderDeckLimits();
   renderDeckStatus();
 }
 
@@ -271,6 +309,10 @@ async function saveCurrentDeck() {
   const validation = validateCurrentDeck();
   if (!validation.ok) return showToast(validation.errors[0]);
 
+  const saveButton = $("btnSaveDeck");
+  saveButton.disabled = true;
+  saveButton.dataset.label = saveButton.textContent;
+  saveButton.textContent = "Saving...";
   try {
     const res = await arcaneFetch("/decks", {
       method: "POST",
@@ -289,10 +331,18 @@ async function saveCurrentDeck() {
     renderDeckBuilder();
   } catch (err) {
     showToast(err.message);
+  } finally {
+    saveButton.textContent = saveButton.dataset.label || "Save deck";
+    delete saveButton.dataset.label;
+    renderDeckBuilder();
   }
 }
 
 async function autoBuildCurrentDeck() {
+  const autoButton = $("btnAutoDeck");
+  autoButton.disabled = true;
+  autoButton.dataset.label = autoButton.textContent;
+  autoButton.textContent = "Building...";
   try {
     const res = await arcaneFetch("/decks/auto", {
       method: "POST",
@@ -312,6 +362,10 @@ async function autoBuildCurrentDeck() {
     renderDeckBuilder();
   } catch (err) {
     showToast(err.message);
+  } finally {
+    autoButton.textContent = autoButton.dataset.label || "Auto build";
+    delete autoButton.dataset.label;
+    renderDeckBuilder();
   }
 }
 

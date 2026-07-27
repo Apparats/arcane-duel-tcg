@@ -7,7 +7,7 @@ module.exports = {
   keywords: ["taunt"],
   race: "Human",
   rarity: "common",
-  country: "Arcana",
+  country: "Sri Lanka",
   lore: "I'm sorry, brothers. So sorry, lover..",
   image: "art/AntichristJesus.webp",
 };

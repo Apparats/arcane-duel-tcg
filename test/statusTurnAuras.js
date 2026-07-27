@@ -73,27 +73,30 @@ function testStatusCardsApplyInitialTargetedEffect() {
   });
 }
 
-function testCardinalSeverinSilencesAllEnemyMinionsOnFirstPlay() {
+function testCardinalSeverinSilencesAllEnemyMinionsOnPlayAndTurnStart() {
   const game = makeGame();
   const firstTarget = minion("target-1", "base:aleex", { keywords: ["charge"], canAttack: true });
   const secondTarget = minion("target-2", "base:babu", { keywords: ["taunt"], divineShield: true });
   game.players[1].board = [firstTarget, secondTarget];
-  game.players[0].hand.unshift("TheGates:cardinal-severin", "TheGates:cardinal-severin");
+  game.players[0].hand.unshift("TheGates:cardinal-severin");
   game.players[0].manaCurrent = 20;
 
   game.playCard(0, 0, null);
 
-  assert(firstTarget.statuses.some((status) => status.type === "silenced"), "Cardinal Severin should silence the first enemy minion on first play.");
-  assert(secondTarget.statuses.some((status) => status.type === "silenced"), "Cardinal Severin should silence the second enemy minion on first play.");
+  assert(firstTarget.statuses.some((status) => status.type === "silenced"), "Cardinal Severin should silence the first enemy minion on play.");
+  assert(secondTarget.statuses.some((status) => status.type === "silenced"), "Cardinal Severin should silence the second enemy minion on play.");
   assert.deepStrictEqual(firstTarget.keywords, [], "Silenced enemy minions should lose keywords.");
   assert.strictEqual(secondTarget.divineShield, false, "Silenced enemy minions should lose Divine Shield.");
 
   firstTarget.statuses = [];
-  secondTarget.statuses = [];
-  game.playCard(0, 0, null);
+  const freshTarget = minion("target-3", "base:dog", { keywords: ["charge"], canAttack: true });
+  game.players[1].board = [firstTarget, freshTarget];
 
-  assert.strictEqual(firstTarget.statuses.length, 0, "A second Cardinal Severin play should not silence again.");
-  assert.strictEqual(secondTarget.statuses.length, 0, "Cardinal Severin's silence should be first-play only.");
+  advanceBackToPlayer(game);
+
+  assert(firstTarget.statuses.some((status) => status.type === "silenced"), "Cardinal Severin should refresh Silence on existing enemies at turn start.");
+  assert(freshTarget.statuses.some((status) => status.type === "silenced"), "Cardinal Severin should Silence new enemy minions at turn start.");
+  assert.deepStrictEqual(freshTarget.keywords, [], "Turn-start Silence should remove keywords from new enemy minions.");
 }
 
 function testTurnAuraTargetsRandomEnemyMinion() {
@@ -141,7 +144,7 @@ function testSilencedSourceDoesNotApplyTurnAura() {
 
 testStatusCardsHaveTurnAuras();
 testStatusCardsApplyInitialTargetedEffect();
-testCardinalSeverinSilencesAllEnemyMinionsOnFirstPlay();
+testCardinalSeverinSilencesAllEnemyMinionsOnPlayAndTurnStart();
 testTurnAuraTargetsRandomEnemyMinion();
 testTurnAuraIgnoresEmptyEnemyBoard();
 testSilencedSourceDoesNotApplyTurnAura();

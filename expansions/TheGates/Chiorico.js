@@ -8,7 +8,7 @@ module.exports = {
   race: "Human",
   rarity: "legendary",
   country: "Malta",
-  lore: "On play, mark an enemy minion. At the start of your turns, mark 1 random enemy minion.",
+  lore: "Marked enemies take 3 extra damage from the next hit, then Marked is removed. Applies on play and each turn.",
   image: "art/chiorico.webp",
   abilities: [
     { trigger: "onPlay", effect: "applyStatus", target: "enemyMinion", status: "marked", value: 3, turns: 2 },
