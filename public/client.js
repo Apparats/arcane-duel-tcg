@@ -39,7 +39,7 @@ const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", m
 const BABU2_CARD_ID = "expansion2:Babu2";
 const SECOND_PLAYER_MANA_CARD_ID = "special:manaspark";
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.6.8-card-balance-deck-builder";
+const CHANGELOG_VERSION = "1.6.8-board-hand-qol";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const ACTIVITY_INVITE_SEEN_STORAGE_KEY = "arcane_activity_invite_seen_v1";
@@ -99,6 +99,7 @@ const predictedAttackKeys = new Set();
 let turnClockOffsetMs = 0;
 let turnTimerInterval = null;
 let lastHandTurnKey = null;
+let lastMobileAutoHideKey = null;
 let handManualVisibility = null;
 let mulliganRoomCode = null;
 let mulliganSelectedIndexes = new Set();
@@ -1784,6 +1785,7 @@ function renderHand(state) {
   container.innerHTML = "";
   const handCount = state.me.hand.length;
   container.dataset.cardCount = String(handCount);
+  renderHandResourcePips(container, state);
   state.me.hand.forEach((card, idx) => {
     const el = document.createElement("div");
     el.className = `hand-card ${rarityClass(card)}`;
@@ -1815,6 +1817,21 @@ function renderHand(state) {
     attachCardTooltip(el, card);
     container.appendChild(el);
   });
+}
+
+function renderHandResourcePips(container, state) {
+  const pips = document.createElement("div");
+  pips.className = "hand-resource-pips";
+  pips.setAttribute("aria-hidden", "true");
+  pips.innerHTML = `
+    <span class="hand-resource-pip hand-resource-health" title="Health">
+      <span>${state.me.health}</span>
+    </span>
+    <span class="hand-resource-pip hand-resource-mana" title="Mana">
+      <span>${state.me.manaCurrent}/${state.me.manaMax}</span>
+    </span>
+  `;
+  container.appendChild(pips);
 }
 
 function mulliganCardHTML(card) {
@@ -2215,6 +2232,7 @@ function onMinionClick(minion, isSelf) {
     if (!minion.canAttack) return showToast("That minion can't attack yet.");
     if ((minion.attack || 0) <= 0) return showToast("Minions with 0 Attack can't attack.");
     selectedAttackerId = minion.instanceId;
+    collapseHandForTargeting();
     render(state);
   }
 }
@@ -2263,6 +2281,8 @@ $("selfHero").addEventListener("click", () => onHeroClick(true));
 
 $("btnEndTurn").addEventListener("click", () => {
   clearSelection();
+  handManualVisibility = null;
+  if (isMobileTouchLayout()) setHandCollapsed(true);
   $("btnEndTurn").classList.add("action-pending");
   $("btnEndTurn").disabled = true;
   setTimeout(() => $("btnEndTurn").classList.remove("action-pending"), 1_500);
@@ -2276,6 +2296,11 @@ $("btnSurrender").addEventListener("click", () => {
 });
 
 $("btnToggleHand").addEventListener("click", () => {
+  if (shouldForceHideHand(myState)) {
+    handManualVisibility = null;
+    setHandCollapsed(true);
+    return;
+  }
   const collapsed = $("screen-game").classList.contains("hand-collapsed");
   handManualVisibility = collapsed ? "shown" : "hidden";
   setHandCollapsed(!collapsed);
@@ -2295,6 +2320,17 @@ $("btnMulliganReplace")?.addEventListener("click", () => {
 function hasPlayableHandCard(state) {
   const mana = Number(state?.me?.manaCurrent);
   return Number.isFinite(mana) && Boolean(state?.me?.hand?.some((card) => Number(card.cost) <= mana && !getHandCardPlayBlockReason(state, card)));
+}
+
+function getMaxBoardMinions() {
+  if (typeof TCGDeckRules !== "undefined" && Number.isFinite(Number(TCGDeckRules.MAX_BOARD))) {
+    return Number(TCGDeckRules.MAX_BOARD);
+  }
+  return 4;
+}
+
+function isOwnBoardFullForHandPlay(state) {
+  return Array.isArray(state?.me?.board) && state.me.board.length >= getMaxBoardMinions();
 }
 
 function hasReadyAttacker(state) {
@@ -2345,6 +2381,9 @@ function getHandCardPlayBlockReason(state, card) {
   if (card.type === "minion" && hasBabuBoardLock(state.me.board)) {
     return "Babu prevents you from summoning more minions.";
   }
+  if (card.type === "minion" && !cardReturnsOtherFriendlyMinionsToHand(card) && isOwnBoardFullForHandPlay(state)) {
+    return "Board is full.";
+  }
   const keywordBlocker = boardKeywordSummonBlocker(card, state.me.board, state.opponent?.board);
   if (keywordBlocker) {
     return `${keywordBlocker.name} prevents keyword cards from being summoned.`;
@@ -2362,20 +2401,51 @@ function shouldAutoHideHand(state) {
   return !state || state.winner !== null || !state.isYourTurn || !hasPlayableHandCard(state);
 }
 
+function isHandTargetingActive() {
+  return selectedHandIndex !== null || selectedAttackerId !== null;
+}
+
+function shouldForceHideHand(state) {
+  if (!isMobileTouchLayout()) return false;
+  return !state || state.winner !== null || isHandTargetingActive();
+}
+
+function getMobileAutoHideHandKey(state, turnKey) {
+  if (!isMobileTouchLayout() || !state || state.winner !== null || isHandTargetingActive()) return "";
+  if (!state.isYourTurn) return `${turnKey}:waiting`;
+  if (!hasPlayableHandCard(state)) return `${turnKey}:no-playable-cards`;
+  return "";
+}
+
 function isMobileTouchLayout() {
   return typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse) and (max-width: 900px)").matches;
 }
 
+function collapseHandForTargeting() {
+  if (!isMobileTouchLayout()) return;
+  handManualVisibility = null;
+  lastMobileAutoHideKey = null;
+  setHandCollapsed(true);
+}
+
 function collapseHandForSpellTargeting() {
-  if (isMobileTouchLayout() && handManualVisibility !== "shown") setHandCollapsed(true);
+  collapseHandForTargeting();
 }
 
 document.addEventListener("arcana:spell-drag-start", () => {
   collapseHandForSpellTargeting();
 });
 
+document.addEventListener("arcana:targeting-start", () => {
+  collapseHandForTargeting();
+});
+
 document.addEventListener("arcana:spell-drag-end", (event) => {
   if (!event.detail?.played && selectedHandIndex === null) syncHandVisibility(myState);
+});
+
+document.addEventListener("arcana:targeting-end", (event) => {
+  if (!event.detail?.played && selectedHandIndex === null && selectedAttackerId === null) syncHandVisibility(myState);
 });
 
 function setHandCollapsed(collapsed) {
@@ -2388,10 +2458,38 @@ function setHandCollapsed(collapsed) {
 }
 
 function syncHandVisibility(state) {
+  if (!state) {
+    handManualVisibility = null;
+    lastMobileAutoHideKey = null;
+    setHandCollapsed(true);
+    return;
+  }
   const turnKey = `${state.roomCode || "local"}:${state.turnNumber}:${state.turn}`;
   const startsYourTurn = state.isYourTurn && turnKey !== lastHandTurnKey;
   lastHandTurnKey = turnKey;
   $("screen-game").classList.remove("hand-preview-open");
+  if (startsYourTurn) {
+    handManualVisibility = null;
+    lastMobileAutoHideKey = null;
+    setHandCollapsed(false);
+    return;
+  }
+  if (shouldForceHideHand(state)) {
+    handManualVisibility = null;
+    lastMobileAutoHideKey = null;
+    setHandCollapsed(true);
+    return;
+  }
+  const mobileAutoHideKey = getMobileAutoHideHandKey(state, turnKey);
+  if (mobileAutoHideKey && mobileAutoHideKey !== lastMobileAutoHideKey) {
+    lastMobileAutoHideKey = mobileAutoHideKey;
+    handManualVisibility = null;
+    setHandCollapsed(true);
+    return;
+  }
+  if (!mobileAutoHideKey) {
+    lastMobileAutoHideKey = null;
+  }
   const selectedCard = selectedHandIndex === null ? null : state.me.hand[selectedHandIndex];
   if (handManualVisibility === "shown" || handManualVisibility === "hidden") {
     setHandCollapsed(handManualVisibility === "hidden");

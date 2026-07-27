@@ -154,8 +154,18 @@
     const needsPlayTarget = typeof cardRequiresPlayTarget === "function" && cardRequiresPlayTarget(card);
     const needsEnemyMinionTarget = typeof cardRequiresEnemyMinionTarget === "function" && cardRequiresEnemyMinionTarget(card);
     const needsFriendlyMinionTarget = typeof cardRequiresFriendlyMinionTarget === "function" && cardRequiresFriendlyMinionTarget(card);
+    const needsMinionTarget = typeof cardRequiresMinionTarget === "function" && cardRequiresMinionTarget(card);
     const needsEnemyHeroTarget = typeof cardRequiresEnemyHeroTarget === "function" && cardRequiresEnemyHeroTarget(card);
     const enemyOnlyTarget = typeof cardTargetsEnemyOnly === "function" && cardTargetsEnemyOnly(card);
+    if (needsPlayTarget && needsMinionTarget) {
+      if (!target?.minion) return false;
+      window.ArcaneAudio?.playSfx("cardPlay");
+      predictCardPlay(drag.source);
+      send("playCard", { handIndex, targetInstanceId: target.id });
+      selectedHandIndex = null;
+      hideTargetHint();
+      return true;
+    }
     if (needsPlayTarget && needsFriendlyMinionTarget) {
       if (!target) return false;
       const isFriendlyMinion = target?.minion?.parentElement?.id === "selfBoard";
@@ -240,7 +250,10 @@
     if (distance < threshold) return;
     const dragStarted = !drag.moved;
     drag.moved = true;
-    if (dragStarted && drag.type === "targeted-spell" && drag.payload.card.type === "spell") {
+    if (dragStarted && (drag.type === "attack" || drag.type === "targeted-spell")) {
+      notifySpellDrag("arcana:targeting-start");
+    }
+    if (dragStarted && drag.type === "targeted-spell") {
       notifySpellDrag("arcana:spell-drag-start");
     }
     drag.source.classList.add("card-dragging");
@@ -265,14 +278,20 @@
       // into the click-to-play or click-to-attack controls.
       suppressDragClick(activeDrag.source);
     }
-    if (activeDrag.moved && activeDrag.type === "targeted-spell" && activeDrag.payload.card.type === "spell") {
+    if (activeDrag.moved && (activeDrag.type === "attack" || activeDrag.type === "targeted-spell")) {
+      notifySpellDrag("arcana:targeting-end", { played });
+    }
+    if (activeDrag.moved && activeDrag.type === "targeted-spell") {
       notifySpellDrag("arcana:spell-drag-end", { played });
     }
     clearDrag();
   });
 
   document.addEventListener("pointercancel", () => {
-    if (drag?.moved && drag.type === "targeted-spell" && drag.payload.card.type === "spell") {
+    if (drag?.moved && (drag.type === "attack" || drag.type === "targeted-spell")) {
+      notifySpellDrag("arcana:targeting-end", { played: false });
+    }
+    if (drag?.moved && drag.type === "targeted-spell") {
       notifySpellDrag("arcana:spell-drag-end", { played: false });
     }
     clearDrag();

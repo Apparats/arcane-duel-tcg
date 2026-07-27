@@ -20,8 +20,8 @@
 <link rel="stylesheet" href="css/lobby.css?v=1.6.6-v5" />
 <link rel="stylesheet" href="css/board.css?v=1.6.5-v1" />
 <link rel="stylesheet" href="css/cards.css?v=1.6.5-v1" />
-<link rel="stylesheet" href="css/board-arena.css?v=1.6.5-v1" />
-<link rel="stylesheet" href="css/board-hand.css?v=1.6.5-v1" />
+<link rel="stylesheet" href="css/board-arena.css?v=1.6.8-v8" />
+<link rel="stylesheet" href="css/board-hand.css?v=1.6.8-v1" />
 <link rel="stylesheet" href="css/inventory.css?v=1.6.6-v3" />
 <link rel="stylesheet" href="css/deck-builder.css?v=1.6.8-v2" />
 <link rel="stylesheet" href="css/shop.css?v=1.6.5-v2" />
@@ -236,7 +236,7 @@
             <path d="M14 3v5h5M9 12h7M9 16h7" />
           </svg>
           <span>Patch Notes</span>
-          <span id="changelogNewBadge" class="changelog-new-badge hidden">NEW!</span>
+          <span id="changelogNewBadge" class="changelog-new-badge hidden">New!</span>
         </button>
       </div>
 
@@ -1104,6 +1104,11 @@
           <li>Jacque De Balsac has lower Health, Red is now Legendary, and Moths now enter with Divine Shield.</li>
           <li>Kep from The Gates is now Legendary, has updated stats, and repeats its attack damage after striking a minion.</li>
           <li>The Deck Builder now shows the maximum allowed cards for each card type, making deck limits easier to follow while editing.</li>
+          <li>The battlefield now uses the new board texture and keeps hero panels visually lighter so the table stays easier to read.</li>
+          <li>Mobile hand handling is smarter: the hand hides while choosing targets, after ending your turn, and when no hand cards can currently be played.</li>
+          <li>The hand toggle can still be used manually after automatic hiding, so you can inspect your cards whenever the board is clear.</li>
+          <li>Mobile hand view now shows compact Health and Mana circles beside the hand when the hero is covered.</li>
+          <li>Targeted cards, including healing and overhealing minions, can now be dragged directly onto their targets on touch screens.</li>
         </ul>
       </article>
       <article class="changelog-entry">
@@ -1656,9 +1661,9 @@
 <script src="profileCatalog.js?v=1.6.8-v1"></script>
 <script src="profileBadges.js?v=1.6.5-v1"></script>
 <script src="accountProfile.js?v=1.6.5-v1"></script>
-<script src="client.js?v=1.6.8-v1"></script>
+<script src="client.js?v=1.6.8-v8"></script>
 <script src="shieldChallenge.js?v=1.6.5-v1"></script>
-<script src="boardInteractions.js?v=1.6.5-v1"></script>
+<script src="boardInteractions.js?v=1.6.8-v5"></script>
 <script src="inventory.js?v=1.6.5-v1"></script>
 <script src="deckBuilder.js?v=1.6.8-v2"></script>
 <script src="shop.js?v=1.6.5-v1"></script>

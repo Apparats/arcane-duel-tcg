@@ -1,4 +1,4 @@
-const SHELL_CACHE = "arcana-tcg-shell-v1.6.8-v2";
+const SHELL_CACHE = "arcana-tcg-shell-v1.6.8-v12";
 const APP_SHELL = [
   "/",
   "/index.html",

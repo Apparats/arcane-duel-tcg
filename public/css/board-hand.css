@@ -38,6 +38,45 @@
   box-shadow: 0 0 0 1px rgba(242, 202, 80, 0.2);
 }
 
+#screen-game .hand-resource-pips {
+  position: absolute;
+  z-index: 60;
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  pointer-events: none;
+}
+
+#screen-game .hand-resource-pip {
+  position: relative;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid rgba(255, 232, 174, 0.72);
+  border-radius: 50%;
+  box-shadow: 0 5px 13px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  color: #fff6d6;
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+}
+
+#screen-game .hand-resource-health {
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255, 215, 159, 0.28), transparent 38%),
+    linear-gradient(145deg, rgba(129, 24, 26, 0.95), rgba(48, 7, 13, 0.98));
+}
+
+#screen-game .hand-resource-mana {
+  background:
+    radial-gradient(circle at 35% 25%, rgba(197, 239, 255, 0.3), transparent 38%),
+    linear-gradient(145deg, rgba(24, 84, 128, 0.96), rgba(6, 22, 50, 0.98));
+  font-size: 9px;
+}
+
 #screen-game .hand-card {
   --hand-angle: 0deg;
   --hand-rest-y: 0px;
@@ -141,6 +180,7 @@
 
 @media (max-width: 900px) and (orientation: landscape) {
   #screen-game .hand-area { width: min(62vw, 530px); min-height: 92px; margin-bottom: 10px; padding: 4px 9px 0; }
+  #screen-game .hand-resource-pips { display: flex; left: -14px; bottom: 22px; }
   #screen-game .hand-card { width: clamp(62px, 10vw, 88px); margin-left: clamp(-25px, -2.7vw, -11px); }
   #screen-game .hand-card .card-cost { width: 21px; height: 23px; top: -6px; left: -6px; font-size: 10px; }
   #screen-game .hand-card .card-badges { top: -6px; left: 50%; max-width: calc(100% - 28px); }
@@ -154,6 +194,9 @@
 
 @media (max-width: 720px) and (orientation: portrait) {
   #screen-game .hand-area { width: min(100%, 430px); min-height: 118px; margin-bottom: 4px; padding: 5px 8px 0; }
+  #screen-game .hand-resource-pips { display: flex; left: 0; bottom: 40px; transform: translateX(-18%); }
+  #screen-game .hand-resource-pip { width: 30px; height: 30px; font-size: 10px; }
+  #screen-game .hand-resource-mana { font-size: 8px; }
   #screen-game .hand-card { width: clamp(76px, 21vw, 102px); margin-left: clamp(-31px, -7.2vw, -17px); }
   #screen-game .hand-card .card-cost { width: 25px; height: 27px; top: -7px; left: -7px; font-size: 12px; }
   #screen-game .hand-card .card-badges { top: -6px; left: 50%; max-width: calc(100% - 28px); }

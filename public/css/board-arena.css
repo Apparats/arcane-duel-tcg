@@ -232,7 +232,12 @@
     linear-gradient(90deg, rgba(232, 179, 79, 0.05), transparent 18%, transparent 82%, rgba(232, 179, 79, 0.05)),
     radial-gradient(ellipse at 50% 8%, rgba(79, 195, 232, 0.13), transparent 38%),
     radial-gradient(ellipse at 50% 54%, rgba(232, 179, 79, 0.11), transparent 42%),
+    linear-gradient(180deg, rgba(18, 10, 14, 0.18), rgba(10, 6, 10, 0.42)),
+    url("../art/board.webp"),
     radial-gradient(ellipse at bottom, #221824 0%, var(--bg) 70%);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: auto, auto, auto, auto, cover, cover, auto;
 }
 
 .board::before {
@@ -331,25 +336,42 @@
   overflow: visible;
   touch-action: none;
   padding: 0;
-  border: 2px solid rgba(242, 202, 80, 0.76);
-  border-radius: 12px 12px 26px 26px;
-  background:
-    linear-gradient(145deg, rgba(91, 51, 18, 0.96), rgba(22, 10, 4, 0.98) 68%),
-    radial-gradient(circle at 50% 24%, rgba(255, 227, 146, 0.2), transparent 56%);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255, 230, 158, 0.25);
+  border: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  isolation: isolate;
 }
 
 .hero-panel::before {
   content: "";
   position: absolute;
-  inset: 5px;
-  border: 1px solid rgba(255, 221, 132, 0.26);
-  border-radius: 8px 8px 21px 21px;
+  z-index: 0;
+  inset: -2px -4px -2px;
+  border: 2px solid rgba(242, 202, 80, 0.76);
+  border-radius: 14px 14px 28px 28px;
+  background:
+    linear-gradient(145deg, rgba(91, 51, 18, 0.88), rgba(22, 10, 4, 0.9) 68%),
+    radial-gradient(circle at 50% 24%, rgba(255, 227, 146, 0.18), transparent 56%);
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 230, 158, 0.22);
+  pointer-events: none;
+}
+
+.hero-panel::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 3px 2px 3px;
+  border: 1px solid rgba(255, 221, 132, 0.24);
+  border-radius: 10px 10px 23px 23px;
   pointer-events: none;
 }
 
 .hero-avatar {
   position: absolute;
+  z-index: 2;
   display: grid;
   place-items: center;
   top: 8px;
@@ -373,6 +395,7 @@
 
 .hero-name {
   position: absolute;
+  z-index: 2;
   top: calc(100% + 4px);
   left: 50%;
   width: calc(100% + 22px);
@@ -482,8 +505,19 @@
 }
 
 .hero-panel.active-turn {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.hero-panel.active-turn::before {
   border-color: #ffdf78;
-  box-shadow: 0 0 0 2px rgba(242, 202, 80, 0.52), 0 0 24px rgba(242, 202, 80, 0.42), inset 0 1px 0 rgba(255, 236, 176, 0.3);
+  background:
+    linear-gradient(145deg, rgba(104, 61, 23, 0.9), rgba(24, 11, 6, 0.92) 68%),
+    radial-gradient(circle at 50% 24%, rgba(255, 236, 173, 0.22), transparent 56%);
+  box-shadow:
+    0 0 0 2px rgba(242, 202, 80, 0.52),
+    0 0 24px rgba(242, 202, 80, 0.42),
+    inset 0 1px 0 rgba(255, 236, 176, 0.3);
 }
 
 .minion-row {
@@ -630,7 +664,14 @@
   filter: none;
   opacity: 0.58;
 }
-.hero-panel.targetable { cursor: crosshair; box-shadow: 0 0 0 2px var(--hp); }
+.hero-panel.targetable { cursor: crosshair; box-shadow: none; }
+
+.hero-panel.targetable::before {
+  box-shadow:
+    0 0 0 2px var(--hp),
+    0 10px 22px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 230, 158, 0.22);
+}
 
 @media (max-width: 900px) and (orientation: landscape) {
   .board { grid-template-rows: minmax(112px, 1fr) auto minmax(112px, 1fr) auto; padding: 14px 18px 0; }
