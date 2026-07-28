@@ -229,6 +229,25 @@
   .menu-glow { animation: none; opacity: 0.65; }
 }
 
+html[data-discord-activity="true"] .firefly,
+html[data-discord-activity="true"] #screen-menu .firefly {
+  animation: none;
+  filter: none;
+  opacity: 0.38;
+}
+
+html[data-discord-activity="true"] .menu-glow {
+  animation: none;
+  opacity: 0.4;
+}
+
+html[data-discord-activity="true"] .menu-glow::before,
+html[data-discord-activity="true"] .menu-glow::after,
+html[data-discord-activity="true"] #screen-menu .menu-glow::before,
+html[data-discord-activity="true"] #screen-menu .menu-glow::after {
+  filter: none;
+}
+
 .menu-wrap {
   position: relative;
   z-index: 1;
@@ -1260,6 +1279,21 @@
   opacity: .16;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.2'/%3E%3C/svg%3E");
   mix-blend-mode: soft-light;
+}
+
+html[data-discord-activity="true"] #screen-menu::after {
+  mix-blend-mode: normal;
+  opacity: 0.08;
+}
+
+html[data-discord-activity="true"] .menu-options-trigger,
+html[data-discord-activity="true"] .menu-option-button,
+html[data-discord-activity="true"] .menu-options-panel,
+html[data-discord-activity="true"] .audio-config-panel,
+html[data-discord-activity="true"] .btn-discord,
+html[data-discord-activity="true"] .menu-tile {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 #screen-menu .menu-glow {

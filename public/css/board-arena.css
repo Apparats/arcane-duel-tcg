@@ -83,6 +83,13 @@
   #screen-game[data-campaign-theme="fire"] .board::before { animation: none; opacity: 0.78; transform: none; }
 }
 
+html[data-discord-activity="true"] #screen-game[data-campaign-theme="frost"] .board::before,
+html[data-discord-activity="true"] #screen-game[data-campaign-theme="fire"] .board::before {
+  animation: none;
+  filter: none;
+  opacity: 0.42;
+}
+
 .hand-toggle { display: none; }
 
 /* Battlefield composition. This file is the single source of truth for
@@ -245,6 +252,11 @@
   background: radial-gradient(ellipse, rgba(242, 202, 80, 0.1), rgba(113, 63, 14, 0.05) 44%, transparent 70%);
   filter: blur(30px);
   opacity: 0.9;
+}
+
+html[data-discord-activity="true"] .board::before {
+  filter: none;
+  opacity: 0.42;
 }
 
 .board::after {

@@ -3047,6 +3047,10 @@ function isDiscordActivityEnvironment() {
   );
 }
 
+function syncDiscordActivityDocumentState() {
+  document.documentElement.dataset.discordActivity = isDiscordActivityEnvironment() ? "true" : "false";
+}
+
 function hasDiscordActivityParams() {
   const params = new URLSearchParams(window.location.search);
   return params.has("frame_id") && params.has("instance_id") && params.has("platform");
@@ -3752,6 +3756,7 @@ $("btnOpenAudioConfig").addEventListener("click", () => {
 });
 
 $("btnOpenChangelog").addEventListener("click", () => setChangelogOpen(true));
+syncDiscordActivityDocumentState();
 syncChangelogNewBadge();
 syncActivityInviteBadge();
 $("btnCloseChangelog").addEventListener("click", () => setChangelogOpen(false));

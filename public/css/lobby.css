@@ -58,6 +58,20 @@
   75%       { opacity: 0.78; transform: scaleY(1.01) scaleX(0.99); }
 }
 
+html[data-discord-activity="true"] #screen-lobby.lobby-singleplayer::before,
+html[data-discord-activity="true"] #screen-lobby.lobby-singleplayer::after,
+html[data-discord-activity="true"] #screen-lobby.lobby-multiplayer::before,
+html[data-discord-activity="true"] #screen-lobby.lobby-multiplayer::after {
+  animation: none;
+  filter: none;
+}
+
+html[data-discord-activity="true"] #screen-lobby .firefly {
+  animation: none;
+  filter: none;
+  opacity: 0.34;
+}
+
 .lobby-card {
   width: min(92vw, 520px);
   background:
