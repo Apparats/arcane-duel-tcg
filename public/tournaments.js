@@ -10,6 +10,7 @@
   let lastBracketTrigger = null;
   let selectedRoundTab = null;
   let selectedRoundTabIsManual = false;
+  let tournamentHistoryOpen = false;
   const queuedMatches = new Map();
 
   const el = (id) => document.getElementById(id);
@@ -400,8 +401,14 @@
   function actionHTML(tournament) {
     if (tournament.phase === "registration") {
       return tournament.registered
-        ? '<div class="tournament-actions"><span class="tournament-registered">Registered</span><button class="btn btn-secondary" type="button" data-tournament-action="unregister">Leave</button></div>'
-        : '<div class="tournament-actions"><button class="btn btn-primary" type="button" data-tournament-action="register">Pre-register</button></div>';
+        ? '<div class="tournament-actions tournament-registration-actions"><span class="tournament-registered">Registered</span><button class="btn btn-secondary" type="button" data-tournament-action="unregister">Leave tournament</button></div>'
+        : '<div class="tournament-actions tournament-registration-actions"><button class="btn btn-primary" type="button" data-tournament-action="register">Register for tournament</button></div>';
+    }
+    if (tournament.phase === "upcoming") {
+      return '<div class="tournament-actions tournament-registration-actions"><button class="btn btn-secondary" type="button" disabled>Registration not open yet</button></div>';
+    }
+    if (tournament.phase === "locked" && tournament.registered) {
+      return '<div class="tournament-actions tournament-registration-actions"><span class="tournament-registered">Registered</span></div>';
     }
     if (tournament.phase === "active" && tournament.myMatchId) {
       const queueKey = `${tournament.id}:${tournament.myMatchId}`;
@@ -421,6 +428,8 @@
 
   function tournamentHTML(tournament) {
     const prize = tournament.prizes || {};
+    const participantCount = Number.isFinite(Number(tournament.participantCount)) ? Number(tournament.participantCount) : 0;
+    const maxPlayers = Number.isFinite(Number(tournament.maxPlayers)) ? Number(tournament.maxPlayers) : 0;
     const startInFuture = Date.parse(tournament.startsAt) > Date.now();
     const registrationTime = tournament.phase === "upcoming" ? `Registration opens ${dateTime(tournament.registrationOpensAt, tournament.timeZone)}`
       : tournament.phase === "registration" ? `Registration closes ${dateTime(tournament.registrationClosesAt, tournament.timeZone)}`
@@ -431,22 +440,32 @@
     return `<article class="tournament-card" data-tournament-id="${text(tournament.id)}">
       <header class="tournament-card-header"><h2>${text(tournament.name)}</h2><div class="tournament-card-header-actions"><span class="tournament-phase phase-${text(tournament.phase)}">${text(phaseLabel(tournament.phase))}</span>${bracketButton}</div></header>
       <div class="tournament-card-body">
-        <p class="tournament-description">${text(tournament.description)}</p>
         ${registrationTime ? `<p class="tournament-timing">${text(registrationTime)}</p>` : ""}
         <p class="tournament-timing">${tournament.phase === "active" || tournament.phase === "completed" ? "Started" : "Starts"} ${text(dateTime(tournament.startsAt, tournament.timeZone))}</p>
         <p class="tournament-timing tournament-local-start">Your local start: ${text(localDateTime(tournament.startsAt))}</p>
         ${tournament.finishedAt ? `<p class="tournament-timing">Completed ${text(localDateTime(tournament.finishedAt))}</p>` : ""}
         ${startInFuture ? `<p class="tournament-countdown" data-tournament-countdown="${text(tournament.startsAt)}">Starts in --</p>` : ""}
-        <div class="tournament-meta"><span>${tournament.participantCount}/${tournament.maxPlayers} players</span><span><strong>1st</strong> ${prize.first || 0} gold</span><span><strong>2nd</strong> ${prize.second || 0} gold</span><span><strong>3rd</strong> ${prize.third || 0} gold</span></div>
-        ${myTournamentHTML(tournament)}
+        <div class="tournament-meta" aria-label="Tournament details"><span><strong>Players</strong> ${participantCount}/${maxPlayers}</span><span><strong>1st</strong> ${prize.first || 0} gold</span><span><strong>2nd</strong> ${prize.second || 0} gold</span><span><strong>3rd</strong> ${prize.third || 0} gold</span></div>
         ${actionHTML(tournament)}
+        <p class="tournament-description">${text(tournament.description)}</p>
+        ${myTournamentHTML(tournament)}
       </div>
     </article>`;
+  }
+
+  function tournamentSectionHTML(title, subtitle, items, className = "") {
+    if (items.length === 0) return "";
+    return `<section class="tournament-section ${text(className)}">
+      <div class="tournament-section-heading"><span>${text(title)}</span>${subtitle ? `<small>${text(subtitle)}</small>` : ""}</div>
+      <div class="tournament-section-list">${items.map(tournamentHTML).join("")}</div>
+    </section>`;
   }
 
   function render() {
     const list = el("tournamentList");
     if (!list) return;
+    const existingHistory = list.querySelector(".tournament-history");
+    if (existingHistory) tournamentHistoryOpen = existingHistory.open;
     clearCountdownTimer();
     if (loading && tournaments.length === 0) {
       list.innerHTML = '<p class="tournament-empty">Loading tournaments...</p>';
@@ -454,8 +473,12 @@
     }
     const current = tournaments.filter((tournament) => !["completed", "cancelled"].includes(tournament.phase));
     const history = tournaments.filter((tournament) => ["completed", "cancelled"].includes(tournament.phase));
+    const currentHTML = tournamentSectionHTML("Open tournaments", "Register, check the time, and review prizes.", current, "tournament-current");
+    const historyHTML = history.length
+      ? `<details class="tournament-history"${tournamentHistoryOpen ? " open" : ""}><summary><span>Tournament history</span><small>${history.length} completed event${history.length === 1 ? "" : "s"}</small></summary><div class="tournament-section-list">${history.map(tournamentHTML).join("")}</div></details>`
+      : "";
     list.innerHTML = tournaments.length
-      ? `${current.map(tournamentHTML).join("")}${history.length ? `<section class="tournament-history"><div class="tournament-history-heading"><span>Tournament history</span><small>Completed brackets remain available here.</small></div>${history.map(tournamentHTML).join("")}</section>` : ""}`
+      ? `${currentHTML || '<p class="tournament-empty">No open tournaments right now.</p>'}${historyHTML}`
       : '<p class="tournament-empty">No tournaments are scheduled right now.</p>';
     syncBracketModal();
     startCountdowns();
@@ -580,6 +603,10 @@
       showToast(error.message || "Could not update tournament registration.");
     }
   });
+  el("tournamentList")?.addEventListener("toggle", (event) => {
+    if (!(event.target instanceof Element) || !event.target.classList.contains("tournament-history")) return;
+    tournamentHistoryOpen = event.target.open;
+  }, true);
 
   el("tournamentBracketModal")?.addEventListener("click", (event) => {
     if (event.target === event.currentTarget) {
