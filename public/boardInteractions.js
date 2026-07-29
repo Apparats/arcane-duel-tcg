@@ -157,6 +157,17 @@
     const needsMinionTarget = typeof cardRequiresMinionTarget === "function" && cardRequiresMinionTarget(card);
     const needsEnemyHeroTarget = typeof cardRequiresEnemyHeroTarget === "function" && cardRequiresEnemyHeroTarget(card);
     const enemyOnlyTarget = typeof cardTargetsEnemyOnly === "function" && cardTargetsEnemyOnly(card);
+    const optionalEnemyMinionTarget = typeof cardHasOptionalEnemyMinionPlayTarget === "function" && cardHasOptionalEnemyMinionPlayTarget(card);
+    const hasEnemyMinionTarget = (myState?.opponent?.board || []).length > 0;
+    if (card.type === "minion" && needsEnemyMinionTarget && optionalEnemyMinionTarget && !hasEnemyMinionTarget) {
+      if (!overSelfBoard) return false;
+      window.ArcaneAudio?.playSfx("cardPlay");
+      pendingHandPlayAnimation = { cardId: card.id, rect: drag.source.getBoundingClientRect(), createdAt: performance.now() };
+      predictCardPlay(drag.source);
+      send("playCard", { handIndex, targetInstanceId: null });
+      return true;
+    }
+
     if (needsPlayTarget && needsMinionTarget) {
       if (!target?.minion) return false;
       window.ArcaneAudio?.playSfx("cardPlay");

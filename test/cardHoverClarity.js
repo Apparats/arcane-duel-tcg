@@ -18,6 +18,13 @@ assert(hoverSection.includes("translateZ(4px)"), "Card hover tracking should kee
 assert(hoverSection.includes("--shine-x"), "Card hover tracking should keep cursor-following shine X.");
 assert(hoverSection.includes("--shine-y"), "Card hover tracking should keep cursor-following shine Y.");
 assert(hoverSection.includes("--foil-angle"), "Card hover tracking should keep cursor-following foil angle.");
+assert(hoverSection.includes("activeParallaxCard"), "Card hover tracking should keep a sticky active card for fast shell crossings.");
+assert(hoverSection.includes("CARD_PARALLAX_STICKY_MARGIN"), "Card hover tracking should keep a tolerance margin around tilt shells.");
+assert(hoverSection.includes("cardParallaxHitRect(card)"), "Card hover tracking should use the stable shell hit area for tilt math.");
+assert(!clientSource.includes("CARD_PARALLAX_RELEASE_DELAY"), "Card hover should not linger after leaving the card.");
+assert(!clientSource.includes("scheduleCardParallaxReset"), "Card hover should reset immediately once the pointer is outside the shell.");
+assert(clientSource.includes("if (activeParallaxCard) resetCardParallax(activeParallaxCard);"), "Card hover tracking should clear sticky shell state immediately after the pointer leaves the shell.");
+assert(clientSource.includes("resetCardParallax(activeParallaxCard)"), "Card hover tracking should reset the previous active card when another card becomes active.");
 assert(cardsCss.includes("backface-visibility: hidden"), "Cards should stabilize backface rendering during hover.");
 assert(
   /\.card-cost\s*\{[\s\S]*?transform: translateZ\(16px\);[\s\S]*?backface-visibility: hidden/.test(cardsCss),

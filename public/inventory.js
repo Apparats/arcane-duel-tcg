@@ -773,9 +773,9 @@ $("tileInventory").addEventListener("click", () => openInventory());
 // ---- Card zoom ----
 
 function setCardZoomArtFocus(active) {
-  const zoomContent = document.querySelector(".card-zoom-content");
-  if (!zoomContent) return;
-  zoomContent.classList.toggle("is-art-focus", Boolean(active));
+  const zoomPanel = document.querySelector(".card-zoom-panel");
+  if (!zoomPanel) return;
+  zoomPanel.classList.toggle("is-art-focus", Boolean(active));
 }
 
 function openCardZoom(card) {
@@ -799,9 +799,8 @@ function openCardZoom(card) {
   $("zoomMeta").innerHTML = `
     <span class="zoom-chip zoom-rarity ${rarityClass(card)}">${RARITY_LABEL[rarity] || "Common"}</span>
     <span class="zoom-chip">${typeLabel}</span>
-    <span class="zoom-chip">${card.cost} mana</span>
     ${card.race ? `<span class="zoom-chip">${escapeHtml(card.race)}</span>` : ""}
-    <span class="zoom-chip">🏳 ${escapeHtml(card.country || "—")}</span>
+    <span class="zoom-chip zoom-country">${countryFlagHTML(card.country)}</span>
   `;
 
   const keywords = activeKeywords(card);

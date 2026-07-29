@@ -309,6 +309,36 @@ function main() {
   assert(mostorTest.players[0].board.length === 0, "Mostor should leave the board after its second death.");
   assert(mostorTest.players[0].deck.length === 0, "Mostor should disappear after its second death.");
 
+  const fullHandDrawTest = new Game("FULLHAND", "FullHand1", "FullHand2", {
+    decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
+  });
+  fullHandDrawTest.players[0].hand = Array(10).fill("base:babu");
+  fullHandDrawTest.players[0].deck = ["base:mostor", "base:aleex"];
+  assert(fullHandDrawTest._draw(0, 1) === 0, "A full hand should block the draw.");
+  assert(fullHandDrawTest.players[0].deck.length === 2, "A blocked draw should not remove a deck card.");
+  assert(fullHandDrawTest.players[0].deck[0] === "base:mostor", "The blocked draw should preserve the next deck card.");
+  fullHandDrawTest.players[0].hand.pop();
+  assert(fullHandDrawTest._draw(0, 1) === 1, "Freeing hand space should allow the next draw.");
+  assert(fullHandDrawTest.players[0].hand.at(-1) === "base:mostor", "The preserved top card should be drawn after hand space is freed.");
+
+  const fullHandAbilityDrawTest = new Game("FULLABILITY", "Ability1", "Ability2", {
+    decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
+  });
+  fullHandAbilityDrawTest.players[0].hand = Array(10).fill("base:babu");
+  fullHandAbilityDrawTest.players[0].deck = ["base:aleex", "base:mostor"];
+  fullHandAbilityDrawTest._triggerAbilities(
+    { abilities: [{ trigger: "test", effect: "drawNonLegendaryNonMythicCard" }] },
+    "test",
+    { casterIdx: 0, sourceName: "Full Hand Draw Test" }
+  );
+  assert(fullHandAbilityDrawTest.players[0].deck.length === 2, "A full hand should not burn searched deck draws.");
+  fullHandAbilityDrawTest._triggerAbilities(
+    { abilities: [{ trigger: "test", effect: "drawRandomDeckCards", value: 2 }] },
+    "test",
+    { casterIdx: 0, sourceName: "Full Hand Random Draw Test" }
+  );
+  assert(fullHandAbilityDrawTest.players[0].deck.length === 2, "A full hand should not burn random deck draws.");
+
   const crowleyTest = new Game("CROWLEY", "Crowley1", "Crowley2", {
     decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
   });

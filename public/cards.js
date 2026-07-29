@@ -593,7 +593,7 @@
       "race": "Human",
       "rarity": "legendary",
       "country": "Sri Lanka",
-      "lore": "While on the board, Taunt, Charge, and Divine Shield minions cannot be summoned. When this kills an enemy minion, it gains Divine Shield.",
+      "lore": "While on the board, enemies cannot summon Taunt or Divine Shield minions. When this kills an enemy minion, it restores its Health up to 8.",
       "image": "art/Antichristjesus2.webp",
       "abilities": [
         {
@@ -601,13 +601,14 @@
           "effect": "blockKeywordSummons",
           "keywords": [
             "taunt",
-            "charge",
             "divineShield"
-          ]
+          ],
+          "enemyOnly": true
         },
         {
           "trigger": "onKillMinion",
-          "effect": "grantSelfDivineShield"
+          "effect": "restoreSelfHealthToValue",
+          "value": 8
         }
       ],
       "_expansionId": "expansion2"

@@ -1973,6 +1973,18 @@ html[data-discord-activity="true"] #screen-lobby .firefly {
 
 /* Lightweight full-screen motion for mobile GPUs. */
 @media (max-width: 760px) {
+  #screen-lobby .lobby-snow,
+  #lobbyEmbers {
+    display: none !important;
+  }
+
+  #screen-lobby .lobby-snow .firefly,
+  #lobbyEmbers .firefly {
+    animation: none !important;
+    filter: none !important;
+    opacity: 0 !important;
+  }
+
   #screen-menu.screen-transition-in,
   #screen-menu.screen-transition-out,
   #screen-lobby.screen-transition-in,

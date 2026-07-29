@@ -36,7 +36,8 @@
 }
 
 .match-status.warning { width: min(90vw, 540px); padding: 10px 14px; border-color: rgba(214, 69, 69, 0.9); background: rgba(57, 12, 18, 0.94); box-shadow: 0 7px 24px rgba(0, 0, 0, 0.58), inset 0 0 0 1px rgba(255, 170, 163, 0.12); color: #ffd0cc; font-size: 13px; }
-#screen-game.opponent-reconnecting .board-frame { opacity: 0.72; pointer-events: none; }
+#screen-game.match-reconnecting .board-frame { opacity: 0.62; pointer-events: none; }
+#screen-game.match-reconnecting .match-status { z-index: 80; }
 
 @media (max-width: 720px) {
   .match-status { top: max(5px, env(safe-area-inset-top)); max-width: 88vw; padding: 4px 7px; font-size: 9px; }

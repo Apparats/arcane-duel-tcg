@@ -56,6 +56,7 @@ const VALID_ABILITY_EFFECTS = [
   "buffSelf",
   "grantDivineShieldToAllFriendlyMinions",
   "grantSelfDivineShield",
+  "restoreSelfHealthToValue",
   "grantSelfCharge",
   "grantSelfTaunt",
   "grantChargeToRandomFriendlyNonCharge",
@@ -327,6 +328,13 @@ function validateAbilities(card, label) {
       if (ability.trigger !== "onKillMinion") {
         fail(`${abLabel}: grantSelfDivineShield can only use the "onKillMinion" trigger.`);
       }
+    } else if (ability.effect === "restoreSelfHealthToValue") {
+      if (ability.trigger !== "onKillMinion") {
+        fail(`${abLabel}: restoreSelfHealthToValue can only use the "onKillMinion" trigger.`);
+      }
+      if (!isIntegerInRange(ability.value, 1, 99)) {
+        fail(`${abLabel}: restoreSelfHealthToValue needs a "value" between 1 and 99.`);
+      }
     } else if (ability.effect === "grantSelfCharge") {
       if (ability.trigger !== "onKillMinion") {
         fail(`${abLabel}: grantSelfCharge can only use the "onKillMinion" trigger.`);
@@ -461,6 +469,9 @@ function validateAbilities(card, label) {
           fail(`${abLabel}: unknown blocked keyword "${keyword}". Valid: ${VALID_KEYWORDS.join(", ")}.`);
         }
       });
+      if (ability.enemyOnly !== undefined && typeof ability.enemyOnly !== "boolean") {
+        fail(`${abLabel}: "enemyOnly" must be true or false when included.`);
+      }
     } else if (ability.effect === "unattackable") {
       if (ability.trigger !== "passive") {
         fail(`${abLabel}: unattackable must use trigger: "passive".`);

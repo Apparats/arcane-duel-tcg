@@ -9,10 +9,10 @@ module.exports = {
   race: "Human",
   rarity: "legendary",
   country: "Sri Lanka",
-  lore: "While on the board, Taunt, Charge, and Divine Shield minions cannot be summoned. When this kills an enemy minion, it gains Divine Shield.",
+  lore: "While on the board, enemies cannot summon Taunt or Divine Shield minions. When this kills an enemy minion, it restores its Health up to 8.",
   image: "art/Antichristjesus2.webp",
   abilities: [
-    { trigger: "passive", effect: "blockKeywordSummons", keywords: ["taunt", "charge", "divineShield"] },
-    { trigger: "onKillMinion", effect: "grantSelfDivineShield" },
+    { trigger: "passive", effect: "blockKeywordSummons", keywords: ["taunt", "divineShield"], enemyOnly: true },
+    { trigger: "onKillMinion", effect: "restoreSelfHealthToValue", value: 8 },
   ],
 };

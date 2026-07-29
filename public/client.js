@@ -36,11 +36,135 @@ const STATUS_FULL_LABEL = {
   dodge: "Dodge",
 };
 const RARITY_LABEL = { common: "Common", rare: "Rare", legendary: "Legendary", mythic: "Mythic", souvenir: "Souvenir" };
+const COUNTRY_CODE_BY_NAME = Object.freeze({
+  argentina: "ar",
+  austria: "at",
+  belgium: "be",
+  bolivia: "bo",
+  brazil: "br",
+  chad: "td",
+  chile: "cl",
+  croatia: "hr",
+  cyprus: "cy",
+  czechia: "cz",
+  denmark: "dk",
+  djibouti: "dj",
+  egypt: "eg",
+  eeuu: "us",
+  finland: "fi",
+  france: "fr",
+  germany: "de",
+  guatemala: "gt",
+  honduras: "hn",
+  iceland: "is",
+  india: "in",
+  indonesia: "id",
+  iraq: "iq",
+  ireland: "ie",
+  italy: "it",
+  japan: "jp",
+  latvia: "lv",
+  lithuania: "lt",
+  luxembourg: "lu",
+  luxemburg: "lu",
+  malaysia: "my",
+  malta: "mt",
+  morocco: "ma",
+  netherlands: "nl",
+  "new zealand": "nz",
+  nigeria: "ng",
+  norway: "no",
+  oman: "om",
+  poland: "pl",
+  portugal: "pt",
+  romania: "ro",
+  rwanda: "rw",
+  serbia: "rs",
+  "sierra leone": "sl",
+  "solomon islands": "sb",
+  "south africa": "za",
+  "south korea": "kr",
+  spain: "es",
+  "sri lanka": "lk",
+  sweden: "se",
+  tanzania: "tz",
+  thailand: "th",
+  ukraine: "ua",
+  "united kingdom": "gb",
+  "united states": "us",
+  usa: "us",
+  uzbekistan: "uz",
+  vanuatu: "vu",
+  vatican: "va",
+  venezuela: "ve",
+  yemen: "ye",
+});
+const COUNTRY_FLAG_DESIGN_BY_CODE = Object.freeze({
+  ar: { type: "horizontal", colors: ["#74acdf", "#ffffff", "#74acdf"], emblem: "sun" },
+  at: { type: "horizontal", colors: ["#ed2939", "#ffffff", "#ed2939"] },
+  be: { type: "vertical", colors: ["#000000", "#ffd90c", "#ef3340"] },
+  bo: { type: "horizontal", colors: ["#d52b1e", "#f9e300", "#007934"] },
+  br: { type: "diamond", base: "#009b3a", diamond: "#ffdf00", circle: "#002776" },
+  cl: { type: "canton", base: "#d52b1e", top: "#ffffff", canton: "#0039a6", star: true },
+  cy: { type: "solid", base: "#ffffff", emblem: "cyprus" },
+  cz: { type: "triangle", colors: ["#ffffff", "#d7141a"], triangle: "#11457e" },
+  de: { type: "horizontal", colors: ["#000000", "#dd0000", "#ffce00"] },
+  dk: { type: "nordic", base: "#c60c30", cross: "#ffffff" },
+  dj: { type: "triangle", colors: ["#6ab2e7", "#12ad2b"], triangle: "#ffffff", starColor: "#d7141a" },
+  eg: { type: "horizontal", colors: ["#ce1126", "#ffffff", "#000000"], emblem: "gold" },
+  es: { type: "horizontal", colors: ["#aa151b", "#f1bf00", "#aa151b"], weights: [1, 2, 1] },
+  fi: { type: "nordic", base: "#ffffff", cross: "#002f6c" },
+  fr: { type: "vertical", colors: ["#0055a4", "#ffffff", "#ef4135"] },
+  gb: { type: "union" },
+  gt: { type: "vertical", colors: ["#4997d0", "#ffffff", "#4997d0"], emblem: "green" },
+  hn: { type: "horizontal", colors: ["#0073cf", "#ffffff", "#0073cf"], emblem: "stars" },
+  hr: { type: "horizontal", colors: ["#ff0000", "#ffffff", "#171796"], emblem: "checker" },
+  id: { type: "horizontal", colors: ["#ce1126", "#ffffff"] },
+  ie: { type: "vertical", colors: ["#169b62", "#ffffff", "#ff883e"] },
+  in: { type: "horizontal", colors: ["#ff9933", "#ffffff", "#138808"], emblem: "wheel" },
+  iq: { type: "horizontal", colors: ["#ce1126", "#ffffff", "#000000"], emblem: "green" },
+  is: { type: "nordic", base: "#02529c", cross: "#ffffff", inner: "#dc1e35" },
+  it: { type: "vertical", colors: ["#009246", "#ffffff", "#ce2b37"] },
+  jp: { type: "circle", base: "#ffffff", circle: "#bc002d" },
+  kr: { type: "taegeuk" },
+  lt: { type: "horizontal", colors: ["#fdb913", "#006a44", "#c1272d"] },
+  lk: { type: "vertical", colors: ["#00534e", "#ff9e1b", "#8d153a"], weights: [1, 1, 4] },
+  lu: { type: "horizontal", colors: ["#ef3340", "#ffffff", "#00a3e0"] },
+  lv: { type: "horizontal", colors: ["#9e3039", "#ffffff", "#9e3039"], weights: [2, 1, 2] },
+  ma: { type: "solid", base: "#c1272d", emblem: "starGreen" },
+  mt: { type: "vertical", colors: ["#ffffff", "#cf142b"], emblem: "cross" },
+  my: { type: "canton-stripes", canton: "#010066", moon: "#ffcc00" },
+  ng: { type: "vertical", colors: ["#008753", "#ffffff", "#008753"] },
+  nl: { type: "horizontal", colors: ["#ae1c28", "#ffffff", "#21468b"] },
+  no: { type: "nordic", base: "#ba0c2f", cross: "#ffffff", inner: "#00205b" },
+  nz: { type: "blue-stars", base: "#00247d" },
+  om: { type: "oman" },
+  pl: { type: "horizontal", colors: ["#ffffff", "#dc143c"] },
+  pt: { type: "portugal" },
+  ro: { type: "vertical", colors: ["#002b7f", "#fcd116", "#ce1126"] },
+  rs: { type: "horizontal", colors: ["#c6363c", "#0c4076", "#ffffff"], emblem: "gold" },
+  rw: { type: "horizontal", colors: ["#00a1de", "#fad201", "#20603d"], weights: [2, 1, 1], emblem: "sunRight" },
+  sb: { type: "diagonal", a: "#0051ba", b: "#215b33", stripe: "#fcd116" },
+  se: { type: "nordic", base: "#006aa7", cross: "#fecc00" },
+  sl: { type: "horizontal", colors: ["#1eb53a", "#ffffff", "#0072c6"] },
+  td: { type: "vertical", colors: ["#002664", "#fecb00", "#c60c30"] },
+  th: { type: "horizontal", colors: ["#a51931", "#ffffff", "#2d2a4a", "#ffffff", "#a51931"], weights: [1, 1, 2, 1, 1] },
+  tz: { type: "diagonal", a: "#1eb53a", b: "#00a3dd", stripe: "#000000", border: "#fcd116" },
+  ua: { type: "horizontal", colors: ["#0057b7", "#ffd700"] },
+  us: { type: "canton-stripes", canton: "#3c3b6e", stars: true },
+  uz: { type: "horizontal", colors: ["#1eb5e5", "#ffffff", "#009739"], weights: [2, 1, 2], emblem: "moon" },
+  va: { type: "vertical", colors: ["#ffe000", "#ffffff"], emblem: "gold" },
+  ve: { type: "horizontal", colors: ["#fcd116", "#003893", "#ce1126"], emblem: "stars" },
+  vu: { type: "triangle", colors: ["#d21034", "#009543"], triangle: "#000000", starColor: "#ffd100" },
+  ye: { type: "horizontal", colors: ["#ce1126", "#ffffff", "#000000"] },
+  za: { type: "south-africa" },
+});
 const BABU2_CARD_ID = "expansion2:Babu2";
 const SECOND_PLAYER_MANA_CARD_ID = "special:manaspark";
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.6.8-board-hand-qol";
+const CHANGELOG_VERSION = "1.6.9";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
+const CARD_ART_ASSET_VERSION = "1.6.9-art768";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const ACTIVITY_INVITE_SEEN_STORAGE_KEY = "arcane_activity_invite_seen_v1";
 const TYPE_ICON = { minion: "⚔", spell: "✦" };
@@ -243,7 +367,7 @@ function clearMatchStatus() {
 }
 
 function setOpponentReconnectPaused(paused) {
-  $("screen-game")?.classList.toggle("opponent-reconnecting", paused);
+  $("screen-game")?.classList.toggle("match-reconnecting", paused);
 }
 
 function setMatchStatus(message, { warning = false } = {}) {
@@ -262,7 +386,7 @@ function showOpponentDisconnectStatus(payload = {}) {
   const update = () => {
     const seconds = Number.isFinite(deadline) ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000)) : null;
     const suffix = seconds == null ? "" : ` ${seconds}s`;
-    setMatchStatus(isTournament ? `Opponent disconnected. Tournament victory by forfeit in${suffix}.` : `Opponent disconnected. Victory by forfeit in${suffix}.`, { warning: true });
+    setMatchStatus(isTournament ? `Match paused. Opponent disconnected. Tournament victory by forfeit in${suffix}.` : `Match paused. Opponent disconnected. Victory by forfeit in${suffix}.`, { warning: true });
     if (seconds === 0) {
       clearInterval(matchStatusTimer);
       matchStatusTimer = null;
@@ -272,10 +396,26 @@ function showOpponentDisconnectStatus(payload = {}) {
   if (Number.isFinite(deadline)) matchStatusTimer = setInterval(update, 250);
 }
 
+function showSelfReconnectStatus() {
+  clearInterval(matchStatusTimer);
+  setOpponentReconnectPaused(true);
+  const update = () => {
+    const seconds = Math.max(0, Math.ceil((reconnectDeadline - Date.now()) / 1000));
+    setMatchStatus(`Connection lost. Reconnecting to this match automatically... ${seconds}s left. Keep this screen open.`, { warning: true });
+    if (seconds === 0) {
+      clearInterval(matchStatusTimer);
+      matchStatusTimer = null;
+    }
+  };
+  update();
+  matchStatusTimer = setInterval(update, 250);
+}
+
 function beginMultiplayerReconnect() {
   if (!shouldReconnectMultiplayer()) return;
   reconnectingMultiplayer = true;
   if (!reconnectDeadline) reconnectDeadline = Date.now() + RECONNECT_WINDOW_MS;
+  showSelfReconnectStatus();
   scheduleMultiplayerReconnect(0);
 }
 
@@ -297,6 +437,8 @@ function scheduleMultiplayerReconnect(delay) {
       resumeAckTimer = setTimeout(() => {
         if (reconnectingMultiplayer && ws === reconnectSocket && reconnectSocket?.readyState === WebSocket.OPEN) reconnectSocket.close();
       }, 5_000);
+    }).catch(() => {
+      if (reconnectingMultiplayer) scheduleMultiplayerReconnect(RECONNECT_RETRY_MS);
     });
   }, delay);
 }
@@ -713,6 +855,8 @@ function handleServerMessage(msg) {
       break;
     case "matchResumed":
       clearMultiplayerReconnect();
+      setOpponentReconnectPaused(false);
+      clearMatchStatus();
       activeMatchMode = "multiplayer";
       rememberMultiplayerMatch();
       switchScreen("game");
@@ -1677,6 +1821,12 @@ function renderTurnTimer(state) {
   turnTimerInterval = null;
   turnClockOffsetMs = Number.isFinite(state.serverNow) ? state.serverNow - Date.now() : 0;
 
+  if (state.matchPausedForReconnect) {
+    timer.textContent = "Paused - reconnecting";
+    timer.classList.add("turn-timer-warning");
+    return;
+  }
+
   if (!Number.isFinite(state.turnDeadline)) {
     timer.textContent = state.opponent?.name === "NPC" && !state.isYourTurn ? "NPC is thinking" : state.tournament ? "30s per turn" : "40s per turn";
     timer.classList.remove("turn-timer-warning");
@@ -2147,9 +2297,22 @@ function onHandCardClick(idx, card, state, cardEl = null) {
   const needsMinionTarget = cardRequiresMinionTarget(card);
   const needsEnemyHeroTarget = cardRequiresEnemyHeroTarget(card);
   const enemyOnlyTarget = cardTargetsEnemyOnly(card);
+  const optionalEnemyMinionTarget = cardHasOptionalEnemyMinionPlayTarget(card);
+  const hasEnemyMinionTarget = (state.opponent?.board || []).length > 0;
 
   // Minions normally enter the board immediately. A minion with an on-play
   // status effect waits for an enemy target before the server accepts it.
+  if (card.type === "minion" && needsEnemyMinionTarget && optionalEnemyMinionTarget && !hasEnemyMinionTarget) {
+    selectedHandIndex = null;
+    pendingHandPlayAnimation = cardEl
+      ? { cardId: card.id, rect: cardEl.getBoundingClientRect(), createdAt: performance.now() }
+      : null;
+    predictCardPlay(cardEl);
+    window.ArcaneAudio?.playSfx("cardPlay");
+    send("playCard", { handIndex: idx, targetInstanceId: null });
+    return;
+  }
+
   if (card.type === "minion" && !needsPlayTarget) {
     selectedHandIndex = null;
     pendingHandPlayAnimation = cardEl
@@ -2279,6 +2442,14 @@ function onHeroClick(isSelf) {
 $("oppHero").addEventListener("click", () => onHeroClick(false));
 $("selfHero").addEventListener("click", () => onHeroClick(true));
 
+$("screen-game").addEventListener("click", (event) => {
+  if (!isHandTargetingActive()) return;
+  const target = closestElement(event.target, ".hand-card, .minion-card, .hero-panel, #targetHint, #btnToggleHand, .turn-actions, button");
+  if (target) return;
+  clearSelection({ revealHand: true });
+  render(myState);
+});
+
 $("btnEndTurn").addEventListener("click", () => {
   clearSelection();
   handManualVisibility = null;
@@ -2296,6 +2467,11 @@ $("btnSurrender").addEventListener("click", () => {
 });
 
 $("btnToggleHand").addEventListener("click", () => {
+  if (isHandTargetingActive()) {
+    clearSelection({ revealHand: true });
+    render(myState);
+    return;
+  }
   if (shouldForceHideHand(myState)) {
     handManualVisibility = null;
     setHandCollapsed(true);
@@ -2349,10 +2525,12 @@ function cardReturnsOtherFriendlyMinionsToHand(card) {
   return Boolean(card?.abilities?.some((ability) => ability.effect === "returnOtherFriendlyMinionsToHand"));
 }
 
-function minionBlocksKeywordSummons(minion, keywords = []) {
+function minionBlocksKeywordSummons(minion, keywords = [], context = {}) {
   if ((minion.statuses || []).some((status) => status.type === "silenced")) return false;
   const cardDef = TCGCards.getCardById(minion.cardId);
   return Boolean(cardDef?.abilities?.some((ability) => {
+    const hasPlayerContext = Number.isInteger(context.blockerPlayerIdx) && Number.isInteger(context.summonerIdx);
+    if (ability.enemyOnly && hasPlayerContext && context.blockerPlayerIdx === context.summonerIdx) return false;
     if (ability.effect === "blockChargeSummons") return keywords.includes("charge");
     if (ability.effect !== "blockKeywordSummons") return false;
     const blocked = Array.isArray(ability.keywords) ? ability.keywords : [];
@@ -2360,11 +2538,16 @@ function minionBlocksKeywordSummons(minion, keywords = []) {
   }));
 }
 
-function boardKeywordSummonBlocker(card, ...boards) {
+function boardKeywordSummonBlocker(card, ...boardEntries) {
   const keywords = card?.type === "minion" ? card.keywords || [] : [];
   if (keywords.length === 0) return null;
-  for (const board of boards) {
-    const blocker = (board || []).find((minion) => minionBlocksKeywordSummons(minion, keywords));
+  for (const entry of boardEntries) {
+    const board = Array.isArray(entry) ? entry : entry?.board;
+    const blockerPlayerIdx = Array.isArray(entry) ? null : entry?.playerIdx;
+    const summonerIdx = Array.isArray(entry) ? null : entry?.summonerIdx;
+    const blocker = (board || []).find((minion) => (
+      minionBlocksKeywordSummons(minion, keywords, { blockerPlayerIdx, summonerIdx })
+    ));
     if (blocker) return blocker;
   }
   return null;
@@ -2384,7 +2567,11 @@ function getHandCardPlayBlockReason(state, card) {
   if (card.type === "minion" && !cardReturnsOtherFriendlyMinionsToHand(card) && isOwnBoardFullForHandPlay(state)) {
     return "Board is full.";
   }
-  const keywordBlocker = boardKeywordSummonBlocker(card, state.me.board, state.opponent?.board);
+  const keywordBlocker = boardKeywordSummonBlocker(
+    card,
+    { board: state.me.board, playerIdx: 0, summonerIdx: 0 },
+    { board: state.opponent?.board, playerIdx: 1, summonerIdx: 0 },
+  );
   if (keywordBlocker) {
     return `${keywordBlocker.name} prevents keyword cards from being summoned.`;
   }
@@ -2532,14 +2719,24 @@ document.addEventListener("keydown", (event) => {
 });
 
 $("cancelTarget").addEventListener("click", () => {
-  clearSelection();
+  clearSelection({ revealHand: true });
   render(myState);
 });
 
-function clearSelection() {
+function clearSelection({ sync = false, revealHand = false } = {}) {
   selectedHandIndex = null;
   selectedAttackerId = null;
   hideTargetHint();
+  document.querySelectorAll("#screen-game .selected, #screen-game .targetable").forEach((element) => {
+    element.classList.remove("selected", "targetable");
+  });
+  if (revealHand && myState?.isYourTurn && myState.winner === null && isMobileTouchLayout()) {
+    handManualVisibility = "shown";
+    lastMobileAutoHideKey = null;
+    setHandCollapsed(false);
+    return;
+  }
+  if (sync && myState) syncHandVisibility(myState);
 }
 
 function showTargetHint(text) {
@@ -2729,6 +2926,19 @@ function cardRequiresEnemyHeroTarget(card) {
   ));
 }
 
+function cardHasOptionalEnemyMinionPlayTarget(card) {
+  return Boolean(card?.abilities?.some((playAbility) =>
+    playAbility.trigger === "onPlay" &&
+    playAbility.effect === "applyStatus" &&
+    playAbility.target === "enemyMinion" &&
+    card.abilities.some((turnAbility) =>
+      turnAbility.trigger === "onTurnStart" &&
+      turnAbility.effect === "applyStatusToRandomEnemyMinion" &&
+      turnAbility.status === playAbility.status
+    )
+  ));
+}
+
 function cardTargetsEnemyOnly(card) {
   return Boolean(card?.abilities?.some((ability) =>
     ability.trigger === "onPlay" &&
@@ -2776,14 +2986,20 @@ function rarityClass(card) {
   return `rarity-${catalogCard?.rarity || card?.rarity || "common"}`;
 }
 
+function versionedCardArtUrl(src) {
+  if (!src || !src.startsWith("art/")) return src;
+  return `${src}${src.includes("?") ? "&" : "?"}v=${CARD_ART_ASSET_VERSION}`;
+}
+
 // Returns the art layer's HTML: an image if the card has one, or a
 // generic icon based on type if it doesn't have art yet.
 function cardArtHTML(card, lazy = false) {
   if (card.image) {
+    const imageUrl = versionedCardArtUrl(card.image);
     if (lazy) {
-      return `<div class="card-art lazy-art" data-src="${escapeHtmlAttr(card.image)}"></div>`;
+      return `<div class="card-art lazy-art" data-src="${escapeHtmlAttr(imageUrl)}"></div>`;
     }
-    return `<div class="card-art" style="background-image:url('${escapeHtmlAttr(card.image)}')"></div>`;
+    return `<div class="card-art" style="background-image:url('${escapeHtmlAttr(imageUrl)}')"></div>`;
   }
   const icon = TYPE_ICON[card.type] || "?";
   return `<div class="card-art card-art-placeholder"><span class="card-art-icon">${icon}</span></div>`;
@@ -2791,6 +3007,179 @@ function cardArtHTML(card, lazy = false) {
 
 function escapeHtmlAttr(str) {
   return String(str).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+}
+
+function countryKey(country) {
+  return String(country || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function flagRect(x, y, width, height, fill) {
+  return `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="${fill}"/>`;
+}
+
+function flagCircle(cx, cy, radius, fill) {
+  return `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="${fill}"/>`;
+}
+
+function flagStar(cx, cy, radius, fill) {
+  return `<path d="M ${cx} ${cy - radius} l ${radius * 0.22} ${radius * 0.68} h ${radius * 0.72} l -${radius * 0.58} ${radius * 0.42} l ${radius * 0.22} ${radius * 0.68} l -${radius * 0.58} -${radius * 0.42} l -${radius * 0.58} ${radius * 0.42} l ${radius * 0.22} -${radius * 0.68} l -${radius * 0.58} -${radius * 0.42} h ${radius * 0.72} Z" fill="${fill}"/>`;
+}
+
+function weightedOffsets(weights, total) {
+  const sum = weights.reduce((acc, value) => acc + value, 0);
+  let offset = 0;
+  return weights.map((weight) => {
+    const size = total * weight / sum;
+    const entry = { offset, size };
+    offset += size;
+    return entry;
+  });
+}
+
+function countryFlagSvg(code) {
+  const design = COUNTRY_FLAG_DESIGN_BY_CODE[code];
+  if (!design) return null;
+  const w = 48;
+  const h = 36;
+  let body = "";
+
+  if (design.type === "horizontal") {
+    const weights = design.weights || design.colors.map(() => 1);
+    weightedOffsets(weights, h).forEach((entry, idx) => {
+      body += flagRect(0, entry.offset, w, entry.size, design.colors[idx]);
+    });
+  } else if (design.type === "vertical") {
+    const weights = design.weights || design.colors.map(() => 1);
+    weightedOffsets(weights, w).forEach((entry, idx) => {
+      body += flagRect(entry.offset, 0, entry.size, h, design.colors[idx]);
+    });
+  } else if (design.type === "solid") {
+    body += flagRect(0, 0, w, h, design.base);
+  } else if (design.type === "circle") {
+    body += flagRect(0, 0, w, h, design.base);
+    body += flagCircle(w / 2, h / 2, 9, design.circle);
+  } else if (design.type === "diamond") {
+    body += flagRect(0, 0, w, h, design.base);
+    body += `<path d="M24 5 L42 18 L24 31 L6 18 Z" fill="${design.diamond}"/>`;
+    body += flagCircle(24, 18, 7.2, design.circle);
+  } else if (design.type === "nordic") {
+    body += flagRect(0, 0, w, h, design.base);
+    body += flagRect(13, 0, 7, h, design.cross);
+    body += flagRect(0, 14, w, 7, design.cross);
+    if (design.inner) {
+      body += flagRect(15, 0, 3, h, design.inner);
+      body += flagRect(0, 16, w, 3, design.inner);
+    }
+  } else if (design.type === "triangle") {
+    body += flagRect(0, 0, w, h / 2, design.colors[0]);
+    body += flagRect(0, h / 2, w, h / 2, design.colors[1]);
+    body += `<path d="M0 0 L22 18 L0 36 Z" fill="${design.triangle}"/>`;
+    if (design.starColor) body += flagStar(8, 18, 4, design.starColor);
+  } else if (design.type === "canton") {
+    body += flagRect(0, 0, w, h / 2, design.top);
+    body += flagRect(0, h / 2, w, h / 2, design.base);
+    body += flagRect(0, 0, 17, 18, design.canton);
+    if (design.star) body += flagStar(8.5, 9, 4.2, "#ffffff");
+  } else if (design.type === "canton-stripes") {
+    for (let i = 0; i < 9; i += 1) body += flagRect(0, i * 4, w, 4, i % 2 === 0 ? "#b22234" : "#ffffff");
+    body += flagRect(0, 0, 21, 20, design.canton);
+    if (design.moon) {
+      body += flagCircle(10, 10, 5, design.moon);
+      body += flagCircle(12, 10, 4, design.canton);
+    } else {
+      body += flagCircle(10, 10, 4, "#ffffff");
+    }
+  } else if (design.type === "diagonal") {
+    body += flagRect(0, 0, w, h, design.a);
+    body += `<path d="M0 36 L48 0 L48 36 Z" fill="${design.b}"/>`;
+    if (design.border) {
+      body += `<path d="M-3 31 L45 -5 L51 1 L3 37 Z" fill="${design.border}"/>`;
+      body += `<path d="M-1 33 L47 -3 L49 -1 L1 35 Z" fill="${design.stripe}"/>`;
+    } else {
+      body += `<path d="M-2 30 L44 -4 L50 2 L4 38 Z" fill="${design.stripe}"/>`;
+    }
+  } else if (design.type === "oman") {
+    body += flagRect(0, 0, w, 12, "#ffffff");
+    body += flagRect(0, 12, w, 12, "#db161b");
+    body += flagRect(0, 24, w, 12, "#008000");
+    body += flagRect(0, 0, 13, h, "#db161b");
+  } else if (design.type === "portugal") {
+    body += flagRect(0, 0, 19, h, "#006600");
+    body += flagRect(19, 0, 29, h, "#ff0000");
+    body += flagCircle(19, 18, 5, "#ffcc00");
+  } else if (design.type === "south-africa") {
+    body += flagRect(0, 0, w, h / 2, "#de3831");
+    body += flagRect(0, h / 2, w, h / 2, "#002395");
+    body += `<path d="M0 0 L24 18 L0 36 Z" fill="#000000"/>`;
+    body += `<path d="M0 4 L18 18 L0 32 L0 26 L11 18 L0 10 Z" fill="#ffb612"/>`;
+    body += `<path d="M0 8 L14 18 L0 28 L0 23 L8 18 L0 13 Z" fill="#007a4d"/>`;
+    body += flagRect(14, 15, 34, 6, "#007a4d");
+  } else if (design.type === "taegeuk") {
+    body += flagRect(0, 0, w, h, "#ffffff");
+    body += `<path d="M24 9 a9 9 0 0 1 0 18 a4.5 4.5 0 0 0 0 -9 a4.5 4.5 0 0 1 0 -9" fill="#c60c30"/>`;
+    body += `<path d="M24 27 a9 9 0 0 1 0 -18 a4.5 4.5 0 0 0 0 9 a4.5 4.5 0 0 1 0 9" fill="#003478"/>`;
+  } else if (design.type === "union") {
+    body += flagRect(0, 0, w, h, "#012169");
+    body += `<path d="M0 0 L48 36 M48 0 L0 36" stroke="#ffffff" stroke-width="8"/>`;
+    body += `<path d="M0 0 L48 36 M48 0 L0 36" stroke="#c8102e" stroke-width="4"/>`;
+    body += flagRect(19, 0, 10, h, "#ffffff");
+    body += flagRect(0, 13, w, 10, "#ffffff");
+    body += flagRect(21, 0, 6, h, "#c8102e");
+    body += flagRect(0, 15, w, 6, "#c8102e");
+  } else if (design.type === "blue-stars") {
+    body += flagRect(0, 0, w, h, design.base);
+    body += flagStar(32, 10, 3.5, "#cc142b");
+    body += flagStar(39, 17, 3.5, "#cc142b");
+    body += flagStar(30, 25, 3.5, "#cc142b");
+  }
+
+  if (design.emblem === "sun" || design.emblem === "sunRight") body += flagCircle(design.emblem === "sunRight" ? 38 : 24, design.emblem === "sunRight" ? 9 : 18, 3.5, "#f6b40e");
+  if (design.emblem === "gold") body += flagCircle(24, 18, 3.5, "#d4af37");
+  if (design.emblem === "green") body += flagCircle(24, 18, 3.2, "#2c7a3f");
+  if (design.emblem === "stars") {
+    [18, 21, 24, 27, 30].forEach((x) => { body += flagStar(x, 18, 1.5, "#0073cf"); });
+  }
+  if (design.emblem === "checker") {
+    body += flagRect(20, 13, 8, 10, "#ffffff");
+    body += flagRect(20, 13, 4, 5, "#ff0000");
+    body += flagRect(24, 18, 4, 5, "#ff0000");
+  }
+  if (design.emblem === "wheel") body += flagCircle(24, 18, 4, "#000080");
+  if (design.emblem === "starGreen") body += flagStar(24, 18, 7, "#006233");
+  if (design.emblem === "cross") {
+    body += flagRect(6, 6, 6, 2, "#b0b7bc");
+    body += flagRect(8, 4, 2, 6, "#b0b7bc");
+  }
+  if (design.emblem === "moon") {
+    body += flagCircle(12, 10, 4, "#ffffff");
+    body += flagCircle(14, 10, 3.2, "#1eb5e5");
+  }
+  if (design.emblem === "cyprus") {
+    body += `<ellipse cx="24" cy="17" rx="8" ry="5" fill="#d57800"/>`;
+    body += `<path d="M17 25 q7 4 14 0" fill="none" stroke="#4e8f3a" stroke-width="2" stroke-linecap="round"/>`;
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${body}</svg>`;
+}
+
+function countryFlagDataUri(code) {
+  const svg = countryFlagSvg(code);
+  return svg ? `data:image/svg+xml,${encodeURIComponent(svg)}` : null;
+}
+
+function countryFlagHTML(country) {
+  const label = String(country || "Unknown").trim() || "Unknown";
+  const code = COUNTRY_CODE_BY_NAME[countryKey(label)];
+  const labelHTML = `<span class="country-flag-label">${escapeHtml(label)}</span>`;
+  const flagSrc = code ? countryFlagDataUri(code) : null;
+  if (!flagSrc) {
+    return `<span class="country-flag-wrap"><span class="country-flag country-flag-fallback" aria-hidden="true"></span>${labelHTML}</span>`;
+  }
+  return `<span class="country-flag-wrap"><img class="country-flag" src="${escapeHtmlAttr(flagSrc)}" alt="" loading="lazy" decoding="async">${labelHTML}</span>`;
 }
 
 // ---------------- CARD TOOLTIP ----------------
@@ -2807,62 +3196,157 @@ function attachCardTooltip(el, card) {
   });
   if (!canUseHoverTooltips()) return;
 
-  el.addEventListener("mouseenter", (e) => showCardTooltip(getCard(), e));
-  el.addEventListener("mousemove", positionCardTooltip);
+  el.addEventListener("mouseenter", (e) => showCardTooltip(getCard(), el, e));
+  el.addEventListener("mousemove", (e) => positionCardTooltip(e, el));
   el.addEventListener("mouseleave", hideCardTooltip);
 }
 
-function showCardTooltip(card, e) {
+function showCardTooltip(card, anchorElement, e) {
   if (!canUseHoverTooltips()) return;
   populateCardTooltip(card);
-  positionCardTooltip(e);
+  positionCardTooltip(e, anchorElement);
 }
 
 function populateCardTooltip(card) {
   const t = $("cardTooltip");
   const rarity = card.rarity || "common";
-
-  const keywords = activeKeywords(card);
-  const keywordsHTML = keywords.length
-    ? `<div class="tooltip-keywords">${keywords
+  const rarityName = RARITY_LABEL[rarity] || "Common";
+  const typeLabel = card.type === "minion" ? "Minion" : "Spell";
+  const artClasses = ["minion-card", "card-tooltip-art", rarityClass(card)];
+  if (card.type === "spell") artClasses.push("spell");
+  const miniKeywords = activeKeywords(card);
+  const miniKeywordsHTML = miniKeywords.length
+    ? `<div class="tooltip-keywords zoom-keywords">${miniKeywords
         .map((k) => `<span class="tooltip-kw kw-${k}">${keywordIconHTML(k)} ${KEYWORD_FULL_LABEL[k] || k}</span>`)
         .join("")}</div>`
     : "";
-  const statuses = activeStatuses(card);
-  const statusesHTML = statuses.length
-    ? `<div class="tooltip-keywords tooltip-statuses">${statuses
+  const miniStatuses = activeStatuses(card);
+  const miniStatusesHTML = miniStatuses.length
+    ? `<div class="tooltip-keywords tooltip-statuses zoom-keywords">${miniStatuses
         .map((status) => `<span class="tooltip-kw status-${status.type}">${escapeHtml(statusDescription(status))}</span>`)
         .join("")}</div>`
     : "";
 
+  t.className = `card-tooltip hidden ${rarityClass(card)}`;
   t.innerHTML = `
-    <div class="tooltip-header">
-      <span class="tooltip-name">${escapeHtml(card.name)}</span>
-      <span class="tooltip-rarity ${rarityClass(card)}">${RARITY_LABEL[rarity] || "Common"}</span>
+    <div class="card-tooltip-content">
+      <div class="${artClasses.join(" ")}">
+        ${cardArtHTML(card)}
+        ${cardCostHTML(card)}
+        ${specialAbilityBadgeHTML(card)}
+        <div class="card-badges">${keywordBadgesHTML(card)}</div>
+        <div class="card-status-badges">${statusBadgesHTML(card)}</div>
+        <div class="card-footer">
+          ${
+            card.type === "minion"
+              ? `<span class="card-stat atk">${card.attack}</span><span class="card-name">${escapeHtml(card.name)}</span><span class="card-stat hp">${card.health}</span>`
+              : `<span class="card-name">${escapeHtml(card.name)}</span>${spellEffectValueHTML(card)}`
+          }
+        </div>
+      </div>
+      <div class="card-tooltip-details">
+        <div class="tooltip-header">
+          <span class="tooltip-name">${escapeHtml(card.name)}</span>
+          <span class="tooltip-rarity ${rarityClass(card)}">${rarityName}</span>
+        </div>
+        <div class="tooltip-meta">
+          <span>${typeLabel}</span>
+          ${card.race ? `<span class="tooltip-race">${escapeHtml(card.race)}</span>` : ""}
+          <span class="tooltip-country">${countryFlagHTML(card.country)}</span>
+        </div>
+        ${miniKeywordsHTML}
+        ${miniStatusesHTML}
+        ${card.lore ? `<div class="tooltip-lore">${escapeHtml(card.lore)}</div>` : ""}
+      </div>
     </div>
-    <div class="tooltip-meta">
-      ${card.race ? `<span class="tooltip-race">${escapeHtml(card.race)}</span>` : ""}
-      <span class="tooltip-country">🏳 ${escapeHtml(card.country || "—")}</span>
-    </div>
-    ${keywordsHTML}
-    ${statusesHTML}
-    ${card.lore ? `<div class="tooltip-lore">${escapeHtml(card.lore)}</div>` : ""}
   `;
   t.classList.remove("hidden");
 }
 
-function positionCardTooltip(e) {
-  if (!e || !canUseHoverTooltips()) return;
+function visualViewportBounds() {
+  const viewport = window.visualViewport;
+  if (!viewport) {
+    return {
+      left: 0,
+      top: 0,
+      right: window.innerWidth,
+      bottom: window.innerHeight,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+  }
+  return {
+    left: viewport.offsetLeft,
+    top: viewport.offsetTop,
+    right: viewport.offsetLeft + viewport.width,
+    bottom: viewport.offsetTop + viewport.height,
+    width: viewport.width,
+    height: viewport.height,
+  };
+}
+
+function anchorRectFromEvent(e) {
+  return {
+    left: e.clientX - 1,
+    right: e.clientX + 1,
+    top: e.clientY - 1,
+    bottom: e.clientY + 1,
+    width: 2,
+    height: 2,
+  };
+}
+
+function chooseTooltipPosition(anchorRect, tooltipRect, viewport) {
+  const edge = 10;
+  const gap = 12;
+  const maxX = viewport.right - tooltipRect.width - edge;
+  const maxY = viewport.bottom - tooltipRect.height - edge;
+  const clampX = (value) => Math.max(viewport.left + edge, Math.min(maxX, value));
+  const clampY = (value) => Math.max(viewport.top + edge, Math.min(maxY, value));
+  const spaces = [
+    { side: "right", value: viewport.right - anchorRect.right - gap },
+    { side: "left", value: anchorRect.left - viewport.left - gap },
+    { side: "below", value: viewport.bottom - anchorRect.bottom - gap },
+    { side: "above", value: anchorRect.top - viewport.top - gap },
+  ];
+  const preferred = spaces.find((space) => space.value >= (space.side === "left" || space.side === "right" ? tooltipRect.width : tooltipRect.height));
+  const side = preferred?.side || spaces.sort((a, b) => b.value - a.value)[0].side;
+
+  if (side === "right") {
+    return {
+      left: clampX(anchorRect.right + gap),
+      top: clampY(anchorRect.top + (anchorRect.height - tooltipRect.height) / 2),
+    };
+  }
+  if (side === "left") {
+    return {
+      left: clampX(anchorRect.left - tooltipRect.width - gap),
+      top: clampY(anchorRect.top + (anchorRect.height - tooltipRect.height) / 2),
+    };
+  }
+  if (side === "above") {
+    return {
+      left: clampX(anchorRect.left + (anchorRect.width - tooltipRect.width) / 2),
+      top: clampY(anchorRect.top - tooltipRect.height - gap),
+    };
+  }
+  return {
+    left: clampX(anchorRect.left + (anchorRect.width - tooltipRect.width) / 2),
+    top: clampY(anchorRect.bottom + gap),
+  };
+}
+
+function positionCardTooltip(e, anchorElement = null) {
+  if (!e) return;
   const t = $("cardTooltip");
   if (t.classList.contains("hidden")) return;
-  const offset = 18;
-  const rect = t.getBoundingClientRect();
-  let x = e.clientX + offset;
-  let y = e.clientY + offset;
-  if (x + rect.width > window.innerWidth - 8) x = e.clientX - rect.width - offset;
-  if (y + rect.height > window.innerHeight - 8) y = e.clientY - rect.height - offset;
-  t.style.left = `${Math.max(8, x)}px`;
-  t.style.top = `${Math.max(8, y)}px`;
+  const viewport = visualViewportBounds();
+  t.style.maxHeight = `${Math.max(220, viewport.height - 20)}px`;
+  const tooltipRect = t.getBoundingClientRect();
+  const anchorRect = anchorElement?.getBoundingClientRect?.() || anchorRectFromEvent(e);
+  const position = chooseTooltipPosition(anchorRect, tooltipRect, viewport);
+  t.style.left = `${position.left}px`;
+  t.style.top = `${position.top}px`;
 }
 
 function hideCardTooltip() {
@@ -2871,6 +3355,7 @@ function hideCardTooltip() {
   tooltip.classList.add("hidden");
   tooltip.style.left = "";
   tooltip.style.top = "";
+  tooltip.style.maxHeight = "";
 }
 
 let touchTooltipPress = null;
@@ -2887,16 +3372,11 @@ function clearTouchCardTooltip({ hide = false } = {}) {
 function showTouchCardTooltip(card, element) {
   populateCardTooltip(card);
   const tooltip = $("cardTooltip");
-  const cardRect = element.getBoundingClientRect();
-  const tooltipRect = tooltip.getBoundingClientRect();
-  const edge = 8;
-  const gap = 12;
-  const x = Math.max(edge, Math.min(window.innerWidth - tooltipRect.width - edge, cardRect.left + (cardRect.width - tooltipRect.width) / 2));
-  const above = cardRect.top - tooltipRect.height - gap;
-  const below = cardRect.bottom + gap;
-  const y = above >= edge ? above : Math.min(window.innerHeight - tooltipRect.height - edge, below);
-  tooltip.style.left = `${x}px`;
-  tooltip.style.top = `${Math.max(edge, y)}px`;
+  const viewport = visualViewportBounds();
+  tooltip.style.maxHeight = `${Math.max(220, viewport.height - 20)}px`;
+  const position = chooseTooltipPosition(element.getBoundingClientRect(), tooltip.getBoundingClientRect(), viewport);
+  tooltip.style.left = `${position.left}px`;
+  tooltip.style.top = `${position.top}px`;
 }
 
 function startTouchCardTooltip(event, element, getCard) {
@@ -3538,6 +4018,51 @@ function setActivityInviteOpen(open) {
   if (open) setMenuOptionsOpen(false);
 }
 
+function getFullscreenElement() {
+  return document.fullscreenElement || document.webkitFullscreenElement || null;
+}
+
+function getFullscreenTarget() {
+  return document.documentElement;
+}
+
+function canUseFullscreen() {
+  const target = getFullscreenTarget();
+  return Boolean(target?.requestFullscreen || target?.webkitRequestFullscreen);
+}
+
+function syncFullscreenButton() {
+  const button = $("btnFullscreen");
+  if (!button) return;
+  const supported = canUseFullscreen();
+  const active = Boolean(getFullscreenElement());
+  button.classList.toggle("hidden", !supported);
+  button.classList.toggle("is-active", active);
+  button.setAttribute("aria-pressed", active ? "true" : "false");
+  button.setAttribute("aria-label", active ? "Exit fullscreen" : "Enter fullscreen");
+  const label = button.querySelector("span");
+  if (label) label.textContent = active ? "Exit full" : "Fullscreen";
+}
+
+async function toggleFullscreen() {
+  try {
+    if (getFullscreenElement()) {
+      const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen;
+      if (!exitFullscreen) throw new Error("Fullscreen exit is not supported here.");
+      await exitFullscreen.call(document);
+    } else {
+      const target = getFullscreenTarget();
+      const requestFullscreen = target.requestFullscreen || target.webkitRequestFullscreen;
+      if (!requestFullscreen) throw new Error("Fullscreen is not supported here.");
+      await requestFullscreen.call(target);
+    }
+  } catch (err) {
+    showToast(err.message || "Fullscreen is not available here.");
+  } finally {
+    syncFullscreenButton();
+  }
+}
+
 function openActivityInviteModal() {
   if (!accountState?.discordInviteUrl) {
     showToast("Discord activity invite is not configured yet.");
@@ -3749,6 +4274,9 @@ $("btnMoreOptions").addEventListener("click", (event) => {
 });
 
 $("btnInviteDiscordActivity").addEventListener("click", openActivityInviteModal);
+$("btnFullscreen").addEventListener("click", toggleFullscreen);
+document.addEventListener("fullscreenchange", syncFullscreenButton);
+document.addEventListener("webkitfullscreenchange", syncFullscreenButton);
 
 $("btnOpenAudioConfig").addEventListener("click", () => {
   setMenuOptionsOpen(false);
@@ -3759,6 +4287,7 @@ $("btnOpenChangelog").addEventListener("click", () => setChangelogOpen(true));
 syncDiscordActivityDocumentState();
 syncChangelogNewBadge();
 syncActivityInviteBadge();
+syncFullscreenButton();
 $("btnCloseChangelog").addEventListener("click", () => setChangelogOpen(false));
 $("changelogModal").addEventListener("click", (event) => {
   if (event.target === event.currentTarget) setChangelogOpen(false);
@@ -3821,12 +4350,63 @@ function cardFreeTiltShell(card) {
   return card?.closest?.(".card-tilt-shell, .card-opening-slot") || null;
 }
 
+const CARD_PARALLAX_STICKY_MARGIN = 18;
+let activeParallaxCard = null;
+
 function cardCanUseParallax(card) {
   if (!card) return false;
   if (card.classList.contains("mulligan-card")) return false;
   if (card.classList.contains("dying") || card.classList.contains("inventory-card-locked") || card.dataset.dragArmed) return false;
   if (card.closest(".card-opening-slot.is-face-down")) return false;
   return true;
+}
+
+function cardParallaxHitRect(card) {
+  const shell = cardFreeTiltShell(card);
+  return (shell || card).getBoundingClientRect();
+}
+
+function pointInsideExpandedRect(rect, x, y, margin = 0) {
+  return x >= rect.left - margin &&
+    x <= rect.right + margin &&
+    y >= rect.top - margin &&
+    y <= rect.bottom + margin;
+}
+
+function pointerInsideParallaxCard(card, event, margin = CARD_PARALLAX_STICKY_MARGIN) {
+  if (!card || !document.body.contains(card)) return false;
+  return pointInsideExpandedRect(cardParallaxHitRect(card), event.clientX, event.clientY, margin);
+}
+
+function setActiveParallaxCard(card) {
+  if (activeParallaxCard && activeParallaxCard !== card) resetCardParallax(activeParallaxCard);
+  activeParallaxCard = card;
+}
+
+function getEventParallaxCard(event) {
+  const directCard = closestElement(event.target, ".minion-card, .hand-card");
+  if (directCard && cardCanUseParallax(directCard)) return directCard;
+  if (activeParallaxCard && cardCanUseParallax(activeParallaxCard) && pointerInsideParallaxCard(activeParallaxCard, event)) {
+    return activeParallaxCard;
+  }
+  return null;
+}
+
+function resetCardParallax(card) {
+  if (!card || card.dataset.dragArmed) return;
+  if (activeParallaxCard === card) activeParallaxCard = null;
+  delete card.dataset.entering;
+  card.style.transition = "";
+  card.style.transform = "";
+  card.style.zIndex = "";
+  card.style.setProperty("--shine-opacity", "0");
+  card.style.setProperty("--foil-opacity", "0.25"); /* Back to subtle resting state */
+
+  const art = card.querySelector(".card-art");
+  if (art) {
+    art.style.transition = "";
+    art.style.transform = "";
+  }
 }
 
 function cardParallaxProfile(card) {
@@ -3850,6 +4430,7 @@ document.addEventListener("mouseenter", (e) => {
 
   if (!cardCanUseParallax(card)) return;
 
+  setActiveParallaxCard(card);
   card.dataset.entering = "true";
   
   // Set smooth transition on enter
@@ -3869,12 +4450,16 @@ document.addEventListener("mouseenter", (e) => {
 
 document.addEventListener("mousemove", (e) => {
   if (!canUseHoverTooltips()) return;
-  const card = closestElement(e.target, ".minion-card, .hand-card");
-  if (!card) return;
+  const card = getEventParallaxCard(e);
+  if (!card) {
+    if (activeParallaxCard) resetCardParallax(activeParallaxCard);
+    return;
+  }
 
   if (!cardCanUseParallax(card)) return;
+  setActiveParallaxCard(card);
 
-  const rect = card.getBoundingClientRect();
+  const rect = cardParallaxHitRect(card);
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
 
@@ -3948,19 +4533,8 @@ document.addEventListener("mouseout", (e) => {
   if (!card) return;
 
   // If moving out of the card (not to a child node)
-  if (!e.relatedTarget || !card.contains(e.relatedTarget)) {
-    if (card.dataset.dragArmed) return;
-    delete card.dataset.entering;
-    card.style.transition = "";
-    card.style.transform = "";
-    card.style.zIndex = "";
-    card.style.setProperty("--shine-opacity", "0");
-    card.style.setProperty("--foil-opacity", "0.25"); /* Back to subtle resting state */
-
-    const art = card.querySelector(".card-art");
-    if (art) {
-      art.style.transition = "";
-      art.style.transform = "";
-    }
+  const shell = cardFreeTiltShell(card);
+  if (!e.relatedTarget || (!card.contains(e.relatedTarget) && !shell?.contains(e.relatedTarget))) {
+    resetCardParallax(card);
   }
 });

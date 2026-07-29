@@ -504,6 +504,7 @@ function addPlayerVisuals(state, room, viewerIdx) {
     serverNow: Date.now(),
     turnDeadline: room.turnTimer?.deadline || null,
     turnDurationMs: room.turnTimer?.durationMs || null,
+    matchPausedForReconnect: room.reconnects?.some(Boolean) || false,
     matchIntroRemainingMs: Math.max(0, (room.introEndsAt || 0) - Date.now()),
     mulligan: publicMulliganState(room, viewerIdx),
     me: {
@@ -791,6 +792,7 @@ function markMultiplayerDisconnected(room, playerIdx) {
     reconnectGraceMs: graceMs,
     isTournament: Boolean(room.tournament),
   });
+  broadcastState(room);
 
   const userId = room.userIds[playerIdx];
   if (userId) {

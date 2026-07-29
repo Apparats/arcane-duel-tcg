@@ -99,6 +99,19 @@
     );
   }
 
+  function cardHasOptionalEnemyMinionPlayTarget(card) {
+    return Boolean(card?.abilities?.some((playAbility) =>
+      playAbility.trigger === "onPlay" &&
+      playAbility.effect === "applyStatus" &&
+      playAbility.target === "enemyMinion" &&
+      card.abilities.some((turnAbility) =>
+        turnAbility.trigger === "onTurnStart" &&
+        turnAbility.effect === "applyStatusToRandomEnemyMinion" &&
+        turnAbility.status === playAbility.status
+      )
+    ));
+  }
+
   function cardRequiresPlayTarget(card) {
     if (card?.effect === "damage" || card?.effect === "heal") return true;
     return (card?.abilities || []).some((ability) =>
@@ -267,10 +280,10 @@
       }
 
       const target = npcCardTarget(game, card, playerIdx);
-      if (cardRequiresEnemyMinionTarget(card) && !target) return;
+      if (cardRequiresEnemyMinionTarget(card) && !target && !cardHasOptionalEnemyMinionPlayTarget(card)) return;
       if (cardRequiresFriendlyMinionTarget(card) && !target) return;
       if (cardRequiresMinionTarget(card) && !target) return;
-      if (cardRequiresPlayTarget(card) && target === null && card.type !== "spell" && !cardCanTargetEnemyHero(card)) return;
+      if (cardRequiresPlayTarget(card) && target === null && card.type !== "spell" && !cardCanTargetEnemyHero(card) && !cardHasOptionalEnemyMinionPlayTarget(card)) return;
       if (card.type === "spell" && !hasUsefulSpellTarget(game, playerIdx, card, target)) return;
 
       const score = cardScore(game, playerIdx, card, target);

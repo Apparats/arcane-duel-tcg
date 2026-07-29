@@ -1655,6 +1655,32 @@ html[data-discord-activity="true"] .menu-tile {
   border-color: rgba(177, 136, 233, .58);
 }
 
+#screen-menu .fullscreen-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 5px;
+  border-color: rgba(134, 201, 241, .52);
+  background: linear-gradient(180deg, rgba(27, 48, 66, .97), rgba(8, 15, 26, .97));
+}
+
+#screen-menu .fullscreen-trigger.is-active {
+  border-color: rgba(215, 187, 123, .62);
+  background: linear-gradient(180deg, rgba(61, 50, 33, .97), rgba(15, 14, 17, .97));
+}
+
+#screen-menu .fullscreen-trigger-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 @media (max-width: 760px) {
   #screen-menu {
     align-items: flex-end;
@@ -1751,6 +1777,12 @@ html[data-discord-activity="true"] .menu-tile {
     margin-top: 5px;
     border-color: rgba(177, 136, 233, .66);
     background: linear-gradient(180deg, rgba(84, 56, 105, .99), rgba(34, 23, 50, .99));
+  }
+  #screen-menu .fullscreen-trigger {
+    min-width: 112px;
+    margin-top: 5px;
+    border-color: rgba(134, 201, 241, .6);
+    background: linear-gradient(180deg, rgba(28, 49, 67, .99), rgba(8, 15, 26, .99));
   }
   #screen-menu .menu-options-panel { top: 69px; bottom: auto; }
 }

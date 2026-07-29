@@ -95,19 +95,48 @@ assert.strictEqual(getCardById("base:fish").cost, 5, "Fish should cost 5 Mana.")
   g.players[1].board = [minion("antichrist", "expansion2:Antichristjesus2")];
   g.players[0].hand = ["base:fish"];
 
-  assert.throws(() => g.playCard(0, 0, null), /prevents keyword cards/, "Antichristjesus should block Taunt minions.");
+  assert.throws(() => g.playCard(0, 0, null), /prevents keyword cards/, "Antichristjesus should block enemy Taunt minions.");
 }
 
 {
   const g = game();
-  const antichrist = minion("antichrist", "expansion2:Antichristjesus2", { canAttack: true });
-  const target = minion("target", "base:aleex", { health: 3 });
+  g.players[1].board = [minion("antichrist", "expansion2:Antichristjesus2")];
+  g.players[0].hand = ["special:moths"];
+
+  assert.throws(() => g.playCard(0, 0, null), /prevents keyword cards/, "Antichristjesus should block enemy Divine Shield minions.");
+}
+
+{
+  const g = game();
+  g.players[1].board = [minion("antichrist", "expansion2:Antichristjesus2")];
+  g.players[0].hand = ["base:dog"];
+
+  g.playCard(0, 0, null);
+
+  assert.strictEqual(g.players[0].board[0].cardId, "base:dog", "Antichristjesus should allow enemy Charge minions.");
+}
+
+{
+  const g = game();
+  g.players[0].board = [minion("antichrist", "expansion2:Antichristjesus2")];
+  g.players[0].hand = ["base:fish"];
+
+  g.playCard(0, 0, null);
+
+  assert.strictEqual(g.players[0].board[1].cardId, "base:fish", "Antichristjesus should not block its controller's Taunt minions.");
+}
+
+{
+  const g = game();
+  const antichrist = minion("antichrist", "expansion2:Antichristjesus2", { canAttack: true, health: 4 });
+  const target = minion("target", "base:aleex", { health: 3, attack: 0 });
   g.players[0].board = [antichrist];
   g.players[1].board = [target];
 
   g.attack(0, antichrist.instanceId, target.instanceId);
 
-  assert.strictEqual(antichrist.divineShield, true, "Antichristjesus should gain Divine Shield when it kills a minion.");
+  assert.strictEqual(antichrist.health, 8, "Antichristjesus should restore Health up to 8 when it kills a minion.");
+  assert.strictEqual(antichrist.divineShield, false, "Antichristjesus should not gain Divine Shield when it kills a minion.");
 }
 
 {

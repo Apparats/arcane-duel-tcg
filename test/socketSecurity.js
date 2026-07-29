@@ -1,5 +1,5 @@
 const assert = require("assert");
-const { isTrustedHttpOrigin, isTrustedWebSocketOrigin, requireSameOrigin } = require("../server/security");
+const { isTrustedHttpOrigin, isTrustedWebSocketOrigin, requireSameOrigin, setSecurityHeaders } = require("../server/security");
 
 function request(origin, host = "tcg.warera.wiki", { method = "POST", path = "/auth/ws-ticket" } = {}) {
   const headers = { origin, host };
@@ -32,6 +32,16 @@ function evaluateStateChange(req) {
   return { allowed, status, body };
 }
 
+function securityHeaders(req = request("https://tcg.warera.wiki")) {
+  const headers = {};
+  setSecurityHeaders(req, {
+    setHeader(name, value) {
+      headers[name] = value;
+    },
+  }, () => {});
+  return headers;
+}
+
 const previousPublicOrigin = process.env.PUBLIC_APP_ORIGIN;
 const previousAllowedOrigins = process.env.WS_ALLOWED_ORIGINS;
 const previousClientId = process.env.DISCORD_CLIENT_ID;
@@ -51,6 +61,14 @@ assert.deepStrictEqual(evaluateStateChange(request("https://evil.example", "loca
   status: 403,
   body: { error: "Cross-origin requests are not allowed." },
 });
+assert(
+  /img-src[^;]*'self'[^;]*data:[^;]*https:\/\/cdn\.discordapp\.com/.test(securityHeaders()["Content-Security-Policy"]),
+  "CSP img-src should allow self-hosted assets, inline flag SVG data, and Discord avatars."
+);
+assert(
+  !securityHeaders()["Content-Security-Policy"].includes("flagcdn.com"),
+  "CSP should not need the external flag CDN."
+);
 
 process.env.PUBLIC_APP_ORIGIN = "https://tcg.warera.wiki";
 assert.strictEqual(isTrustedWebSocketOrigin(request("https://tcg.warera.wiki", "localhost:8443")), true);

@@ -130,6 +130,48 @@ function testTurnAuraIgnoresEmptyEnemyBoard() {
   assert.strictEqual(game.players[1].board.length, 0, "Status turn auras should not create targets when the enemy board is empty.");
 }
 
+function testTurnAuraCardsCanBePlayedIntoEmptyEnemyBoard() {
+  const cases = [
+    "TheGates:toy",
+    "TheGates:jacquedebalsac",
+    "TheGates:chiorico",
+  ];
+
+  cases.forEach((cardId) => {
+    const game = makeGame();
+    game.players[1].board = [];
+    game.players[0].hand.unshift(cardId);
+    game.players[0].manaCurrent = 20;
+
+    game.playCard(0, 0, null);
+
+    assert.strictEqual(game.players[0].hand.includes(cardId), false, `${getCardById(cardId).name} should leave hand when played without an initial target.`);
+    assert(game.players[0].board.some((minion) => minion.cardId === cardId), `${getCardById(cardId).name} should enter the board without an initial target.`);
+    assert.strictEqual(game.players[1].board.length, 0, `${getCardById(cardId).name} should not create or require an enemy target on play.`);
+  });
+}
+
+function testTurnAuraCardsStillRequireInitialTargetWhenAvailable() {
+  const cases = [
+    "TheGates:toy",
+    "TheGates:jacquedebalsac",
+    "TheGates:chiorico",
+  ];
+
+  cases.forEach((cardId) => {
+    const game = makeGame();
+    game.players[1].board = [minion("available-target", "base:aleex")];
+    game.players[0].hand.unshift(cardId);
+    game.players[0].manaCurrent = 20;
+
+    assert.throws(
+      () => game.playCard(0, 0, null),
+      /Choose an enemy minion/,
+      `${getCardById(cardId).name} should still require an initial target when one exists.`
+    );
+  });
+}
+
 function testSilencedSourceDoesNotApplyTurnAura() {
   const game = makeGame();
   const chiorico = minion("chiorico", "TheGates:chiorico", { statuses: [{ type: "silenced", value: 1, turnsRemaining: null }] });
@@ -147,5 +189,7 @@ testStatusCardsApplyInitialTargetedEffect();
 testCardinalSeverinSilencesAllEnemyMinionsOnPlayAndTurnStart();
 testTurnAuraTargetsRandomEnemyMinion();
 testTurnAuraIgnoresEmptyEnemyBoard();
+testTurnAuraCardsCanBePlayedIntoEmptyEnemyBoard();
+testTurnAuraCardsStillRequireInitialTargetWhenAvailable();
 testSilencedSourceDoesNotApplyTurnAura();
 console.log("--- STATUS TURN AURAS TEST OK ---");

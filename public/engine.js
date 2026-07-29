@@ -156,6 +156,15 @@
     return Boolean(cardDef?.abilities?.some((ability) => ability.effect === "returnOtherFriendlyMinionsToHand"));
   }
 
+  function cardHasMatchingRandomEnemyMinionTurnAura(cardDef, playAbility) {
+    if (!cardDef || !playAbility || playAbility.effect !== "applyStatus" || playAbility.target !== "enemyMinion") return false;
+    return Boolean((cardDef.abilities || []).some((ability) =>
+      ability.trigger === "onTurnStart" &&
+      ability.effect === "applyStatusToRandomEnemyMinion" &&
+      ability.status === playAbility.status
+    ));
+  }
+
   function minionPreventsDamageFromRace(minion, sourceRace) {
     if (!sourceRace || (minion.statuses || []).some((status) => status.type === "silenced")) return false;
     const cardDef = getCardById(minion.cardId);
@@ -188,10 +197,12 @@
     return Boolean(cardDef?.abilities?.some((ability) => ability.effect === "blockChargeSummons"));
   }
 
-  function minionBlocksKeywordSummons(minion, keywords = []) {
+  function minionBlocksKeywordSummons(minion, keywords = [], context = {}) {
     if ((minion.statuses || []).some((status) => status.type === "silenced")) return false;
     const cardDef = getCardById(minion.cardId);
     return Boolean(cardDef?.abilities?.some((ability) => {
+      const hasPlayerContext = Number.isInteger(context.blockerPlayerIdx) && Number.isInteger(context.summonerIdx);
+      if (ability.enemyOnly && hasPlayerContext && context.blockerPlayerIdx === context.summonerIdx) return false;
       if (ability.effect === "blockChargeSummons") return keywords.includes("charge");
       if (ability.effect !== "blockKeywordSummons") return false;
       const blocked = Array.isArray(ability.keywords) ? ability.keywords : [];
@@ -356,8 +367,8 @@
     // Draws cards for whoever played the card. E.g. "generates more cards".
     drawCards(game, ctx, ability) {
       const amount = ability.value || 1;
-      game._draw(ctx.casterIdx, amount);
-      game._addLog(`${ctx.sourceName}: ${game.players[ctx.casterIdx].name} draws ${amount} card(s).`);
+      const drawn = game._draw(ctx.casterIdx, amount);
+      if (drawn > 0) game._addLog(`${ctx.sourceName}: ${game.players[ctx.casterIdx].name} draws ${drawn} card(s).`);
     },
 
     drawNonLegendaryNonMythicCard(game, ctx) {
@@ -371,14 +382,14 @@
         return;
       }
 
-      const [cardRef] = player.deck.splice(deckIndex, 1);
+      const cardRef = player.deck[deckIndex];
       const card = getCardById(cardIdFromRef(cardRef));
       if (player.hand.length >= MAX_HAND) {
-        game._addLog(`${ctx.sourceName} burns ${card.name} (hand is full).`);
+        game._addLog(`${ctx.sourceName} cannot draw ${card.name}: hand is full.`);
         return;
       }
 
-      player.hand.push(cardRef);
+      player.hand.push(player.deck.splice(deckIndex, 1)[0]);
       game._addLog(`${ctx.sourceName}: ${player.name} draws ${card.name}.`);
     },
 
@@ -387,13 +398,12 @@
       const amount = Math.max(1, ability.value || 1);
       let drawn = 0;
       for (let i = 0; i < amount && player.deck.length > 0; i++) {
+        if (player.hand.length >= MAX_HAND) {
+          game._addLog(`${ctx.sourceName} cannot draw random card(s): hand is full.`);
+          break;
+        }
         const deckIndex = game.randomInt(player.deck.length);
         const [cardRef] = player.deck.splice(deckIndex, 1);
-        const card = getCardById(cardIdFromRef(cardRef));
-        if (player.hand.length >= MAX_HAND) {
-          game._addLog(`${ctx.sourceName} burns ${card?.name || "a card"} (hand is full).`);
-          continue;
-        }
         player.hand.push(cardRef);
         drawn += 1;
       }
@@ -567,7 +577,7 @@
       }
       const count = ability.count || 1;
       const p = game.players[ctx.casterIdx];
-      const keywordBlocker = game._keywordSummonBlocker(cardDef);
+      const keywordBlocker = game._keywordSummonBlocker(cardDef, ctx.casterIdx);
       if (keywordBlocker) {
         game._recordSpecialAbilityActivation(keywordBlocker, { effect: "blockKeywordSummons", trigger: "passive" });
         game._addLog(`${keywordBlocker.name} prevents ${cardDef.name} from being summoned.`);
@@ -589,7 +599,7 @@
       if (!cardDef || cardDef.type !== "minion") return;
       const player = game.players[ctx.casterIdx];
       if (player.board.some((minion) => minion.cardId === cardDef.id)) return;
-      const keywordBlocker = game._keywordSummonBlocker(cardDef);
+      const keywordBlocker = game._keywordSummonBlocker(cardDef, ctx.casterIdx);
       if (keywordBlocker) {
         game._recordSpecialAbilityActivation(keywordBlocker, { effect: "blockKeywordSummons", trigger: "passive" });
         game._addLog(`${keywordBlocker.name} prevents ${cardDef.name} from being summoned.`);
@@ -645,6 +655,16 @@
       if (!target || target.playerIdx !== ctx.casterIdx) return;
       game._addKeyword(target.minion, "divineShield");
       game._addLog(`${ctx.sourceName} gains Divine Shield.`);
+    },
+
+    restoreSelfHealthToValue(game, ctx, ability) {
+      const target = game._findMinion(ctx.instanceId);
+      if (!target || target.playerIdx !== ctx.casterIdx) return;
+      const restoreTo = Math.max(1, ability.value || target.minion.maxHealth || 1);
+      const nextHealth = Math.min(target.minion.maxHealth, restoreTo);
+      if (target.minion.health >= nextHealth) return;
+      target.minion.health = nextHealth;
+      game._addLog(`${ctx.sourceName} restores Health to ${nextHealth}.`);
     },
 
     grantSelfCharge(game, ctx) {
@@ -861,11 +881,16 @@
 
     applyStatus(game, ctx, ability) {
       const statusAbility = { ...ability, sourceRace: ctx.sourceRace };
+      const cardDef = getCardById(ctx.cardId);
+      const opponentIdx = game._opponentIdx(ctx.casterIdx);
+      if (!ctx.targetInstanceId && game.players[opponentIdx].board.length === 0 && cardHasMatchingRandomEnemyMinionTurnAura(cardDef, ability)) {
+        return;
+      }
       if (ctx.targetInstanceId === "faceEnemy") {
         if (!abilityCanTargetEnemyHero(ability) || ability.status !== "poisoned") {
           throw new Error("Choose an enemy minion.");
         }
-        const playerIdx = game._opponentIdx(ctx.casterIdx);
+        const playerIdx = opponentIdx;
         const applied = game._applyHeroStatus(playerIdx, statusAbility);
         game._addLog(`${ctx.sourceName} poisons ${game.players[playerIdx].name} for ${applied.value} damage.`);
         return;
@@ -1120,19 +1145,21 @@
 
     _draw(playerIdx, n = 1) {
       const p = this.players[playerIdx];
+      let drawn = 0;
       for (let i = 0; i < n; i++) {
         if (p.deck.length === 0) {
           this._addLog(`${p.name}'s deck is empty — no card drawn.`);
-          continue;
+          break;
         }
         if (p.hand.length >= MAX_HAND) {
-          p.deck.shift();
-          this._addLog(`${p.name} burns a card (hand is full).`);
-          continue;
+          this._addLog(`${p.name} cannot draw: hand is full.`);
+          break;
         }
         const cardId = p.deck.shift();
         p.hand.push(cardId);
+        drawn += 1;
       }
+      return drawn;
     }
 
     replaceOpeningHandCards(playerIdx, handIndexes = []) {
@@ -1243,12 +1270,16 @@
       return playerIdx === 0 ? 1 : 0;
     }
 
-    _keywordSummonBlocker(cardDef) {
+    _keywordSummonBlocker(cardDef, summonerIdx = null) {
       const keywords = cardDef?.type === "minion" ? cardDef.keywords || [] : [];
       if (keywords.length === 0) return null;
-      return this.players
-        .flatMap((player) => player.board)
-        .find((minion) => minionBlocksKeywordSummons(minion, keywords)) || null;
+      for (let blockerPlayerIdx = 0; blockerPlayerIdx < this.players.length; blockerPlayerIdx += 1) {
+        const blocker = (this.players[blockerPlayerIdx].board || []).find((minion) => (
+          minionBlocksKeywordSummons(minion, keywords, { blockerPlayerIdx, summonerIdx })
+        ));
+        if (blocker) return blocker;
+      }
+      return null;
     }
 
     _addKeyword(minion, keyword) {
@@ -1320,7 +1351,7 @@
       if (card.cost > p.manaCurrent) throw new Error("Not enough mana.");
       const playRuleError = cardPlayRuleError(p, card);
       if (playRuleError) throw new Error(playRuleError);
-      const keywordBlocker = this._keywordSummonBlocker(card);
+      const keywordBlocker = this._keywordSummonBlocker(card, playerIdx);
       if (keywordBlocker) throw new Error(`${keywordBlocker.name} prevents keyword cards from being summoned.`);
       this._validateAbilityTargets(playerIdx, card, targetInstanceId);
 
@@ -1423,7 +1454,7 @@
       const player = this.players[playerIdx];
       const playRuleError = cardPlayRuleError(player, cardDef);
       if (playRuleError) return playRuleError;
-      const keywordBlocker = this._keywordSummonBlocker(cardDef);
+      const keywordBlocker = this._keywordSummonBlocker(cardDef, playerIdx);
       if (keywordBlocker) return `${keywordBlocker.name} prevents keyword cards from being summoned.`;
       if (cardDef?.type === "minion") return boardLimitError(player, cardDef, options);
       return null;
@@ -1462,6 +1493,11 @@
         }
 
         if (ability.effect === "applyStatus") {
+          const opponent = this.players[this._opponentIdx(playerIdx)];
+          if (!targetInstanceId && opponent.board.length === 0 && cardHasMatchingRandomEnemyMinionTurnAura(card, ability)) {
+            continue;
+          }
+
           if (ability.target === "enemyHero") {
             if (targetInstanceId !== "faceEnemy") throw new Error("Choose the enemy hero.");
             if (ability.status !== "poisoned") throw new Error("Invalid hero status.");
