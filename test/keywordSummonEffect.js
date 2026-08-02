@@ -6,6 +6,8 @@ const fxCss = fs.readFileSync("public/css/fx.css", "utf8");
 
 assert(clientSource.includes('const KEYWORD_SUMMON_EFFECT_ORDER = ["taunt", "charge", "divineShield"]'), "Keyword summon effect should target Taunt, Charge, and Divine Shield.");
 assert(/divineShield:\s*\n\s*'<svg class="keyword-icon keyword-icon-divine-shield"/.test(clientSource), "Divine Shield should have an SVG icon.");
+assert(clientSource.includes('if (card?.divineShield === true && !keywords.includes("divineShield")) keywords.push("divineShield");'), "Runtime Divine Shield should render a keyword badge even if the keyword list is stale.");
+assert(clientSource.includes('title="${escapeHtmlAttr(label)}"'), "Keyword badges should expose a readable label.");
 assert(clientSource.includes("function spawnKeywordSummonEffect(targetEl, keywords = [])"), "Client should define a keyword summon effect helper.");
 assert(clientSource.includes("spawnKeywordSummonEffect(el, keywords)"), "Newly rendered minions should trigger keyword summon effects.");
 assert(

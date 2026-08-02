@@ -53,7 +53,7 @@ assert(
   "Inventory zoom names should wrap safely instead of overflowing the details panel."
 );
 assert(
-  indexSource.includes('id="btnCloseZoom" class="btn-link close-zoom" type="button" aria-label="Close card preview">×</button>'),
+  indexSource.includes('id="btnCloseZoom" class="btn-link close-zoom" type="button" aria-label="Close card preview">x</button>'),
   "Inventory zoom close button should render as an accessible X button."
 );
 assert(
@@ -73,7 +73,7 @@ assert(
   "Inventory zoom metadata should not use platform-dependent flag emoji."
 );
 assert(
-  indexSource.includes("css/inventory.css?v=1.6.9-v8") && indexSource.includes("inventory.js?v=1.6.9-v3"),
+  indexSource.includes("css/inventory.css?v=1.7-v2") && indexSource.includes("inventory.js?v=1.7-v2"),
   "Inventory zoom country flag changes should be cache-busted."
 );
 ["common", "rare", "legendary", "mythic", "souvenir"].forEach((rarity) => {

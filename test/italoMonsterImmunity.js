@@ -37,8 +37,8 @@ function makeGame() {
 }
 
 const italoCard = getCardById("expansion2:italo179");
-assert(italoCard.abilities.some((ability) => ability.effect === "preventDamageFromRace" && ability.race === "Monster"), "Italo179 should prevent Monster damage.");
-assert(italoCard.lore.includes("Monster cards"), "Italo179 should describe its Monster damage prevention.");
+assert(italoCard.abilities.some((ability) => ability.effect === "reduceDamageFromRace" && ability.race === "Monster"), "Italo179 should reduce Monster damage.");
+assert(italoCard.lore.includes("half damage from Monster cards"), "Italo179 should describe its Monster damage reduction.");
 
 {
   const game = makeGame();
@@ -46,10 +46,10 @@ assert(italoCard.lore.includes("Monster cards"), "Italo179 should describe its M
   game.players[0].board = [italo];
 
   game._damageMinion(0, italo, 3, { sourceRace: "Monster" });
-  assert.strictEqual(italo.health, italoCard.health, "Italo179 should take no direct minion damage from Monster sources.");
+  assert.strictEqual(italo.health, italoCard.health - 2, "Italo179 should take half direct minion damage from Monster sources, rounded up.");
 
   game._damageMinion(0, italo, 2, { sourceRace: "Human" });
-  assert.strictEqual(italo.health, italoCard.health - 2, "Italo179 should still take damage from non-Monster sources.");
+  assert.strictEqual(italo.health, italoCard.health - 4, "Italo179 should still take full damage from non-Monster sources.");
 }
 
 {
@@ -61,7 +61,7 @@ assert(italoCard.lore.includes("Monster cards"), "Italo179 should describe its M
   game.turn = 1;
 
   game.attack(1, monster.instanceId, italo.instanceId);
-  assert.strictEqual(italo.health, italoCard.health, "Italo179 should take no combat damage from Monster minions.");
+  assert.strictEqual(italo.health, italoCard.health - 2, "Italo179 should take half combat damage from Monster minions, rounded up.");
   assert.strictEqual(monster.health, 10 - italo.attack, "Italo179 should still deal combat damage back.");
 }
 
@@ -73,7 +73,7 @@ assert(italoCard.lore.includes("Monster cards"), "Italo179 should describe its M
   game.players[1].board = [italo];
 
   game.playCard(0, 0, null);
-  assert.strictEqual(italo.health, italoCard.health, "Italo179 should take no AoE damage from Monster cards.");
+  assert.strictEqual(italo.health, italoCard.health - 2, "Italo179 should take half AoE damage from Monster cards.");
 }
 
 {
@@ -86,7 +86,7 @@ assert(italoCard.lore.includes("Monster cards"), "Italo179 should describe its M
   game.playCard(0, 0, italo.instanceId);
   assert.strictEqual(italo.statuses[0]?.sourceRace, "Monster", "Monster-applied statuses should remember their damage source race.");
   game.endTurn(0);
-  assert.strictEqual(italo.health, italoCard.health, "Italo179 should take no Poison damage applied by a Monster card.");
+  assert.strictEqual(italo.health, italoCard.health - 1, "Italo179 should take half Poison damage applied by a Monster card, rounded up.");
 }
 
-console.log("--- ITALO MONSTER IMMUNITY TEST OK ---");
+console.log("--- ITALO MONSTER DAMAGE REDUCTION TEST OK ---");

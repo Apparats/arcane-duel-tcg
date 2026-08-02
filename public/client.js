@@ -1,5 +1,5 @@
 // ============================================================
-// CLIENT — vanilla JS, no dependencies, no build step.
+// CLIENT - vanilla JS, no dependencies, no build step.
 // ============================================================
 
 const KEYWORD_LABEL = { divineShield: "*" };
@@ -162,12 +162,12 @@ const COUNTRY_FLAG_DESIGN_BY_CODE = Object.freeze({
 const BABU2_CARD_ID = "expansion2:Babu2";
 const SECOND_PLAYER_MANA_CARD_ID = "special:manaspark";
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.6.9";
+const CHANGELOG_VERSION = "1.7";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
-const CARD_ART_ASSET_VERSION = "1.6.9-art768";
+const CARD_ART_ASSET_VERSION = "1.7-art768";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
 const ACTIVITY_INVITE_SEEN_STORAGE_KEY = "arcane_activity_invite_seen_v1";
-const TYPE_ICON = { minion: "⚔", spell: "✦" };
+const TYPE_ICON = { minion: "X", spell: "*" };
 
 let ws = null;
 let wsConnectPromise = null;
@@ -207,6 +207,8 @@ let reconnectTimer = null;
 let resumeAckTimer = null;
 let matchStatusTimer = null;
 let forfeitResultMessage = "";
+let quickplayRankingView = "wins";
+let quickplayRankingLoadSeq = 0;
 
 let lastAnimatedActionSeq = 0; // avoids replaying the same attack's animation
 let lastAnimatedSpecialAbilitySeq = 0;
@@ -625,6 +627,42 @@ function introInitials(name) {
   return (parts.length > 1 ? `${parts[0][0]}${parts[1][0]}` : (parts[0] || "P").slice(0, 2)).toUpperCase();
 }
 
+function normalizeRankDisplay(rank) {
+  const name = String(rank?.name || "").trim().toLowerCase();
+  const id = String(rank?.id || "").trim().toLowerCase();
+  if (!rank || id === "arena" || id === "sand" || name === "arena" || name === "arena (sand)" || name === "sand" || !name) {
+    return {
+      ...(rank || {}),
+      id: "sand",
+      name: "Sand",
+      color: rank?.color || "#8ddcff",
+      icon: rank?.icon || "*",
+    };
+  }
+  return rank;
+}
+
+function normalizeRankedDisplay(ranked) {
+  const rating = Number(ranked?.rating || 0);
+  return {
+    ...(ranked || {}),
+    rating: Number.isFinite(rating) ? Math.max(0, rating) : 0,
+    rank: normalizeRankDisplay(ranked?.rank),
+  };
+}
+
+function rankIconMarkup(rank) {
+  const visibleRank = normalizeRankDisplay(rank);
+  const icons = {
+    sand: '<svg class="rank-icon-svg rank-icon-sand" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6" style="fill:currentColor;stroke:none;opacity:.14"/><circle cx="12" cy="12" r="8.6"/><path d="M4.4 16.1c2.1-1.9 4.7-2.9 7.6-2.9s5.5 1 7.6 2.9"/><path d="M6.4 18.6c1.6-.9 3.5-1.3 5.6-1.3s4 .4 5.6 1.3"/><path d="m12 5.2 2.1 4.1L12 10.7 9.9 9.3 12 5.2Z"/></svg>',
+    bronze: '<svg class="rank-icon-svg rank-icon-bronze" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2 5.2 6.1v5.4c0 4.2 2.7 7.1 6.8 8.7 4.1-1.6 6.8-4.5 6.8-8.7V6.1L12 3.2Z" style="fill:currentColor;stroke:none;opacity:.16"/><path d="M12 3.2 5.2 6.1v5.4c0 4.2 2.7 7.1 6.8 8.7 4.1-1.6 6.8-4.5 6.8-8.7V6.1L12 3.2Z"/><path d="M8 8.7h8"/><path d="m8.4 11.7 3.6 2.5 3.6-2.5"/><path d="m8.8 15 3.2 2.1 3.2-2.1"/></svg>',
+    gold: '<svg class="rank-icon-svg rank-icon-gold" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="11.2" r="4.4" style="fill:currentColor;stroke:none;opacity:.18"/><circle cx="12" cy="11.2" r="4.4"/><path d="M12 3.4v2.2M12 16.8V19M4.2 11.2h2.2M17.6 11.2h2.2M6.5 5.7l1.6 1.6M15.9 15.1l1.6 1.6M17.5 5.7l-1.6 1.6M8.1 15.1l-1.6 1.6"/><path d="M7 19.2c1.3 1 3 1.5 5 1.5s3.7-.5 5-1.5"/></svg>',
+    diamond: '<svg class="rank-icon-svg rank-icon-diamond" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2 20.5 12 12 20.8 3.5 12 12 3.2Z" style="fill:currentColor;stroke:none;opacity:.16"/><path d="M12 3.2 20.5 12 12 20.8 3.5 12 12 3.2Z"/><path d="M7.4 12 12 3.2 16.6 12 12 20.8 7.4 12Z"/><path d="M3.5 12h17"/><path d="m7.4 12 2.1-5.2h5L16.6 12"/></svg>',
+    master: '<svg class="rank-icon-svg rank-icon-master" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 17.3h15l-1.1-8-4.1 3-2.3-7-2.3 7-4.1-3-1.1 8Z" style="fill:currentColor;stroke:none;opacity:.18"/><path d="M4.5 17.3h15l-1.1-8-4.1 3-2.3-7-2.3 7-4.1-3-1.1 8Z"/><path d="M6 20.5h12"/><path d="M9.2 17.3 12 5.3l2.8 12"/><path d="M8.2 8.2 12 4l3.8 4.2"/><circle cx="12" cy="12.2" r="1.5"/></svg>',
+  };
+  return icons[visibleRank.id] || icons.sand;
+}
+
 function introProfile(participant, own) {
   const account = own ? accountState?.user : null;
   const profile = participant?.profile || account || {};
@@ -638,10 +676,12 @@ function introProfile(participant, own) {
       bestQuickplayRank: profile.quickplayBestRank ?? profile.stats?.bestQuickplayRank,
     })
     : null;
+  const ranked = normalizeRankedDisplay(profile.ranked);
   return {
     username: profile.username || participant?.name || "Player",
     avatarUrl: profile.avatarUrl || participant?.avatarUrl || null,
     title: selected?.name || progress?.selectedTitle?.name || "Arcane Initiate",
+    ranked,
     badges: profile.equippedBadges || progress?.equippedBadges || [],
     starts: participant?.starts === true,
   };
@@ -676,6 +716,18 @@ function renderIntroContender(element, profile) {
     starts.textContent = "Starts";
     titleRow.append(starts);
   }
+  const rank = normalizeRankDisplay(profile.ranked?.rank);
+  const rankBadge = document.createElement("div");
+  rankBadge.className = "match-intro-rank";
+  rankBadge.style.setProperty("--rank-color", rank.color || "#8ddcff");
+  const rankIcon = document.createElement("span");
+  rankIcon.className = "match-intro-rank-icon";
+  rankIcon.innerHTML = rankIconMarkup(rank);
+  const rankName = document.createElement("strong");
+  rankName.textContent = rank.name || "Sand";
+  const rankRating = document.createElement("small");
+  rankRating.textContent = `${Number(profile.ranked?.rating || 0)} rating`;
+  rankBadge.append(rankIcon, rankName, rankRating);
   const badges = document.createElement("div");
   badges.className = "match-intro-badges";
   (profile.badges || []).slice(0, 3).forEach((badge) => {
@@ -685,7 +737,7 @@ function renderIntroContender(element, profile) {
     badgeElement.innerHTML = window.ArcaneProfileBadges?.badgeMarkup(badge.id, true) || "";
     badges.append(badgeElement);
   });
-  copy.append(name, titleRow, badges);
+  copy.append(name, titleRow, rankBadge, badges);
   element.replaceChildren(avatar, copy);
 }
 
@@ -809,6 +861,9 @@ function handleServerMessage(msg) {
     case "quickplayQueued":
       setQuickplaySearching(true);
       break;
+    case "rankedQueued":
+      setRankedSearching(true);
+      break;
     case "tournamentMatchQueued":
       window.ArcaneTournaments?.setQueuedMatch(msg.payload);
       showToast("Waiting for your tournament opponent to enter the match.");
@@ -836,6 +891,7 @@ function handleServerMessage(msg) {
       break;
     case "matchStarted":
       if (quickplaySearching) window.ArcaneAudio?.playSfx("matchFound");
+      setRankedSearching(false);
       window.ArcaneTournaments?.clearQueuedMatch();
       window.ArcaneTournaments?.setVisible(false);
       forfeitResultMessage = "";
@@ -914,6 +970,7 @@ function handleServerMessage(msg) {
         ...(accountState?.user || {}),
         stats: msg.payload?.stats || accountState?.user?.stats || {},
         modeStats: msg.payload?.modeStats || accountState?.user?.modeStats || {},
+        ranked: msg.payload?.ranked || accountState?.user?.ranked,
       });
       break;
     case "opponentDisconnected":
@@ -923,7 +980,7 @@ function handleServerMessage(msg) {
     case "opponentReconnected":
       setOpponentReconnectPaused(false);
       clearMatchStatus();
-      if (myState?.tournament) setMatchStatus("Tournament match · 30 seconds per turn");
+      if (myState?.tournament) setMatchStatus("Tournament match | 30 seconds per turn");
       showToast("Your opponent reconnected.");
       break;
     case "tournamentForfeitWin":
@@ -970,7 +1027,7 @@ function handleServerMessage(msg) {
 // ---------------- ANIMATIONS (diffed against the previous state) ----------------
 // This is all purely visual: compares "before" vs "after" health/board
 // and fires short-lived CSS classes. If something here fails (e.g. an
-// element isn't found), it must not break the game — that's why every
+// element isn't found), it must not break the game - that's why every
 // function checks the element exists before touching it.
 
 function findCardElement(instanceId) {
@@ -1071,7 +1128,7 @@ function diffAndFlashBoard(prevBoard, nextBoard) {
   let any = false;
   prevBoard.forEach((prevM) => {
     const nextM = nextById.get(prevM.instanceId);
-    if (!nextM) return; // died — handled by animateDeaths
+    if (!nextM) return; // died - handled by animateDeaths
     const delta = nextM.health - prevM.health;
     if (delta === 0) return;
     const el = findCardElement(prevM.instanceId);
@@ -1468,7 +1525,7 @@ function openLobby(mode) {
   $("lobbySubtitle").textContent =
     mode === "singleplayer"
       ? "Practice against the NPC or play a Campaign for rewards"
-      : "Online 1v1 — create a room or join one with a code";
+      : "Online 1v1 - create a room or join one with a code";
   $("roomInfo").classList.add("hidden");
   $("lobbyError").classList.add("hidden");
   $("onlinePlayerCount").classList.toggle("hidden", mode !== "multiplayer");
@@ -1476,7 +1533,7 @@ function openLobby(mode) {
     $("lobbySubtitle").textContent = "Online 1v1 - find a match or use a room code";
     setLobbyTab("quickplay");
     loadOnlinePlayerCount();
-    void window.ArcaneTournaments?.load();
+    void loadRankedStatus();
   }
   switchScreen("lobby");
 }
@@ -1489,7 +1546,7 @@ $("tileSupport").addEventListener("click", () => window.open("https://ko-fi.com/
 
 document.querySelectorAll(".menu-tile-locked").forEach((tile) => {
   tile.addEventListener("click", () => {
-    showToast(`${tile.dataset.lockedName} isn't available yet — coming soon.`);
+    showToast(`${tile.dataset.lockedName} isn't available yet - coming soon.`);
   });
 });
 
@@ -1497,6 +1554,7 @@ $("btnBackToMenu").addEventListener("click", () => {
   setQuickplaySearching(false);
   setSingleplayerStartPending(false);
   send("cancelQuickplay", {});
+  send("cancelRanked", {});
   send("cancelTournamentMatch", {});
   window.ArcaneTournaments?.setVisible(false);
   switchScreen("menu");
@@ -1507,51 +1565,238 @@ $("btnBackToMenu").addEventListener("click", () => {
 function setLobbyTab(tab) {
   const isQuickplay = tab === "quickplay";
   const isRoomCode = tab === "room";
-  const isRanking = tab === "ranking";
-  const isTournaments = tab === "tournaments";
+  const isRanked = tab === "ranked";
   $("tabRoomCode").classList.toggle("active", isRoomCode);
   $("tabQuickplay").classList.toggle("active", isQuickplay);
-  $("tabRanking").classList.toggle("active", isRanking);
-  $("tabTournaments").classList.toggle("active", isTournaments);
+  $("tabRanked").classList.toggle("active", isRanked);
   $("roomCodePanel").classList.toggle("hidden", !isRoomCode);
   $("quickplayPanel").classList.toggle("hidden", !isQuickplay);
-  $("rankingPanel").classList.toggle("hidden", !isRanking);
-  $("tournamentPanel").classList.toggle("hidden", !isTournaments);
+  $("rankedPanel").classList.toggle("hidden", !isRanked);
   $("roomInfo").classList.add("hidden");
-  window.ArcaneTournaments?.setVisible(isTournaments);
+  window.ArcaneTournaments?.setVisible(false);
+  if (isRanked) loadRankedStatus();
 }
 
-function rankingRowHTML(player) {
+let rankedSearching = false;
+let rankedStatusTimer = null;
+let rankedWindowOpen = false;
+let rankedRewardState = null;
+let rankedRewardTiers = [];
+let rankedStatusPromise = null;
+let rankedStatusCache = null;
+let rankedStatusCacheAt = 0;
+function setRankedSearching(searching) {
+  rankedSearching = searching;
+  $("btnRanked")?.classList.toggle("hidden", searching);
+  $("btnCancelRanked")?.classList.toggle("hidden", !searching);
+  if ($("rankedStatus") && searching) $("rankedStatus").textContent = "Searching for a ranked opponent...";
+}
+function setRankedAvailability(open) {
+  rankedWindowOpen = open;
+  const button = $("btnRanked");
+  if (!button || rankedSearching) return;
+  button.disabled = !open;
+  button.setAttribute("aria-disabled", String(!open));
+  button.textContent = open ? "Find ranked match" : "Ranked closed";
+  button.classList.toggle("ranked-closed-button", !open);
+  button.title = open ? "Find a ranked opponent" : "Ranked is outside its scheduled CET window";
+  if ($("rankedStatus")) $("rankedStatus").textContent = open
+    ? "Matchmaking only with ranked players."
+    : "Ranked is closed. Search is available during the scheduled window.";
+}
+
+function setRankedRewardsModalOpen(open) {
+  const modal = $("rankedRewardsModal");
+  if (!modal) return;
+  modal.classList.toggle("hidden", !open);
+  if (open) {
+    renderRankedRewards();
+    void loadRankedStatus();
+  }
+}
+
+function renderRankedRewards() {
+  const list = $("rankedRewardsList");
+  const status = $("rankedRewardsStatus");
+  const claimButton = $("btnClaimRankedReward");
+  if (!list || !status || !claimButton) return;
+  const reward = rankedRewardState || {};
+  const currentRank = normalizeRankDisplay(reward.currentRank);
+  const claimed = Boolean(reward.claimed);
+  const currentRewardGold = Number(reward.currentRewardGold || 0);
+  list.innerHTML = (rankedRewardTiers || []).map((rank) => {
+    const visibleRank = normalizeRankDisplay(rank);
+    const isCurrent = visibleRank.id === currentRank.id;
+    const isClaimed = claimed && reward.claimedRankId === visibleRank.id;
+    return `<div class="ranked-reward-row ${isCurrent ? "is-current" : ""} ${isClaimed ? "is-claimed" : ""}" style="--rank-color:${escapeHtmlAttr(visibleRank.color || "#8ddcff")}"><span class="ranked-reward-rank"><span class="ranked-reward-icon">${rankIconMarkup(visibleRank)}</span><strong>${escapeHtml(visibleRank.name || "Sand")}</strong></span><span class="ranked-reward-gold">${Number(visibleRank.rewardGold || 0)} gold</span></div>`;
+  }).join("");
+  claimButton.disabled = claimed || currentRewardGold <= 0;
+  claimButton.setAttribute("aria-disabled", String(claimButton.disabled));
+  claimButton.textContent = claimed ? "Claimed this week" : currentRewardGold > 0 ? `Claim ${currentRewardGold} gold` : "No reward";
+  status.textContent = claimed
+    ? `This week's ${reward.claimedRewardGold || 0} gold reward was already claimed.`
+    : currentRewardGold > 0
+      ? `Current rank: ${currentRank.name}. Claimable this week: ${currentRewardGold} gold.`
+      : "Sand has no weekly gold reward. Climb to Bronze or higher to claim.";
+}
+
+function applyRankedStatus(data) {
+  const current = data.current || {};
+  rankedRewardState = data.reward || null;
+  rankedRewardTiers = Array.isArray(data.ranks) ? data.ranks : [];
+  setRankedAvailability(Boolean(data.window?.open));
+  const currentRank = normalizeRankDisplay(current.rank);
+  $("rankedCurrent").innerHTML = `<span class="ranked-emblem" style="--rank-color:${escapeHtmlAttr(currentRank?.color || "#8ddcff")}">${rankIconMarkup(currentRank)}</span><strong>${escapeHtml(currentRank?.name || "Sand")}</strong><span>${Number(current.rating || 0)} rating</span>`;
+  const rankedStart = data.window?.startsAt ? new Date(data.window.startsAt) : null;
+  const localStart = rankedStart && !Number.isNaN(rankedStart.getTime())
+    ? new Intl.DateTimeFormat(undefined, { weekday:"short", hour:"numeric", minute:"2-digit" }).format(rankedStart)
+    : "Unavailable";
+  $("rankedLocalTime").textContent = data.window?.open
+    ? `Ranked is open now | Started at ${localStart} (your local time)`
+    : `Starts at ${localStart} (your local time)`;
+  $("rankedRanks").innerHTML = (data.ranks || []).map((rank) => {
+    const visibleRank = normalizeRankDisplay(rank);
+    return `<span class="ranked-tier" style="--rank-color:${escapeHtmlAttr(visibleRank.color)}"><b>${rankIconMarkup(visibleRank)}</b>${escapeHtml(visibleRank.name)}<small>${visibleRank.min}+ | ${Number(visibleRank.rewardGold || 0)}g</small></span>`;
+  }).join("");
+  renderRankedRewards();
+  clearInterval(rankedStatusTimer);
+  const updateCountdown = () => {
+    const window = data.window || {};
+    const target = window.open ? new Date(window.endsAt) : new Date(window.startsAt);
+    const seconds = Math.max(0, Math.floor((target - Date.now()) / 1000));
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const label = window.open ? "Ranked ends in" : "Ranked starts in";
+    $("rankedCountdown").textContent = label + " " + hours + "h " + minutes + "m";
+    const seasonTarget = data.season?.endsAt ? new Date(data.season.endsAt) : null;
+    if ($("rankedSeasonCountdown") && seasonTarget && !Number.isNaN(seasonTarget.getTime())) {
+      const seasonSeconds = Math.max(0, Math.floor((seasonTarget - Date.now()) / 1000));
+      const seasonDays = Math.floor(seasonSeconds / 86400);
+      const seasonHours = Math.floor((seasonSeconds % 86400) / 3600);
+      const seasonMinutes = Math.floor((seasonSeconds % 3600) / 60);
+      $("rankedSeasonCountdown").textContent = `Ranked season ends in ${seasonDays}d ${seasonHours}h ${seasonMinutes}m`;
+    }
+    if (target <= Date.now()) void loadRankedStatus({ force: true });
+  };
+  updateCountdown();
+  rankedStatusTimer = setInterval(updateCountdown, 30000);
+}
+
+async function loadRankedStatus({ force = false } = {}) {
+  const cacheFresh = rankedStatusCache && Date.now() - rankedStatusCacheAt < 15000;
+  if (!force && cacheFresh) {
+    applyRankedStatus(rankedStatusCache);
+    return rankedStatusCache;
+  }
+  if (rankedStatusPromise) return rankedStatusPromise;
+  rankedStatusPromise = (async () => {
+    try {
+      const response = await apiFetch("/ranking/ranked");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not load ranked status.");
+      rankedStatusCache = data;
+      rankedStatusCacheAt = Date.now();
+      applyRankedStatus(data);
+      return data;
+    } catch (err) {
+      setRankedAvailability(false);
+      if ($("rankedStatus")) $("rankedStatus").textContent = err.message;
+      return null;
+    } finally {
+      rankedStatusPromise = null;
+    }
+  })();
+  return rankedStatusPromise;
+}
+
+async function claimRankedReward() {
+  const button = $("btnClaimRankedReward");
+  if (button?.disabled) return;
+  if (button) {
+    button.disabled = true;
+    button.setAttribute("aria-busy", "true");
+    button.textContent = "Claiming...";
+  }
+  try {
+    const response = await apiFetch("/ranking/ranked/reward", { method: "POST" });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not claim ranked reward.");
+    rankedRewardState = data.reward || rankedRewardState;
+    if (data.user) updateAccountDisplay(data.user);
+    renderRankedRewards();
+    if (data.reward?.goldAwarded > 0) showToast(`Ranked reward: +${data.reward.goldAwarded} gold.`);
+    else showToast(data.reward?.reason || "Ranked reward already claimed this week.");
+    void loadRankedStatus();
+  } catch (err) {
+    showToast(err.message || "Could not claim ranked reward.");
+    renderRankedRewards();
+  } finally {
+    if (button) button.removeAttribute("aria-busy");
+  }
+}
+
+function rankingRowHTML(player, view = quickplayRankingView) {
   const rank = Number(player?.rank) || 0;
   const wins = Number(player?.wins) || 0;
+  const ranked = normalizeRankedDisplay(player?.ranked);
+  const visibleRank = normalizeRankDisplay(ranked.rank);
+  const value = view === "ranked" ? Number(ranked.rating || 0) : wins;
   const name = escapeHtml(player?.username || "Player");
   const avatar = player?.avatarUrl
     ? `<img class="ranking-avatar" src="${escapeHtmlAttr(player.avatarUrl)}" alt="" />`
     : `<span class="ranking-avatar ranking-avatar-empty" aria-hidden="true"></span>`;
-  return `<li class="ranking-row"><span class="ranking-rank">#${rank}</span><span class="ranking-player">${avatar}<span class="ranking-name">${name}</span></span><span class="ranking-wins">${wins}</span></li>`;
+  const rankIcon = `<span class="ranking-rank-icon" style="--rank-color:${escapeHtmlAttr(visibleRank.color || "#8ddcff")}" title="${escapeHtmlAttr(visibleRank.name || "Sand")}">${rankIconMarkup(visibleRank)}</span>`;
+  return `<li class="ranking-row"><span class="ranking-rank">#${rank}</span><span class="ranking-player">${avatar}${rankIcon}<span class="ranking-name">${name}</span></span><span class="ranking-wins">${value}</span></li>`;
 }
 
-async function loadQuickplayRanking() {
+function setQuickplayRankingView(view, { reload = true } = {}) {
+  quickplayRankingView = view === "ranked" ? "ranked" : "wins";
+  document.querySelectorAll("[data-ranking-view]").forEach((button) => {
+    const active = button.dataset.rankingView === quickplayRankingView;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", active ? "true" : "false");
+  });
+  const valueHeader = $("rankingValueHeader");
+  if (valueHeader) valueHeader.textContent = quickplayRankingView === "ranked" ? "Rating" : "Wins";
+  if (reload) void loadQuickplayRanking(quickplayRankingView);
+}
+
+async function loadQuickplayRanking(view = quickplayRankingView) {
   const list = $("rankingList");
   const current = $("rankingCurrentPlayer");
   if (!list || !current) return;
+  const rankingView = view === "ranked" ? "ranked" : "wins";
+  const loadSeq = ++quickplayRankingLoadSeq;
   list.innerHTML = '<li class="ranking-empty">Loading ranking...</li>';
   current.classList.add("hidden");
 
   try {
-    const res = await apiFetch("/ranking/quickplay");
+    const res = await apiFetch(`/ranking/quickplay?view=${encodeURIComponent(rankingView)}`);
     const data = await res.json();
+    if (loadSeq !== quickplayRankingLoadSeq) return;
     if (!res.ok) throw new Error(data.error || "Could not load the quickplay ranking.");
     const players = Array.isArray(data.players) ? data.players : [];
     list.innerHTML = players.length > 0
-      ? players.map(rankingRowHTML).join("")
-      : '<li class="ranking-empty">No quickplay wins yet.</li>';
+      ? players.map((player) => rankingRowHTML(player, rankingView)).join("")
+      : `<li class="ranking-empty">${rankingView === "ranked" ? "No ranked players yet." : "No victories yet."}</li>`;
     if (data.currentPlayer) {
-      current.innerHTML = rankingRowHTML(data.currentPlayer);
+      current.innerHTML = rankingRowHTML(data.currentPlayer, rankingView);
       current.classList.remove("hidden");
     }
   } catch (err) {
+    if (loadSeq !== quickplayRankingLoadSeq) return;
     list.innerHTML = `<li class="ranking-empty">${escapeHtml(err.message || "Could not load the quickplay ranking.")}</li>`;
+  }
+}
+
+function setQuickplayRankingModalOpen(open, view = null) {
+  const modal = $("quickplayRankingModal");
+  if (!modal) return;
+  modal.classList.toggle("hidden", !open);
+  if (open) {
+    if (view) quickplayRankingView = view === "ranked" ? "ranked" : "wins";
+    setQuickplayRankingView(quickplayRankingView, { reload: false });
+    void loadQuickplayRanking(quickplayRankingView);
   }
 }
 
@@ -1579,11 +1824,7 @@ function setSingleplayerStartPending(pending) {
 
 $("tabRoomCode").addEventListener("click", () => setLobbyTab("room"));
 $("tabQuickplay").addEventListener("click", () => setLobbyTab("quickplay"));
-$("tabTournaments").addEventListener("click", () => setLobbyTab("tournaments"));
-$("tabRanking").addEventListener("click", () => {
-  setLobbyTab("ranking");
-  loadQuickplayRanking();
-});
+$("tabRanked").addEventListener("click", () => setLobbyTab("ranked"));
 
 $("btnCreate").addEventListener("click", () => {
   if (!requireLoggedInForPlay()) return;
@@ -1612,6 +1853,27 @@ $("btnCancelQuickplay").addEventListener("click", () => {
   setQuickplaySearching(false);
   send("cancelQuickplay", {});
 });
+$("btnOpenQuickplayRanking").addEventListener("click", () => setQuickplayRankingModalOpen(true, "wins"));
+$("btnCloseQuickplayRanking").addEventListener("click", () => setQuickplayRankingModalOpen(false));
+$("rankingViewWins").addEventListener("click", () => setQuickplayRankingView("wins"));
+$("rankingViewRanked").addEventListener("click", () => setQuickplayRankingView("ranked"));
+$("quickplayRankingModal").addEventListener("click", (event) => {
+  if (event.target.id === "quickplayRankingModal") setQuickplayRankingModalOpen(false);
+});
+$("btnRankedRewards").addEventListener("click", () => setRankedRewardsModalOpen(true));
+$("btnOpenRankedRanking").addEventListener("click", () => setQuickplayRankingModalOpen(true, "ranked"));
+$("btnCloseRankedRewards").addEventListener("click", () => setRankedRewardsModalOpen(false));
+$("rankedRewardsModal").addEventListener("click", (event) => {
+  if (event.target.id === "rankedRewardsModal") setRankedRewardsModalOpen(false);
+});
+$("btnClaimRankedReward").addEventListener("click", claimRankedReward);
+$("btnRanked").addEventListener("click", () => {
+  if (!rankedWindowOpen) return showToast("Ranked is currently closed.");
+  if (!requireLoggedInForPlay()) return;
+  setRankedSearching(true);
+  connect(() => send("ranked", {}));
+});
+$("btnCancelRanked").addEventListener("click", () => { setRankedSearching(false); send("cancelRanked", {}); });
 
 $("btnStartSingle").addEventListener("click", () => {
   if (!requireLoggedInForPlay()) return;
@@ -1737,7 +1999,7 @@ $("btnStartCampaignStage").addEventListener("click", () => {
 
 function render(state) {
   // A full re-render is about to replace every card node, including
-  // possibly the one currently under the cursor/finger — hide any open
+  // possibly the one currently under the cursor/finger - hide any open
   // tooltip first, since its mouseleave will never fire on a node that
   // no longer exists.
   hideCardTooltip();
@@ -1746,9 +2008,12 @@ function render(state) {
   else delete gameScreen.dataset.campaignTheme;
   if (state.campaignBoardMusic) window.ArcaneAudio?.playMusic(state.campaignBoardMusic);
   if (state.tournament && state.winner === null && $("matchStatus")?.classList.contains("hidden")) {
-    setMatchStatus("Tournament match · 30 seconds per turn");
+    setMatchStatus("Tournament match | 30 seconds per turn");
   }
-  if (!state.tournament) clearMatchStatus();
+  if (state.ranked && state.winner === null && $("matchStatus")?.classList.contains("hidden")) {
+    setMatchStatus("Ranked match - rating at stake");
+  }
+  if (!state.tournament && !state.ranked) clearMatchStatus();
 
   // Heroes
   $("selfName").textContent = state.me.name;
@@ -2741,7 +3006,7 @@ function clearSelection({ sync = false, revealHand = false } = {}) {
 
 function showTargetHint(text) {
   $("targetHint").classList.remove("hidden");
-  $("targetHint").firstChild.textContent = text + " — ";
+  $("targetHint").firstChild.textContent = text + " - ";
 }
 function hideTargetHint() {
   $("targetHint").classList.add("hidden");
@@ -2803,10 +3068,16 @@ function updateEndRewardText() {
   if (!reward) return;
   if (lastEconomyUpdate) {
     const parts = [];
+    if (lastEconomyUpdate.rankedChange) {
+      const delta = Number(lastEconomyUpdate.rankedChange.delta || 0);
+      const current = Number(lastEconomyUpdate.rankedChange.currentRating || 0);
+      const sign = delta > 0 ? "+" : "";
+      parts.push(`ELO ${sign}${delta} (current: ${current})`);
+    }
     if (lastEconomyUpdate.awardedGold) parts.push(`+${lastEconomyUpdate.awardedGold} gold`);
     if (lastEconomyUpdate.penaltyGold) parts.push(`-${lastEconomyUpdate.penaltyGold} surrender penalty`);
     if (!parts.length) parts.push("Daily reward limit reached");
-    reward.textContent = `${parts.join(" · ")} (${lastEconomyUpdate.dailyEarned}/${lastEconomyUpdate.dailyLimit} today)`;
+    reward.textContent = `${parts.join(" | ")} (${lastEconomyUpdate.dailyEarned}/${lastEconomyUpdate.dailyLimit} today)`;
   } else {
     reward.textContent = "";
   }
@@ -2841,16 +3112,20 @@ $("btnRestart").addEventListener("click", () => {
 // Returns the circular keyword badges for the card's corner. Divine
 // Shield only shows while it's still active: once consumed
 // (m.divineShield === false on a minion already in play), it
-// disappears — in hand (where there's no "consumed" state yet) it
+// disappears - in hand (where there's no "consumed" state yet) it
 // always shows.
 function activeKeywords(card) {
-  const keywords = card.keywords || [];
-  return keywords.filter((k) => !(k === "divineShield" && card.divineShield === false));
+  const keywords = [...(card?.keywords || [])];
+  if (card?.divineShield === true && !keywords.includes("divineShield")) keywords.push("divineShield");
+  return keywords.filter((k) => !(k === "divineShield" && card?.divineShield === false));
 }
 
 function keywordBadgesHTML(card) {
   const keywordBadges = activeKeywords(card)
-    .map((k) => `<span class="keyword-badge kw-${k}">${keywordIconHTML(k)}</span>`)
+    .map((k) => {
+      const label = KEYWORD_FULL_LABEL[k] || k;
+      return `<span class="keyword-badge kw-${k}" aria-label="${escapeHtmlAttr(label)}" title="${escapeHtmlAttr(label)}">${keywordIconHTML(k)}</span>`;
+    })
     .join("");
   return keywordBadges;
 }
@@ -3429,7 +3704,7 @@ document.addEventListener("click", (event) => {
   event.stopImmediatePropagation();
 }, true);
 
-// Touch devices have no real "mouseleave" — the only way a tooltip
+// Touch devices have no real "mouseleave" - the only way a tooltip
 // closes there is by tapping somewhere else. This covers that case
 // (and is harmless on desktop too).
 document.addEventListener("pointerdown", (e) => {
@@ -3477,7 +3752,7 @@ async function initAccountWidget({ skipActivityAutoLogin = false } = {}) {
     data = await res.json();
   } catch (err) {
     setAuthGate("Start the local server to continue with Discord login.", false);
-    return; // no server reachable (e.g. offline vs-NPC file:// usage) — nothing to show
+    return; // no server reachable (e.g. offline vs-NPC file:// usage) - nothing to show
   }
 
   await loadEnabledExpansions();
@@ -3492,7 +3767,7 @@ async function initAccountWidget({ skipActivityAutoLogin = false } = {}) {
     $("btnLoginDiscord").classList.add("hidden");
     $("accountProfile").classList.remove("hidden");
     updateAccountDisplay(data.user);
-    void loadTournamentIncoming();
+    void loadRankedIncoming();
     if (data.dailyLoginReward?.claimed) {
       showToast(`Daily login reward: +${data.dailyLoginReward.goldAwarded} gold`);
     }
@@ -4108,20 +4383,23 @@ async function loadEnabledExpansions() {
   }
 }
 
-async function loadTournamentIncoming() {
+let rankedIncomingTimer = null;
+async function loadRankedIncoming() {
   const notice = $("tournamentIncoming");
   if (!notice) return;
-  notice.classList.add("hidden");
   try {
-    const response = await apiFetch("/tournaments");
+    const response = await apiFetch("/ranking/ranked");
     const data = await response.json();
-    if (!response.ok) return;
-    const hasScheduledTournament = (data.tournaments || []).some((tournament) =>
-      !["completed", "cancelled"].includes(tournament?.phase)
-    );
-    notice.classList.toggle("hidden", !hasScheduledTournament);
+    const window = data.window || {};
+    const startsInMs = window.startsAt ? Date.parse(window.startsAt) - Date.now() : Infinity;
+    const shouldShow = window.open || (startsInMs >= 0 && startsInMs <= 60 * 60 * 1000);
+    notice.classList.toggle("hidden", !shouldShow);
+    if (shouldShow) notice.lastChild.textContent = window.open ? "Ranked is open now (CET)" : "Ranked starts in less than 1 hour (CET)";
   } catch (err) {
-    // A tournament alert is optional; never block the main menu on it.
+    notice.classList.add("hidden");
+  } finally {
+    clearTimeout(rankedIncomingTimer);
+    rankedIncomingTimer = setTimeout(loadRankedIncoming, 60 * 1000);
   }
 }
 
@@ -4161,8 +4439,10 @@ function queueInitialRewards(rewards) {
 
 function updateAccountDisplay(user) {
   if (!user) return;
-  if (accountState) accountState.user = { ...(accountState.user || {}), ...user };
-  const mergedUser = accountState?.user || user;
+  const nextUser = user.ranked ? { ...user, ranked: normalizeRankedDisplay(user.ranked) } : user;
+  if (accountState) accountState.user = { ...(accountState.user || {}), ...nextUser };
+  if (accountState?.user?.ranked) accountState.user.ranked = normalizeRankedDisplay(accountState.user.ranked);
+  const mergedUser = accountState?.user || nextUser;
   $("accountName").textContent = mergedUser.username || "Player";
   $("accountGold").textContent = `${mergedUser.gold || 0} gold`;
   if (user.cardCollection && accountState?.user) accountState.user.cardCollection = user.cardCollection;
@@ -4322,6 +4602,8 @@ document.addEventListener("click", (event) => {
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
+    setQuickplayRankingModalOpen(false);
+    setRankedRewardsModalOpen(false);
     setChangelogOpen(false);
     closeLegalNotice();
   }

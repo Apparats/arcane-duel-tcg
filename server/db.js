@@ -15,6 +15,7 @@ const { assertMongoKeySegment, assertPositiveInteger, sanitizeDiscordProfile, to
 const { withUserLock, withUserLocks } = require("./userLocks");
 const { getProgress } = require("../public/profileCatalog");
 const { migrateDecksToCurrentSize } = require("./deckMigration");
+const { RANKED_WEEKLY_REWARDS, getRank, rankedRewardTiers, rankedSeasonResetRating } = require("./ranked");
 
 let client = null;
 let db = null;
@@ -342,6 +343,86 @@ function todayKey(date = new Date()) {
   return date.toISOString().slice(0, 10);
 }
 
+function rankedRewardWeekKey(date = new Date()) {
+  const value = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const day = value.getUTCDay() || 7;
+  value.setUTCDate(value.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(value.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((value - yearStart) / 86400000) + 1) / 7);
+  return `${value.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+}
+
+function rankedCompletedMonth(date = new Date()) {
+  const periodEndedAt = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+  const monthStart = new Date(Date.UTC(periodEndedAt.getUTCFullYear(), periodEndedAt.getUTCMonth() - 1, 1));
+  return {
+    monthKey: `${monthStart.getUTCFullYear()}-${String(monthStart.getUTCMonth() + 1).padStart(2, "0")}`,
+    periodEndedAt,
+  };
+}
+
+async function applyRankedMonthlyDecay(targetDb = getDB(), date = new Date()) {
+  const users = targetDb.collection("users");
+  const { monthKey, periodEndedAt } = rankedCompletedMonth(date);
+  const markerField = `economy.rankedMonthlyResets.${monthKey}`;
+  const now = new Date();
+  const cursor = users.find(
+    {
+      [markerField]: { $exists: false },
+      $or: [
+        { createdAt: { $lt: periodEndedAt } },
+        { createdAt: { $exists: false } },
+      ],
+    },
+    { projection: { ranked: 1 } }
+  );
+  let processedCount = 0;
+  let changedCount = 0;
+
+  while (await cursor.hasNext()) {
+    const user = await cursor.next();
+    const previousRating = Math.max(0, Number(user?.ranked?.rating) || 0);
+    const currentRating = rankedSeasonResetRating(previousRating);
+    const set = {
+      [markerField]: {
+        previousRating,
+        currentRating,
+        appliedAt: now,
+      },
+      updatedAt: now,
+    };
+    if (currentRating !== previousRating) set["ranked.rating"] = currentRating;
+    const result = await users.updateOne(
+      { _id: user._id, [markerField]: { $exists: false } },
+      { $set: set }
+    );
+    if (result.modifiedCount > 0) {
+      processedCount += 1;
+      if (currentRating !== previousRating) changedCount += 1;
+    }
+  }
+
+  return { monthKey, processedCount, changedCount };
+}
+
+function rankedWeeklyRewardState(user, date = new Date()) {
+  const rating = Math.max(0, Number(user?.ranked?.rating) || 0);
+  const currentRank = getRank(rating);
+  const weekKey = rankedRewardWeekKey(date);
+  const claim = user?.economy?.rankedWeeklyRewards?.[weekKey] || null;
+  const currentRewardGold = RANKED_WEEKLY_REWARDS[currentRank.id] || 0;
+  return {
+    weekKey,
+    currentRating: rating,
+    claimed: Boolean(claim),
+    claimedRankId: claim?.rankId || null,
+    claimedRewardGold: Number(claim?.goldAwarded) || 0,
+    currentRank,
+    currentRewardGold,
+    tiers: rankedRewardTiers(),
+  };
+}
+
 function getDailyRewardProgress(user, date = new Date()) {
   const day = todayKey(date);
   const dailyRewards = user?.economy?.dailyRewards?.[day] || {};
@@ -472,7 +553,7 @@ async function exchangeCardsBetweenUsers({ fromUserId, toUserId, fromCardId, toC
   });
 }
 
-async function grantMatchEconomy(userId, { mode, result, surrendered = false, quickplay = false, johnnyWin = false }) {
+async function grantMatchEconomy(userId, { mode, result, surrendered = false, quickplay = false, ranked = false, johnnyWin = false }) {
   if (!["singleplayer", "multiplayer"].includes(mode)) throw new Error("Invalid economy mode.");
   if (!["win", "loss", "draw"].includes(result)) throw new Error("Invalid match result.");
 
@@ -483,7 +564,7 @@ async function grantMatchEconomy(userId, { mode, result, surrendered = false, qu
   const day = todayKey(now);
   const dailyField = `economy.dailyRewards.${day}.${mode}`;
 
-  const user = await users.findOne({ _id }, { projection: { gold: 1, economy: 1, stats: 1, modeStats: 1 } });
+  const user = await users.findOne({ _id }, { projection: { gold: 1, economy: 1, stats: 1, modeStats: 1, ranked: 1 } });
   if (!user) throw new Error("User not found.");
 
   const earnedToday = user.economy?.dailyRewards?.[day]?.[mode] || 0;
@@ -501,7 +582,7 @@ async function grantMatchEconomy(userId, { mode, result, surrendered = false, qu
     },
   };
 
-  const statMode = mode === "singleplayer" ? "singleplayer" : quickplay ? "quickplay" : "oneVsOne";
+  const statMode = mode === "singleplayer" ? "singleplayer" : ranked ? "ranked" : quickplay ? "quickplay" : "oneVsOne";
   const modeStatField = `modeStats.${statMode}`;
   if (result === "win") update.$inc[`${modeStatField}.wins`] = 1;
   if (result === "loss") update.$inc[`${modeStatField}.losses`] = 1;
@@ -513,6 +594,18 @@ async function grantMatchEconomy(userId, { mode, result, surrendered = false, qu
   if (result === "win" && mode === "singleplayer") update.$inc["stats.npcWins"] = 1;
   if (result === "win" && mode === "multiplayer" && johnnyWin) update.$inc["stats.johnnyWins"] = 1;
   if (result === "loss") update.$inc["stats.losses"] = 1;
+  let rankedChange = null;
+  if (ranked) {
+    const previousRating = Math.max(0, Number(user.ranked?.rating) || 0);
+    const requestedDelta = result === "win" ? 100 : result === "loss" ? -70 : 0;
+    const currentRating = Math.max(0, previousRating + requestedDelta);
+    rankedChange = {
+      previousRating,
+      currentRating,
+      delta: currentRating - previousRating,
+    };
+    update.$set["ranked.rating"] = currentRating;
+  }
   if (surrendered) {
     update.$inc["stats.surrenders"] = 1;
   }
@@ -547,6 +640,8 @@ async function grantMatchEconomy(userId, { mode, result, surrendered = false, qu
     modeStats: updated.modeStats || {},
     quickplayRank: rankProgress.quickplayRank,
     quickplayBestRank: rankProgress.bestQuickplayRank,
+    ranked: ranked ? { rating: Math.max(0, (updated.ranked?.rating || 0)), rank: getRank(updated.ranked?.rating || 0) } : undefined,
+    rankedChange,
   };
   });
 }
@@ -743,11 +838,27 @@ async function grantTournamentPrize(userId, { tournamentId, place, gold }) {
   return { awarded: true, gold: user?.gold || 0, stats: user?.stats || {} };
 }
 
+function rankedMatchCount(user) {
+  const ranked = normalizedModeStats(user.modeStats, user.stats).ranked;
+  return ranked.wins + ranked.losses + ranked.draws + ranked.surrenders;
+}
+
+function quickplayRankingWins(user) {
+  const modes = normalizedModeStats(user.modeStats, user.stats);
+  return modes.quickplay.wins + modes.ranked.wins;
+}
+
 function publicRankingPlayer(user, rank) {
+  const modes = normalizedModeStats(user.modeStats, user.stats);
+  const rating = Math.max(0, Number(user.ranked?.rating) || 0);
   return {
     rank,
     username: playerDisplayName(user),
-    wins: user.stats?.quickplayWins || 0,
+    wins: modes.quickplay.wins + modes.ranked.wins,
+    quickplayWins: modes.quickplay.wins,
+    rankedWins: modes.ranked.wins,
+    rankedMatches: modes.ranked.wins + modes.ranked.losses + modes.ranked.draws + modes.ranked.surrenders,
+    ranked: { rating, rank: getRank(rating) },
     avatarUrl: user.avatar ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png` : null,
     userId: String(user._id),
   };
@@ -789,7 +900,8 @@ function normalizedModeStats(modeStats = {}, legacyStats = {}) {
   const singleplayer = normalize(modeStats.singleplayer);
   const oneVsOne = normalize(modeStats.oneVsOne);
   const quickplay = normalize(modeStats.quickplay);
-  const allModes = [singleplayer, oneVsOne, quickplay];
+  const ranked = normalize(modeStats.ranked);
+  const allModes = [singleplayer, oneVsOne, quickplay, ranked];
   const total = (field) => allModes.reduce((sum, stats) => sum + stats[field], 0);
 
   // Mode-specific stats were added after the global record. Keep those older
@@ -797,7 +909,7 @@ function normalizedModeStats(modeStats = {}, legacyStats = {}) {
   quickplay.wins += Math.max(0, (legacyStats.wins || 0) - total("wins"), (legacyStats.quickplayWins || 0) - quickplay.wins);
   quickplay.losses += Math.max(0, (legacyStats.losses || 0) - total("losses"));
   quickplay.surrenders += Math.max(0, (legacyStats.surrenders || 0) - total("surrenders"));
-  return { singleplayer, oneVsOne, quickplay };
+  return { singleplayer, oneVsOne, quickplay, ranked };
 }
 
 function publicPlayerProfile(user, options = {}) {
@@ -826,6 +938,7 @@ function publicPlayerProfile(user, options = {}) {
     equippedBadges: progress.equippedBadges,
     quickplayRank,
     quickplayBestRank: bestQuickplayRank,
+    ranked: { rating: Math.max(0, Number(user.ranked?.rating) || 0), rank: getRank(user.ranked?.rating || 0) },
     cardCollection: user.cardCollection || {},
     unlockedCards: user.unlockedCards || [],
     purchasedAchievementIds: user.purchasedAchievementIds || [],
@@ -940,7 +1053,7 @@ async function searchPublicPlayers(query, limit = 8) {
 
   const safeLimit = Math.max(1, Math.min(Number.isInteger(limit) ? limit : 8, 12));
   const regex = new RegExp(escapeRegex(search), "i");
-  const projection = { username: 1, displayName: 1, discordUsername: 1, avatar: 1, discordId: 1, stats: 1, modeStats: 1, selectedTitle: 1, equippedBadgeIds: 1, purchasedAchievementIds: 1, purchasedTitleIds: 1, supporter: 1, cardCollection: 1, unlockedCards: 1, createdAt: 1 };
+  const projection = { username: 1, displayName: 1, discordUsername: 1, avatar: 1, discordId: 1, stats: 1, modeStats: 1, ranked: 1, selectedTitle: 1, equippedBadgeIds: 1, purchasedAchievementIds: 1, purchasedTitleIds: 1, supporter: 1, cardCollection: 1, unlockedCards: 1, createdAt: 1 };
   const users = await getDB()
     .collection("users")
     .find({ $or: [{ displayName: regex }, { username: regex }, { discordUsername: regex }] }, { projection })
@@ -957,17 +1070,24 @@ async function getPublicPlayerProfile(userId) {
     .collection("users")
     .findOne(
       { _id: toObjectId(userId, "user id") },
-      { projection: { username: 1, displayName: 1, avatar: 1, discordId: 1, stats: 1, modeStats: 1, selectedTitle: 1, equippedBadgeIds: 1, purchasedAchievementIds: 1, purchasedTitleIds: 1, supporter: 1, cardCollection: 1, unlockedCards: 1, createdAt: 1 } }
+      { projection: { username: 1, displayName: 1, avatar: 1, discordId: 1, stats: 1, modeStats: 1, ranked: 1, selectedTitle: 1, equippedBadgeIds: 1, purchasedAchievementIds: 1, purchasedTitleIds: 1, supporter: 1, cardCollection: 1, unlockedCards: 1, createdAt: 1 } }
     );
   return user ? publicPlayerProfile(user, await getQuickplayRankStateForUser(user, { persistBest: true })) : null;
 }
 
-function rankQuickplayPlayers(users, userId, limit = 50) {
+function rankQuickplayPlayers(users, userId, limit = 50, view = "wins") {
   const safeLimit = Math.max(1, Math.min(Number.isInteger(limit) ? limit : 50, 50));
-  const players = users.filter((user) => (user.stats?.quickplayWins || 0) > 0);
+  const rankingView = view === "ranked" ? "ranked" : "wins";
+  const players = users.filter((user) => (
+    rankingView === "ranked"
+      ? rankedMatchCount(user) > 0
+      : quickplayRankingWins(user) > 0
+  ));
 
   players.sort((left, right) => {
-    const winDiff = (right.stats?.quickplayWins || 0) - (left.stats?.quickplayWins || 0);
+    const winDiff = rankingView === "ranked"
+      ? (Math.max(0, Number(right.ranked?.rating) || 0) - Math.max(0, Number(left.ranked?.rating) || 0)) || ((normalizedModeStats(right.modeStats, right.stats).ranked.wins || 0) - (normalizedModeStats(left.modeStats, left.stats).ranked.wins || 0))
+      : quickplayRankingWins(right) - quickplayRankingWins(left);
     return winDiff || String(left._id).localeCompare(String(right._id));
   });
 
@@ -979,32 +1099,40 @@ function rankQuickplayPlayers(users, userId, limit = 50) {
   };
 }
 
-async function getQuickplayRanking(userId, limit = 50) {
+async function getQuickplayRanking(userId, limit = 50, view = "wins") {
   const users = getDB().collection("users");
   const safeLimit = Math.max(1, Math.min(Number.isInteger(limit) ? limit : 50, 50));
-  const projection = { username: 1, displayName: 1, avatar: 1, discordId: 1, stats: 1 };
-  const sort = { "stats.quickplayWins": -1, _id: 1 };
-  const [topPlayers, currentUser] = await Promise.all([
-    users.find({ "stats.quickplayWins": { $gt: 0 } }, { projection }).sort(sort).limit(safeLimit).toArray(),
+  const rankingView = view === "ranked" ? "ranked" : "wins";
+  const projection = { username: 1, displayName: 1, avatar: 1, discordId: 1, stats: 1, modeStats: 1, ranked: 1 };
+  const rankedActivityFilter = {
+    $or: [
+      { "modeStats.ranked.wins": { $gt: 0 } },
+      { "modeStats.ranked.losses": { $gt: 0 } },
+      { "modeStats.ranked.draws": { $gt: 0 } },
+      { "modeStats.ranked.surrenders": { $gt: 0 } },
+    ],
+  };
+  const winsActivityFilter = {
+    $or: [
+      { "stats.wins": { $gt: 0 } },
+      { "stats.quickplayWins": { $gt: 0 } },
+      { "modeStats.quickplay.wins": { $gt: 0 } },
+      { "modeStats.ranked.wins": { $gt: 0 } },
+    ],
+  };
+  const [rankingUsers, currentUser] = await Promise.all([
+    users.find(rankingView === "ranked" ? rankedActivityFilter : winsActivityFilter, { projection }).toArray(),
     users.findOne({ _id: toObjectId(userId, "user id") }, { projection }),
   ]);
-
-  const players = topPlayers.map((player, index) => publicRankingPlayer(player, index + 1));
-  const wins = currentUser?.stats?.quickplayWins || 0;
-  if (wins <= 0 || players.some((player) => player.userId === String(userId))) {
-    return { players, currentPlayer: null };
-  }
-
-  const playersAhead = await users.countDocuments({
-    $or: [
-      { "stats.quickplayWins": { $gt: wins } },
-      { "stats.quickplayWins": wins, _id: { $lt: currentUser._id } },
-    ],
-  });
-  return {
-    players,
-    currentPlayer: publicRankingPlayer(currentUser, playersAhead + 1),
-  };
+  const ranked = rankQuickplayPlayers(
+    currentUser
+      ? [...new Map([...rankingUsers, currentUser].map((user) => [String(user._id), user])).values()]
+      : rankingUsers,
+    userId,
+    safeLimit,
+    rankingView
+  );
+  return { view: rankingView, ...ranked };
 }
 
 async function recordMultiplayerDisconnect(userId) {
@@ -1085,6 +1213,83 @@ async function grantDailyLoginReward(userId, date = new Date()) {
     gold: updated?.gold || 0,
     day,
   };
+}
+
+async function getRankedWeeklyRewardState(userId, date = new Date()) {
+  const user = await getDB().collection("users").findOne(
+    { _id: toObjectId(userId, "user id") },
+    { projection: { ranked: 1, economy: 1 } }
+  );
+  return rankedWeeklyRewardState(user, date);
+}
+
+async function getRankedOverview(userId, date = new Date()) {
+  const user = await getDB().collection("users").findOne(
+    { _id: toObjectId(userId, "user id") },
+    { projection: { ranked: 1, economy: 1 } }
+  );
+  const reward = rankedWeeklyRewardState(user, date);
+  return {
+    rating: reward.currentRating,
+    rank: reward.currentRank,
+    reward,
+  };
+}
+
+async function claimRankedWeeklyReward(userId, date = new Date()) {
+  const users = getDB().collection("users");
+  const _id = toObjectId(userId, "user id");
+  return withUserLock(String(_id), async () => {
+    const now = new Date();
+    const user = await users.findOne({ _id }, { projection: { gold: 1, ranked: 1, economy: 1 } });
+    const state = rankedWeeklyRewardState(user, date);
+    if (state.claimed) {
+      return {
+        ...state,
+        claimedNow: false,
+        goldAwarded: 0,
+        gold: user?.gold || 0,
+        reason: "Ranked reward already claimed this week.",
+      };
+    }
+    if (state.currentRewardGold <= 0) {
+      return {
+        ...state,
+        claimedNow: false,
+        goldAwarded: 0,
+        gold: user?.gold || 0,
+        reason: "This rank has no weekly gold reward.",
+      };
+    }
+
+    const claimField = `economy.rankedWeeklyRewards.${state.weekKey}`;
+    const result = await users.updateOne(
+      { _id, [claimField]: { $exists: false } },
+      {
+        $inc: { gold: state.currentRewardGold },
+        $set: {
+          [claimField]: {
+            rankId: state.currentRank.id,
+            rankName: state.currentRank.name,
+            goldAwarded: state.currentRewardGold,
+            claimedAt: now,
+          },
+          updatedAt: now,
+        },
+      }
+    );
+    const updated = await users.findOne({ _id }, { projection: { gold: 1, ranked: 1, economy: 1 } });
+    const updatedState = rankedWeeklyRewardState(updated, date);
+    return {
+      ...updatedState,
+      claimedNow: result.modifiedCount > 0,
+      goldAwarded: result.modifiedCount > 0 ? state.currentRewardGold : 0,
+      gold: updated?.gold || 0,
+      currentRank: state.currentRank,
+      currentRewardGold: state.currentRewardGold,
+      reason: result.modifiedCount > 0 ? null : "Ranked reward already claimed this week.",
+    };
+  });
 }
 
 async function grantDiscordActivityInviteReward(userId, targetDb = getDB(), now = new Date()) {
@@ -1291,6 +1496,9 @@ module.exports = {
   recordCampaignResult,
   getCampaignProgress,
   getDailyRewardProgress,
+  getRankedOverview,
+  getRankedWeeklyRewardState,
+  claimRankedWeeklyReward,
   grantDailyLoginReward,
   grantMatchEconomy,
   grantTournamentPrize,
@@ -1303,6 +1511,7 @@ module.exports = {
   recordMultiplayerDisconnect,
   searchPublicPlayers,
   resetConsecutiveDisconnects,
+  applyRankedMonthlyDecay,
   exchangeCardsBetweenUsers,
   assertCardCanBeTraded,
   DAILY_REWARD_LIMITS,

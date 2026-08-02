@@ -37,8 +37,8 @@ function makeGame() {
 }
 
 const knudCard = getCardById("expansion2:knud-the-dorf");
-assert(knudCard.abilities.some((ability) => ability.effect === "preventDamageFromRace" && ability.race === "Human"), "Knud_the_Dorf should prevent Human damage.");
-assert(knudCard.lore.includes("Human cards"), "Knud_the_Dorf should describe its Human damage prevention.");
+assert(knudCard.abilities.some((ability) => ability.effect === "reduceDamageFromRace" && ability.race === "Human"), "Knud_the_Dorf should reduce Human damage.");
+assert(knudCard.lore.includes("half damage from Human cards"), "Knud_the_Dorf should describe its Human damage reduction.");
 
 {
   const game = makeGame();
@@ -46,10 +46,10 @@ assert(knudCard.lore.includes("Human cards"), "Knud_the_Dorf should describe its
   game.players[0].board = [knud];
 
   game._damageMinion(0, knud, 3, { sourceRace: "Human" });
-  assert.strictEqual(knud.health, knudCard.health, "Knud_the_Dorf should take no direct minion damage from Human sources.");
+  assert.strictEqual(knud.health, knudCard.health - 2, "Knud_the_Dorf should take half direct minion damage from Human sources, rounded up.");
 
   game._damageMinion(0, knud, 2, { sourceRace: "Monster" });
-  assert.strictEqual(knud.health, knudCard.health - 2, "Knud_the_Dorf should still take damage from non-Human sources.");
+  assert.strictEqual(knud.health, knudCard.health - 4, "Knud_the_Dorf should still take full damage from non-Human sources.");
 }
 
 {
@@ -61,7 +61,7 @@ assert(knudCard.lore.includes("Human cards"), "Knud_the_Dorf should describe its
   game.turn = 1;
 
   game.attack(1, human.instanceId, knud.instanceId);
-  assert.strictEqual(knud.health, knudCard.health, "Knud_the_Dorf should take no combat damage from Human minions.");
+  assert.strictEqual(knud.health, knudCard.health - 2, "Knud_the_Dorf should take half combat damage from Human minions, rounded up.");
   assert.strictEqual(human.health, 10 - knud.attack, "Knud_the_Dorf should still deal combat damage back.");
 }
 
@@ -80,4 +80,4 @@ assert(knudCard.lore.includes("Human cards"), "Knud_the_Dorf should describe its
   assert.strictEqual(knud.health, knudCard.health - 20, "Knud_the_Dorf should still take damage from Monster card effects.");
 }
 
-console.log("--- KNUD HUMAN IMMUNITY TEST OK ---");
+console.log("--- KNUD HUMAN DAMAGE REDUCTION TEST OK ---");

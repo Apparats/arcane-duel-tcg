@@ -8,7 +8,7 @@ const { WebSocketServer } = require("ws");
 const { Game } = require("../public/engine");
 const { getCardById } = require("../public/cards");
 const { buildRandomLegalDeck } = require("../public/deckRules");
-const { connectDB, getCampaignProgress, grantCampaignReward, grantMatchEconomy, getPublicPlayerProfile, getQuickplayRanking, isDbEnabled, recordCampaignResult, recordMultiplayerDisconnect, resetConsecutiveDisconnects, scrapeDuplicateCards, searchPublicPlayers, setDisplayName, setEquippedBadges, setSelectedTitle, submitCardRequest } = require("./db");
+const { applyRankedMonthlyDecay, claimRankedWeeklyReward, connectDB, getCampaignProgress, getRankedOverview, grantCampaignReward, grantMatchEconomy, getPublicPlayerProfile, getQuickplayRanking, isDbEnabled, recordCampaignResult, recordMultiplayerDisconnect, resetConsecutiveDisconnects, scrapeDuplicateCards, searchPublicPlayers, setDisplayName, setEquippedBadges, setSelectedTitle, submitCardRequest } = require("./db");
 const { listTournaments, registerForTournament, unregisterFromTournament, getReadyMatch, recordTournamentResult, recordTournamentMatchArrival, clearTournamentMatchArrival, clearTournamentMatchNoShowDeadline } = require("./tournaments/service");
 const { TOURNAMENT_TURN_DURATION_MS, TOURNAMENT_RECONNECT_GRACE_MS, TOURNAMENT_READY_GRACE_MS } = require("./tournaments/rules");
 const { router: authRouter, getSessionUser, isAuthEnabled } = require("./auth");
@@ -27,6 +27,7 @@ const { secureRandomCode, secureRandomInt } = require("./random");
 const { createCampaignMatch, campaignProgressionAccess, getCampaignEncounter, listCampaignEncounters } = require("./campaigns");
 const { createShieldChallenge, recordShieldInput, resolveShieldChallenge, scaleShieldChallenge } = require("./campaigns/shieldChallenge");
 const { chooseNpcAttack, chooseNpcPlayable } = require("./npcAi");
+const { getRank, rankedRewardTiers, rankedSeason, rankedWindow } = require("./ranked");
 
 const PORT = process.env.PORT || 8443;
 const HTTP_JSON_LIMIT = "32kb";
@@ -58,6 +59,7 @@ const MATCH_INTRO_DURATION_MS = 4200;
 const MULLIGAN_DURATION_MS = 25_000;
 const MULLIGAN_START_GRACE_MS = 750;
 const EMOTE_COOLDOWN_MS = 1_500;
+const RANKED_REMATCH_COOLDOWN_MS = 5 * 60 * 1000;
 const ALLOWED_EMOTES = new Set(["😄", "😭", "😯", "😡", "🫄", "💀"]);
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
 let enabledExpansionsCache = null;
@@ -123,11 +125,24 @@ app.get("/campaigns", createRateLimiter({ max: 30, keyPrefix: "campaigns" }), as
     })),
   });
 });
+app.get("/ranking/ranked", createRateLimiter({ max: 30, keyPrefix: "ranked" }), async (req, res) => {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Login with Discord is required." });
+  const ranked = await getRankedOverview(user.id);
+  const window = rankedWindow();
+  res.json({ window, season: rankedSeason(), ranks: rankedRewardTiers(), reward: ranked.reward, current: { rating: ranked.rating, rank: getRank(ranked.rating) } });
+});
+app.post("/ranking/ranked/reward", createRateLimiter({ max: 10, keyPrefix: "ranked-reward" }), async (req, res) => {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Login with Discord is required." });
+  const reward = await claimRankedWeeklyReward(user.id);
+  res.json({ reward, gold: reward.gold, user: { ...user, gold: reward.gold } });
+});
 app.get("/ranking/quickplay", createRateLimiter({ max: 30, keyPrefix: "ranking" }), async (req, res) => {
   const user = await getSessionUser(req);
   if (!user) return res.status(401).json({ error: "Login with Discord is required." });
   try {
-    res.json(await getQuickplayRanking(user.id, 50));
+    res.json(await getQuickplayRanking(user.id, 50, req.query.view));
   } catch (err) {
     console.error("Quickplay ranking failed:", err.message);
     res.status(500).json({ error: "Could not load the quickplay ranking." });
@@ -266,11 +281,16 @@ const server = app.listen(PORT, () => {
   console.log(`TCG server listening on http://localhost:${PORT}`);
   if (isDbEnabled()) {
     connectDB()
-      .then(() => {
+      .then(async () => {
         console.log("Player accounts: enabled (MongoDB connected). ");
+        const rankedDecay = await applyRankedMonthlyDecay();
+        if (rankedDecay.changedCount > 0) {
+          console.log(`Ranked monthly reset ${rankedDecay.monthKey}: ${rankedDecay.changedCount} player(s) dropped 2 rank tier(s).`);
+        }
+        setInterval(() => applyRankedMonthlyDecay().catch((err) => console.error("Ranked monthly reset failed:", err.message)), 60 * 60 * 1000).unref();
         setInterval(() => listTournaments(null).catch((err) => console.error("Tournament scheduler failed:", err.message)), 30_000).unref();
       })
-      .catch((err) => console.error("MongoDB connection failed — accounts will be unavailable:", err.message));
+      .catch((err) => console.error("MongoDB connection failed - accounts will be unavailable:", err.message));
   } else {
     console.log("Player accounts: disabled (no MONGODB_URI set). The game itself works fine without it.");
   }
@@ -284,6 +304,8 @@ const wss = new WebSocketServer({ noServer: true, maxPayload: WS_MAX_PAYLOAD_BYT
 // roomCode -> { game, sockets, names, avatars, userIds, mode, rewardGranted, surrenderedBy, reconnects }
 const rooms = new Map();
 const quickplayQueue = [];
+const rankedQueue = [];
+const rankedRematchCooldowns = new Map();
 const tournamentQueues = new Map();
 const tournamentMatchStarts = new Map();
 const tournamentNoShowResolutions = new Set();
@@ -522,6 +544,7 @@ function addPlayerVisuals(state, room, viewerIdx) {
     campaignTheme: room.mode === "campaign" ? room.campaign?.theme || null : null,
     campaignBoardMusic: room.mode === "campaign" ? room.campaign?.audio?.boardMusic || null : null,
     tournament: room.tournament ? { id: room.tournament.id, matchId: room.tournament.matchId } : null,
+    ranked: room.matchType === "ranked",
   };
 }
 
@@ -531,6 +554,7 @@ function matchProfile(room, playerIdx) {
     username: profile?.username || room.names?.[playerIdx] || "Player",
     avatarUrl: profile?.avatarUrl || room.avatars?.[playerIdx] || null,
     selectedTitle: profile?.selectedTitle || { name: playerIdx === 1 && isNpcMatch(room) ? "Arena Guardian" : "Arcane Initiate" },
+    ranked: profile?.ranked || { rating: 0, rank: getRank(0) },
     equippedBadges: Array.isArray(profile?.equippedBadges) ? profile.equippedBadges : [],
   };
 }
@@ -605,6 +629,50 @@ function requireIntent(type, payload) {
 function removeFromQuickplayQueue(ws) {
   const index = quickplayQueue.findIndex((entry) => entry.ws === ws);
   if (index >= 0) quickplayQueue.splice(index, 1);
+}
+
+function removeFromRankedQueue(ws) {
+  const index = rankedQueue.findIndex((entry) => entry.ws === ws);
+  if (index >= 0) rankedQueue.splice(index, 1);
+}
+
+function rankedPairKey(userIdA, userIdB) {
+  return [String(userIdA), String(userIdB)].sort().join(":");
+}
+
+function pruneRankedRematchCooldowns(now = Date.now()) {
+  for (const [key, expiresAt] of rankedRematchCooldowns) {
+    if (expiresAt <= now) rankedRematchCooldowns.delete(key);
+  }
+}
+
+function rememberRankedPairMatch(userIdA, userIdB, now = Date.now()) {
+  if (!userIdA || !userIdB || String(userIdA) === String(userIdB)) return;
+  pruneRankedRematchCooldowns(now);
+  rankedRematchCooldowns.set(rankedPairKey(userIdA, userIdB), now + RANKED_REMATCH_COOLDOWN_MS);
+}
+
+function isRankedRematchBlocked(userIdA, userIdB, now = Date.now()) {
+  pruneRankedRematchCooldowns(now);
+  return (rankedRematchCooldowns.get(rankedPairKey(userIdA, userIdB)) || 0) > now;
+}
+
+function pruneRankedQueue() {
+  for (let index = rankedQueue.length - 1; index >= 0; index -= 1) {
+    const entry = rankedQueue[index];
+    if (!entry?.ws || entry.ws.readyState !== entry.ws.OPEN) rankedQueue.splice(index, 1);
+  }
+}
+
+function findRankedOpponentIndex(entry) {
+  const now = Date.now();
+  pruneRankedQueue();
+  pruneRankedRematchCooldowns(now);
+  return rankedQueue.findIndex((candidate) =>
+    candidate.ws.readyState === candidate.ws.OPEN &&
+    candidate.user.id !== entry.user.id &&
+    !isRankedRematchBlocked(candidate.user.id, entry.user.id, now)
+  );
 }
 
 function removeFromTournamentQueues(ws) {
@@ -811,6 +879,7 @@ function markMultiplayerDisconnected(room, playerIdx) {
 
 function detachSocketFromRoom(ws, { notifyOpponent = false } = {}) {
   removeFromQuickplayQueue(ws);
+  removeFromRankedQueue(ws);
   removeFromTournamentQueues(ws);
   if (!ws.roomCode || !rooms.has(ws.roomCode)) return;
 
@@ -836,6 +905,7 @@ function detachSocketFromRoom(ws, { notifyOpponent = false } = {}) {
 
 function handleSocketClose(ws) {
   removeFromQuickplayQueue(ws);
+  removeFromRankedQueue(ws);
   removeFromTournamentQueues(ws);
   cancelPendingTournamentStart(ws);
   if (!ws.roomCode || !rooms.has(ws.roomCode)) return;
@@ -882,6 +952,7 @@ async function startMultiplayerMatch(playerA, playerB, { matchType = "quickplay"
     disconnectEvents: [null, null],
   };
 
+  if (matchType === "ranked") rememberRankedPairMatch(playerA.user.id, playerB.user.id);
   startMulligan(room);
   rooms.set(code, room);
   playerA.ws.roomCode = code;
@@ -1027,6 +1098,7 @@ async function settleRewards(room) {
         result: resultFor(room.game, idx),
         surrendered: room.surrenderedBy === idx,
         quickplay: room.matchType === "quickplay",
+        ranked: room.matchType === "ranked",
         johnnyWin: room.mode === "multiplayer" && room.game.winner === idx && isJohnny(room.names[idx === 0 ? 1 : 0]),
       });
       send(room.sockets[idx], "economyUpdate", economy);
@@ -1345,6 +1417,25 @@ async function handleMessage(ws, msg) {
     return;
   }
 
+  if (type === "ranked") {
+    const user = await requireSessionUser(ws);
+    assertUserCanStartOrPrepareMatch(user.id);
+    const window = rankedWindow();
+    if (!window.open) return broadcastError(ws, "Ranked is currently closed. Check the CET ranked schedule for the next window.");
+    detachSocketFromRoom(ws);
+    const entry = { ws, user, name: user.username || "Player" };
+    removeFromRankedQueue(ws);
+    const opponentIndex = findRankedOpponentIndex(entry);
+    if (opponentIndex < 0) {
+      rankedQueue.push(entry);
+      send(ws, "rankedQueued", { window });
+      return;
+    }
+    const opponent = rankedQueue.splice(opponentIndex, 1)[0];
+    await startMultiplayerMatch(opponent, entry, { matchType: "ranked" });
+    return;
+  }
+
   if (type === "tournamentJoinMatch") {
     const user = await requireSessionUser(ws);
     assertUserCanStartOrPrepareMatch(user.id);
@@ -1398,6 +1489,11 @@ async function handleMessage(ws, msg) {
 
   if (type === "cancelQuickplay") {
     removeFromQuickplayQueue(ws);
+    return;
+  }
+
+  if (type === "cancelRanked") {
+    removeFromRankedQueue(ws);
     return;
   }
 

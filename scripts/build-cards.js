@@ -88,7 +88,7 @@ const VALID_ABILITY_EFFECTS = [
   "applyConfusionToAllEnemyMinions",
   "cleanseFriendlyMinion",
   "applyBurning",
-  "preventDamageFromRace",
+  "reduceDamageFromRace",
   "reviveOtherFriendlyMinions",
   "drunkAllMinions",
   "blockChargeSummons",
@@ -266,7 +266,7 @@ function validateAbilities(card, label) {
     if (!VALID_ABILITY_EFFECTS.includes(ability.effect)) {
       fail(`${abLabel}: unknown effect "${ability.effect}". Valid: ${VALID_ABILITY_EFFECTS.join(", ")}.`);
     }
-    if (ability.trigger === "passive" && !["preventDamageFromRace", "reviveOtherFriendlyMinions", "drunkAllMinions", "blockChargeSummons", "blockKeywordSummons", "unattackable", "immuneToAdverseEffects"].includes(ability.effect)) {
+    if (ability.trigger === "passive" && !["reduceDamageFromRace", "reviveOtherFriendlyMinions", "drunkAllMinions", "blockChargeSummons", "blockKeywordSummons", "unattackable", "immuneToAdverseEffects"].includes(ability.effect)) {
       fail(`${abLabel}: only passive effects can use trigger: "passive".`);
     }
 
@@ -438,12 +438,12 @@ function validateAbilities(card, label) {
       if (ability.trigger !== "onPlay") {
         fail(`${abLabel}: stealEnemyBoardNonMythicMinions can only use the "onPlay" trigger.`);
       }
-    } else if (ability.effect === "preventDamageFromRace") {
+    } else if (ability.effect === "reduceDamageFromRace") {
       if (ability.trigger !== "passive") {
-        fail(`${abLabel}: preventDamageFromRace must use trigger: "passive".`);
+        fail(`${abLabel}: reduceDamageFromRace must use trigger: "passive".`);
       }
       if (!ability.race || typeof ability.race !== "string") {
-        fail(`${abLabel}: preventDamageFromRace needs "race" (string).`);
+        fail(`${abLabel}: reduceDamageFromRace needs "race" (string).`);
       }
     } else if (ability.effect === "reviveOtherFriendlyMinions") {
       if (ability.trigger !== "passive") {

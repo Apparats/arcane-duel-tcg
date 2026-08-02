@@ -5,7 +5,7 @@ const indexSource = fs.readFileSync("public/index.html", "utf8");
 const lobbyCss = fs.readFileSync("public/css/lobby.css", "utf8");
 
 assert(
-  indexSource.includes('css/lobby.css?v=1.6.9-v1'),
+  indexSource.includes('css/lobby.css?v=1.7-v2'),
   "Lobby CSS should be cache-busted after mobile submenu particle changes."
 );
 

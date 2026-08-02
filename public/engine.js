@@ -165,12 +165,12 @@
     ));
   }
 
-  function minionPreventsDamageFromRace(minion, sourceRace) {
+  function minionReducesDamageFromRace(minion, sourceRace) {
     if (!sourceRace || (minion.statuses || []).some((status) => status.type === "silenced")) return false;
     const cardDef = getCardById(minion.cardId);
     const normalizedSourceRace = String(sourceRace).toLowerCase();
     return Boolean(cardDef?.abilities?.some((ability) =>
-      ability.effect === "preventDamageFromRace" &&
+      ability.effect === "reduceDamageFromRace" &&
       String(ability.race || "").toLowerCase() === normalizedSourceRace
     ));
   }
@@ -1536,10 +1536,10 @@
         this._addLog(`${minion.name} ignores an adverse effect.`);
         return;
       }
-      if (amount > 0 && minionPreventsDamageFromRace(minion, options.sourceRace)) {
-        this._recordSpecialAbilityActivation(minion, { effect: "preventDamageFromRace", trigger: "passive" });
-        this._addLog(`${minion.name} takes no damage from ${options.sourceRace} cards.`);
-        return;
+      if (amount > 0 && minionReducesDamageFromRace(minion, options.sourceRace)) {
+        amount = Math.max(1, Math.ceil(amount / 2));
+        this._recordSpecialAbilityActivation(minion, { effect: "reduceDamageFromRace", trigger: "passive" });
+        this._addLog(`${minion.name} takes ${amount} damage from ${options.sourceRace} cards.`);
       }
       const dodge = amount > 0 ? (minion.statuses || []).find((status) => status.type === "dodge") : null;
       const dodgeChance = Math.max(0, Math.min(100, dodge?.value || 0));

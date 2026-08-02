@@ -11,25 +11,25 @@
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="pwa-icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="pwa-icon-192.png" />
-<link rel="preload" href="art/menu-arcane-sanctuary.webp?v=3" as="image" type="image/webp" fetchpriority="high" />
+<link rel="preload" href="art/menu-arcane-sanctuary.webp?v=1.7-v2" as="image" type="image/webp" fetchpriority="high" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css?v=1.6.8-v1" />
-<link rel="stylesheet" href="css/menu.css?v=1.6.9-v1" />
-<link rel="stylesheet" href="css/account-profile.css?v=1.6.8-v1" />
-<link rel="stylesheet" href="css/lobby.css?v=1.6.9-v1" />
-<link rel="stylesheet" href="css/board.css?v=1.6.9-v1" />
-<link rel="stylesheet" href="css/cards.css?v=1.6.9-v3" />
-<link rel="stylesheet" href="css/board-arena.css?v=1.6.8-v9" />
-<link rel="stylesheet" href="css/board-hand.css?v=1.6.8-v1" />
-<link rel="stylesheet" href="css/inventory.css?v=1.6.9-v8" />
-<link rel="stylesheet" href="css/deck-builder.css?v=1.6.8-v2" />
-<link rel="stylesheet" href="css/shop.css?v=1.6.5-v2" />
-<link rel="stylesheet" href="css/trade.css?v=1.6.8-v1" />
-<link rel="stylesheet" href="css/pack-opening.css?v=1.6.5-v1" />
-<link rel="stylesheet" href="css/fx.css?v=1.6.5-v1" />
-<link rel="stylesheet" href="css/board-effects.css?v=1.6.5-v1" />
-<link rel="stylesheet" href="css/overlay.css?v=1.6.9-v5" />
+<link rel="stylesheet" href="css/base.css?v=1.7-v2" />
+<link rel="stylesheet" href="css/menu.css?v=1.7-v2" />
+<link rel="stylesheet" href="css/account-profile.css?v=1.7-v2" />
+<link rel="stylesheet" href="css/lobby.css?v=1.7-v2" />
+<link rel="stylesheet" href="css/board.css?v=1.7-v2" />
+<link rel="stylesheet" href="css/cards.css?v=1.7-v2" />
+<link rel="stylesheet" href="css/board-arena.css?v=1.7-v2" />
+<link rel="stylesheet" href="css/board-hand.css?v=1.7-v2" />
+<link rel="stylesheet" href="css/inventory.css?v=1.7-v2" />
+<link rel="stylesheet" href="css/deck-builder.css?v=1.7-v2" />
+<link rel="stylesheet" href="css/shop.css?v=1.7-v2" />
+<link rel="stylesheet" href="css/trade.css?v=1.7-v2" />
+<link rel="stylesheet" href="css/pack-opening.css?v=1.7-v2" />
+<link rel="stylesheet" href="css/fx.css?v=1.7-v2" />
+<link rel="stylesheet" href="css/board-effects.css?v=1.7-v2" />
+<link rel="stylesheet" href="css/overlay.css?v=1.7-v2" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -133,7 +133,7 @@
         <button id="btnOpenPrivacyMenu" class="btn menu-option-button" type="button">Privacy Notice</button>
         <div class="menu-option-config">
           <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Config</button>
-          <span class="menu-version">Version 1.6.9</span>
+          <span class="menu-version">Version 1.7</span>
         </div>
       </div>
     </div>
@@ -261,7 +261,7 @@
           <span class="menu-tile-gold" id="singleplayerGoldProgress">0 / 80 gold today</span>
         </button>
         <div class="menu-tile-wrap">
-          <span id="tournamentIncoming" class="tournament-incoming hidden" aria-live="polite"><span aria-hidden="true"></span>Tournament incoming</span>
+          <span id="tournamentIncoming" class="tournament-incoming hidden" aria-live="polite"><span aria-hidden="true"></span>Ranked schedule</span>
           <button class="menu-tile menu-tile-primary" id="tileMultiplayer">
           <span class="menu-tile-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
@@ -489,7 +489,7 @@
               <span class="singleplayer-mode-title">Campaign</span>
               <span class="singleplayer-mode-subtitle">Cross the Gates, defeat their guardians and claim unique rewards.</span>
             </span>
-            <span class="singleplayer-mode-enter" aria-hidden="true">Explore <b>›</b></span>
+            <span class="singleplayer-mode-enter" aria-hidden="true">Explore <b>></b></span>
           </button>
           <button id="btnStartSingle" class="singleplayer-mode singleplayer-mode-npc" type="button">
             <span class="singleplayer-mode-art" aria-hidden="true">
@@ -504,7 +504,7 @@
               <span class="singleplayer-mode-title">Random NPC</span>
               <span class="singleplayer-mode-subtitle">Enter Fastplay with your active deck and earn daily gold.</span>
             </span>
-            <span class="singleplayer-mode-enter" aria-hidden="true">Duel now <b>›</b></span>
+            <span class="singleplayer-mode-enter" aria-hidden="true">Duel now <b>></b></span>
           </button>
         </div>
         <div id="campaignStagePanel" class="campaign-stage-panel hidden">
@@ -538,13 +538,9 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 2-8 11h7l-1 9 8-12h-7l1-8Z" /></svg>
             <span>Quickplay</span>
           </button>
-          <button id="tabTournaments" class="lobby-tab" type="button">
+          <button id="tabRanked" class="lobby-tab" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0V4ZM8 6H4v2a4 4 0 0 0 4 4M16 6h4v2a4 4 0 0 1-4 4M12 13v4M8 21h8M9 17h6" /></svg>
-            <span>Tournaments</span>
-          </button>
-          <button id="tabRanking" class="lobby-tab" type="button">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-7h4v7M10 20V4h4v16M15 20v-11h4v11M3 20h18" /></svg>
-            <span>Ranking</span>
+            <span>Ranked</span>
           </button>
         </div>
 
@@ -560,21 +556,27 @@
         <div id="quickplayPanel" class="lobby-tab-panel">
           <button id="btnQuickplay" class="btn btn-primary">Find opponent</button>
           <button id="btnCancelQuickplay" class="btn btn-secondary hidden">Cancel search</button>
+          <button id="btnOpenQuickplayRanking" class="btn btn-secondary quickplay-ranking-button" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z" /><path d="M8 6H4v2a4 4 0 0 0 4 4" /><path d="M16 6h4v2a4 4 0 0 1-4 4" /><path d="M12 13v4" /><path d="M8 21h8" /><path d="M9 17h6" /></svg>
+            <span>Ranking</span>
+          </button>
           <p id="quickplayStatus" class="quickplay-status">Queue for a basic online 1v1 match.</p>
         </div>
 
-        <div id="tournamentPanel" class="lobby-tab-panel tournament-panel hidden" aria-live="polite">
-          <div id="tournamentList" class="tournament-list"></div>
+        <div id="rankedPanel" class="lobby-tab-panel tournament-panel hidden" aria-live="polite">
+          <div class="ranked-hero"><p class="profile-kicker">Ranked ladder</p><h2>Climb the ladder</h2><p>Friday 18:00-19:00 CET | Saturday 19:00-20:00 CET | Sunday 21:00-22:00 CET</p><p id="rankedLocalTime" class="tournament-local-start"></p><p id="rankedCountdown" class="tournament-countdown">Loading ranked schedule...</p><p id="rankedSeasonCountdown" class="tournament-countdown ranked-season-countdown">Loading ranked season...</p></div>
+          <div id="rankedCurrent" class="ranked-current"></div>
+          <button id="btnRanked" class="btn btn-primary">Find ranked match</button>
+          <button id="btnCancelRanked" class="btn btn-secondary hidden">Cancel search</button>
+          <button id="btnRankedRewards" class="btn btn-secondary ranked-rewards-button" type="button">Rewards</button>
+          <button id="btnOpenRankedRanking" class="btn btn-secondary quickplay-ranking-button ranked-ranking-button" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z" /><path d="M8 6H4v2a4 4 0 0 0 4 4" /><path d="M16 6h4v2a4 4 0 0 1-4 4" /><path d="M12 13v4" /><path d="M8 21h8" /><path d="M9 17h6" /></svg>
+            <span>Ranking</span>
+          </button>
+          <p id="rankedStatus" class="quickplay-status">Matchmaking only with ranked players.</p>
+          <div id="rankedRanks" class="ranked-ranks"></div>
         </div>
 
-        <div id="rankingPanel" class="lobby-tab-panel ranking-panel hidden">
-          <div class="ranking-header">
-            <h2>Quickplay Ranking</h2>
-            <span>Wins</span>
-          </div>
-          <ol id="rankingList" class="ranking-list"></ol>
-          <div id="rankingCurrentPlayer" class="ranking-current hidden"></div>
-        </div>
       </div>
 
       <div id="roomInfo" class="room-info hidden">
@@ -885,7 +887,7 @@
   <!-- ---------- OVERLAY: CARD ZOOM ---------- -->
   <div id="cardZoomOverlay" class="overlay hidden">
     <div class="card-zoom-panel">
-      <button id="btnCloseZoom" class="btn-link close-zoom" type="button" aria-label="Close card preview">×</button>
+      <button id="btnCloseZoom" class="btn-link close-zoom" type="button" aria-label="Close card preview">x</button>
       <div class="card-zoom-content">
         <div id="cardZoomArt" class="minion-card card-zoom-art"></div>
         <div class="card-zoom-details">
@@ -1076,6 +1078,54 @@
     </div>
   </div>
 
+  <!-- ---------- MODAL: QUICKPLAY RANKING ---------- -->
+  <div id="quickplayRankingModal" class="overlay quickplay-ranking-modal hidden" role="dialog" aria-modal="true" aria-labelledby="quickplayRankingTitle">
+    <div class="overlay-card quickplay-ranking-modal-card">
+      <header class="quickplay-ranking-modal-header">
+        <div>
+          <p>Quickplay</p>
+          <h2 id="quickplayRankingTitle">Ranking</h2>
+        </div>
+        <button id="btnCloseQuickplayRanking" class="quickplay-ranking-modal-close" type="button" aria-label="Close ranking">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg>
+        </button>
+      </header>
+      <section id="rankingPanel" class="ranking-panel quickplay-ranking-modal-body" aria-labelledby="quickplayRankingTitle">
+        <div class="ranking-view-tabs" role="tablist" aria-label="Ranking view">
+          <button id="rankingViewWins" class="ranking-view-button active" type="button" role="tab" aria-selected="true" data-ranking-view="wins">Victories</button>
+          <button id="rankingViewRanked" class="ranking-view-button" type="button" role="tab" aria-selected="false" data-ranking-view="ranked">Rank</button>
+        </div>
+        <div class="ranking-header">
+          <h2>Player</h2>
+          <span id="rankingValueHeader">Wins</span>
+        </div>
+        <ol id="rankingList" class="ranking-list"></ol>
+        <div id="rankingCurrentPlayer" class="ranking-current hidden"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ---------- MODAL: RANKED REWARDS ---------- -->
+  <div id="rankedRewardsModal" class="overlay ranked-rewards-modal hidden" role="dialog" aria-modal="true" aria-labelledby="rankedRewardsTitle">
+    <div class="overlay-card ranked-rewards-card">
+      <header class="ranked-rewards-header">
+        <div>
+          <p>Weekly ladder</p>
+          <h2 id="rankedRewardsTitle">Rewards</h2>
+        </div>
+        <button id="btnCloseRankedRewards" class="ranked-rewards-close" type="button" aria-label="Close rewards">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg>
+        </button>
+      </header>
+      <div id="rankedRewardsList" class="ranked-rewards-list"></div>
+      <p class="ranked-rewards-note">At the end of each month, Master players receive a Legendary or Mythic card of themselves.</p>
+      <div class="ranked-rewards-footer">
+        <p id="rankedRewardsStatus">Claim the weekly reward for your current highest rank.</p>
+        <button id="btnClaimRankedReward" class="btn btn-primary" type="button">Claim reward</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ---------- MODAL: TOURNAMENT BRACKET ---------- -->
   <div id="tournamentBracketModal" class="overlay tournament-bracket-modal hidden" role="dialog" aria-modal="true" aria-labelledby="tournamentBracketModalTitle">
     <div class="overlay-card tournament-bracket-modal-card">
@@ -1084,7 +1134,7 @@
           <p>Live tournament</p>
           <h2 id="tournamentBracketModalTitle">Tournament bracket</h2>
         </div>
-        <button id="btnCloseTournamentBracket" class="tournament-bracket-modal-close" type="button" aria-label="Close bracket">×</button>
+        <button id="btnCloseTournamentBracket" class="tournament-bracket-modal-close" type="button" aria-label="Close bracket">x</button>
       </header>
       <div id="tournamentBracketModalContent" class="tournament-bracket-modal-content"></div>
     </div>
@@ -1098,6 +1148,23 @@
         <button id="btnCloseChangelog" class="changelog-close" type="button" aria-label="Close patch notes">x</button>
       </div>
       <div class="changelog-content">
+      <article class="changelog-entry">
+        <div class="changelog-entry-meta">
+          <h3>Version 1.7</h3>
+          <span>Ranked Ladder &amp; Competitive Rewards</span>
+        </div>
+        <p class="changelog-entry-intro">Ranked arrives as Arcana's competitive ladder: scheduled matchmaking, rating progression, rank identity, and weekly rewards in one complete mode.</p>
+        <ul class="changelog-list">
+          <li>Ranked matchmaking is available during scheduled CET windows on Friday, Saturday, and Sunday.</li>
+          <li>The ladder uses rating and rank tiers from Sand to Master, with match results showing the rating gained or lost.</li>
+          <li>Weekly Ranked rewards grant gold for Bronze, Gold, Diamond, and Master, claimable once per week from the Rewards panel.</li>
+          <li>The Ranked lobby presents the full schedule, local start time, season countdown, rank tiers, and reward table in one place.</li>
+          <li>Player profiles, match intros, and profile stats include Ranked rating, rank badges, and Ranked match records.</li>
+          <li>Quickplay keeps its own Ranking modal, so casual ranking and Ranked ladder stay clearly separated.</li>
+          <li>Card state is clearer in matches: cards that gain active effects such as Divine Shield display the matching badge while the effect is active.</li>
+          <li>Italo179 and Knud_the_Dorf receive a balance pass: their protected matchups take half damage instead of fully ignoring it, with damage rounded cleanly.</li>
+        </ul>
+      </article>
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
           <h3>Version 1.6.9</h3>
@@ -1585,9 +1652,17 @@
               <p id="profilePageSubtitle" class="profile-kicker">Player profile</p>
               <div class="profile-name-row">
                 <h1 id="profilePageName">Player</h1>
-                <button id="btnEditProfileDisplayName" class="profile-edit-name-button hidden" type="button" aria-label="Edit game username" title="Edit game username">✎</button>
+                <button id="btnEditProfileDisplayName" class="profile-edit-name-button hidden" type="button" aria-label="Edit game username" title="Edit game username">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+                  </svg>
+                </button>
               </div>
-              <p id="profilePageTitle" class="profile-title-badge">Arcane Initiate</p>
+              <div class="profile-identity-status">
+                <p id="profilePageTitle" class="profile-title-badge">Arcane Initiate</p>
+                <div id="profileRankBadge" class="profile-rank-badge" aria-label="Rank"></div>
+              </div>
               <div id="profileEquippedBadges" class="profile-equipped-badges" aria-label="Equipped achievement badges"></div>
               <div class="profile-meta-row">
                 <span id="profilePageGold" class="profile-meta-pill">Public profile</span>
@@ -1597,6 +1672,7 @@
           </div>
           <div class="profile-stat-modes" role="tablist" aria-label="Match statistics mode">
             <button class="profile-stat-mode is-active" type="button" role="tab" aria-selected="true" data-stat-mode="quickplay">Quickplay</button>
+            <button class="profile-stat-mode" type="button" role="tab" aria-selected="false" data-stat-mode="ranked">Ranked</button>
             <button class="profile-stat-mode" type="button" role="tab" aria-selected="false" data-stat-mode="oneVsOne">1v1</button>
             <button class="profile-stat-mode" type="button" role="tab" aria-selected="false" data-stat-mode="singleplayer">Singleplayer</button>
           </div>
@@ -1652,13 +1728,13 @@
   <!-- ---------- MODAL: GAME USERNAME ---------- -->
   <div id="profileDisplayNameModal" class="overlay profile-display-name-modal hidden" role="dialog" aria-modal="true" aria-labelledby="profileDisplayNameModalTitle">
     <div class="overlay-card profile-display-name-modal-card">
-      <button id="btnCloseProfileDisplayName" class="profile-display-name-close" type="button" aria-label="Close username editor">×</button>
+      <button id="btnCloseProfileDisplayName" class="profile-display-name-close" type="button" aria-label="Close username editor">x</button>
       <p class="profile-display-name-kicker">Profile</p>
       <h2 id="profileDisplayNameModalTitle">Change game username</h2>
       <form id="profileDisplayNameForm" class="profile-display-name-form">
         <label for="profileDisplayNameInput">Game username</label>
         <input id="profileDisplayNameInput" type="text" maxlength="24" autocomplete="username" spellcheck="false" pattern="[A-Za-z0-9_]+" aria-describedby="profileDisplayNameHint" />
-        <p id="profileDisplayNameHint">1–24 letters, numbers, or _. Spaces and special characters are not allowed.</p>
+        <p id="profileDisplayNameHint">1-24 letters, numbers, or _. Spaces and special characters are not allowed.</p>
         <div class="profile-display-name-actions">
           <button id="btnCancelProfileDisplayName" class="btn btn-secondary" type="button">Cancel</button>
           <button class="btn btn-primary" type="submit">Save username</button>
@@ -1674,25 +1750,25 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.6.9-v1"></script>
-  <script src="deckRules.js?v=1.6.6-v1"></script>
-  <script src="engine.js?v=1.6.9-v2"></script>
-  <script src="ai.js?v=1.6.9-v1"></script>
-  <script src="audioConfig.js?v=1.6.5-v1"></script>
-  <script src="audioManager.js?v=1.6.5-v1"></script>
-  <script src="packOpening.js?v=1.6.5-v1"></script>
-<script src="legalNotices.js?v=1.6.5-v1"></script>
-<script src="profileCatalog.js?v=1.6.8-v1"></script>
-<script src="profileBadges.js?v=1.6.5-v1"></script>
-<script src="accountProfile.js?v=1.6.5-v1"></script>
-<script src="client.js?v=1.6.9-v9"></script>
-<script src="shieldChallenge.js?v=1.6.5-v1"></script>
-<script src="boardInteractions.js?v=1.6.9-v1"></script>
-<script src="inventory.js?v=1.6.9-v3"></script>
-<script src="deckBuilder.js?v=1.6.8-v2"></script>
-<script src="shop.js?v=1.6.5-v1"></script>
-<script src="trade.js?v=1.6.5-v1"></script>
-<script src="tournaments.js?v=1.6.8-v3"></script>
-<script src="pwa.js?v=1.6.5-v1"></script>
+  <script src="cards.js?v=1.7-v2"></script>
+  <script src="deckRules.js?v=1.7-v2"></script>
+  <script src="engine.js?v=1.7-v2"></script>
+  <script src="ai.js?v=1.7-v2"></script>
+  <script src="audioConfig.js?v=1.7-v2"></script>
+  <script src="audioManager.js?v=1.7-v2"></script>
+  <script src="packOpening.js?v=1.7-v2"></script>
+<script src="legalNotices.js?v=1.7-v2"></script>
+<script src="profileCatalog.js?v=1.7-v2"></script>
+<script src="profileBadges.js?v=1.7-v2"></script>
+<script src="accountProfile.js?v=1.7-v2"></script>
+<script src="client.js?v=1.7-v2"></script>
+<script src="shieldChallenge.js?v=1.7-v2"></script>
+<script src="boardInteractions.js?v=1.7-v2"></script>
+<script src="inventory.js?v=1.7-v2"></script>
+<script src="deckBuilder.js?v=1.7-v2"></script>
+<script src="shop.js?v=1.7-v2"></script>
+<script src="trade.js?v=1.7-v2"></script>
+<script src="tournaments.js?v=1.7-v2"></script>
+<script src="pwa.js?v=1.7-v2"></script>
 </body>
 </html>

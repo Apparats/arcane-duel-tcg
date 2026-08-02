@@ -31,6 +31,42 @@
     return (parts.length > 1 ? `${parts[0][0]}${parts[1][0]}` : (parts[0] || "P").slice(0, 2)).toUpperCase();
   }
 
+  function normalizeRankDisplay(rank) {
+    const name = String(rank?.name || "").trim().toLowerCase();
+    const id = String(rank?.id || "").trim().toLowerCase();
+    if (!rank || id === "arena" || id === "sand" || name === "arena" || name === "arena (sand)" || name === "sand" || !name) {
+      return {
+        ...(rank || {}),
+        id: "sand",
+        name: "Sand",
+        color: rank?.color || "#8ddcff",
+        icon: rank?.icon || "*",
+      };
+    }
+    return rank;
+  }
+
+  function normalizeRankedDisplay(ranked) {
+    const rating = Number(ranked?.rating || 0);
+    return {
+      ...(ranked || {}),
+      rating: Number.isFinite(rating) ? Math.max(0, rating) : 0,
+      rank: normalizeRankDisplay(ranked?.rank),
+    };
+  }
+
+  function rankIconMarkup(rank) {
+    const visibleRank = normalizeRankDisplay(rank);
+    const icons = {
+      sand: '<svg class="rank-icon-svg rank-icon-sand" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6" style="fill:currentColor;stroke:none;opacity:.14"/><circle cx="12" cy="12" r="8.6"/><path d="M4.4 16.1c2.1-1.9 4.7-2.9 7.6-2.9s5.5 1 7.6 2.9"/><path d="M6.4 18.6c1.6-.9 3.5-1.3 5.6-1.3s4 .4 5.6 1.3"/><path d="m12 5.2 2.1 4.1L12 10.7 9.9 9.3 12 5.2Z"/></svg>',
+      bronze: '<svg class="rank-icon-svg rank-icon-bronze" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2 5.2 6.1v5.4c0 4.2 2.7 7.1 6.8 8.7 4.1-1.6 6.8-4.5 6.8-8.7V6.1L12 3.2Z" style="fill:currentColor;stroke:none;opacity:.16"/><path d="M12 3.2 5.2 6.1v5.4c0 4.2 2.7 7.1 6.8 8.7 4.1-1.6 6.8-4.5 6.8-8.7V6.1L12 3.2Z"/><path d="M8 8.7h8"/><path d="m8.4 11.7 3.6 2.5 3.6-2.5"/><path d="m8.8 15 3.2 2.1 3.2-2.1"/></svg>',
+      gold: '<svg class="rank-icon-svg rank-icon-gold" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="11.2" r="4.4" style="fill:currentColor;stroke:none;opacity:.18"/><circle cx="12" cy="11.2" r="4.4"/><path d="M12 3.4v2.2M12 16.8V19M4.2 11.2h2.2M17.6 11.2h2.2M6.5 5.7l1.6 1.6M15.9 15.1l1.6 1.6M17.5 5.7l-1.6 1.6M8.1 15.1l-1.6 1.6"/><path d="M7 19.2c1.3 1 3 1.5 5 1.5s3.7-.5 5-1.5"/></svg>',
+      diamond: '<svg class="rank-icon-svg rank-icon-diamond" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2 20.5 12 12 20.8 3.5 12 12 3.2Z" style="fill:currentColor;stroke:none;opacity:.16"/><path d="M12 3.2 20.5 12 12 20.8 3.5 12 12 3.2Z"/><path d="M7.4 12 12 3.2 16.6 12 12 20.8 7.4 12Z"/><path d="M3.5 12h17"/><path d="m7.4 12 2.1-5.2h5L16.6 12"/></svg>',
+      master: '<svg class="rank-icon-svg rank-icon-master" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 17.3h15l-1.1-8-4.1 3-2.3-7-2.3 7-4.1-3-1.1 8Z" style="fill:currentColor;stroke:none;opacity:.18"/><path d="M4.5 17.3h15l-1.1-8-4.1 3-2.3-7-2.3 7-4.1-3-1.1 8Z"/><path d="M6 20.5h12"/><path d="M9.2 17.3 12 5.3l2.8 12"/><path d="M8.2 8.2 12 4l3.8 4.2"/><circle cx="12" cy="12.2" r="1.5"/></svg>',
+    };
+    return icons[visibleRank.id] || icons.sand;
+  }
+
   function normalizedStats(profile) {
     const stats = profile?.stats || {};
     return {
@@ -54,6 +90,7 @@
       singleplayer: normalize(stored.singleplayer),
       oneVsOne: normalize(stored.oneVsOne),
       quickplay: normalize(stored.quickplay),
+      ranked: normalize(stored.ranked),
     };
     const total = (field) => Object.values(modes).reduce((sum, stats) => sum + stats[field], 0);
     const legacy = normalizedStats(profile);
@@ -134,8 +171,11 @@
   function syncUser(user) {
     if (!user) return;
     const account = getAccountState?.();
-    if (account?.user) account.user = { ...account.user, ...user };
-    currentUser = { ...(account?.user || currentUser || {}), ...user };
+    const nextUser = user.ranked ? { ...user, ranked: normalizeRankedDisplay(user.ranked) } : user;
+    if (account?.user) account.user = { ...account.user, ...nextUser };
+    if (account?.user?.ranked) account.user.ranked = normalizeRankedDisplay(account.user.ranked);
+    currentUser = { ...(account?.user || currentUser || {}), ...nextUser };
+    if (currentUser.ranked) currentUser.ranked = normalizeRankedDisplay(currentUser.ranked);
     refreshProgressIndicator(currentUser);
     detectNewProgress(currentUser);
     setAvatar($("accountAvatar"), $("accountAvatarFallback"), currentUser);
@@ -447,7 +487,7 @@
   function renderProfile(profile) {
     const current = getCurrentUser();
     const merged = isCurrentUser(profile) ? { ...profile, ...current, gold: current?.gold ?? profile.gold } : profile;
-    activeProfile = enrichProfile(merged);
+    activeProfile = enrichProfile(merged?.ranked ? { ...merged, ranked: normalizeRankedDisplay(merged.ranked) } : merged);
     if (!activeProfile) return;
     const stats = normalizedStats(activeProfile);
     const own = isCurrentUser(activeProfile);
@@ -457,6 +497,13 @@
     if (!own) closeDisplayNameModal();
     if (own && $("profileDisplayNameInput")) $("profileDisplayNameInput").value = activeProfile.username || "";
     $("profilePageTitle").textContent = activeProfile.selectedTitle?.name || "Arcane Initiate";
+    const ranked = activeProfile.ranked || {};
+    const rank = normalizeRankDisplay(ranked.rank);
+    const rankBadge = $("profileRankBadge");
+    if (rankBadge) {
+      rankBadge.style.setProperty("--rank-color", rank.color || "#8ddcff");
+      rankBadge.innerHTML = `<span class="profile-rank-icon">${rankIconMarkup(rank)}</span><strong>${rank.name || "Sand"}</strong><small>${Number(ranked.rating || 0)} rating</small>`;
+    }
     renderEquippedBadges(activeProfile);
     $("profilePageGold").textContent = own ? `${formatNumber(activeProfile.gold)} gold` : "Public profile";
     $("profilePageRecord").textContent = `${formatNumber(stats.wins)}W / ${formatNumber(stats.losses)}L`;
@@ -548,7 +595,7 @@
   async function updateDisplayName(displayName) {
     if (!fetcher || !isCurrentUser(activeProfile)) return;
     if (!/^[A-Za-z0-9_]{1,24}$/.test(displayName)) {
-      return notify?.("Use 1–24 letters, numbers, or underscores only; spaces are not allowed.");
+      return notify?.("Use 1-24 letters, numbers, or underscores only; spaces are not allowed.");
     }
     try {
       const response = await fetcher("/account/display-name", {

@@ -4,7 +4,7 @@ window.ArcaneAudioConfig = {
   musicVolume: 0.15,
   sfxVolume: 0.24,
   assetsBasePath: "assets/audio/",
-  assetVersion: "1.6.5-audio-v1",
+  assetVersion: "1.7-audio-v2",
 
   music: {
     mainMenu: {

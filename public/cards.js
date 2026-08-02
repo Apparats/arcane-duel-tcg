@@ -851,12 +851,12 @@
       "race": "Human",
       "rarity": "rare",
       "country": "Brazil",
-      "lore": "Takes no damage from Monster cards.",
+      "lore": "Takes half damage from Monster cards.",
       "image": "art/Italo179.webp",
       "abilities": [
         {
           "trigger": "passive",
-          "effect": "preventDamageFromRace",
+          "effect": "reduceDamageFromRace",
           "race": "Monster"
         }
       ],
@@ -888,12 +888,12 @@
       "race": "Monster",
       "rarity": "rare",
       "country": "Denmark",
-      "lore": "Takes no damage from Human cards.",
+      "lore": "Takes half damage from Human cards.",
       "image": "art/Knud_the_Dorf.webp",
       "abilities": [
         {
           "trigger": "passive",
-          "effect": "preventDamageFromRace",
+          "effect": "reduceDamageFromRace",
           "race": "Human"
         }
       ],

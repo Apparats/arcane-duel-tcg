@@ -456,7 +456,7 @@ html[data-discord-activity="true"] #screen-lobby .firefly {
 }
 .lobby-tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
   padding: 5px;
   background: rgba(8, 6, 15, 0.6);
@@ -515,14 +515,47 @@ html[data-discord-activity="true"] #screen-lobby .firefly {
 }
 
 .ranking-panel {
+  display: grid;
   gap: 8px;
   min-height: 0;
+}
+
+.ranking-view-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 6px;
+  padding: 3px;
+  border: 1px solid rgba(232, 179, 79, 0.18);
+  border-radius: 6px;
+  background: rgba(8, 6, 15, 0.36);
+}
+
+.ranking-view-button {
+  min-height: 32px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--cream-dim);
+  font-family: "Cinzel", serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ranking-view-button.active,
+.ranking-view-button:hover,
+.ranking-view-button:focus-visible {
+  border-color: rgba(232, 179, 79, 0.45);
+  background: rgba(232, 179, 79, 0.13);
+  color: var(--gold);
+  outline: none;
 }
 
 .ranking-header,
 .ranking-row {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) 54px;
+  grid-template-columns: 42px minmax(0, 1fr) 62px;
   align-items: center;
   gap: 10px;
 }
@@ -566,13 +599,310 @@ html[data-discord-activity="true"] #screen-lobby .firefly {
 .ranking-rank { color: var(--gold); font-family: "Cinzel", serif; font-size: 12px; }
 .ranking-player { display: flex; min-width: 0; align-items: center; gap: 8px; }
 .ranking-avatar { width: 24px; height: 24px; flex: 0 0 auto; border: 1px solid rgba(232, 179, 79, 0.42); border-radius: 50%; object-fit: cover; }
+.ranking-rank-icon {
+  display: inline-grid;
+  flex: 0 0 20px;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  color: var(--rank-color, #8ddcff);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--rank-color, #8ddcff) 42%, transparent));
+}
+.ranking-rank-icon .rank-icon-svg {
+  width: 19px;
+  height: 19px;
+}
 .ranking-name { overflow: hidden; color: var(--cream); font-size: 13px; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .ranking-wins { color: var(--mana); font-family: "Cinzel", serif; font-size: 12px; text-align: right; }
 .ranking-current { margin-top: 8px; }
 .ranking-current .ranking-row { border-color: rgba(232, 179, 79, 0.48); background: rgba(232, 179, 79, 0.1); }
 .ranking-empty { margin: 18px 0; color: var(--cream-dim); font-size: 13px; }
 
+.quickplay-ranking-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.quickplay-ranking-button svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+.quickplay-ranking-modal {
+  z-index: 30;
+  box-sizing: border-box;
+  padding: max(16px, var(--safe-top)) max(16px, var(--safe-right)) max(16px, var(--safe-bottom)) max(16px, var(--safe-left));
+}
+.quickplay-ranking-modal-card {
+  display: flex;
+  flex-direction: column;
+  width: min(540px, 100%);
+  max-height: min(680px, calc(100dvh - 32px));
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+}
+.quickplay-ranking-modal-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid rgba(232, 179, 79, 0.2);
+}
+.quickplay-ranking-modal-header p {
+  margin: 0 0 3px;
+  color: var(--mana);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+.quickplay-ranking-modal-header h2 {
+  margin: 0;
+  color: var(--gold);
+  font-family: "Cinzel", serif;
+  font-size: 22px;
+}
+.quickplay-ranking-modal-close {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(232, 179, 79, 0.45);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--cream);
+  cursor: pointer;
+}
+.quickplay-ranking-modal-close svg {
+  width: 17px;
+  height: 17px;
+}
+.quickplay-ranking-modal-close:hover,
+.quickplay-ranking-modal-close:focus-visible {
+  border-color: var(--gold);
+  background: rgba(232, 179, 79, 0.15);
+  outline: none;
+}
+.quickplay-ranking-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16px 20px 20px;
+  overflow: hidden;
+}
+.quickplay-ranking-modal-body .ranking-list {
+  max-height: min(48vh, 430px);
+  overflow-y: auto;
+}
+@media (max-width: 760px) {
+  .quickplay-ranking-modal {
+    padding: max(10px, var(--safe-top)) max(10px, var(--safe-right)) max(10px, var(--safe-bottom)) max(10px, var(--safe-left));
+  }
+  .quickplay-ranking-modal-card {
+    width: 100%;
+    max-height: calc(100dvh - 20px);
+  }
+  .quickplay-ranking-modal-header {
+    padding: 12px 14px 10px;
+  }
+  .quickplay-ranking-modal-header h2 {
+    font-size: 18px;
+  }
+  .quickplay-ranking-modal-close {
+    width: 34px;
+    height: 34px;
+  }
+  .quickplay-ranking-modal-body {
+    padding: 12px;
+  }
+  .quickplay-ranking-modal-body .ranking-header,
+  .quickplay-ranking-modal-body .ranking-row {
+    grid-template-columns: 36px minmax(0, 1fr) 54px;
+    gap: 7px;
+  }
+  .quickplay-ranking-modal-body .ranking-list {
+    max-height: calc(100dvh - 176px);
+  }
+  .ranked-rewards-modal {
+    padding: max(10px, var(--safe-top)) max(10px, var(--safe-right)) max(10px, var(--safe-bottom)) max(10px, var(--safe-left));
+  }
+  .ranked-rewards-card {
+    width: 100%;
+    max-height: calc(100dvh - 20px);
+  }
+  .ranked-rewards-header {
+    padding: 12px 14px 10px;
+  }
+  .ranked-rewards-header h2 {
+    font-size: 18px;
+  }
+  .ranked-rewards-list {
+    padding: 12px;
+  }
+  .ranked-rewards-note {
+    padding: 0 12px 10px;
+  }
+  .ranked-reward-row {
+    min-height: 40px;
+    padding: 7px 8px;
+  }
+  .ranked-rewards-footer {
+    padding: 11px 12px 12px;
+  }
+}
+
 .tournament-panel { gap: 10px; }
+
+.ranked-hero { padding:10px 12px; border:1px solid rgba(141,220,255,.2); border-radius:10px; background:linear-gradient(135deg,rgba(141,220,255,.1),rgba(217,167,255,.06)); }
+.ranked-hero h2 { margin: 0; font-size: 18px; line-height: 1.12; }
+.ranked-hero p { margin: 5px 0 0; font-size: 11px; line-height: 1.35; }
+.ranked-season-countdown { color: rgba(218, 230, 238, .72); }
+.ranked-current { display:flex; align-items:center; gap:10px; margin:12px 0; padding:12px; border-radius:14px; background:rgba(0,0,0,.18); }
+.rank-icon-svg { display:block; width:1em; height:1em; fill:none; stroke:currentColor; stroke-width:1.55; stroke-linecap:round; stroke-linejoin:round; }
+.ranked-emblem { display:grid; flex:0 0 auto; place-items:center; width:34px; height:34px; color:var(--rank-color); font-size:28px; filter:drop-shadow(0 0 10px var(--rank-color)); }
+.ranked-current span:last-child { margin-left:auto; color:var(--text-muted); font-size:12px; }
+.ranked-ranks { display:grid; grid-template-columns:repeat(5,1fr); gap:7px; margin-top:14px; }
+.ranked-tier { display:flex; flex-direction:column; align-items:center; gap:2px; padding:9px 4px; border:1px solid color-mix(in srgb,var(--rank-color) 35%,transparent); border-radius:10px; color:var(--rank-color); font-size:11px; }
+.ranked-tier b { display:grid; place-items:center; width:26px; height:26px; font-size:24px; filter:drop-shadow(0 0 8px var(--rank-color)); }.ranked-tier small { color:var(--text-muted); }
+.ranked-rewards-button { letter-spacing: .02em; }
+.ranked-ranking-button { letter-spacing: .02em; }
+.ranked-rewards-modal {
+  z-index: 31;
+  box-sizing: border-box;
+  padding: max(16px, var(--safe-top)) max(16px, var(--safe-right)) max(16px, var(--safe-bottom)) max(16px, var(--safe-left));
+}
+.ranked-rewards-card {
+  display: flex;
+  flex-direction: column;
+  width: min(500px, 100%);
+  max-height: min(680px, calc(100dvh - 32px));
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+}
+.ranked-rewards-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid rgba(232, 179, 79, .2);
+}
+.ranked-rewards-header p {
+  margin: 0 0 3px;
+  color: var(--mana);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+}
+.ranked-rewards-header h2 {
+  margin: 0;
+  color: var(--gold);
+  font-family: "Cinzel", serif;
+  font-size: 22px;
+}
+.ranked-rewards-close {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(232, 179, 79, .45);
+  border-radius: 50%;
+  background: rgba(255,255,255,.05);
+  color: var(--cream);
+  cursor: pointer;
+}
+.ranked-rewards-close svg { width: 17px; height: 17px; }
+.ranked-rewards-close:hover,
+.ranked-rewards-close:focus-visible { border-color: var(--gold); background: rgba(232,179,79,.15); outline: none; }
+.ranked-rewards-list {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+  padding: 14px 18px;
+  overflow-y: auto;
+}
+.ranked-reward-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--rank-color) 26%, transparent);
+  border-radius: 6px;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--rank-color) 10%, transparent), rgba(6,10,18,.62));
+  color: var(--cream);
+}
+.ranked-reward-row.is-current {
+  border-color: color-mix(in srgb, var(--rank-color) 62%, transparent);
+  box-shadow: inset 0 0 18px color-mix(in srgb, var(--rank-color) 12%, transparent);
+}
+.ranked-reward-row.is-claimed { opacity: .72; }
+.ranked-reward-rank {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+}
+.ranked-reward-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  color: var(--rank-color);
+  font-size: 25px;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px var(--rank-color));
+}
+.ranked-reward-rank strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: "Cinzel", serif;
+  font-size: 13px;
+}
+.ranked-reward-gold {
+  flex: 0 0 auto;
+  color: var(--gold);
+  font-weight: 800;
+  font-size: 12px;
+}
+.ranked-rewards-note {
+  margin: 0;
+  padding: 0 18px 12px;
+  color: var(--cream-dim);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.ranked-rewards-footer {
+  display: grid;
+  gap: 10px;
+  padding: 12px 18px 18px;
+  border-top: 1px solid rgba(232, 179, 79, .16);
+}
+.ranked-rewards-footer p {
+  margin: 0;
+  color: var(--cream-dim);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.ranked-rewards-footer .btn:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+  filter: grayscale(.25);
+}
 .tournament-list { display: grid; align-content: start; gap: 12px; max-height: min(58vh, 560px); overflow-y: auto; padding-right: 2px; }
 .tournament-section { display: grid; gap: 9px; }
 .tournament-section-heading,
@@ -1243,7 +1573,7 @@ html[data-discord-activity="true"] #screen-lobby .firefly {
     max(24px, env(safe-area-inset-left));
   background:
     linear-gradient(90deg, rgba(4, 6, 15, .97) 0%, rgba(7, 8, 18, .86) 38%, rgba(6, 7, 16, .34) 72%, rgba(3, 4, 10, .5) 100%),
-    url("../art/menu-arcane-sanctuary.webp?v=3") center / cover no-repeat;
+    url("../art/menu-arcane-sanctuary.webp?v=4") center / cover no-repeat;
   background-color: #050711;
 }
 
@@ -1524,7 +1854,7 @@ html[data-discord-activity="true"] #screen-lobby .firefly {
       max(12px, env(safe-area-inset-left));
     background:
       linear-gradient(180deg, rgba(3,4,11,.22), rgba(4,5,14,.94) 54%, #050611),
-      url("../art/menu-arcane-sanctuary.webp?v=3") 65% center / cover no-repeat;
+      url("../art/menu-arcane-sanctuary.webp?v=4") 65% center / cover no-repeat;
     overflow: hidden;
     overscroll-behavior: none;
   }
@@ -1600,7 +1930,7 @@ html[data-discord-activity="true"] #screen-lobby .firefly {
     max(24px, env(safe-area-inset-left));
   background:
     linear-gradient(90deg, rgba(4,6,15,.97), rgba(7,8,18,.88) 42%, rgba(6,7,16,.38) 75%, rgba(3,4,10,.54)),
-    url("../art/menu-arcane-sanctuary.webp?v=3") center / cover no-repeat;
+    url("../art/menu-arcane-sanctuary.webp?v=4") center / cover no-repeat;
 }
 
 #screen-lobby.lobby-multiplayer::before {
@@ -1717,7 +2047,7 @@ html[data-discord-activity="true"] #screen-lobby .firefly {
 
 #screen-lobby.lobby-multiplayer .lobby-tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
   padding: 5px;
   border: 1px solid rgba(134,177,207,.18);
@@ -1836,6 +2166,7 @@ html[data-discord-activity="true"] #screen-lobby .firefly {
   color: rgba(211,225,234,.62);
   font-size: 11px;
 }
+#screen-lobby.lobby-multiplayer #quickplayPanel { min-width: 0; }
 
 #screen-lobby.lobby-multiplayer #roomCodePanel {
   display: grid;
@@ -1879,6 +2210,44 @@ html[data-discord-activity="true"] #screen-lobby .firefly {
   justify-content: flex-start;
   overflow: visible;
 }
+
+/* Ranked has a compact, fixed-height lobby card rather than tournament's
+   bracket container. Keep every section inside the card and scroll only the
+   panel when the viewport is short. */
+#screen-lobby.lobby-multiplayer #rankedPanel {
+  box-sizing: border-box;
+  height: min(470px, calc(100dvh - 286px));
+  max-height: min(470px, calc(100dvh - 286px));
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 14px;
+  scrollbar-gutter: stable;
+}
+#screen-lobby.lobby-multiplayer #rankedPanel > * { min-width: 0; }
+#screen-lobby.lobby-multiplayer #rankedPanel .ranked-hero { padding: 10px 12px; border-radius: 8px; }
+#screen-lobby.lobby-multiplayer #rankedPanel .ranked-hero h2 { margin: 0; font-size: clamp(15px, 2.4vw, 20px); }
+#screen-lobby.lobby-multiplayer #rankedPanel .ranked-hero p { margin: 4px 0 0; font-size: 10px; line-height: 1.35; overflow-wrap: anywhere; }
+#screen-lobby.lobby-multiplayer #rankedPanel .ranked-current { min-width: 0; margin: 0; padding: 10px; border: 1px solid rgba(141,220,255,.15); border-radius: 10px; }
+#screen-lobby.lobby-multiplayer #rankedPanel .ranked-current strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#screen-lobby.lobby-multiplayer #rankedPanel .ranked-current span:last-child { white-space: nowrap; }
+#screen-lobby.lobby-multiplayer #rankedPanel .ranked-ranks { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; margin-top: 0; }
+#screen-lobby.lobby-multiplayer #rankedPanel .ranked-tier { min-width: 0; padding: 7px 3px; overflow: hidden; text-align: center; }
+#screen-lobby.lobby-multiplayer #rankedPanel .ranked-tier b { line-height: 1.1; }
+#screen-lobby.lobby-multiplayer #rankedPanel .ranked-tier:not(:has(b)) { overflow-wrap: anywhere; }
+#screen-lobby.lobby-multiplayer #rankedPanel > .btn { flex: 0 0 auto; width: 100%; min-height: 40px; }
+#screen-lobby.lobby-multiplayer #rankedPanel #btnRanked.ranked-closed-button,
+#screen-lobby.lobby-multiplayer #rankedPanel #btnRanked:disabled {
+  border-color: rgba(152, 169, 184, .22);
+  background: linear-gradient(180deg, rgba(86, 101, 115, .42), rgba(39, 49, 60, .58));
+  box-shadow: inset 0 1px rgba(255,255,255,.04);
+  color: rgba(229, 236, 240, .48);
+  cursor: not-allowed;
+  filter: none;
+  opacity: 1;
+  transform: none;
+}
+#screen-lobby.lobby-multiplayer #rankedPanel #btnRanked.ranked-closed-button::before { content: "◷"; margin-right: 7px; color: rgba(189, 205, 216, .55); }
 #screen-lobby.lobby-multiplayer .tournament-list {
   flex: 1 1 auto;
   min-height: 0;
@@ -1913,7 +2282,7 @@ html[data-discord-activity="true"] #screen-lobby .firefly {
       max(12px, env(safe-area-inset-left));
     background:
       linear-gradient(180deg, rgba(3,4,11,.22), rgba(4,5,14,.94) 52%, #050611),
-      url("../art/menu-arcane-sanctuary.webp?v=3") 65% center / cover no-repeat;
+      url("../art/menu-arcane-sanctuary.webp?v=4") 65% center / cover no-repeat;
     overflow: hidden;
     overscroll-behavior: none;
   }
@@ -1946,6 +2315,12 @@ html[data-discord-activity="true"] #screen-lobby .firefly {
     height: calc(100dvh - 240px);
     max-height: calc(100dvh - 240px);
   }
+  #screen-lobby.lobby-multiplayer #rankedPanel {
+    height: calc(100dvh - 240px);
+    max-height: calc(100dvh - 240px);
+    padding: 13px;
+  }
+  #screen-lobby.lobby-multiplayer #rankedPanel .ranked-ranks { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 420px) {
@@ -1954,6 +2329,9 @@ html[data-discord-activity="true"] #screen-lobby .firefly {
   #screen-lobby.lobby-multiplayer #quickplayPanel { padding-right: 112px; }
   #screen-lobby.lobby-multiplayer #quickplayPanel .btn { min-height: 42px; font-size: 11px; }
   #screen-lobby.lobby-multiplayer .join-row { gap: 6px; }
+  #screen-lobby.lobby-multiplayer #rankedPanel .ranked-current { flex-wrap: wrap; }
+  #screen-lobby.lobby-multiplayer #rankedPanel .ranked-current span:last-child { width: 100%; margin-left: 38px; }
+  #screen-lobby.lobby-multiplayer #rankedPanel .ranked-ranks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-height: 600px) and (orientation: landscape) {

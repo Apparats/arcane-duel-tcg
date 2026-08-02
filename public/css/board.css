@@ -102,6 +102,11 @@ html[data-discord-activity="true"] .match-intro {
 .match-intro-title-row { display: flex; align-items: center; gap: 8px; min-width: 0; margin-top: 4px; }
 .match-intro-title { min-width: 0; overflow: hidden; color: var(--gold); font-size: 11px; font-weight: 700; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .match-intro-starts { flex: 0 0 auto; border: 1px solid rgba(178, 239, 255, 0.8); border-radius: 3px; background: rgba(36, 115, 138, 0.38); color: #e4fbff; font: 700 9px/1 "Cinzel", serif; letter-spacing: 0; padding: 3px 5px; text-transform: uppercase; }
+.match-intro-rank { display: inline-flex; align-items: center; gap: 6px; width: fit-content; max-width: 100%; min-height: 24px; margin-top: 7px; padding: 3px 8px 3px 5px; box-sizing: border-box; border: 1px solid color-mix(in srgb, var(--rank-color) 62%, transparent); border-radius: 4px; background: linear-gradient(105deg, color-mix(in srgb, var(--rank-color) 16%, transparent), rgba(4, 8, 16, .7)); color: var(--rank-color); box-shadow: inset 0 0 12px color-mix(in srgb, var(--rank-color) 10%, transparent); }
+.match-intro-rank-icon { display: grid; flex: 0 0 auto; place-items: center; width: 20px; height: 20px; color: var(--rank-color); font-size: 19px; line-height: 1; filter: drop-shadow(0 0 7px var(--rank-color)); }
+.match-intro-rank-icon .rank-icon-svg { display: block; width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.55; stroke-linecap: round; stroke-linejoin: round; }
+.match-intro-rank strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 10px/1 "Cinzel", serif; letter-spacing: .04em; text-transform: uppercase; }
+.match-intro-rank small { flex: 0 0 auto; color: rgba(235, 241, 246, .72); font-size: 9px; white-space: nowrap; }
 .match-intro-badges { display: flex; flex-wrap: wrap; gap: 5px; min-height: 28px; margin-top: 8px; }
 .match-intro-badge { display: grid; place-items: center; width: 28px; height: 28px; }
 .match-intro-badge .profile-badge-svg { width: 28px; height: 28px; }
@@ -118,6 +123,9 @@ html[data-discord-activity="true"] .match-intro {
   .match-intro-title-row { gap: 6px; margin-top: 3px; }
   .match-intro-title { font-size: 9px; }
   .match-intro-starts { font-size: 8px; padding: 3px 4px; }
+  .match-intro-rank { max-width: 100%; margin-top: 5px; padding: 3px 6px 3px 4px; }
+  .match-intro-rank strong { font-size: 8px; }
+  .match-intro-rank small { font-size: 8px; }
   .match-intro-badges { min-height: 22px; margin-top: 5px; }
   .match-intro-badge, .match-intro-badge .profile-badge-svg { width: 22px; height: 22px; }
   .match-intro-versus { width: 44px; height: 44px; margin-block: -3px; font-size: 12px; }

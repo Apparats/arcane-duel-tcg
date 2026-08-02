@@ -8,9 +8,9 @@ module.exports = {
   race: "Human",
   rarity: "rare",
   country: "Brazil",
-  lore: "Takes no damage from Monster cards.",
+  lore: "Takes half damage from Monster cards.",
   image: "art/Italo179.webp",
   abilities: [
-    { trigger: "passive", effect: "preventDamageFromRace", race: "Monster" },
+    { trigger: "passive", effect: "reduceDamageFromRace", race: "Monster" },
   ],
 };

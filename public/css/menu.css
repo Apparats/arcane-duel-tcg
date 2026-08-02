@@ -1260,7 +1260,7 @@ html[data-discord-activity="true"] #screen-menu .menu-glow::after {
     max(24px, env(safe-area-inset-left));
   background:
     linear-gradient(90deg, rgba(4, 6, 15, .96) 0%, rgba(7, 8, 18, .83) 30%, rgba(7, 7, 16, .22) 61%, rgba(3, 4, 10, .4) 100%),
-    url("../art/menu-arcane-sanctuary.webp?v=3") center / cover no-repeat;
+    url("../art/menu-arcane-sanctuary.webp?v=4") center / cover no-repeat;
   background-color: #050711;
 }
 
@@ -1691,7 +1691,7 @@ html[data-discord-activity="true"] .menu-tile {
       max(12px, env(safe-area-inset-left));
     background:
       linear-gradient(180deg, rgba(3, 4, 11, .2) 0%, rgba(4, 5, 13, .25) 26%, rgba(4, 5, 14, .91) 59%, #050611 100%),
-      url("../art/menu-arcane-sanctuary.webp?v=3") 65% center / cover no-repeat;
+      url("../art/menu-arcane-sanctuary.webp?v=4") 65% center / cover no-repeat;
     overflow: hidden;
     overscroll-behavior: none;
     touch-action: manipulation;

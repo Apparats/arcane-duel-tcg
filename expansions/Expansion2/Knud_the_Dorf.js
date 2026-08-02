@@ -8,9 +8,9 @@ module.exports = {
   race: "Monster",
   rarity: "rare",
   country: "Denmark",
-  lore: "Takes no damage from Human cards.",
+  lore: "Takes half damage from Human cards.",
   image: "art/Knud_the_Dorf.webp",
   abilities: [
-    { trigger: "passive", effect: "preventDamageFromRace", race: "Human" },
+    { trigger: "passive", effect: "reduceDamageFromRace", race: "Human" },
   ],
 };
