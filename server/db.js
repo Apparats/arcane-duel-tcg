@@ -15,7 +15,7 @@ const { assertMongoKeySegment, assertPositiveInteger, sanitizeDiscordProfile, to
 const { withUserLock, withUserLocks } = require("./userLocks");
 const { getProgress } = require("../public/profileCatalog");
 const { migrateDecksToCurrentSize } = require("./deckMigration");
-const { RANKED_WEEKLY_REWARDS, getRank, rankedRewardTiers, rankedSeasonResetRating } = require("./ranked");
+const { RANKED_WEEKLY_REWARDS, getRank, rankedRatingDelta, rankedRewardTiers, rankedSeasonResetRating } = require("./ranked");
 
 let client = null;
 let db = null;
@@ -317,6 +317,8 @@ const MATCH_REWARDS = {
   multiplayer: { win: 10, loss: 5 },
 };
 
+const RANKED_MATCH_REWARDS = { win: 20, loss: 10 };
+
 const SURRENDER_GOLD_PENALTY = 10;
 const DISCONNECT_GOLD_PENALTY = 20;
 const DISCONNECT_PENALTY_THRESHOLD = 4;
@@ -569,7 +571,8 @@ async function grantMatchEconomy(userId, { mode, result, surrendered = false, qu
 
   const earnedToday = user.economy?.dailyRewards?.[day]?.[mode] || 0;
   const dailyLimit = DAILY_REWARD_LIMITS[mode];
-  const baseReward = surrendered || result === "draw" ? 0 : MATCH_REWARDS[mode][result];
+  const rewardTable = ranked && mode === "multiplayer" ? RANKED_MATCH_REWARDS : MATCH_REWARDS[mode];
+  const baseReward = surrendered || result === "draw" ? 0 : rewardTable[result];
   const awardedGold = Math.max(0, Math.min(baseReward, dailyLimit - earnedToday));
   const penaltyGold = surrendered && mode === "multiplayer" ? SURRENDER_GOLD_PENALTY : 0;
   const netGold = awardedGold - penaltyGold;
@@ -597,7 +600,7 @@ async function grantMatchEconomy(userId, { mode, result, surrendered = false, qu
   let rankedChange = null;
   if (ranked) {
     const previousRating = Math.max(0, Number(user.ranked?.rating) || 0);
-    const requestedDelta = result === "win" ? 100 : result === "loss" ? -70 : 0;
+    const requestedDelta = rankedRatingDelta(result);
     const currentRating = Math.max(0, previousRating + requestedDelta);
     rankedChange = {
       previousRating,
@@ -1516,6 +1519,7 @@ module.exports = {
   assertCardCanBeTraded,
   DAILY_REWARD_LIMITS,
   MATCH_REWARDS,
+  RANKED_MATCH_REWARDS,
   DAILY_LOGIN_GOLD,
   DISCORD_ACTIVITY_INVITE_GOLD,
   STARTER_GOLD_BONUS,

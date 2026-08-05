@@ -185,10 +185,13 @@
     return Boolean((minion?.keywords || cardDef?.keywords || []).includes("taunt") || (cardDef?.keywords || []).includes("taunt"));
   }
 
-  function minionAppliesDrunkAura(minion) {
+  function minionAppliesDrunkAuraToPlayer(minion, auraOwnerIdx, targetPlayerIdx) {
     if ((minion.statuses || []).some((status) => status.type === "silenced")) return false;
     const cardDef = getCardById(minion.cardId);
-    return Boolean(cardDef?.abilities?.some((ability) => ability.effect === "drunkAllMinions"));
+    return Boolean(cardDef?.abilities?.some((ability) => {
+      if (ability.effect !== "drunkAllMinions") return false;
+      return !ability.enemyOnly || auraOwnerIdx !== targetPlayerIdx;
+    }));
   }
 
   function minionBlocksChargeSummons(minion) {
@@ -216,10 +219,18 @@
     return Boolean(cardDef?.abilities?.some((ability) => ability.effect === "unattackable"));
   }
 
-  function minionImmuneToAdverseEffects(minion) {
+  function minionHasCardEffectImmunity(minion, sourceInstanceId = null) {
+    if ((minion.statuses || []).some((status) => status.type === "silenced")) return false;
+    if (sourceInstanceId && minion.instanceId === sourceInstanceId) return false;
+    const cardDef = getCardById(minion.cardId);
+    return Boolean(cardDef?.abilities?.some((ability) => ability.effect === "immuneToCardEffects"));
+  }
+
+  function minionImmuneToAdverseEffects(minion, sourceInstanceId = null) {
     if ((minion.statuses || []).some((status) => status.type === "silenced")) return false;
     const cardDef = getCardById(minion.cardId);
-    return Boolean(cardDef?.abilities?.some((ability) => ability.effect === "immuneToAdverseEffects"));
+    return minionHasCardEffectImmunity(minion, sourceInstanceId) ||
+      Boolean(cardDef?.abilities?.some((ability) => ability.effect === "immuneToAdverseEffects"));
   }
 
   function setStatusSourceRace(status, sourceRace) {
@@ -271,6 +282,7 @@
       manaMax: settings.startingMana - 1,
       manaCurrent: 0,
       manaCap: settings.manaCap,
+      nextTurnManaBonus: 0,
       boardRules: settings.boardRules,
       uniqueMythicPlays: settings.uniqueMythicPlays,
       deck: shuffle(deck, randomInt),
@@ -313,6 +325,7 @@
       playedCount: extra.playedCount || 0,
       returnCount: extra.returnCount || 0,
       rebirthUsed: extra.rebirthUsed === true,
+      abilityApplicationCounts: {},
     };
   }
 
@@ -418,6 +431,13 @@
       game._addLog(`${ctx.sourceName} grants ${amount} temporary Mana to ${player.name}.`);
     },
 
+    grantNextTurnTemporaryMana(game, ctx, ability) {
+      const amount = Math.max(1, ability.value || 1);
+      const player = game.players[ctx.casterIdx];
+      player.nextTurnManaBonus = Math.max(0, player.nextTurnManaBonus || 0) + amount;
+      game._addLog(`${ctx.sourceName} grants ${amount} extra Mana next turn to ${player.name}.`);
+    },
+
     addCardToHand(game, ctx, ability) {
       const cardDef = getCardById(ability.cardId);
       const player = game.players[ctx.casterIdx];
@@ -469,7 +489,7 @@
       const opponent = game.players[game._opponentIdx(ctx.casterIdx)];
       const eligibleMinions = opponent.board.filter((minion) => {
         const cardDef = getCardById(minion.cardId);
-        return cardDef && cardDef.type === "minion" && !minionImmuneToAdverseEffects(minion) && !boardLimitError(player, cardDef, { summoned: true });
+        return cardDef && cardDef.type === "minion" && !minionImmuneToAdverseEffects(minion, ctx.instanceId) && !boardLimitError(player, cardDef, { summoned: true });
       });
       if (eligibleMinions.length === 0) {
         game._addLog(`${ctx.sourceName} finds no enemy minion to steal.`);
@@ -498,7 +518,7 @@
           cardDef.type === "minion" &&
           cardDef.rarity !== "mythic" &&
           !isSameCard &&
-          !minionImmuneToAdverseEffects(minion) &&
+          !minionImmuneToAdverseEffects(minion, ctx.instanceId) &&
           !boardLimitError(player, cardDef, { summoned: true });
 
         if (!canSteal) {
@@ -524,7 +544,7 @@
       const amount = ability.value || 1;
       const oppIdx = game._opponentIdx(ctx.casterIdx);
       const targets = [...game.players[oppIdx].board]; // copy: _damageMinion can mutate the original array
-      targets.forEach((m) => game._damageMinion(oppIdx, m, amount, { sourceRace: ctx.sourceRace, adverseEffect: true }));
+      targets.forEach((m) => game._damageMinion(oppIdx, m, amount, { sourceRace: ctx.sourceRace, sourceInstanceId: ctx.instanceId, adverseEffect: true }));
       game._addLog(`${ctx.sourceName} deals ${amount} damage to all enemy minions.`);
     },
 
@@ -533,9 +553,18 @@
       const amount = ability.value || 1;
       [0, 1].forEach((pi) => {
         const targets = [...game.players[pi].board];
-        targets.forEach((m) => game._damageMinion(pi, m, amount, { sourceRace: ctx.sourceRace, adverseEffect: true }));
+        targets.forEach((m) => game._damageMinion(pi, m, amount, { sourceRace: ctx.sourceRace, sourceInstanceId: ctx.instanceId, adverseEffect: true }));
       });
       game._addLog(`${ctx.sourceName} deals ${amount} damage to all minions in play.`);
+    },
+
+    damageAllOtherMinions(game, ctx, ability) {
+      const amount = ability.value || 1;
+      [0, 1].forEach((pi) => {
+        const targets = [...game.players[pi].board].filter((m) => m.instanceId !== ctx.instanceId);
+        targets.forEach((m) => game._damageMinion(pi, m, amount, { sourceRace: ctx.sourceRace, sourceInstanceId: ctx.instanceId, adverseEffect: true }));
+      });
+      game._addLog(`${ctx.sourceName} deals ${amount} damage to all other minions in play.`);
     },
 
     // Direct damage to the enemy hero, no target needed.
@@ -555,7 +584,7 @@
         return;
       }
       const target = targets[game.randomInt(targets.length)];
-      game._damageMinion(opponentIdx, target, amount, { sourceRace: ctx.sourceRace, adverseEffect: true });
+      game._damageMinion(opponentIdx, target, amount, { sourceRace: ctx.sourceRace, sourceInstanceId: ctx.instanceId, adverseEffect: true });
       game._addLog(`${ctx.sourceName} repeats ${amount} damage to ${target.name}.`);
     },
 
@@ -563,9 +592,23 @@
     healAllFriendlyMinions(game, ctx, ability) {
       const amount = ability.value || 1;
       game.players[ctx.casterIdx].board.forEach((m) => {
+        if (minionHasCardEffectImmunity(m, ctx.instanceId)) return;
         m.health = Math.min(m.maxHealth, m.health + amount);
       });
       game._addLog(`${ctx.sourceName} heals your minions for ${amount}.`);
+    },
+
+    healFriendlyRaceMinions(game, ctx, ability) {
+      const amount = ability.value || 1;
+      const race = String(ability.race || "").toLowerCase();
+      let healed = 0;
+      game.players[ctx.casterIdx].board.forEach((m) => {
+        if (String(m.race || "").toLowerCase() !== race) return;
+        if (minionHasCardEffectImmunity(m, ctx.instanceId)) return;
+        m.health = Math.min(m.maxHealth, m.health + amount);
+        healed += 1;
+      });
+      if (healed > 0) game._addLog(`${ctx.sourceName} heals ${healed} friendly ${ability.race} minion(s) for ${amount}.`);
     },
 
     // Summons copies of another card (by id) onto the caster's board.
@@ -615,6 +658,7 @@
       const atk = ability.attack || 0;
       const hp = ability.health || 0;
       game.players[ctx.casterIdx].board.forEach((m) => {
+        if (minionHasCardEffectImmunity(m, ctx.instanceId)) return;
         m.attack += atk;
         m.health += hp;
         m.maxHealth += hp;
@@ -622,9 +666,33 @@
       game._addLog(`${ctx.sourceName} buffs your minions (+${atk}/+${hp}).`);
     },
 
+    buffFriendlyRaceMinions(game, ctx, ability) {
+      const atk = ability.attack || 0;
+      const hp = ability.health || 0;
+      const race = String(ability.race || "").toLowerCase();
+      let buffed = 0;
+      game.players[ctx.casterIdx].board.forEach((m) => {
+        if (String(m.race || "").toLowerCase() !== race) return;
+        if (minionHasCardEffectImmunity(m, ctx.instanceId)) return;
+        m.attack += atk;
+        m.health += hp;
+        m.maxHealth += hp;
+        buffed += 1;
+      });
+      if (buffed > 0) game._addLog(`${ctx.sourceName} buffs ${buffed} friendly ${ability.race} minion(s) (+${atk}/+${hp}).`);
+    },
+
     buffSelf(game, ctx, ability) {
       const target = game._findMinion(ctx.instanceId);
       if (!target || target.playerIdx !== ctx.casterIdx) return;
+      let applicationKey = null;
+      let applicationCount = 0;
+      if (Number.isInteger(ability.maxApplications)) {
+        applicationKey = `buffSelf:${ability.attack || 0}:${ability.health || 0}`;
+        target.minion.abilityApplicationCounts = target.minion.abilityApplicationCounts || {};
+        applicationCount = target.minion.abilityApplicationCounts[applicationKey] || 0;
+        if (applicationCount >= ability.maxApplications) return;
+      }
       const atk = ability.attack || 0;
       const hp = ability.health || 0;
       const nextAttack = Number.isInteger(ability.maxAttack)
@@ -636,15 +704,18 @@
       const gainedAttack = nextAttack - target.minion.attack;
       const gainedHealth = nextMaxHealth - target.minion.maxHealth;
       if (gainedAttack === 0 && gainedHealth === 0) return;
+      if (applicationKey) target.minion.abilityApplicationCounts[applicationKey] = applicationCount + 1;
       target.minion.attack = nextAttack;
       target.minion.maxHealth = nextMaxHealth;
-      target.minion.health = Math.min(nextMaxHealth, target.minion.health + Math.max(0, gainedHealth));
+      target.minion.health += gainedHealth;
+      if (gainedHealth < 0) target.minion.health = Math.min(nextMaxHealth, target.minion.health);
       game._addLog(`${ctx.sourceName} gains +${gainedAttack}/+${gainedHealth}.`);
     },
 
     grantDivineShieldToAllFriendlyMinions(game, ctx, ability) {
       if (ability.firstPlayOnly && ctx.playedCount !== 1) return;
       game.players[ctx.casterIdx].board.forEach((minion) => {
+        if (minionHasCardEffectImmunity(minion, ctx.instanceId)) return;
         game._addKeyword(minion, "divineShield");
       });
       game._addLog(`${ctx.sourceName} grants Divine Shield to all friendly minions.`);
@@ -681,6 +752,29 @@
       game._addLog(`${ctx.sourceName} gains Taunt.`);
     },
 
+    grantRandomSelfKeyword(game, ctx, ability) {
+      const target = game._findMinion(ctx.instanceId);
+      if (!target || target.playerIdx !== ctx.casterIdx) return;
+      const keywords = Array.isArray(ability.keywords) && ability.keywords.length
+        ? ability.keywords
+        : ["taunt", "charge", "divineShield"];
+      const keyword = keywords[game.randomInt(keywords.length)];
+      game._addKeyword(target.minion, keyword);
+      const label = keyword === "divineShield" ? "Divine Shield" : keyword[0].toUpperCase() + keyword.slice(1);
+      game._addLog(`${ctx.sourceName} gains ${label}.`);
+    },
+
+    grantDivineShieldToTargetMinion(game, ctx) {
+      const target = game._findMinion(ctx.targetInstanceId);
+      if (!target) throw new Error("Choose a minion.");
+      if (minionHasCardEffectImmunity(target.minion, ctx.instanceId)) {
+        game._addLog(`${target.minion.name} ignores ${ctx.sourceName}.`);
+        return;
+      }
+      game._addKeyword(target.minion, "divineShield");
+      game._addLog(`${ctx.sourceName} grants Divine Shield to ${target.minion.name}.`);
+    },
+
     grantChargeToRandomFriendlyNonCharge(game, ctx, ability) {
       if (ability.firstPlayOnly && ctx.playedCount !== 1) return;
       const player = game.players[ctx.casterIdx];
@@ -713,7 +807,7 @@
     returnEnemyMinionToDeck(game, ctx) {
       const target = game._findMinion(ctx.targetInstanceId);
       if (!target || target.playerIdx === ctx.casterIdx) throw new Error("Choose an enemy minion.");
-      if (minionImmuneToAdverseEffects(target.minion)) {
+      if (minionImmuneToAdverseEffects(target.minion, ctx.instanceId)) {
         game._addLog(`${target.minion.name} ignores ${ctx.sourceName}.`);
         return;
       }
@@ -733,7 +827,7 @@
 
         owner.board = [];
         minions.forEach((minion) => {
-          if (minionImmuneToAdverseEffects(minion)) {
+          if (minionImmuneToAdverseEffects(minion, ctx.instanceId)) {
             owner.board.push(minion);
             return;
           }
@@ -748,6 +842,10 @@
     cleanseFriendlyMinion(game, ctx) {
       const target = game._findMinion(ctx.targetInstanceId);
       if (!target || target.playerIdx !== ctx.casterIdx) throw new Error("Choose a friendly minion.");
+      if (minionHasCardEffectImmunity(target.minion, ctx.instanceId)) {
+        game._addLog(`${target.minion.name} ignores ${ctx.sourceName}.`);
+        return;
+      }
       const removed = game._cleanseNegativeStatuses(target.minion);
       game._addLog(`${ctx.sourceName} cleanses ${target.minion.name}${removed > 0 ? ` (${removed} effect(s))` : ""}.`);
     },
@@ -838,7 +936,7 @@
       const chance = Math.max(0, Math.min(100, ability.chance || 0));
       if (chance <= 0 || game.randomInt(100) >= chance) return;
       const opponentIdx = game._opponentIdx(ctx.casterIdx);
-      const targets = game.players[opponentIdx].board.filter((minion) => !minionImmuneToAdverseEffects(minion));
+      const targets = game.players[opponentIdx].board.filter((minion) => !minionImmuneToAdverseEffects(minion, ctx.instanceId));
       if (targets.length === 0) return;
       const target = targets[game.randomInt(targets.length)];
       game._addLog(`${ctx.sourceName} destroys ${target.name}.`);
@@ -849,7 +947,7 @@
       const target = game._findMinion(ctx.attackerInstanceId);
       if (!target || target.playerIdx !== ctx.attackerPlayerIdx) return;
       const turns = Math.max(1, ability.turns || 1);
-      const applied = game._applyStatus(target.playerIdx, target.minion, { status: "drunk", turns });
+      const applied = game._applyStatus(target.playerIdx, target.minion, { status: "drunk", turns, sourceInstanceId: ctx.instanceId });
       if (applied) game._addLog(`${ctx.sourceName} makes ${target.minion.name} Drunk.`);
     },
 
@@ -863,8 +961,20 @@
         value,
         turns,
         sourceRace: ctx.sourceRace,
+        sourceInstanceId: ctx.instanceId,
       });
       if (applied) game._addLog(`${ctx.sourceName} burns ${target.minion.name} for ${applied.value} damage.`);
+    },
+
+    applyStatusToAttacker(game, ctx, ability) {
+      const target = game._findMinion(ctx.attackerInstanceId);
+      if (!target || target.playerIdx !== ctx.attackerPlayerIdx) return;
+      const applied = game._applyStatus(target.playerIdx, target.minion, {
+        ...ability,
+        sourceRace: ctx.sourceRace,
+        sourceInstanceId: ctx.instanceId,
+      });
+      if (applied) game._addLog(`${ctx.sourceName} applies ${ability.status} to ${target.minion.name}.`);
     },
 
     applyConfusionToAllEnemyMinions(game, ctx, ability) {
@@ -873,14 +983,14 @@
       const chance = Math.max(0, Math.min(100, ability.chance || 30));
       let appliedCount = 0;
       game.players[opponentIdx].board.forEach((minion) => {
-        const applied = game._applyStatus(opponentIdx, minion, { status: "confused", value: chance, turns });
+        const applied = game._applyStatus(opponentIdx, minion, { status: "confused", value: chance, turns, sourceInstanceId: ctx.instanceId });
         if (applied) appliedCount += 1;
       });
       if (appliedCount > 0) game._addLog(`${ctx.sourceName} confuses ${appliedCount} enemy minion(s).`);
     },
 
     applyStatus(game, ctx, ability) {
-      const statusAbility = { ...ability, sourceRace: ctx.sourceRace };
+      const statusAbility = { ...ability, sourceRace: ctx.sourceRace, sourceInstanceId: ctx.instanceId };
       const cardDef = getCardById(ctx.cardId);
       const opponentIdx = game._opponentIdx(ctx.casterIdx);
       if (!ctx.targetInstanceId && game.players[opponentIdx].board.length === 0 && cardHasMatchingRandomEnemyMinionTurnAura(cardDef, ability)) {
@@ -908,7 +1018,7 @@
       const targets = game.players[opponentIdx].board;
       if (targets.length === 0) return;
       const target = targets[game.randomInt(targets.length)];
-      const applied = game._applyStatus(opponentIdx, target, { ...ability, sourceRace: ctx.sourceRace });
+      const applied = game._applyStatus(opponentIdx, target, { ...ability, sourceRace: ctx.sourceRace, sourceInstanceId: ctx.instanceId });
       if (applied) game._addLog(`${ctx.sourceName} applies ${applied.type} to ${target.name}.`);
     },
 
@@ -917,7 +1027,7 @@
       const opponentIdx = game._opponentIdx(ctx.casterIdx);
       let appliedCount = 0;
       game.players[opponentIdx].board.forEach((minion) => {
-        const applied = game._applyStatus(opponentIdx, minion, { ...ability, sourceRace: ctx.sourceRace });
+        const applied = game._applyStatus(opponentIdx, minion, { ...ability, sourceRace: ctx.sourceRace, sourceInstanceId: ctx.instanceId });
         if (applied) appliedCount += 1;
       });
       if (appliedCount > 0) game._addLog(`${ctx.sourceName} applies ${ability.status} to ${appliedCount} enemy minion(s).`);
@@ -926,7 +1036,7 @@
     applyBurning(game, ctx, ability) {
       const value = Math.max(1, Number.isInteger(ability.value) ? ability.value : 1);
       const turns = Math.max(1, Number.isInteger(ability.turns) ? ability.turns : 1);
-      const status = { status: "burning", value, turns, sourceRace: ctx.sourceRace };
+      const status = { status: "burning", value, turns, sourceRace: ctx.sourceRace, sourceInstanceId: ctx.instanceId };
       if (ctx.targetPlayerIdx != null) {
         const applied = game._applyHeroStatus(ctx.targetPlayerIdx, status);
         game._addLog(`${ctx.sourceName} burns ${game.players[ctx.targetPlayerIdx].name} for ${applied.value} damage.`);
@@ -942,6 +1052,10 @@
     healTargetMinion(game, ctx, ability) {
       const target = game._findMinion(ctx.targetInstanceId);
       if (!target) throw new Error("Choose a minion to heal.");
+      if (minionHasCardEffectImmunity(target.minion, ctx.instanceId)) {
+        game._addLog(`${target.minion.name} ignores ${ctx.sourceName}.`);
+        return;
+      }
       const value = Math.max(1, Number.isInteger(ability.value) ? ability.value : 1);
       applyOverflowHeal(target.minion, value);
       game._addLog(`${ctx.sourceName} heals ${target.minion.name} for ${value}.`);
@@ -978,8 +1092,9 @@
       const player = game.players[ctx.casterIdx];
       let appliedCount = 0;
       player.board.forEach((minion) => {
+        if (minionHasCardEffectImmunity(minion, ctx.instanceId)) return;
         const value = minion.instanceId === ctx.instanceId ? ability.selfValue || ability.value || 40 : ability.value || 30;
-        const applied = game._applyStatus(ctx.casterIdx, minion, { status: "dodge", value });
+        const applied = game._applyStatus(ctx.casterIdx, minion, { status: "dodge", value, sourceInstanceId: ctx.instanceId });
         if (applied) appliedCount += 1;
       });
       if (appliedCount > 0) game._addLog(`${ctx.sourceName} grants Dodge to ${appliedCount} friendly minion(s).`);
@@ -992,7 +1107,7 @@
       const maxValue = Math.max(1, ability.maxValue || 60);
       const increase = Math.max(1, ability.value || 5);
       const nextValue = Math.min(maxValue, (existing?.value || 0) + increase);
-      const applied = game._applyStatus(ctx.casterIdx, target.minion, { status: "dodge", value: nextValue });
+      const applied = game._applyStatus(ctx.casterIdx, target.minion, { status: "dodge", value: nextValue, sourceInstanceId: ctx.instanceId });
       if (applied) game._addLog(`${ctx.sourceName}'s Dodge rises to ${applied.value}%.`);
     },
 
@@ -1064,6 +1179,9 @@
         turnsRemaining: Math.max(1, ability.turns || 1),
         attack: ability.attack || 0,
         health: ability.health || 0,
+        setAttack: ability.setAttack,
+        setHealth: ability.setHealth,
+        grantDivineShield: ability.grantDivineShield === true,
         used: false,
       };
       game._addLog(`${ctx.sourceName} will grow if it survives ${target.minion.delayedSelfBuff.turnsRemaining} turn(s).`);
@@ -1196,7 +1314,9 @@
     _startTurn(playerIdx) {
       const p = this.players[playerIdx];
       p.manaMax = Math.min(p.manaCap || MAX_MANA, p.manaMax + 1);
-      p.manaCurrent = p.manaMax;
+      const manaBonus = Math.max(0, p.nextTurnManaBonus || 0);
+      p.nextTurnManaBonus = 0;
+      p.manaCurrent = p.manaMax + manaBonus;
       this._resolveStartOfTurnHeroStatuses(playerIdx);
       [...p.board].forEach((m) => this._resolveStartOfTurnStatuses(playerIdx, m));
       [...p.board].forEach((m) => this._resolveDelayedMinionEffects(playerIdx, m));
@@ -1417,6 +1537,7 @@
         }
         const target = this._findMinion(targetInstanceId);
         if (!target) throw new Error("Invalid target.");
+        if (minionHasCardEffectImmunity(target.minion)) return;
         applyOverflowHeal(target.minion, card.value);
         return;
       }
@@ -1465,7 +1586,7 @@
       if (needsHandSpace && this.players[playerIdx].hand.length >= MAX_HAND) {
         throw new Error("Your hand is full.");
       }
-      const returnsFriendlyBoardToHand = (card.abilities || []).some((ability) => ability.effect === "returnOtherFriendlyMinionsToHand");
+      const returnsFriendlyBoardToHand = (card.abilities || []).some((ability) => ability.trigger === "onPlay" && ability.effect === "returnOtherFriendlyMinionsToHand");
       if (returnsFriendlyBoardToHand) {
         const player = this.players[playerIdx];
         const availableAfterPlay = MAX_HAND - Math.max(0, player.hand.length - 1);
@@ -1521,6 +1642,11 @@
           if (!target) throw new Error("Choose a minion to heal.");
         }
 
+        if (ability.effect === "grantDivineShieldToTargetMinion") {
+          const target = this._findMinion(targetInstanceId);
+          if (!target) throw new Error("Choose a minion.");
+        }
+
         if (ability.effect === "cleanseFriendlyMinion") {
           const target = this._findMinion(targetInstanceId);
           if (!target || target.playerIdx !== playerIdx) {
@@ -1531,7 +1657,7 @@
     }
 
     _damageMinion(ownerIdx, minion, amount, options = {}) {
-      if (options.adverseEffect && minionImmuneToAdverseEffects(minion)) {
+      if (options.adverseEffect && minionImmuneToAdverseEffects(minion, options.sourceInstanceId)) {
         this._recordSpecialAbilityActivation(minion, { effect: "immuneToAdverseEffects", trigger: "passive" });
         this._addLog(`${minion.name} ignores an adverse effect.`);
         return;
@@ -1652,18 +1778,32 @@
       if (delayed.turnsRemaining > 0) return;
 
       delayed.used = true;
-      const attack = delayed.attack || 0;
-      const health = delayed.health || 0;
-      minion.attack = Math.max(0, minion.attack + attack);
-      minion.maxHealth = Math.max(1, minion.maxHealth + health);
-      minion.health = Math.max(1, minion.health + health);
-      this._addLog(`${minion.name} survives and gains +${attack}/+${health}.`);
+      const hasFixedStats = Number.isInteger(delayed.setAttack) || Number.isInteger(delayed.setHealth);
+      if (Number.isInteger(delayed.setAttack)) {
+        minion.attack = Math.max(0, delayed.setAttack);
+      } else {
+        minion.attack = Math.max(0, minion.attack + (delayed.attack || 0));
+      }
+      if (Number.isInteger(delayed.setHealth)) {
+        minion.maxHealth = Math.max(1, delayed.setHealth);
+        minion.health = minion.maxHealth;
+      } else {
+        const health = delayed.health || 0;
+        minion.maxHealth = Math.max(1, minion.maxHealth + health);
+        minion.health = Math.max(1, minion.health + health);
+      }
+      if (delayed.grantDivineShield) this._addKeyword(minion, "divineShield");
+      if (hasFixedStats) {
+        this._addLog(`${minion.name} survives and becomes ${minion.attack}/${minion.maxHealth}.`);
+      } else {
+        this._addLog(`${minion.name} survives and gains +${delayed.attack || 0}/${delayed.health || 0}.`);
+      }
     }
 
     _applyStatus(ownerIdx, minion, ability) {
       const type = ability.status;
       if (!STATUS_TYPES.has(type)) throw new Error("Invalid status.");
-      if (minionImmuneToAdverseEffects(minion)) {
+      if (minionImmuneToAdverseEffects(minion, ability.sourceInstanceId)) {
         this._recordSpecialAbilityActivation(minion, { effect: "immuneToAdverseEffects", trigger: "passive" });
         this._addLog(`${minion.name} ignores an adverse effect.`);
         return null;
@@ -1779,8 +1919,18 @@
       return attacker.attack + extra;
     }
 
-    _isDrunkAuraActive() {
-      return this.players.some((player) => player.board.some((minion) => minionAppliesDrunkAura(minion)));
+    _drunkAuraSourcesForPlayer(playerIdx) {
+      const sources = [];
+      this.players.forEach((player, auraOwnerIdx) => {
+        player.board.forEach((minion) => {
+          if (minionAppliesDrunkAuraToPlayer(minion, auraOwnerIdx, playerIdx)) sources.push(minion);
+        });
+      });
+      return sources;
+    }
+
+    _isDrunkAuraActive(playerIdx) {
+      return this._drunkAuraSourcesForPlayer(playerIdx).length > 0;
     }
 
     _randomDrunkTarget(attackerInstanceId) {
@@ -1822,13 +1972,11 @@
       if (!attacker.canAttack) throw new Error("That minion can't attack yet.");
       if ((attacker.attack || 0) <= 0) throw new Error("Minions with 0 Attack can't attack.");
 
-      if (this._hasStatus(attacker, "drunk") || this._isDrunkAuraActive()) {
+      if (this._hasStatus(attacker, "drunk") || this._isDrunkAuraActive(playerIdx)) {
         const target = this._randomDrunkTarget(attacker.instanceId);
         if (!target) throw new Error("No Drunk target available.");
-        this.players.forEach((player) => {
-          player.board.filter((minion) => minionAppliesDrunkAura(minion)).forEach((minion) => {
-            this._recordSpecialAbilityActivation(minion, { effect: "drunkAllMinions", trigger: "passive" });
-          });
+        this._drunkAuraSourcesForPlayer(playerIdx).forEach((minion) => {
+          this._recordSpecialAbilityActivation(minion, { effect: "drunkAllMinions", trigger: "passive" });
         });
         const targetCard = getCardById(target.minion.cardId);
         if (targetCard) {
@@ -2021,10 +2169,9 @@
       const oppIdx = this._opponentIdx(viewerIdx);
       const me = this.players[viewerIdx];
       const opp = this.players[oppIdx];
-      const drunkAuraActive = this._isDrunkAuraActive();
-
-      const serializeBoard = (board) =>
-        board.map((m) => ({
+      const serializeBoard = (board, ownerIdx) => {
+        const drunkAuraActive = this._isDrunkAuraActive(ownerIdx);
+        return board.map((m) => ({
           instanceId: m.instanceId,
           cardId: m.cardId,
           name: m.name,
@@ -2049,6 +2196,7 @@
           image: m.image,
           returnCount: m.returnCount || 0,
         }));
+      };
 
       return {
         roomCode: this.roomCode,
@@ -2076,7 +2224,7 @@
           manaCurrent: me.manaCurrent,
           deckCount: me.deck.length,
           hand: me.hand.map((cardRef) => cardWithRefModifiers(cardRef)),
-          board: serializeBoard(me.board),
+          board: serializeBoard(me.board, viewerIdx),
         },
         opponent: {
           name: opp.name,
@@ -2091,7 +2239,7 @@
           manaCurrent: opp.manaCurrent,
           deckCount: opp.deck.length,
           handCount: opp.hand.length,
-          board: serializeBoard(opp.board),
+          board: serializeBoard(opp.board, oppIdx),
         },
       };
     }

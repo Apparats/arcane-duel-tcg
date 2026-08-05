@@ -1515,49 +1515,49 @@ html[data-discord-activity="true"] #screen-lobby .firefly {
    ============================================================ */
 
 #screen-menu.screen-transition-out {
-  animation: arcana-menu-leave 150ms ease-in both;
+  animation: arcana-menu-leave 80ms ease-in both;
   pointer-events: none;
 }
 
 #screen-lobby.lobby-singleplayer.screen-transition-in {
-  animation: arcana-singleplayer-enter 360ms cubic-bezier(.2, .75, .25, 1) both;
+  animation: arcana-singleplayer-enter 180ms ease-out both;
 }
 
 #screen-lobby.lobby-singleplayer.screen-transition-out,
 #screen-lobby.lobby-multiplayer.screen-transition-out {
-  animation: arcana-singleplayer-leave 150ms ease-in both;
+  animation: arcana-singleplayer-leave 80ms ease-in both;
   pointer-events: none;
 }
 
 #screen-lobby.lobby-multiplayer.screen-transition-in {
-  animation: arcana-multiplayer-enter 360ms cubic-bezier(.2, .75, .25, 1) both;
+  animation: arcana-multiplayer-enter 180ms ease-out both;
 }
 
 #screen-menu.screen-transition-in {
-  animation: arcana-menu-return 360ms cubic-bezier(.2, .75, .25, 1) both;
+  animation: arcana-menu-return 180ms ease-out both;
 }
 
 @keyframes arcana-menu-leave {
-  to { opacity: 0; transform: scale(1.015); filter: blur(3px); }
+  to { opacity: 0; transform: translateY(4px); }
 }
 
 @keyframes arcana-singleplayer-enter {
-  from { opacity: 0; transform: translateX(22px) scale(1.012); filter: blur(4px); }
-  to { opacity: 1; transform: none; filter: none; }
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: none; }
 }
 
 @keyframes arcana-multiplayer-enter {
-  from { opacity: 0; transform: translateX(-22px) scale(1.012); filter: blur(4px); }
-  to { opacity: 1; transform: none; filter: none; }
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: none; }
 }
 
 @keyframes arcana-singleplayer-leave {
-  to { opacity: 0; transform: translateX(18px); filter: blur(3px); }
+  to { opacity: 0; transform: translateX(6px); }
 }
 
 @keyframes arcana-menu-return {
-  from { opacity: 0; transform: translateX(-18px) scale(1.01); filter: blur(4px); }
-  to { opacity: 1; transform: none; filter: none; }
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: none; }
 }
 
 .singleplayer-kicker { display: none; }

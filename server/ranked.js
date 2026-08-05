@@ -18,6 +18,8 @@ const RANKED_WEEKLY_REWARDS = {
   diamond: 600,
   master: 1200,
 };
+const RANKED_WIN_RATING = 150;
+const RANKED_LOSS_RATING = -75;
 const CET_TIME_ZONE = "Etc/GMT-1";
 
 function getRank(points = 0) {
@@ -34,6 +36,12 @@ function rankedSeasonResetRating(points = 0, ranksToDrop = 2) {
   const currentIndex = getRankIndex(points);
   const targetIndex = Math.max(0, currentIndex - Math.max(0, Number(ranksToDrop) || 0));
   return RANKS[targetIndex].min;
+}
+
+function rankedRatingDelta(result) {
+  if (result === "win") return RANKED_WIN_RATING;
+  if (result === "loss") return RANKED_LOSS_RATING;
+  return 0;
 }
 
 function rankedRewardTiers() {
@@ -81,5 +89,5 @@ function rankedWindow(now = new Date()) {
   throw new Error("Could not find the next ranked window.");
 }
 
-module.exports = { RANKS, RANKED_SCHEDULE, RANKED_WEEKLY_REWARDS, getRank, rankedRewardTiers, rankedSeason, rankedSeasonResetRating, rankedWindow };
+module.exports = { RANKS, RANKED_SCHEDULE, RANKED_WEEKLY_REWARDS, RANKED_WIN_RATING, RANKED_LOSS_RATING, getRank, rankedRatingDelta, rankedRewardTiers, rankedSeason, rankedSeasonResetRating, rankedWindow };
 

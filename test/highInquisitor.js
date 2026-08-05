@@ -34,10 +34,12 @@ assert(card.abilities.some((ability) =>
   ability.effect === "buffSelf" &&
   ability.attack === 3 &&
   ability.health === 3 &&
-  ability.maxAttack === 10 &&
-  ability.maxHealth === 16
-), "High_Inquisitor_KnkL should buff only itself up to 10/16.");
-assert(card.lore.includes("10/16"), "High_Inquisitor_KnkL should describe its stat cap.");
+  ability.maxApplications === 4 &&
+  ability.maxAttack === undefined &&
+  ability.maxHealth === undefined
+), "High_Inquisitor_KnkL should buff only itself up to 4 times.");
+assert(card.lore.includes("after this is summoned"), "High_Inquisitor_KnkL should describe that the buff happens on later turn starts.");
+assert(card.lore.includes("up to 4 times"), "High_Inquisitor_KnkL should describe its activation cap.");
 
 const game = new Game("INQUISITOR", "Inquisitor", "Opponent", {
   decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
@@ -61,8 +63,18 @@ for (let i = 0; i < 5; i += 1) {
   game.endTurn(0);
   game.endTurn(1);
 }
-assert.strictEqual(inquisitor.attack, 10, "High_Inquisitor_KnkL should stop gaining Attack at 10.");
-assert.strictEqual(inquisitor.health, 16, "High_Inquisitor_KnkL should stop gaining Health at 16.");
-assert.strictEqual(inquisitor.maxHealth, 16, "High_Inquisitor_KnkL should stop gaining max Health at 16.");
+assert.strictEqual(inquisitor.attack, 12, "High_Inquisitor_KnkL should stop after 4 Attack buffs.");
+assert.strictEqual(inquisitor.health, 15, "High_Inquisitor_KnkL should stop after 4 Health buffs.");
+assert.strictEqual(inquisitor.maxHealth, 15, "High_Inquisitor_KnkL should stop after 4 max Health buffs.");
+
+const overhealGame = new Game("INQUISITOR-OVERHEAL", "Inquisitor", "Opponent", {
+  decks: [Array(20).fill("base:aleex"), Array(20).fill("base:aleex")],
+});
+const overhealed = minion("overhealed", "expansion2:high-inquisitor-knkl", { health: 20 });
+overhealGame.players[0].board = [overhealed];
+overhealGame.endTurn(0);
+overhealGame.endTurn(1);
+assert.strictEqual(overhealed.maxHealth, card.health + 3, "High_Inquisitor_KnkL should still gain max Health while overhealed.");
+assert.strictEqual(overhealed.health, 23, "High_Inquisitor_KnkL should not reduce overhealed Health when buffing.");
 
 console.log("--- HIGH INQUISITOR TEST OK ---");

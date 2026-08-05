@@ -32,7 +32,6 @@
    rule. They stay visible without obscuring the card's art or combat stats. */
 #screen-game .minion-card.status-weakened { border-color: #d76052; box-shadow: 0 0 13px rgba(215, 71, 60, 0.44); }
 #screen-game .minion-card.status-frozen { border-color: #8be6ff; box-shadow: 0 0 15px rgba(90, 211, 255, 0.54); }
-#screen-game .minion-card.status-silenced { filter: saturate(0.55) brightness(0.84); }
 #screen-game .minion-card.status-poisoned { border-color: #a8d95a; box-shadow: 0 0 15px rgba(125, 192, 54, 0.46); }
 #screen-game .minion-card.status-marked { border-color: #ff895f; box-shadow: 0 0 16px rgba(255, 97, 72, 0.52); }
 #screen-game .minion-card.status-drunk { border-color: #d6b55f; box-shadow: 0 0 15px rgba(214, 181, 95, 0.45), 0 0 22px rgba(94, 209, 181, 0.22); }

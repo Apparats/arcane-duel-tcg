@@ -1,6 +1,6 @@
 module.exports = {
   name: "Zugzwang",
-  cost: 6,
+  cost: 5,
   type: "minion",
   attack: 5,
   health: 7,

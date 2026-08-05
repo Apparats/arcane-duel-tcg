@@ -8,9 +8,9 @@ module.exports = {
   race: "Monster",
   rarity: "legendary",
   country: "Vatican",
-  lore: "At the start of each of your turns, this card gains up to +3/+3 until it becomes 10/16, after it stops winning stats.",
+  lore: "At the start of each of your turns after this is summoned, this card gains +3/+3. This can happen up to 4 times.",
   image: "art/High_Inquisitor_KnkL.webp",
   abilities: [
-    { trigger: "onTurnStart", effect: "buffSelf", attack: 3, health: 3, maxAttack: 10, maxHealth: 16 },
+    { trigger: "onTurnStart", effect: "buffSelf", attack: 3, health: 3, maxApplications: 4 },
   ],
 };

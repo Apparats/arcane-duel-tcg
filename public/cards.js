@@ -221,10 +221,10 @@
     },
     {
       "name": "Fanex",
-      "cost": 6,
+      "cost": 4,
       "type": "minion",
-      "attack": 6,
-      "health": 10,
+      "attack": 4,
+      "health": 5,
       "keywords": [],
       "race": "Monster",
       "rarity": "legendary",
@@ -317,20 +317,20 @@
     },
     {
       "name": "Manuchiliz",
-      "cost": 5,
+      "cost": 4,
       "type": "minion",
-      "attack": 5,
-      "health": 10,
+      "attack": 4,
+      "health": 6,
       "keywords": [],
       "race": "Monster",
       "rarity": "legendary",
       "country": "Argentina",
-      "lore": "Its arrival makes 4 of damage to all cards on the board, ally and enemy alike.",
+      "lore": "On play, deals 4 damage to all other cards on the board.",
       "image": "art/Manuchiliz.webp",
       "abilities": [
         {
           "trigger": "onPlay",
-          "effect": "damageAllMinions",
+          "effect": "damageAllOtherMinions",
           "value": 4
         }
       ],
@@ -432,7 +432,7 @@
     },
     {
       "name": "Red",
-      "cost": 6,
+      "cost": 5,
       "type": "minion",
       "attack": 0,
       "health": 10,
@@ -549,6 +549,23 @@
       "_expansionId": "expansion2"
     },
     {
+      "name": "alfredo_cristiani",
+      "cost": 1,
+      "type": "minion",
+      "attack": 2,
+      "health": 1,
+      "keywords": [
+        "divineShield"
+      ],
+      "race": "Human",
+      "rarity": "common",
+      "country": "El Salvador",
+      "lore": "Divine Shield.",
+      "image": "art/Alfredo_Cristiani.webp",
+      "id": "expansion2:alfredo-cristiani",
+      "_expansionId": "expansion2"
+    },
+    {
       "name": "Ancalego",
       "cost": 3,
       "type": "minion",
@@ -585,7 +602,7 @@
       "name": "Antichristjesus",
       "cost": 4,
       "type": "minion",
-      "attack": 3,
+      "attack": 4,
       "health": 8,
       "keywords": [
         "taunt"
@@ -593,7 +610,7 @@
       "race": "Human",
       "rarity": "legendary",
       "country": "Sri Lanka",
-      "lore": "While on the board, enemies cannot summon Taunt or Divine Shield minions. When this kills an enemy minion, it restores its Health up to 8.",
+      "lore": "Immune to adverse effects. While on the board, enemies cannot summon Taunt or Divine Shield minions. When this kills an enemy minion, it restores its Health up to 8.",
       "image": "art/Antichristjesus2.webp",
       "abilities": [
         {
@@ -606,11 +623,38 @@
           "enemyOnly": true
         },
         {
+          "trigger": "passive",
+          "effect": "immuneToAdverseEffects"
+        },
+        {
           "trigger": "onKillMinion",
           "effect": "restoreSelfHealthToValue",
           "value": 8
         }
       ],
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "asher",
+      "cost": 3,
+      "type": "minion",
+      "attack": 3,
+      "health": 2,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "rare",
+      "country": "Cambodia",
+      "lore": "On play, heals all friendly Monster cards for 1.",
+      "image": "art/Asher.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "healFriendlyRaceMinions",
+          "race": "Monster",
+          "value": 1
+        }
+      ],
+      "id": "expansion2:asher",
       "_expansionId": "expansion2"
     },
     {
@@ -641,7 +685,7 @@
       "cost": 5,
       "type": "minion",
       "attack": 4,
-      "health": 10,
+      "health": 7,
       "keywords": [],
       "race": "Human",
       "rarity": "legendary",
@@ -662,20 +706,21 @@
     {
       "id": "expansion2:Baatus2",
       "name": "Baatus",
-      "cost": 4,
+      "cost": 5,
       "type": "minion",
       "attack": 3,
-      "health": 10,
+      "health": 9,
       "keywords": [],
       "race": "Human",
       "rarity": "legendary",
       "country": "Netherlands",
-      "lore": "While Baatus is on the board, all board minions are Drunk. Drunk minions attack a random minion on either side instead of the chosen target.",
+      "lore": "While Baatus is on the board, enemy minions are Drunk. Drunk minions attack a random minion on either side instead of the chosen target.",
       "image": "art/Baatus2.webp",
       "abilities": [
         {
           "trigger": "passive",
-          "effect": "drunkAllMinions"
+          "effect": "drunkAllMinions",
+          "enemyOnly": true
         }
       ],
       "_expansionId": "expansion2"
@@ -751,6 +796,45 @@
       "_expansionId": "expansion2"
     },
     {
+      "name": "BrodoCaldo",
+      "cost": 5,
+      "type": "minion",
+      "attack": 4,
+      "health": 7,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "common",
+      "country": "Mongolia",
+      "lore": "",
+      "image": "art/BrodoCaldo.webp",
+      "id": "expansion2:brodocaldo",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "CORN",
+      "cost": 6,
+      "type": "minion",
+      "attack": 5,
+      "health": 7,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "rare",
+      "country": "Canada",
+      "lore": "While this card is on the board, Taunt cards cannot be summoned.",
+      "image": "art/CORN.webp",
+      "abilities": [
+        {
+          "trigger": "passive",
+          "effect": "blockKeywordSummons",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "id": "expansion2:corn",
+      "_expansionId": "expansion2"
+    },
+    {
       "name": "Chewakkka",
       "cost": 7,
       "type": "minion",
@@ -763,6 +847,21 @@
       "lore": "Chewakkka",
       "image": "art/Chewakkka.webp",
       "id": "expansion2:chewakkka",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "Chivo",
+      "cost": 6,
+      "type": "minion",
+      "attack": 6,
+      "health": 6,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "common",
+      "country": "Liberia",
+      "lore": "",
+      "image": "art/Chivo.webp",
+      "id": "expansion2:chivo",
       "_expansionId": "expansion2"
     },
     {
@@ -780,6 +879,21 @@
       "lore": "Triplebeam. This card avoids the first hit against him.",
       "image": "art/DaVoskDocta.webp",
       "id": "expansion2:davoskdocta",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "dempc",
+      "cost": 7,
+      "type": "minion",
+      "attack": 7,
+      "health": 7,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "common",
+      "country": "Ireland",
+      "lore": "",
+      "image": "art/DempC.webp",
+      "id": "expansion2:dempc",
       "_expansionId": "expansion2"
     },
     {
@@ -817,6 +931,54 @@
       "_expansionId": "expansion2"
     },
     {
+      "name": "ghoulli",
+      "cost": 4,
+      "type": "minion",
+      "attack": 4,
+      "health": 5,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "rare",
+      "country": "Luxembourg",
+      "lore": "On play, gains Taunt, Divine Shield, or Charge at random.",
+      "image": "art/Ghoulli.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "grantRandomSelfKeyword",
+          "keywords": [
+            "taunt",
+            "divineShield",
+            "charge"
+          ]
+        }
+      ],
+      "id": "expansion2:ghoulli",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "halbarad",
+      "cost": 5,
+      "type": "minion",
+      "attack": 4,
+      "health": 6,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "rare",
+      "country": "Luxembourg",
+      "lore": "On play, adds a Quick Bandage to your hand.",
+      "image": "art/Halbarad.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "addCardToHand",
+          "cardId": "expansion1:quickbandage"
+        }
+      ],
+      "id": "expansion2:halbarad",
+      "_expansionId": "expansion2"
+    },
+    {
       "name": "High_Inquisitor_KnkL",
       "cost": 3,
       "type": "minion",
@@ -826,7 +988,7 @@
       "race": "Monster",
       "rarity": "legendary",
       "country": "Vatican",
-      "lore": "At the start of each of your turns, this card gains up to +3/+3 until it becomes 10/16, after it stops winning stats.",
+      "lore": "At the start of each of your turns after this is summoned, this card gains +3/+3. This can happen up to 4 times.",
       "image": "art/High_Inquisitor_KnkL.webp",
       "abilities": [
         {
@@ -834,8 +996,7 @@
           "effect": "buffSelf",
           "attack": 3,
           "health": 3,
-          "maxAttack": 10,
-          "maxHealth": 16
+          "maxApplications": 4
         }
       ],
       "id": "expansion2:high-inquisitor-knkl",
@@ -861,6 +1022,28 @@
         }
       ],
       "id": "expansion2:italo179",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "jaume_primer",
+      "cost": 5,
+      "type": "minion",
+      "attack": 4,
+      "health": 6,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "rare",
+      "country": "Andorra",
+      "lore": "On play, adds a Minor Spark to your hand.",
+      "image": "art/Jaume_Primer.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "addCardToHand",
+          "cardId": "expansion1:minorspark"
+        }
+      ],
+      "id": "expansion2:jaume-primer",
       "_expansionId": "expansion2"
     },
     {
@@ -902,10 +1085,10 @@
     },
     {
       "name": "Lawrence-of-Arabia",
-      "cost": 5,
+      "cost": 4,
       "type": "minion",
-      "attack": 3,
-      "health": 9,
+      "attack": 2,
+      "health": 10,
       "keywords": [],
       "race": "Monster",
       "rarity": "legendary",
@@ -979,6 +1162,35 @@
       "_expansionId": "expansion2"
     },
     {
+      "name": "masterchief",
+      "cost": 1,
+      "type": "minion",
+      "attack": 2,
+      "health": 8,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "legendary",
+      "country": "Oman",
+      "lore": "When this card kills another card, it gains Divine Shield. If it survives 3 turns, it becomes a 10/10 with Divine Shield.",
+      "image": "art/MasterChief.webp",
+      "abilities": [
+        {
+          "trigger": "onKillMinion",
+          "effect": "grantSelfDivineShield"
+        },
+        {
+          "trigger": "onPlay",
+          "effect": "startDelayedSelfBuff",
+          "turns": 3,
+          "setAttack": 10,
+          "setHealth": 10,
+          "grantDivineShield": true
+        }
+      ],
+      "id": "expansion2:masterchief",
+      "_expansionId": "expansion2"
+    },
+    {
       "name": "Michiel_op_Snuifari",
       "cost": 5,
       "type": "minion",
@@ -997,6 +1209,21 @@
         }
       ],
       "id": "expansion2:michiel-op-snuifari",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "naladarkclouds",
+      "cost": 4,
+      "type": "minion",
+      "attack": 4,
+      "health": 6,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "common",
+      "country": "Chile",
+      "lore": "",
+      "image": "art/NalaDarkclouds.webp",
+      "id": "expansion2:naladarkclouds",
       "_expansionId": "expansion2"
     },
     {
@@ -1020,6 +1247,136 @@
         }
       ],
       "id": "expansion2:napalmerino",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "nootmuskater",
+      "cost": 3,
+      "type": "minion",
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "charge"
+      ],
+      "race": "Monster",
+      "rarity": "common",
+      "country": "Netherlands",
+      "lore": "Charge.",
+      "image": "art/Nootmuskater.webp",
+      "id": "expansion2:nootmuskater",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "ravana",
+      "cost": 6,
+      "type": "minion",
+      "attack": 2,
+      "health": 9,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "common",
+      "country": "Sri Lanka",
+      "lore": "",
+      "image": "art/Ravana.webp",
+      "id": "expansion2:ravana",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "sagukeju",
+      "cost": 2,
+      "type": "minion",
+      "attack": 2,
+      "health": 5,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "common",
+      "country": "Laos",
+      "lore": "",
+      "image": "art/SaguKeju.webp",
+      "id": "expansion2:sagukeju",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "sinistersmiley",
+      "cost": 6,
+      "type": "minion",
+      "attack": 6,
+      "health": 6,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "rare",
+      "country": "South Africa",
+      "lore": "On play, choose a card to give it Divine Shield.",
+      "image": "art/SinisterSmiley.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "grantDivineShieldToTargetMinion",
+          "target": "minion"
+        }
+      ],
+      "id": "expansion2:sinistersmiley",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "snowman",
+      "cost": 6,
+      "type": "minion",
+      "attack": 3,
+      "health": 8,
+      "keywords": [
+        "taunt"
+      ],
+      "race": "Monster",
+      "rarity": "rare",
+      "country": "Portugal",
+      "lore": "Taunt. When this card is attacked, the attacker is Frozen for 2 turns.",
+      "image": "art/SnowMan.webp",
+      "abilities": [
+        {
+          "trigger": "onAttacked",
+          "effect": "applyStatusToAttacker",
+          "status": "frozen",
+          "turns": 2
+        }
+      ],
+      "id": "expansion2:snowman",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "storamiaska",
+      "cost": 10,
+      "type": "minion",
+      "attack": 5,
+      "health": 12,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "rare",
+      "country": "Saudi Arabia",
+      "lore": "This card cannot be affected by other cards' effects, positive or negative.",
+      "image": "art/StoraMiaska.webp",
+      "abilities": [
+        {
+          "trigger": "passive",
+          "effect": "immuneToCardEffects"
+        }
+      ],
+      "id": "expansion2:storamiaska",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "tomaswenzel",
+      "cost": 0,
+      "type": "minion",
+      "attack": 1,
+      "health": 1,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "common",
+      "country": "Poland",
+      "lore": "",
+      "image": "art/Tomaswenzel.webp",
+      "id": "expansion2:tomaswenzel",
       "_expansionId": "expansion2"
     },
     {
@@ -1059,6 +1416,44 @@
         }
       ],
       "id": "expansion2:vatou",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "Vel",
+      "cost": 3,
+      "type": "minion",
+      "attack": 3,
+      "health": 2,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "rare",
+      "country": "Mali",
+      "lore": "On play, gives +1 Attack to all friendly Human cards.",
+      "image": "art/Vel.webp",
+      "abilities": [
+        {
+          "trigger": "onPlay",
+          "effect": "buffFriendlyRaceMinions",
+          "race": "Human",
+          "attack": 1
+        }
+      ],
+      "id": "expansion2:vel",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "vorneburg",
+      "cost": 10,
+      "type": "minion",
+      "attack": 9,
+      "health": 5,
+      "keywords": [],
+      "race": "Human",
+      "rarity": "common",
+      "country": "Thailand",
+      "lore": "",
+      "image": "art/Vorneburg.webp",
+      "id": "expansion2:vorneburg",
       "_expansionId": "expansion2"
     },
     {
@@ -1115,6 +1510,57 @@
       "_expansionId": "expansion2"
     },
     {
+      "id": "expansion2:zugzwang2",
+      "name": "zugzwang",
+      "cost": 4,
+      "type": "minion",
+      "attack": 2,
+      "health": 5,
+      "keywords": [
+        "charge"
+      ],
+      "race": "Human",
+      "rarity": "common",
+      "country": "Bolivia",
+      "lore": "Charge.",
+      "image": "art/Zugzwang2.webp",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "desumn",
+      "cost": 5,
+      "type": "minion",
+      "attack": 1,
+      "health": 9,
+      "keywords": [
+        "taunt"
+      ],
+      "race": "Human",
+      "rarity": "common",
+      "country": "France",
+      "lore": "Taunt.",
+      "image": "art/desumn.webp",
+      "id": "expansion2:desumn",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "dnalop",
+      "cost": 10,
+      "type": "minion",
+      "attack": 4,
+      "health": 13,
+      "keywords": [
+        "taunt"
+      ],
+      "race": "Human",
+      "rarity": "common",
+      "country": "Greenland",
+      "lore": "Taunt.",
+      "image": "art/dnalop.webp",
+      "id": "expansion2:dnalop",
+      "_expansionId": "expansion2"
+    },
+    {
       "name": "excelsior97",
       "cost": 3,
       "type": "minion",
@@ -1127,6 +1573,21 @@
       "lore": "meow",
       "image": "art/excelsior97.webp",
       "id": "expansion2:excelsior97",
+      "_expansionId": "expansion2"
+    },
+    {
+      "name": "polltrek",
+      "cost": 5,
+      "type": "minion",
+      "attack": 7,
+      "health": 3,
+      "keywords": [],
+      "race": "Monster",
+      "rarity": "common",
+      "country": "Norway",
+      "lore": "",
+      "image": "art/polltrek.webp",
+      "id": "expansion2:polltrek",
       "_expansionId": "expansion2"
     },
     {
@@ -1268,10 +1729,8 @@
       "cost": 5,
       "type": "minion",
       "attack": 3,
-      "health": 12,
-      "keywords": [
-        "taunt"
-      ],
+      "health": 10,
+      "keywords": [],
       "race": "Human",
       "rarity": "mythic",
       "country": "Thailand",
@@ -1297,25 +1756,24 @@
       "cost": 5,
       "type": "minion",
       "attack": 4,
-      "health": 10,
+      "health": 7,
       "keywords": [],
       "race": "Human",
       "rarity": "legendary",
       "country": "Malta",
-      "lore": "Marked enemies take 3 extra damage from the next hit, then Marked is removed. Applies on play and each turn.",
+      "lore": "On play and at the start of your turns, Mark all enemy minions. Marked enemies take 3 extra damage from the next hit, then Marked is removed.",
       "image": "art/chiorico.webp",
       "abilities": [
         {
           "trigger": "onPlay",
-          "effect": "applyStatus",
-          "target": "enemyMinion",
+          "effect": "applyStatusToAllEnemyMinions",
           "status": "marked",
           "value": 3,
           "turns": 2
         },
         {
           "trigger": "onTurnStart",
-          "effect": "applyStatusToRandomEnemyMinion",
+          "effect": "applyStatusToAllEnemyMinions",
           "status": "marked",
           "value": 3,
           "turns": 2
@@ -1356,7 +1814,7 @@
     },
     {
       "name": "Kep",
-      "cost": 6,
+      "cost": 5,
       "type": "minion",
       "attack": 5,
       "health": 8,
@@ -1380,7 +1838,7 @@
       "cost": 5,
       "type": "minion",
       "attack": 5,
-      "health": 10,
+      "health": 9,
       "keywords": [],
       "race": "Monster",
       "rarity": "legendary",
@@ -1411,7 +1869,7 @@
       "name": "Overseer",
       "cost": 3,
       "type": "minion",
-      "attack": 4,
+      "attack": 3,
       "health": 6,
       "keywords": [
         "charge"
@@ -1441,8 +1899,8 @@
       "name": "Toy",
       "cost": 4,
       "type": "minion",
-      "attack": 5,
-      "health": 8,
+      "attack": 4,
+      "health": 7,
       "keywords": [],
       "race": "Human",
       "rarity": "legendary",
@@ -1880,20 +2338,21 @@
     },
     {
       "name": "Humph",
-      "cost": 6,
+      "cost": 5,
       "type": "minion",
-      "attack": 7,
-      "health": 10,
+      "attack": 5,
+      "health": 8,
       "keywords": [],
       "race": "Human",
       "rarity": "legendary",
       "country": "Ireland",
-      "lore": "When this card dies, return every remaining minion on both boards to its owner's deck.",
+      "lore": "When this kills a minion, gain 2 extra Mana on your next turn.",
       "image": "art/Humph.webp",
       "abilities": [
         {
-          "trigger": "onDeath",
-          "effect": "returnAllMinionsToDeck"
+          "trigger": "onKillMinion",
+          "effect": "grantNextTurnTemporaryMana",
+          "value": 2
         }
       ],
       "id": "base:humph",
@@ -2502,7 +2961,7 @@
     },
     {
       "name": "Zugzwang",
-      "cost": 6,
+      "cost": 5,
       "type": "minion",
       "attack": 5,
       "health": 7,

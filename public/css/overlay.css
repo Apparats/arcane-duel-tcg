@@ -186,19 +186,19 @@
   --zoom-rarity-panel-b: rgba(12, 10, 18, 0.99);
   position: fixed;
   z-index: 260;
-  width: min(90vw, 300px);
+  width: min(86vw, 244px);
   max-width: calc(100vw - 16px);
   max-height: calc(100dvh - 20px);
   box-sizing: border-box;
   isolation: isolate;
-  overflow: hidden;
+  overflow: hidden auto;
   background:
     linear-gradient(180deg, var(--zoom-rarity-accent-soft), transparent 32%),
     linear-gradient(135deg, rgba(79, 195, 232, 0.08), transparent 28%, var(--zoom-rarity-accent-soft) 82%, rgba(232, 179, 79, 0.08)),
     linear-gradient(180deg, var(--zoom-rarity-panel-a), var(--zoom-rarity-panel-b));
   border: 1px solid var(--zoom-rarity-accent);
   border-radius: 8px;
-  padding: 10px;
+  padding: 10px 10px 12px;
   box-shadow:
     0 14px 36px rgba(0, 0, 0, 0.66),
     0 0 0 1px rgba(255, 236, 179, 0.1),
@@ -270,15 +270,17 @@
   max-height: inherit;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  overflow: hidden;
+  justify-content: flex-start;
+  gap: 9px;
+  overflow: visible;
+  text-align: center;
 }
 
 .card-tooltip-art {
-  width: clamp(86px, 20vw, 112px);
+  width: clamp(112px, 28vw, 138px);
   max-width: 100%;
   flex: 0 0 auto;
-  margin: 9px 10px 13px;
+  margin: 8px auto 10px;
   cursor: default;
   transform: translateZ(0);
 }
@@ -353,8 +355,9 @@
 }
 
 .card-tooltip-details {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   width: 100%;
+  max-height: calc(100dvh - 190px);
   min-width: 0;
   min-height: 0;
   overflow: hidden auto;
@@ -368,14 +371,17 @@
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     inset 0 0 18px rgba(0, 0, 0, 0.22);
+  text-align: center;
 }
 
 .tooltip-header {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 6px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
   margin-bottom: 6px;
+  text-align: center;
 }
 .tooltip-name {
   min-width: 0;
@@ -386,8 +392,10 @@
   line-height: 1.2;
   overflow-wrap: anywhere;
   text-shadow: 0 2px 0 #000, 0 0 12px rgba(232, 179, 79, 0.18);
+  text-align: center;
 }
 .tooltip-rarity {
+  align-self: center;
   flex-shrink: 0;
   font-size: 9px;
   text-transform: uppercase;
@@ -405,12 +413,13 @@
 .tooltip-meta {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
+  justify-content: center;
   gap: 6px;
   font-size: 10px;
   color: var(--cream-dim);
   margin-bottom: 7px;
   flex-wrap: wrap;
+  text-align: center;
 }
 .tooltip-race { font-style: italic; }
 
@@ -418,6 +427,7 @@
   display: inline-flex;
   min-width: 0;
   align-items: center;
+  justify-content: center;
   gap: 5px;
 }
 
@@ -492,21 +502,22 @@
 
 @media (max-width: 560px) {
   .card-tooltip {
-    width: min(90vw, 288px);
+    width: min(88vw, 236px);
     padding: 9px;
   }
 
   .card-tooltip-content {
     gap: 8px;
-    max-height: calc(100dvh - 44px);
+    max-height: none;
   }
 
   .card-tooltip-art {
-    width: clamp(78px, 24vw, 104px);
-    margin: 9px 10px 13px;
+    width: min(54vw, 126px);
+    margin: 8px auto 10px;
   }
 
   .card-tooltip-details {
+    max-height: calc(100dvh - 176px);
     padding: 9px;
   }
 
@@ -517,6 +528,16 @@
   .tooltip-lore {
     font-size: 13.5px;
     line-height: 1.45;
+  }
+}
+
+@media (max-height: 520px) {
+  .card-tooltip-art {
+    width: clamp(86px, 22vh, 112px);
+  }
+
+  .card-tooltip-details {
+    max-height: calc(100dvh - 142px);
   }
 }
 

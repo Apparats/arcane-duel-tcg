@@ -81,8 +81,9 @@ function main() {
   assert(manuchilizGame.players[0].board.length === 1, "Manuchiliz should also damage and remove friendly minions with 3 health.");
   assert(manuchilizGame.players[0].board[0].cardId === "expansion1:manuchiliz", "Manuchiliz should survive its own on-play damage.");
   const manuchiliz = getCardById("expansion1:manuchiliz");
-  const manuchilizDamage = manuchiliz.abilities.find((ability) => ability.effect === "damageAllMinions")?.value;
-  assert(manuchilizGame.players[0].board[0].health === manuchiliz.health - manuchilizDamage, "Manuchiliz should take damage from its own effect.");
+  const manuchilizDamage = manuchiliz.abilities.find((ability) => ability.effect === "damageAllOtherMinions")?.value;
+  assert(manuchilizDamage === 4, "Manuchiliz should deal 4 damage to other minions.");
+  assert(manuchilizGame.players[0].board[0].health === manuchiliz.health, "Manuchiliz should not take damage from its own effect.");
   assert(manuchilizGame.players[1].board.length === 0, "Manuchiliz should remove enemy minions with 3 health.");
   console.log("--- FANEX AND MANUCHILIZ TEST OK ---");
 }

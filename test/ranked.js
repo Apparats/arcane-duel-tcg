@@ -1,5 +1,5 @@
 const assert = require("assert");
-const { getRank, rankedRewardTiers, rankedSeason, rankedSeasonResetRating, rankedWindow } = require("../server/ranked");
+const { getRank, rankedRatingDelta, rankedRewardTiers, rankedSeason, rankedSeasonResetRating, rankedWindow } = require("../server/ranked");
 
 assert.strictEqual(getRank(0).name, "Sand");
 assert.strictEqual(getRank(400).name, "Bronze");
@@ -18,6 +18,9 @@ assert.strictEqual(rankedSeasonResetRating(450), 0);
 assert.strictEqual(rankedSeasonResetRating(950), 0);
 assert.strictEqual(rankedSeasonResetRating(1600), 400);
 assert.strictEqual(rankedSeasonResetRating(2400), 900);
+assert.strictEqual(rankedRatingDelta("win"), 150);
+assert.strictEqual(rankedRatingDelta("loss"), -75);
+assert.strictEqual(rankedRatingDelta("draw"), 0);
 assert.strictEqual(rankedSeason(new Date("2026-08-12T10:00:00Z")).endsAt.toISOString(), "2026-09-01T00:00:00.000Z");
 
 const fridayBefore = rankedWindow(new Date("2026-07-31T16:59:00Z"));

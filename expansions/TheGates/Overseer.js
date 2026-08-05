@@ -2,7 +2,7 @@ module.exports = {
   name: "Overseer",
   cost: 3,
   type: "minion",
-  attack: 4,
+  attack: 3,
   health: 6,
   keywords: ["charge"],
   race: "Monster",

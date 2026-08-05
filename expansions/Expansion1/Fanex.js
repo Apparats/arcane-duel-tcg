@@ -1,9 +1,9 @@
 module.exports = {
   name: "Fanex",
-  cost: 6,
+  cost: 4,
   type: "minion",
-  attack: 6,
-  health: 10,
+  attack: 4,
+  health: 5,
   keywords: [],
   race: "Monster",
   rarity: "legendary",

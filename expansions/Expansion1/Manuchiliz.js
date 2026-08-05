@@ -1,16 +1,16 @@
 module.exports = {
   name: "Manuchiliz",
-  cost: 5,
+  cost: 4,
   type: "minion",
-  attack: 5,
-  health: 10,
+  attack: 4,
+  health: 6,
   keywords: [],
   race: "Monster",
   rarity: "legendary",
   country: "Argentina",
-  lore: "Its arrival makes 4 of damage to all cards on the board, ally and enemy alike.",
+  lore: "On play, deals 4 damage to all other cards on the board.",
   image: "art/Manuchiliz.webp",
   abilities: [
-    { trigger: "onPlay", effect: "damageAllMinions", value: 4 },
+    { trigger: "onPlay", effect: "damageAllOtherMinions", value: 4 },
   ],
 };

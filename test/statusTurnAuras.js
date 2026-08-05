@@ -42,7 +42,6 @@ function testStatusCardsHaveTurnAuras() {
   const cases = [
     ["TheGates:toy", "weakened", "enemyMinion"],
     ["TheGates:jacquedebalsac", "frozen", "enemyMinion"],
-    ["TheGates:chiorico", "marked", "enemyMinion"],
     ["TheGates:mamaluteo", "poisoned", "enemy"],
   ];
 
@@ -51,13 +50,16 @@ function testStatusCardsHaveTurnAuras() {
     assert(card.abilities.some((ability) => ability.trigger === "onPlay" && ability.effect === "applyStatus" && ability.target === target && ability.status === status), `${card.name} should apply ${status} on play.`);
     assert(card.abilities.some((ability) => ability.trigger === "onTurnStart" && ability.effect === "applyStatusToRandomEnemyMinion" && ability.status === status && ability.oncePerMinion !== true), `${card.name} should apply ${status} repeatedly to a random enemy minion at turn start.`);
   });
+
+  const chiorico = getCardById("TheGates:chiorico");
+  assert(chiorico.abilities.some((ability) => ability.trigger === "onPlay" && ability.effect === "applyStatusToAllEnemyMinions" && ability.status === "marked"), "Chiorico should Mark all enemy minions on play.");
+  assert(chiorico.abilities.some((ability) => ability.trigger === "onTurnStart" && ability.effect === "applyStatusToAllEnemyMinions" && ability.status === "marked"), "Chiorico should Mark all enemy minions at turn start.");
 }
 
 function testStatusCardsApplyInitialTargetedEffect() {
   const cases = [
     ["TheGates:toy", "weakened"],
     ["TheGates:jacquedebalsac", "frozen"],
-    ["TheGates:chiorico", "marked"],
   ];
 
   cases.forEach(([cardId, status]) => {
@@ -71,6 +73,18 @@ function testStatusCardsApplyInitialTargetedEffect() {
 
     assert(target.statuses.some((item) => item.type === status), `${getCardById(cardId).name} should apply ${status} when played.`);
   });
+
+  const game = makeGame();
+  const firstTarget = minion("marked-target-1", "base:aleex");
+  const secondTarget = minion("marked-target-2", "base:babu");
+  game.players[1].board = [firstTarget, secondTarget];
+  game.players[0].hand.unshift("TheGates:chiorico");
+  game.players[0].manaCurrent = 20;
+
+  game.playCard(0, 0, null);
+
+  assert(firstTarget.statuses.some((item) => item.type === "marked"), "Chiorico should Mark the first enemy minion when played.");
+  assert(secondTarget.statuses.some((item) => item.type === "marked"), "Chiorico should Mark the second enemy minion when played.");
 }
 
 function testCardinalSeverinSilencesAllEnemyMinionsOnPlayAndTurnStart() {
@@ -120,6 +134,20 @@ function testTurnAuraTargetsRandomEnemyMinion() {
   assert(firstTarget.statuses.some((status) => status.type === "weakened" && status.value === 3), "Toy should keep weakening a random enemy minion on later turn starts.");
 }
 
+function testChioricoTurnAuraMarksAllEnemyMinions() {
+  const game = makeGame();
+  const chiorico = minion("chiorico", "TheGates:chiorico");
+  const firstTarget = minion("target-1", "base:aleex");
+  const secondTarget = minion("target-2", "base:babu");
+  game.players[0].board = [chiorico];
+  game.players[1].board = [firstTarget, secondTarget];
+
+  advanceBackToPlayer(game);
+
+  assert(firstTarget.statuses.some((status) => status.type === "marked" && status.value === 3), "Chiorico should Mark the first enemy minion at turn start.");
+  assert(secondTarget.statuses.some((status) => status.type === "marked" && status.value === 3), "Chiorico should Mark the second enemy minion at turn start.");
+}
+
 function testTurnAuraIgnoresEmptyEnemyBoard() {
   const game = makeGame();
   game.players[0].board = [minion("jacque", "TheGates:jacquedebalsac")];
@@ -134,7 +162,6 @@ function testTurnAuraCardsCanBePlayedIntoEmptyEnemyBoard() {
   const cases = [
     "TheGates:toy",
     "TheGates:jacquedebalsac",
-    "TheGates:chiorico",
   ];
 
   cases.forEach((cardId) => {
@@ -155,7 +182,6 @@ function testTurnAuraCardsStillRequireInitialTargetWhenAvailable() {
   const cases = [
     "TheGates:toy",
     "TheGates:jacquedebalsac",
-    "TheGates:chiorico",
   ];
 
   cases.forEach((cardId) => {
@@ -188,6 +214,7 @@ testStatusCardsHaveTurnAuras();
 testStatusCardsApplyInitialTargetedEffect();
 testCardinalSeverinSilencesAllEnemyMinionsOnPlayAndTurnStart();
 testTurnAuraTargetsRandomEnemyMinion();
+testChioricoTurnAuraMarksAllEnemyMinions();
 testTurnAuraIgnoresEmptyEnemyBoard();
 testTurnAuraCardsCanBePlayedIntoEmptyEnemyBoard();
 testTurnAuraCardsStillRequireInitialTargetWhenAvailable();

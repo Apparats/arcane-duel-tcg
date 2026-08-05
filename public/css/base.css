@@ -114,6 +114,69 @@ body {
   outline: none;
 }
 
+.global-match-search-status {
+  position: fixed;
+  z-index: 45;
+  top: calc(var(--safe-top) + 8px);
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: min(92vw, 310px);
+  min-height: 34px;
+  padding: 7px 11px;
+  border: 1px solid rgba(232, 179, 79, 0.45);
+  border-radius: 999px;
+  background: rgba(12, 9, 18, 0.92);
+  color: var(--cream);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 239, 190, 0.08);
+  font: 700 12px "Inter", sans-serif;
+  letter-spacing: 0.02em;
+  transform: translateX(-50%);
+  cursor: pointer;
+}
+
+.global-match-search-status:hover,
+.global-match-search-status:focus-visible {
+  border-color: var(--gold);
+  background: rgba(26, 19, 32, 0.96);
+  outline: none;
+}
+
+.global-match-search-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--mana);
+  box-shadow: 0 0 0 0 rgba(79, 195, 232, 0.55);
+  animation: global-search-pulse 1.15s ease-out infinite;
+}
+
+.global-match-search-cancel {
+  flex: 0 0 auto;
+  padding-left: 8px;
+  border-left: 1px solid rgba(232, 179, 79, 0.24);
+  color: var(--gold);
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+}
+
+@keyframes global-search-pulse {
+  70% { box-shadow: 0 0 0 7px rgba(79, 195, 232, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(79, 195, 232, 0); }
+}
+
+@media (max-width: 560px) {
+  .global-match-search-status {
+    top: calc(var(--safe-top) + 6px);
+    min-height: 31px;
+    padding: 6px 9px;
+    font-size: 11px;
+  }
+}
+
 .shop-header,
 .inventory-header,
 .trade-header {

@@ -11,25 +11,25 @@
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="pwa-icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="pwa-icon-192.png" />
-<link rel="preload" href="art/menu-arcane-sanctuary.webp?v=1.7-v2" as="image" type="image/webp" fetchpriority="high" />
+<link rel="preload" href="art/menu-arcane-sanctuary.webp?v=1.7.1" as="image" type="image/webp" fetchpriority="high" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css?v=1.7-v2" />
-<link rel="stylesheet" href="css/menu.css?v=1.7-v2" />
-<link rel="stylesheet" href="css/account-profile.css?v=1.7-v2" />
-<link rel="stylesheet" href="css/lobby.css?v=1.7-v2" />
-<link rel="stylesheet" href="css/board.css?v=1.7-v2" />
-<link rel="stylesheet" href="css/cards.css?v=1.7-v2" />
-<link rel="stylesheet" href="css/board-arena.css?v=1.7-v2" />
-<link rel="stylesheet" href="css/board-hand.css?v=1.7-v2" />
-<link rel="stylesheet" href="css/inventory.css?v=1.7-v2" />
-<link rel="stylesheet" href="css/deck-builder.css?v=1.7-v2" />
-<link rel="stylesheet" href="css/shop.css?v=1.7-v2" />
-<link rel="stylesheet" href="css/trade.css?v=1.7-v2" />
-<link rel="stylesheet" href="css/pack-opening.css?v=1.7-v2" />
-<link rel="stylesheet" href="css/fx.css?v=1.7-v2" />
-<link rel="stylesheet" href="css/board-effects.css?v=1.7-v2" />
-<link rel="stylesheet" href="css/overlay.css?v=1.7-v2" />
+<link rel="stylesheet" href="css/base.css?v=1.7.1" />
+<link rel="stylesheet" href="css/menu.css?v=1.7.1" />
+<link rel="stylesheet" href="css/account-profile.css?v=1.7.1" />
+<link rel="stylesheet" href="css/lobby.css?v=1.7.1" />
+<link rel="stylesheet" href="css/board.css?v=1.7.1" />
+<link rel="stylesheet" href="css/cards.css?v=1.7.1" />
+<link rel="stylesheet" href="css/board-arena.css?v=1.7.1" />
+<link rel="stylesheet" href="css/board-hand.css?v=1.7.1" />
+<link rel="stylesheet" href="css/inventory.css?v=1.7.1" />
+<link rel="stylesheet" href="css/deck-builder.css?v=1.7.1" />
+<link rel="stylesheet" href="css/shop.css?v=1.7.1" />
+<link rel="stylesheet" href="css/trade.css?v=1.7.1" />
+<link rel="stylesheet" href="css/pack-opening.css?v=1.7.1" />
+<link rel="stylesheet" href="css/fx.css?v=1.7.1" />
+<link rel="stylesheet" href="css/board-effects.css?v=1.7.1" />
+<link rel="stylesheet" href="css/overlay.css?v=1.7.1" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -49,6 +49,12 @@
       <div class="loading-text">Awakening the seal...</div>
     </div>
   </div>
+
+  <button id="globalMatchSearchStatus" class="global-match-search-status hidden" type="button" aria-live="polite" aria-label="Cancel match search">
+    <span class="global-match-search-dot" aria-hidden="true"></span>
+    <span id="globalMatchSearchText">Buscando</span>
+    <span class="global-match-search-cancel">Cancel</span>
+  </button>
 
   <!-- ---------- SCREEN: DISCORD AUTH ---------- -->
   <section id="screen-auth" class="screen hidden auth-screen">
@@ -132,8 +138,8 @@
         <button id="btnOpenTermsMenu" class="btn menu-option-button" type="button">Terms of Service</button>
         <button id="btnOpenPrivacyMenu" class="btn menu-option-button" type="button">Privacy Notice</button>
         <div class="menu-option-config">
-          <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Config</button>
-          <span class="menu-version">Version 1.7</span>
+          <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Audio</button>
+          <span class="menu-version">Version 1.7.1</span>
         </div>
       </div>
     </div>
@@ -1150,6 +1156,18 @@
       <div class="changelog-content">
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
+          <h3>Version 1.7.1</h3>
+          <span>Expansion 2 Cards &amp; QoL Updates</span>
+        </div>
+        <p class="changelog-entry-intro">This update brings a significant expansion to the card pool, along with various quality-of-life improvements and general fixes.</p>
+        <ul class="changelog-list">
+          <li>Added 24 brand new cards to Expansion 2 to bring more depth and deckbuilding options.</li>
+          <li>Implemented several quality-of-life (QoL) changes to improve user interface and experience.</li>
+          <li>Applied fixes for multiple bugs to ensure smoother gameplay and stability.</li>
+        </ul>
+      </article>
+      <article class="changelog-entry">
+        <div class="changelog-entry-meta">
           <h3>Version 1.7</h3>
           <span>Ranked Ladder &amp; Competitive Rewards</span>
         </div>
@@ -1750,25 +1768,25 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.7-v2"></script>
-  <script src="deckRules.js?v=1.7-v2"></script>
-  <script src="engine.js?v=1.7-v2"></script>
-  <script src="ai.js?v=1.7-v2"></script>
-  <script src="audioConfig.js?v=1.7-v2"></script>
-  <script src="audioManager.js?v=1.7-v2"></script>
-  <script src="packOpening.js?v=1.7-v2"></script>
-<script src="legalNotices.js?v=1.7-v2"></script>
-<script src="profileCatalog.js?v=1.7-v2"></script>
-<script src="profileBadges.js?v=1.7-v2"></script>
-<script src="accountProfile.js?v=1.7-v2"></script>
-<script src="client.js?v=1.7-v2"></script>
-<script src="shieldChallenge.js?v=1.7-v2"></script>
-<script src="boardInteractions.js?v=1.7-v2"></script>
-<script src="inventory.js?v=1.7-v2"></script>
-<script src="deckBuilder.js?v=1.7-v2"></script>
-<script src="shop.js?v=1.7-v2"></script>
-<script src="trade.js?v=1.7-v2"></script>
-<script src="tournaments.js?v=1.7-v2"></script>
-<script src="pwa.js?v=1.7-v2"></script>
+  <script src="cards.js?v=1.7.1"></script>
+  <script src="deckRules.js?v=1.7.1"></script>
+  <script src="engine.js?v=1.7.1"></script>
+  <script src="ai.js?v=1.7.1"></script>
+  <script src="audioConfig.js?v=1.7.1"></script>
+  <script src="audioManager.js?v=1.7.1"></script>
+  <script src="packOpening.js?v=1.7.1"></script>
+<script src="legalNotices.js?v=1.7.1"></script>
+<script src="profileCatalog.js?v=1.7.1"></script>
+<script src="profileBadges.js?v=1.7.1"></script>
+<script src="accountProfile.js?v=1.7.1"></script>
+<script src="client.js?v=1.7.1"></script>
+<script src="shieldChallenge.js?v=1.7.1"></script>
+<script src="boardInteractions.js?v=1.7.1"></script>
+<script src="inventory.js?v=1.7.1"></script>
+<script src="deckBuilder.js?v=1.7.1"></script>
+<script src="shop.js?v=1.7.1"></script>
+<script src="trade.js?v=1.7.1"></script>
+<script src="tournaments.js?v=1.7.1"></script>
+<script src="pwa.js?v=1.7.1"></script>
 </body>
 </html>

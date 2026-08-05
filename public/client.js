@@ -305,6 +305,8 @@ function connect(onOpen) {
         beginMultiplayerReconnect();
         return;
       }
+      setQuickplaySearching(false);
+      setRankedSearching(false);
       if (!isLocalMode) showToast("Lost connection to the server.");
     });
     socket.addEventListener("error", () => {
@@ -482,6 +484,7 @@ function startLocalMatch(playerName) {
 
 function startServerSingleplayer() {
   if (singleplayerStartPending) return;
+  cancelActiveMatchSearch();
   setSingleplayerStartPending(true);
   clearMultiplayerReconnect();
   forgetMultiplayerMatch();
@@ -890,7 +893,7 @@ function handleServerMessage(msg) {
       showToast(`Tournament ${msg.payload?.place || "prize"}: +${msg.payload?.gold || 0} gold`);
       break;
     case "matchStarted":
-      if (quickplaySearching) window.ArcaneAudio?.playSfx("matchFound");
+      if (quickplaySearching || rankedSearching) window.ArcaneAudio?.playSfx("matchFound");
       setRankedSearching(false);
       window.ArcaneTournaments?.clearQueuedMatch();
       window.ArcaneTournaments?.setVisible(false);
@@ -1425,8 +1428,8 @@ function switchScreen(name) {
     clearTimeout(screenTransitionTimer);
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     const compactMotion = window.matchMedia?.("(max-width: 760px)")?.matches;
-    const swapDelay = reduceMotion ? 0 : compactMotion ? 90 : 150;
-    const enterDuration = reduceMotion ? 0 : compactMotion ? 180 : 360;
+    const swapDelay = reduceMotion ? 0 : compactMotion ? 50 : 80;
+    const enterDuration = reduceMotion ? 0 : compactMotion ? 120 : 180;
     currentScreen.classList.add("screen-transition-out");
     screenTransitionTimer = setTimeout(() => {
       screenIds.forEach((screen) => {
@@ -1551,10 +1554,7 @@ document.querySelectorAll(".menu-tile-locked").forEach((tile) => {
 });
 
 $("btnBackToMenu").addEventListener("click", () => {
-  setQuickplaySearching(false);
   setSingleplayerStartPending(false);
-  send("cancelQuickplay", {});
-  send("cancelRanked", {});
   send("cancelTournamentMatch", {});
   window.ArcaneTournaments?.setVisible(false);
   switchScreen("menu");
@@ -1590,6 +1590,7 @@ function setRankedSearching(searching) {
   $("btnRanked")?.classList.toggle("hidden", searching);
   $("btnCancelRanked")?.classList.toggle("hidden", !searching);
   if ($("rankedStatus") && searching) $("rankedStatus").textContent = "Searching for a ranked opponent...";
+  updateGlobalMatchSearchStatus();
 }
 function setRankedAvailability(open) {
   rankedWindowOpen = open;
@@ -1806,6 +1807,28 @@ function setQuickplaySearching(searching) {
   $("btnCancelQuickplay").classList.toggle("hidden", !searching);
   $("quickplayStatus").classList.toggle("searching", searching);
   $("quickplayStatus").textContent = searching ? "Searching for an opponent" : "Queue for a basic online 1v1 match.";
+  updateGlobalMatchSearchStatus();
+}
+
+function updateGlobalMatchSearchStatus() {
+  const status = $("globalMatchSearchStatus");
+  if (!status) return;
+  const searching = quickplaySearching || rankedSearching;
+  status.classList.toggle("hidden", !searching);
+  const mode = rankedSearching ? "Ranked" : "Quickplay";
+  status.title = searching ? `Cancel ${mode} search` : "";
+  status.setAttribute("aria-label", searching ? `Cancel ${mode} search` : "Match search");
+  const text = $("globalMatchSearchText");
+  if (text) text.textContent = "Buscando";
+}
+
+function cancelActiveMatchSearch() {
+  const wasQuickplaySearching = quickplaySearching;
+  const wasRankedSearching = rankedSearching;
+  setQuickplaySearching(false);
+  setRankedSearching(false);
+  if (wasQuickplaySearching) send("cancelQuickplay", {});
+  if (wasRankedSearching) send("cancelRanked", {});
 }
 
 function setSingleplayerStartPending(pending) {
@@ -1828,7 +1851,7 @@ $("tabRanked").addEventListener("click", () => setLobbyTab("ranked"));
 
 $("btnCreate").addEventListener("click", () => {
   if (!requireLoggedInForPlay()) return;
-  setQuickplaySearching(false);
+  cancelActiveMatchSearch();
   setSingleplayerStartPending(false);
   connect(() => send("createRoom", {}));
 });
@@ -1837,21 +1860,21 @@ $("btnJoin").addEventListener("click", () => {
   if (!requireLoggedInForPlay()) return;
   const roomCode = $("joinCode").value.trim();
   if (!roomCode) return showToast("Enter a room code.");
-  setQuickplaySearching(false);
+  cancelActiveMatchSearch();
   setSingleplayerStartPending(false);
   connect(() => send("joinRoom", { roomCode }));
 });
 
 $("btnQuickplay").addEventListener("click", () => {
   if (!requireLoggedInForPlay()) return;
+  if (rankedSearching) cancelActiveMatchSearch();
   setQuickplaySearching(true);
   setSingleplayerStartPending(false);
-  connect(() => send("quickplay", {}));
+  connect(() => send("quickplay", {})).catch(() => setQuickplaySearching(false));
 });
 
 $("btnCancelQuickplay").addEventListener("click", () => {
-  setQuickplaySearching(false);
-  send("cancelQuickplay", {});
+  cancelActiveMatchSearch();
 });
 $("btnOpenQuickplayRanking").addEventListener("click", () => setQuickplayRankingModalOpen(true, "wins"));
 $("btnCloseQuickplayRanking").addEventListener("click", () => setQuickplayRankingModalOpen(false));
@@ -1870,10 +1893,12 @@ $("btnClaimRankedReward").addEventListener("click", claimRankedReward);
 $("btnRanked").addEventListener("click", () => {
   if (!rankedWindowOpen) return showToast("Ranked is currently closed.");
   if (!requireLoggedInForPlay()) return;
+  if (quickplaySearching) cancelActiveMatchSearch();
   setRankedSearching(true);
-  connect(() => send("ranked", {}));
+  connect(() => send("ranked", {})).catch(() => setRankedSearching(false));
 });
-$("btnCancelRanked").addEventListener("click", () => { setRankedSearching(false); send("cancelRanked", {}); });
+$("btnCancelRanked").addEventListener("click", cancelActiveMatchSearch);
+$("globalMatchSearchStatus").addEventListener("click", cancelActiveMatchSearch);
 
 $("btnStartSingle").addEventListener("click", () => {
   if (!requireLoggedInForPlay()) return;
@@ -1985,6 +2010,7 @@ $("btnStartCampaignStage").addEventListener("click", () => {
     return showToast(activeCampaignStage.lockReason || "Complete the previous stage first.");
   }
   setSingleplayerStartPending(false);
+  cancelActiveMatchSearch();
   clearMultiplayerReconnect();
   forgetMultiplayerMatch();
   isLocalMode = false;
@@ -2010,10 +2036,7 @@ function render(state) {
   if (state.tournament && state.winner === null && $("matchStatus")?.classList.contains("hidden")) {
     setMatchStatus("Tournament match | 30 seconds per turn");
   }
-  if (state.ranked && state.winner === null && $("matchStatus")?.classList.contains("hidden")) {
-    setMatchStatus("Ranked match - rating at stake");
-  }
-  if (!state.tournament && !state.ranked) clearMatchStatus();
+  if (!state.tournament && !$("matchStatus")?.classList.contains("warning")) clearMatchStatus();
 
   // Heroes
   $("selfName").textContent = state.me.name;
@@ -3191,7 +3214,8 @@ function cardRequiresFriendlyMinionTarget(card) {
 
 function cardRequiresMinionTarget(card) {
   return Boolean(card?.abilities?.some((ability) =>
-    ability.effect === "healTargetMinion" && ability.target === "minion"
+    (ability.effect === "healTargetMinion" && ability.target === "minion") ||
+    (ability.effect === "grantDivineShieldToTargetMinion" && ability.target === "minion")
   ));
 }
 

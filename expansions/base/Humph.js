@@ -1,16 +1,16 @@
 module.exports = {
   name: "Humph",
-  cost: 6,
+  cost: 5,
   type: "minion",
-  attack: 7,
-  health: 10,
+  attack: 5,
+  health: 8,
   keywords: [],
   race: "Human",
   rarity: "legendary",
   country: "Ireland",
-  lore: "When this card dies, return every remaining minion on both boards to its owner's deck.",
+  lore: "When this kills a minion, gain 2 extra Mana on your next turn.",
   image: "art/Humph.webp",
   abilities: [
-    { trigger: "onDeath", effect: "returnAllMinionsToDeck" },
+    { trigger: "onKillMinion", effect: "grantNextTurnTemporaryMana", value: 2 },
   ],
 };

@@ -39,17 +39,18 @@ assert(inventorySource.includes("zoom-chip zoom-country"), "Inventory zoom shoul
 assert(inventorySource.includes("countryFlagHTML(card.country)"), "Inventory zoom should use the shared non-emoji flag renderer.");
 assert(!inventorySource.includes("🏳"), "Inventory zoom should not use the white flag emoji.");
 assert(/\.card-tooltip\s*\{[\s\S]*?z-index:\s*260/.test(overlayCss), "Card tooltip should sit above game UI.");
-assert(/\.card-tooltip\s*\{[\s\S]*?width:\s*min\(90vw,\s*300px\)/.test(overlayCss), "Card tooltip should stay compact on desktop.");
+assert(/\.card-tooltip\s*\{[\s\S]*?width:\s*min\(86vw,\s*244px\)/.test(overlayCss), "Card tooltip should stay vertical on desktop.");
 assert(/\.card-tooltip-content\s*\{[\s\S]*?flex-direction:\s*column/.test(overlayCss), "Card tooltip should use a mini zoom-panel layout.");
-assert(/\.card-tooltip-art\s*\{[\s\S]*?width:\s*clamp\(86px,\s*20vw,\s*112px\)/.test(overlayCss), "Card tooltip art should be small enough to fit inside the tip.");
-assert(/\.card-tooltip-art\s*\{[\s\S]*?margin:\s*9px 10px 13px/.test(overlayCss), "Card tooltip art should reserve room for protruding cost, badges, and stats.");
+assert(/\.card-tooltip-content\s*\{[\s\S]*?text-align:\s*center/.test(overlayCss), "Card tooltip content should be centered.");
+assert(/\.card-tooltip-art\s*\{[\s\S]*?width:\s*clamp\(112px,\s*28vw,\s*138px\)/.test(overlayCss), "Card tooltip art should fit inside the vertical tip.");
+assert(/\.card-tooltip-art\s*\{[\s\S]*?margin:\s*8px auto 10px/.test(overlayCss), "Card tooltip art should stay centered in the vertical tip.");
 assert(/\.card-tooltip-art \.card-cost\s*\{[\s\S]*?width:\s*21px/.test(overlayCss), "Card tooltip cost badge should be scaled for the tiny preview.");
 assert(/\.card-tooltip-art \.card-stat\s*\{[\s\S]*?width:\s*18px/.test(overlayCss), "Card tooltip stats should be scaled for the tiny preview.");
 assert(/\.country-flag\s*\{[\s\S]*?width:\s*18px;[\s\S]*?object-fit:\s*cover/.test(overlayCss), "Country flags should render as stable image boxes.");
 assert(/\.country-flag-fallback\s*\{[\s\S]*?radial-gradient/.test(overlayCss), "Country flags should have a CSS fallback instead of emoji.");
 assert(/\.tooltip-lore\s*\{[\s\S]*?font-size:\s*13\.5px/.test(overlayCss), "Tooltip description should remain legible.");
 assert(/\.tooltip-lore\s*\{[\s\S]*?text-align:\s*center/.test(overlayCss), "Tooltip description should be centered.");
-assert(indexSource.includes("css/overlay.css?v=1.7-v2"), "Overlay CSS cache bust should include the tooltip refresh.");
-assert(indexSource.includes("client.js?v=1.7-v2"), "Client cache bust should include the tooltip refresh.");
+assert(indexSource.includes("css/overlay.css?v=1.7.1"), "Overlay CSS cache bust should include the tooltip refresh.");
+assert(indexSource.includes("client.js?v=1.7.1"), "Client cache bust should include the tooltip refresh.");
 
 console.log("--- INVENTORY TOOLTIP TEST OK ---");
