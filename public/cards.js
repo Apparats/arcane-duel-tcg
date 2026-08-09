@@ -294,7 +294,7 @@
       ],
       "race": "Monster",
       "rarity": "rare",
-      "country": "Luxemburg",
+      "country": "Luxembourg",
       "lore": "Light moves first, leaving the board to catch up.",
       "image": "art/Light.webp",
       "id": "expansion1:light",
@@ -1163,15 +1163,15 @@
     },
     {
       "name": "masterchief",
-      "cost": 1,
+      "cost": 4,
       "type": "minion",
       "attack": 2,
-      "health": 8,
+      "health": 5,
       "keywords": [],
       "race": "Monster",
       "rarity": "legendary",
       "country": "Oman",
-      "lore": "When this card kills another card, it gains Divine Shield. If it survives 3 turns, it becomes a 10/10 with Divine Shield.",
+      "lore": "When this card kills another card, it gains Divine Shield. If it survives 4 turns, it becomes a 10/10.",
       "image": "art/MasterChief.webp",
       "abilities": [
         {
@@ -1181,10 +1181,10 @@
         {
           "trigger": "onPlay",
           "effect": "startDelayedSelfBuff",
-          "turns": 3,
+          "turns": 4,
           "setAttack": 10,
           "setHealth": 10,
-          "grantDivineShield": true
+          "grantDivineShield": false
         }
       ],
       "id": "expansion2:masterchief",

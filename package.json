@@ -1,6 +1,6 @@
 {
   "name": "duelo-arcano-tcg",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "Simple Hearthstone-style TCG, online 1v1 over WebSocket. Authoritative server + vanilla client.",
   "main": "server/index.js",
   "scripts": {

@@ -7,7 +7,7 @@ module.exports = {
   keywords: ["charge"],
   race: "Monster",
   rarity: "rare",
-  country: "Luxemburg",
+  country: "Luxembourg",
   lore: "Light moves first, leaving the board to catch up.",
   image: "art/Light.webp",
 };
