@@ -2,6 +2,7 @@ const SHELL_CACHE = "arcana-tcg-shell-v1.7.3b";
 const APP_SHELL = [
   "/",
   "/index.html",
+  "/css/fonts.css",
   "/manifest.webmanifest",
   "/pwa-icon.svg",
   "/pwa-icon-192.png",
