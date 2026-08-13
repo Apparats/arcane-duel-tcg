@@ -8,6 +8,6 @@ module.exports = {
   race: "Human",
   rarity: "common",
   country: "Spain",
-  lore: "Pending final tuning.",
+  lore: "For spain!.",
   image: "art/Trajano.webp",
 };

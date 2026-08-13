@@ -162,7 +162,7 @@ const COUNTRY_FLAG_DESIGN_BY_CODE = Object.freeze({
 const BABU2_CARD_ID = "expansion2:Babu2";
 const SECOND_PLAYER_MANA_CARD_ID = "special:manaspark";
 const DISCORD_CLIENT_ID = "1523179359106502716";
-const CHANGELOG_VERSION = "1.7";
+const CHANGELOG_VERSION = "1.7.3";
 const CHANGELOG_SEEN_STORAGE_KEY = "arcane_changelog_seen_version";
 const CARD_ART_ASSET_VERSION = "1.7-art768";
 const ACTIVITY_AUTH_CACHE_KEY = "arcane_activity_auth";
@@ -352,7 +352,13 @@ function forgetMultiplayerMatch() {
 }
 
 function shouldReconnectMultiplayer() {
-  return !isLocalMode && activeMatchMode === "multiplayer" && hasStoredMultiplayerMatch();
+  return !isLocalMode && (activeMatchMode === "multiplayer" || hasStoredMultiplayerMatch());
+}
+
+function setReconnectBannerVisible(visible) {
+  const banner = $("reconnectBanner");
+  if (!banner) return;
+  banner.classList.toggle("hidden", !visible);
 }
 
 function clearMultiplayerReconnect() {
@@ -430,6 +436,7 @@ function scheduleMultiplayerReconnect(delay) {
     if (Date.now() >= reconnectDeadline) {
       clearMultiplayerReconnect();
       forgetMultiplayerMatch();
+      setReconnectBannerVisible(false);
       showToast("Your match could not be restored.");
       returnToMenuFromMatch();
       return;
@@ -450,8 +457,15 @@ function scheduleMultiplayerReconnect(delay) {
 function resumeSavedMultiplayerMatch() {
   if (!hasStoredMultiplayerMatch()) return;
   activeMatchMode = "multiplayer";
+  rememberMultiplayerMatch();
   beginMultiplayerReconnect();
 }
+
+$("btnReconnectMatch")?.addEventListener("click", () => {
+  setReconnectBannerVisible(false);
+  rememberMultiplayerMatch();
+  resumeSavedMultiplayerMatch();
+});
 
 function send(type, payload = {}) {
   if (isLocalMode) {
@@ -902,8 +916,12 @@ function handleServerMessage(msg) {
       setQuickplaySearching(false);
       setSingleplayerStartPending(false);
       activeMatchMode = activeMatchMode || "multiplayer";
-      if (activeMatchMode === "multiplayer") rememberMultiplayerMatch();
-      else forgetMultiplayerMatch();
+      if (activeMatchMode === "multiplayer") {
+        rememberMultiplayerMatch();
+        setReconnectBannerVisible(false);
+      } else {
+        forgetMultiplayerMatch();
+      }
       myState = null;
       lastAnimatedActionSeq = 0;
       lastAnimatedSpecialAbilitySeq = 0;
@@ -918,6 +936,7 @@ function handleServerMessage(msg) {
       clearMatchStatus();
       activeMatchMode = "multiplayer";
       rememberMultiplayerMatch();
+      setReconnectBannerVisible(false);
       switchScreen("game");
       showToast("Match reconnected.");
       break;
@@ -1008,6 +1027,7 @@ function handleServerMessage(msg) {
       clearMultiplayerReconnect();
       setSingleplayerStartPending(false);
       forgetMultiplayerMatch();
+      setReconnectBannerVisible(false);
       myState = null;
       resetStateQueue();
       showToast(msg.payload?.message || "Match cancelled.");
@@ -1023,6 +1043,10 @@ function handleServerMessage(msg) {
       setQuickplaySearching(false);
       setSingleplayerStartPending(false);
       showToast(msg.payload.message);
+      if (typeof msg.payload?.message === "string" && (msg.payload.message.includes("reconnect before starting another one") || msg.payload.code === "ACTIVE_MATCH_EXISTS")) {
+        rememberMultiplayerMatch();
+        setReconnectBannerVisible(true);
+      }
       break;
   }
 }
@@ -3796,6 +3820,10 @@ async function initAccountWidget({ skipActivityAutoLogin = false } = {}) {
       showToast(`Daily login reward: +${data.dailyLoginReward.goldAwarded} gold`);
     }
     pendingInitialRewards = data.rewards || [];
+    if (hasStoredMultiplayerMatch()) {
+      setReconnectBannerVisible(true);
+      resumeSavedMultiplayerMatch();
+    }
     if (hasSeenEnterGate()) {
       switchScreen("menu");
       if (pendingInitialRewards.length > 0) {

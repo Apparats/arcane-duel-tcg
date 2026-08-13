@@ -1391,7 +1391,7 @@
       "race": "Human",
       "rarity": "common",
       "country": "Spain",
-      "lore": "Pending final tuning.",
+      "lore": "For spain!.",
       "image": "art/Trajano.webp",
       "id": "expansion2:trajano",
       "_expansionId": "expansion2"

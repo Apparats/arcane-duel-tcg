@@ -73,7 +73,7 @@ assert(
   "Inventory zoom metadata should not use platform-dependent flag emoji."
 );
 assert(
-  indexSource.includes("css/inventory.css?v=1.7.2") && indexSource.includes("inventory.js?v=1.7.2"),
+  indexSource.includes("css/inventory.css?v=1.7.3") && indexSource.includes("inventory.js?v=1.7.3"),
   "Inventory zoom country flag changes should be cache-busted."
 );
 ["common", "rare", "legendary", "mythic", "souvenir"].forEach((rarity) => {

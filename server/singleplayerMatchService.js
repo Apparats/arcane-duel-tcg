@@ -5,7 +5,7 @@ const { findActiveMatchForUser } = require("./matchAccess");
 // multiplayer matches remain protected by the regular active-match guard.
 function discardActiveSingleplayerMatch(rooms, userId, { clearTurnTimer, clearAllReconnectGraces, clearMulligan }) {
   const room = findActiveMatchForUser(rooms, userId);
-  if (!room || room.mode !== "singleplayer") return false;
+  if (!room || (room.mode !== "singleplayer" && room.mode !== "campaign")) return false;
 
   clearTurnTimer(room);
   clearAllReconnectGraces(room);

@@ -11,25 +11,25 @@
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="pwa-icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="pwa-icon-192.png" />
-<link rel="preload" href="art/menu-arcane-sanctuary.webp?v=1.7.2" as="image" type="image/webp" fetchpriority="high" />
+<link rel="preload" href="art/menu-arcane-sanctuary.webp?v=1.7.3" as="image" type="image/webp" fetchpriority="high" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css?v=1.7.2" />
-<link rel="stylesheet" href="css/menu.css?v=1.7.2" />
-<link rel="stylesheet" href="css/account-profile.css?v=1.7.2" />
-<link rel="stylesheet" href="css/lobby.css?v=1.7.2" />
-<link rel="stylesheet" href="css/board.css?v=1.7.2" />
-<link rel="stylesheet" href="css/cards.css?v=1.7.2" />
-<link rel="stylesheet" href="css/board-arena.css?v=1.7.2" />
-<link rel="stylesheet" href="css/board-hand.css?v=1.7.2" />
-<link rel="stylesheet" href="css/inventory.css?v=1.7.2" />
-<link rel="stylesheet" href="css/deck-builder.css?v=1.7.2" />
-<link rel="stylesheet" href="css/shop.css?v=1.7.2" />
-<link rel="stylesheet" href="css/trade.css?v=1.7.2" />
-<link rel="stylesheet" href="css/pack-opening.css?v=1.7.2" />
-<link rel="stylesheet" href="css/fx.css?v=1.7.2" />
-<link rel="stylesheet" href="css/board-effects.css?v=1.7.2" />
-<link rel="stylesheet" href="css/overlay.css?v=1.7.2" />
+<link rel="stylesheet" href="css/base.css?v=1.7.3" />
+<link rel="stylesheet" href="css/menu.css?v=1.7.3" />
+<link rel="stylesheet" href="css/account-profile.css?v=1.7.3" />
+<link rel="stylesheet" href="css/lobby.css?v=1.7.3" />
+<link rel="stylesheet" href="css/board.css?v=1.7.3" />
+<link rel="stylesheet" href="css/cards.css?v=1.7.3" />
+<link rel="stylesheet" href="css/board-arena.css?v=1.7.3" />
+<link rel="stylesheet" href="css/board-hand.css?v=1.7.3" />
+<link rel="stylesheet" href="css/inventory.css?v=1.7.3" />
+<link rel="stylesheet" href="css/deck-builder.css?v=1.7.3" />
+<link rel="stylesheet" href="css/shop.css?v=1.7.3" />
+<link rel="stylesheet" href="css/trade.css?v=1.7.3" />
+<link rel="stylesheet" href="css/pack-opening.css?v=1.7.3" />
+<link rel="stylesheet" href="css/fx.css?v=1.7.3" />
+<link rel="stylesheet" href="css/board-effects.css?v=1.7.3" />
+<link rel="stylesheet" href="css/overlay.css?v=1.7.3" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -139,7 +139,7 @@
         <button id="btnOpenPrivacyMenu" class="btn menu-option-button" type="button">Privacy Notice</button>
         <div class="menu-option-config">
           <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Audio</button>
-          <span class="menu-version">Version 1.7.2</span>
+          <span class="menu-version">Version 1.7.3</span>
         </div>
       </div>
     </div>
@@ -479,6 +479,20 @@
       <span id="lobbyKicker" class="singleplayer-kicker">Choose your path</span>
       <h1 class="brand">ARCANA TCG</h1>
       <p class="brand-sub" id="lobbySubtitle">Fast TCG</p>
+
+      <!-- Active Multiplayer Match Reconnect Banner -->
+      <div id="reconnectBanner" class="reconnect-banner hidden" aria-live="polite">
+        <div class="reconnect-banner-content">
+          <span class="reconnect-banner-icon">&#x26A1;</span>
+          <div class="reconnect-banner-text">
+            <strong>Active Duel Found</strong>
+            <p>You have an ongoing multiplayer duel in progress.</p>
+          </div>
+          <button id="btnReconnectMatch" class="btn btn-primary reconnect-banner-button" type="button">
+            Reconnect to Duel
+          </button>
+        </div>
+      </div>
 
       <div id="singleplayerActions" class="lobby-actions hidden">
         <div class="singleplayer-mode-grid">
@@ -1156,6 +1170,19 @@
       <div class="changelog-content">
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
+          <h3>Version 1.7.3</h3>
+          <span>Reconnection Fixes, Responsive Layout &amp; UX</span>
+        </div>
+        <p class="changelog-entry-intro">This update fixes multiplayer match reconnection, addresses singleplayer/campaign startup issues, and optimizes layout spacing for laptops and small screens.</p>
+        <ul class="changelog-list">
+          <li><strong>Multiplayer Reconnection:</strong> Added an active duel banner and direct "Reconnect to Duel" button in the menu. Rejoining an interrupted game now connects seamlessly.</li>
+          <li><strong>Singleplayer &amp; Campaign Stability:</strong> Resolved an issue where starting NPC or Campaign matches would fail or require multiple retries when previous matches were active.</li>
+          <li><strong>Laptop &amp; Discord Activity Layout:</strong> Scaled down the hand area and hero panels on height-constrained screens to give maximum battlefield space to player and opponent cards.</li>
+          <li><strong>Mobile Controls:</strong> The End Turn button is now rectangular on mobile phones, matching the desktop interface style.</li>
+        </ul>
+      </article>
+      <article class="changelog-entry">
+        <div class="changelog-entry-meta">
           <h3>Version 1.7.2</h3>
           <span>Expansion 2 Cards &amp; QoL Updates</span>
         </div>
@@ -1768,25 +1795,25 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.7.2"></script>
-  <script src="deckRules.js?v=1.7.2"></script>
-  <script src="engine.js?v=1.7.2"></script>
-  <script src="ai.js?v=1.7.2"></script>
-  <script src="audioConfig.js?v=1.7.2"></script>
-  <script src="audioManager.js?v=1.7.2"></script>
-  <script src="packOpening.js?v=1.7.2"></script>
-<script src="legalNotices.js?v=1.7.2"></script>
-<script src="profileCatalog.js?v=1.7.2"></script>
-<script src="profileBadges.js?v=1.7.2"></script>
-<script src="accountProfile.js?v=1.7.2"></script>
-<script src="client.js?v=1.7.2"></script>
-<script src="shieldChallenge.js?v=1.7.2"></script>
-<script src="boardInteractions.js?v=1.7.2"></script>
-<script src="inventory.js?v=1.7.2"></script>
-<script src="deckBuilder.js?v=1.7.2"></script>
-<script src="shop.js?v=1.7.2"></script>
-<script src="trade.js?v=1.7.2"></script>
-<script src="tournaments.js?v=1.7.2"></script>
-<script src="pwa.js?v=1.7.2"></script>
+  <script src="cards.js?v=1.7.3"></script>
+  <script src="deckRules.js?v=1.7.3"></script>
+  <script src="engine.js?v=1.7.3"></script>
+  <script src="ai.js?v=1.7.3"></script>
+  <script src="audioConfig.js?v=1.7.3"></script>
+  <script src="audioManager.js?v=1.7.3"></script>
+  <script src="packOpening.js?v=1.7.3"></script>
+<script src="legalNotices.js?v=1.7.3"></script>
+<script src="profileCatalog.js?v=1.7.3"></script>
+<script src="profileBadges.js?v=1.7.3"></script>
+<script src="accountProfile.js?v=1.7.3"></script>
+<script src="client.js?v=1.7.3"></script>
+<script src="shieldChallenge.js?v=1.7.3"></script>
+<script src="boardInteractions.js?v=1.7.3"></script>
+<script src="inventory.js?v=1.7.3"></script>
+<script src="deckBuilder.js?v=1.7.3"></script>
+<script src="shop.js?v=1.7.3"></script>
+<script src="trade.js?v=1.7.3"></script>
+<script src="tournaments.js?v=1.7.3"></script>
+<script src="pwa.js?v=1.7.3"></script>
 </body>
 </html>

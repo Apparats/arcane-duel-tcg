@@ -1122,7 +1122,7 @@ async function resumeMultiplayerMatch(ws) {
   const match = [...rooms.values()].find((room) => {
     if (room.mode !== "multiplayer" || !room.game || room.game.winner !== null) return false;
     const idx = room.userIds.findIndex((userId) => String(userId) === String(user.id));
-    return idx >= 0 && room.sockets[idx] === null && room.reconnects?.[idx];
+    return idx >= 0;
   });
 
   if (!match) {
@@ -1131,6 +1131,11 @@ async function resumeMultiplayerMatch(ws) {
   }
 
   const playerIdx = match.userIds.findIndex((userId) => String(userId) === String(user.id));
+  const oldWs = match.sockets[playerIdx];
+  if (oldWs && oldWs !== ws) {
+    oldWs.roomCode = null;
+    oldWs.playerIdx = null;
+  }
   clearReconnectGrace(match, playerIdx);
   match.sockets[playerIdx] = ws;
   ws.roomCode = match.game.roomCode;
@@ -1139,7 +1144,10 @@ async function resumeMultiplayerMatch(ws) {
   if (match.disconnectEvents?.[playerIdx]?.penaltyGold > 0) {
     send(ws, "disconnectPenalty", match.disconnectEvents[playerIdx]);
   }
-  send(match.sockets[playerIdx === 0 ? 1 : 0], "opponentReconnected", {});
+  const opponentIdx = playerIdx === 0 ? 1 : 0;
+  if (match.sockets[opponentIdx]) {
+    send(match.sockets[opponentIdx], "opponentReconnected", {});
+  }
   broadcastState(match);
 }
 

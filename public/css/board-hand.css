@@ -208,3 +208,70 @@
   #screen-game .hand-card .card-stat.hp { right: -7px; }
   #screen-game .hand-card:hover { transform: translateY(calc(var(--hand-rest-y) - 18px)) rotate(var(--hand-angle)) scale(1.03); }
 }
+
+/* ============================================================
+   LOW-HEIGHT LANDSCAPE / LAPTOP / DISCORD ACTIVITY OPTIMIZATIONS
+   ============================================================ */
+@media (min-width: 721px) and (max-height: 840px),
+html[data-discord-activity="true"]:not([data-mobile="true"]) {
+  #screen-game .hand-area {
+    width: min(68vw, 580px);
+    min-height: 115px;
+    margin: 0 auto 6px;
+    padding: 4px 12px 0;
+  }
+
+  #screen-game .hand-card {
+    width: clamp(74px, 7.8vw, 106px);
+    margin-left: clamp(-30px, -2.2vw, -12px);
+  }
+
+  #screen-game .hand-card .card-cost {
+    width: 21px;
+    height: 23px;
+    top: -6px;
+    left: -6px;
+    font-size: 10px;
+  }
+
+  #screen-game .hand-card .card-badges {
+    top: -6px;
+    left: 50%;
+    max-width: calc(100% - 24px);
+  }
+
+  #screen-game .hand-card .special-ability-badge {
+    bottom: -10px;
+  }
+
+  #screen-game .hand-card .card-footer {
+    min-height: 18px;
+    padding: 2px 14px 2px;
+    font-size: 9px;
+  }
+
+  #screen-game .hand-card .card-name {
+    font-size: 9px;
+  }
+
+  #screen-game .hand-card .card-stat {
+    width: 18px;
+    height: 18px;
+    bottom: -6px;
+    font-size: 10px;
+  }
+
+  #screen-game .hand-card .card-stat.atk,
+  #screen-game .hand-card .card-stat.val { left: -7px; }
+  #screen-game .hand-card .card-stat.hp { right: -7px; }
+
+  #screen-game .hand-card:hover {
+    transform: translateY(calc(var(--hand-rest-y) - 20px)) rotate(var(--hand-angle)) scale(1.05);
+  }
+
+  #screen-game .hand-card.selected {
+    transform: translateY(calc(var(--hand-rest-y) - 24px)) rotate(var(--hand-angle)) scale(1.05);
+  }
+}
+
+
