@@ -39,7 +39,7 @@ assert(
   "Board should visually enter a paused reconnect state."
 );
 assert(
-  indexSource.includes("css/board.css?v=1.7.3") && indexSource.includes("client.js?v=1.7.3"),
+  indexSource.includes("css/board.css?v=1.7.3b") && indexSource.includes("client.js?v=1.7.3b"),
   "Reconnect UI assets should be cache-busted."
 );
 

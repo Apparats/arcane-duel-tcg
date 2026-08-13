@@ -50,7 +50,7 @@ assert(/\.country-flag\s*\{[\s\S]*?width:\s*18px;[\s\S]*?object-fit:\s*cover/.te
 assert(/\.country-flag-fallback\s*\{[\s\S]*?radial-gradient/.test(overlayCss), "Country flags should have a CSS fallback instead of emoji.");
 assert(/\.tooltip-lore\s*\{[\s\S]*?font-size:\s*13\.5px/.test(overlayCss), "Tooltip description should remain legible.");
 assert(/\.tooltip-lore\s*\{[\s\S]*?text-align:\s*center/.test(overlayCss), "Tooltip description should be centered.");
-assert(indexSource.includes("css/overlay.css?v=1.7.3"), "Overlay CSS cache bust should include the tooltip refresh.");
-assert(indexSource.includes("client.js?v=1.7.3"), "Client cache bust should include the tooltip refresh.");
+assert(indexSource.includes("css/overlay.css?v=1.7.3b"), "Overlay CSS cache bust should include the tooltip refresh.");
+assert(indexSource.includes("client.js?v=1.7.3b"), "Client cache bust should include the tooltip refresh.");
 
 console.log("--- INVENTORY TOOLTIP TEST OK ---");

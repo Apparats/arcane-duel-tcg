@@ -151,9 +151,12 @@ html[data-discord-activity="true"] #screen-game[data-campaign-theme="fire"] .boa
   --turn-action-size: 44px;
   display: flex;
   flex-direction: row;
+  flex-wrap: nowrap;
+  white-space: nowrap;
   align-items: center;
   pointer-events: none;
   transform: translateY(-50%);
+  z-index: 10;
 }
 
 .manuscript-rule {
@@ -558,7 +561,7 @@ html[data-discord-activity="true"] .board::before {
 .center-strip {
   min-height: 52px;
   gap: 3px;
-  padding: 2px 180px;
+  padding: 2px clamp(60px, 12vw, 180px);
 }
 
 .turn-seal {
@@ -597,6 +600,7 @@ html[data-discord-activity="true"] .board::before {
 .turn-actions {
   right: clamp(10px, 2vw, 32px);
   gap: 6px;
+  flex-wrap: nowrap;
 }
 
 .btn-end-turn {
@@ -708,7 +712,7 @@ html[data-discord-activity="true"] .board::before {
   .hero-stats .mana::before { inset: 4px; border-width: 1px; }
   .hero-stats .deck { top: 5px; right: 6px; font-size: 6px; }
   #oppHandBack { top: 0; left: 2px; transform: scale(0.78); transform-origin: top left; }
-  .center-strip { min-height: 38px; padding: 0 124px; }
+  .center-strip { min-height: 38px; padding: 0 clamp(40px, 8vw, 124px); }
   .turn-seal { width: 27px; height: 27px; font-size: 7px; }
   .turn-label { font-size: 8px; }
   .turn-timer { font-size: 7px; }
@@ -1041,7 +1045,7 @@ html[data-discord-activity="true"]:not([data-mobile="true"]) {
 
   .center-strip {
     min-height: 36px;
-    padding: 0 140px;
+    padding: 0 clamp(40px, 8vw, 140px);
     gap: 2px;
   }
 
