@@ -61,7 +61,7 @@ function minion(instanceId, cardId, overrides = {}) {
   ["expansion2:ghoulli", "ghoulli", "rare", "Luxembourg", 4, 4, 5],
   ["expansion2:halbarad", "halbarad", "rare", "Luxembourg", 5, 4, 6],
   ["expansion2:jaume-primer", "jaume_primer", "rare", "Andorra", 5, 4, 6],
-  ["expansion2:masterchief", "masterchief", "legendary", "Oman", 1, 2, 8],
+  ["expansion2:masterchief", "masterchief", "legendary", "Oman", 4, 2, 5],
   ["expansion2:naladarkclouds", "naladarkclouds", "common", "Chile", 4, 4, 6],
   ["expansion2:nootmuskater", "nootmuskater", "common", "Netherlands", 3, 3, 3],
   ["expansion2:polltrek", "polltrek", "common", "Norway", 5, 7, 3],
@@ -160,7 +160,7 @@ assert.strictEqual(getCardById("expansion2:brodocaldo").lore, "", "Vanilla cards
 
   g.attack(0, antichrist.instanceId, target.instanceId);
 
-  assert.strictEqual(antichrist.health, 8, "Antichristjesus should restore Health up to 8 when it kills a minion.");
+  assert.strictEqual(antichrist.health, 4, "Antichristjesus should not restore Health when it kills a minion.");
   assert.strictEqual(antichrist.divineShield, false, "Antichristjesus should not gain Divine Shield when it kills a minion.");
 }
 
@@ -326,9 +326,11 @@ assert.strictEqual(getCardById("expansion2:brodocaldo").lore, "", "Vanilla cards
   g.endTurn(1);
   g.endTurn(0);
   g.endTurn(1);
-  assert.strictEqual(chief.attack, 10, "masterchief should become 10 Attack after surviving 3 turns.");
+  g.endTurn(0);
+  g.endTurn(1);
+  assert.strictEqual(chief.attack, 10, "masterchief should become 10 Attack after surviving 4 turns.");
   assert.strictEqual(chief.health, 10, "masterchief should become 10 Health after surviving 3 turns.");
-  assert.strictEqual(chief.divineShield, true, "masterchief should gain Divine Shield when it transforms.");
+  assert.strictEqual(chief.divineShield, false, "masterchief grantDivineShield parameter is false on delayed buff.");
 }
 
 console.log("--- EXPANSION 2 NEW CARDS TEST OK ---");

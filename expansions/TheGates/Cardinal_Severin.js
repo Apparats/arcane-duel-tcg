@@ -8,10 +8,10 @@ module.exports = {
   race: "Human",
   rarity: "mythic",
   country: "Thailand",
-  lore: "On play and at the start of your turns, silence all enemy minions.",
+  lore: "On play, silence all enemy minions. At the start of your turn, silence a random enemy minion.",
   image: "art/Cardinal_Severin.webp",
   abilities: [
     { trigger: "onPlay", effect: "applyStatusToAllEnemyMinions", status: "silenced" },
-    { trigger: "onTurnStart", effect: "applyStatusToAllEnemyMinions", status: "silenced" },
+    { trigger: "onTurnStart", effect: "applyStatusToRandomEnemyMinion", status: "silenced" },
   ],
 };

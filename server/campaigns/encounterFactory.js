@@ -98,15 +98,22 @@ function normalizeCampaignEncounter(definition) {
       openingCardId,
       ignoreDeckSizeLimit: npc.ignoreDeckSizeLimit === true,
       uniqueMythicPlays: npc.uniqueMythicPlays === true,
+      copyPlayer: npc.copyPlayer === true,
       boardRules: Object.freeze(normalizeBoardRules(npc.boardRules)),
     }),
   });
 }
 
-function createCampaignMatch(encounter, { roomCode, playerName, playerDeck, randomInt }) {
+function createCampaignMatch(encounter, { roomCode, playerName, playerDeck, randomInt, playerAvatarUrl }) {
   const npc = encounter.npc;
-  const game = new Game(roomCode, playerName, npc.name, {
-    decks: [playerDeck, npc.deck],
+  const isMimic = npc.copyPlayer === true || encounter.id === "mimic";
+  const rawPlayerName = playerName || "Player";
+  const npcName = isMimic ? (rawPlayerName.startsWith("Mimic ") ? rawPlayerName : `Mimic ${rawPlayerName}`) : npc.name;
+  const npcAvatarUrl = isMimic ? (playerAvatarUrl || npc.avatarUrl) : npc.avatarUrl;
+  const npcDeck = isMimic && Array.isArray(playerDeck) && playerDeck.length > 0 ? playerDeck : npc.deck;
+
+  const game = new Game(roomCode, playerName, npcName, {
+    decks: [playerDeck, npcDeck],
     randomInt,
     playerConfigs: [
       {},
@@ -134,7 +141,7 @@ function createCampaignMatch(encounter, { roomCode, playerName, playerDeck, rand
 
   return {
     game,
-    npc: { name: npc.name, avatarUrl: npc.avatarUrl },
+    npc: { name: npcName, avatarUrl: npcAvatarUrl },
   };
 }
 

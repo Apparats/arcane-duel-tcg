@@ -1326,7 +1326,7 @@ async function handleMessage(ws, msg) {
     const playerDeck = await getActiveDeckCardIds(user.id);
     const profile = await getPublicPlayerProfile(user.id);
     const code = makeRoomCode();
-    const match = createCampaignMatch(campaign, { roomCode: code, playerName: user.username || "Player", playerDeck, randomInt: secureRandomInt });
+    const match = createCampaignMatch(campaign, { roomCode: code, playerName: user.username || "Player", playerDeck, randomInt: secureRandomInt, playerAvatarUrl: user.avatarUrl || null });
     const room = {
       game: match.game,
       sockets: [ws, null], names: [user.username || "Player", match.npc.name], avatars: [user.avatarUrl || null, match.npc.avatarUrl], userIds: [user.id, null], profiles: [profile, null], introEndsAt: Date.now() + MATCH_INTRO_DURATION_MS,

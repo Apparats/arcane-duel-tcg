@@ -11,24 +11,24 @@
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="pwa-icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="pwa-icon-192.png" />
-<link rel="preload" href="art/menu-arcane-sanctuary.webp?v=1.7.3b" as="image" type="image/webp" fetchpriority="high" />
-<link rel="stylesheet" href="css/fonts.css?v=1.7.3b" />
-<link rel="stylesheet" href="css/base.css?v=1.7.3b" />
-<link rel="stylesheet" href="css/menu.css?v=1.7.3b" />
-<link rel="stylesheet" href="css/account-profile.css?v=1.7.3b" />
-<link rel="stylesheet" href="css/lobby.css?v=1.7.3b" />
-<link rel="stylesheet" href="css/board.css?v=1.7.3b" />
-<link rel="stylesheet" href="css/cards.css?v=1.7.3b" />
-<link rel="stylesheet" href="css/board-arena.css?v=1.7.3b" />
-<link rel="stylesheet" href="css/board-hand.css?v=1.7.3b" />
-<link rel="stylesheet" href="css/inventory.css?v=1.7.3b" />
-<link rel="stylesheet" href="css/deck-builder.css?v=1.7.3b" />
-<link rel="stylesheet" href="css/shop.css?v=1.7.3b" />
-<link rel="stylesheet" href="css/trade.css?v=1.7.3b" />
-<link rel="stylesheet" href="css/pack-opening.css?v=1.7.3b" />
-<link rel="stylesheet" href="css/fx.css?v=1.7.3b" />
-<link rel="stylesheet" href="css/board-effects.css?v=1.7.3b" />
-<link rel="stylesheet" href="css/overlay.css?v=1.7.3b" />
+<link rel="preload" href="art/menu-arcane-sanctuary.webp?v=1.7.4" as="image" type="image/webp" fetchpriority="high" />
+<link rel="stylesheet" href="css/fonts.css?v=1.7.4" />
+<link rel="stylesheet" href="css/base.css?v=1.7.4" />
+<link rel="stylesheet" href="css/menu.css?v=1.7.4" />
+<link rel="stylesheet" href="css/account-profile.css?v=1.7.4" />
+<link rel="stylesheet" href="css/lobby.css?v=1.7.4" />
+<link rel="stylesheet" href="css/board.css?v=1.7.4" />
+<link rel="stylesheet" href="css/cards.css?v=1.7.4" />
+<link rel="stylesheet" href="css/board-arena.css?v=1.7.4" />
+<link rel="stylesheet" href="css/board-hand.css?v=1.7.4" />
+<link rel="stylesheet" href="css/inventory.css?v=1.7.4" />
+<link rel="stylesheet" href="css/deck-builder.css?v=1.7.4" />
+<link rel="stylesheet" href="css/shop.css?v=1.7.4" />
+<link rel="stylesheet" href="css/trade.css?v=1.7.4" />
+<link rel="stylesheet" href="css/pack-opening.css?v=1.7.4" />
+<link rel="stylesheet" href="css/fx.css?v=1.7.4" />
+<link rel="stylesheet" href="css/board-effects.css?v=1.7.4" />
+<link rel="stylesheet" href="css/overlay.css?v=1.7.4" />
 </head>
 <body>
   <!-- ---------- OVERLAY: LOADING SCREEN ---------- -->
@@ -138,7 +138,7 @@
         <button id="btnOpenPrivacyMenu" class="btn menu-option-button" type="button">Privacy Notice</button>
         <div class="menu-option-config">
           <button id="btnOpenAudioConfig" class="btn menu-option-button" type="button">Audio</button>
-          <span class="menu-version">Version 1.7.3</span>
+          <span class="menu-version">Version 1.7.4</span>
         </div>
       </div>
     </div>
@@ -1169,6 +1169,20 @@
       <div class="changelog-content">
       <article class="changelog-entry">
         <div class="changelog-entry-meta">
+          <h3>Version 1.7.4 <span class="changelog-tag tag-new">NEW</span></h3>
+          <span>Offline Fonts, Store Protection &amp; Stage 4 Mimic</span>
+        </div>
+        <p class="changelog-entry-intro">Version 1.7.4 brings 100% offline local fonts, complete real country flag coverage, 5-pack store pity protection, Stage 4 Mimic campaign encounter, and card balance adjustments.</p>
+        <ul class="changelog-list">
+          <li><strong>Offline Local Fonts:</strong> All typography has instant font loading across all browsers, and Discord Activity.</li>
+          <li><strong>Complete Real Country Flags:</strong> Added SVG flag rendering for 10 countries across all card sets (El Salvador, Cambodia, Mongolia, Canada, Greenland, Andorra, Laos, Liberia, Mali, Saudi Arabia), achieving 100% flag coverage for all countries.</li>
+          <li><strong>Store 5-Pack Protection (Pity System):</strong> Opening 4 consecutive packs of an expansion without getting a new card now guarantees that at least 1 card in the 5th pack will be a missing card from your collection.</li>
+          <li><strong>Campaign Stage 4 (Mimic):</strong> Unlocked a shape-shifting boss encounter after Stage 3! Mimic enters with 40 Health, awards 300 Gold on victory.</li>
+          <li><strong>Card Balance Adjustments:</strong> Antichristjesus self-heal on kill removed; Cardinal Severin turn-start ability updated to silence a random enemy minion instead of all enemy minions every turn. Still silences all minions on it's first play</li>
+        </ul>
+      </article>
+      <article class="changelog-entry">
+        <div class="changelog-entry-meta">
           <h3>Version 1.7.3</h3>
           <span>Reconnection Fixes, Responsive Layout &amp; UX</span>
         </div>
@@ -1794,25 +1808,25 @@
   <!-- ---------- CARD TOOLTIP (lore, rarity, country) ---------- -->
   <div id="cardTooltip" class="card-tooltip hidden"></div>
 
-  <script src="cards.js?v=1.7.3b"></script>
-  <script src="deckRules.js?v=1.7.3b"></script>
-  <script src="engine.js?v=1.7.3b"></script>
-  <script src="ai.js?v=1.7.3b"></script>
-  <script src="audioConfig.js?v=1.7.3b"></script>
-  <script src="audioManager.js?v=1.7.3b"></script>
-  <script src="packOpening.js?v=1.7.3b"></script>
-<script src="legalNotices.js?v=1.7.3b"></script>
-<script src="profileCatalog.js?v=1.7.3b"></script>
-<script src="profileBadges.js?v=1.7.3b"></script>
-<script src="accountProfile.js?v=1.7.3b"></script>
-<script src="client.js?v=1.7.3b"></script>
-<script src="shieldChallenge.js?v=1.7.3b"></script>
-<script src="boardInteractions.js?v=1.7.3b"></script>
-<script src="inventory.js?v=1.7.3b"></script>
-<script src="deckBuilder.js?v=1.7.3b"></script>
-<script src="shop.js?v=1.7.3b"></script>
-<script src="trade.js?v=1.7.3b"></script>
-<script src="tournaments.js?v=1.7.3b"></script>
-<script src="pwa.js?v=1.7.3b"></script>
+  <script src="cards.js?v=1.7.4"></script>
+  <script src="deckRules.js?v=1.7.4"></script>
+  <script src="engine.js?v=1.7.4"></script>
+  <script src="ai.js?v=1.7.4"></script>
+  <script src="audioConfig.js?v=1.7.4"></script>
+  <script src="audioManager.js?v=1.7.4"></script>
+  <script src="packOpening.js?v=1.7.4"></script>
+<script src="legalNotices.js?v=1.7.4"></script>
+<script src="profileCatalog.js?v=1.7.4"></script>
+<script src="profileBadges.js?v=1.7.4"></script>
+<script src="accountProfile.js?v=1.7.4"></script>
+<script src="client.js?v=1.7.4"></script>
+<script src="shieldChallenge.js?v=1.7.4"></script>
+<script src="boardInteractions.js?v=1.7.4"></script>
+<script src="inventory.js?v=1.7.4"></script>
+<script src="deckBuilder.js?v=1.7.4"></script>
+<script src="shop.js?v=1.7.4"></script>
+<script src="trade.js?v=1.7.4"></script>
+<script src="tournaments.js?v=1.7.4"></script>
+<script src="pwa.js?v=1.7.4"></script>
 </body>
 </html>

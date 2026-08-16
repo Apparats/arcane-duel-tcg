@@ -610,7 +610,7 @@
       "race": "Human",
       "rarity": "legendary",
       "country": "Sri Lanka",
-      "lore": "Immune to adverse effects. While on the board, enemies cannot summon Taunt or Divine Shield minions. When this kills an enemy minion, it restores its Health up to 8.",
+      "lore": "Immune to adverse effects. While on the board, enemies cannot summon Taunt or Divine Shield minions.",
       "image": "art/Antichristjesus2.webp",
       "abilities": [
         {
@@ -625,11 +625,6 @@
         {
           "trigger": "passive",
           "effect": "immuneToAdverseEffects"
-        },
-        {
-          "trigger": "onKillMinion",
-          "effect": "restoreSelfHealthToValue",
-          "value": 8
         }
       ],
       "_expansionId": "expansion2"
@@ -1734,7 +1729,7 @@
       "race": "Human",
       "rarity": "mythic",
       "country": "Thailand",
-      "lore": "On play and at the start of your turns, silence all enemy minions.",
+      "lore": "On play, silence all enemy minions. At the start of your turn, silence a random enemy minion.",
       "image": "art/Cardinal_Severin.webp",
       "abilities": [
         {
@@ -1744,7 +1739,7 @@
         },
         {
           "trigger": "onTurnStart",
-          "effect": "applyStatusToAllEnemyMinions",
+          "effect": "applyStatusToRandomEnemyMinion",
           "status": "silenced"
         }
       ],

@@ -1330,7 +1330,7 @@ async function buyPack(userId, pack) {
   const packSize = assertPositiveInteger(pack.size ?? PACK_SIZE, "pack size", { min: 1, max: 20 });
   const cards = pack.cards || [];
 
-  const user = await users.findOne({ _id }, { projection: { gold: 1, unlockedCards: 1, cardCollection: 1 } });
+  const user = await users.findOne({ _id }, { projection: { gold: 1, unlockedCards: 1, cardCollection: 1, packHistory: 1 } });
   if (!user) throw new Error("User not found.");
   if (cards.length === 0) throw new Error("Pack has no cards.");
   if ((user.gold || 0) < priceGold) {
@@ -1339,7 +1339,23 @@ async function buyPack(userId, pack) {
     throw err;
   }
 
-  const openedCards = buildPackOpening(cards, packSize);
+  const packHistory = Array.isArray(user.packHistory) ? user.packHistory : [];
+  let packsWithoutNew = 0;
+  for (let i = packHistory.length - 1; i >= 0; i--) {
+    const h = packHistory[i];
+    if (h && (h.expansionId === pack.expansionId || h.packId === pack.id)) {
+      if (!h.newCards || h.newCards.length === 0) {
+        packsWithoutNew++;
+      } else {
+        break;
+      }
+    }
+  }
+
+  const openedCards = buildPackOpening(cards, packSize, {
+    existingCollection: user.cardCollection || {},
+    packsWithoutNew,
+  });
   const opening = summarizeOpening(openedCards, user.cardCollection || {});
   const cardResults = opening.cards;
   const newCardIds = opening.newCardIds;

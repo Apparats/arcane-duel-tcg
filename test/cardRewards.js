@@ -105,6 +105,19 @@ function main() {
     completeDrops.every((cardId) => uniquePool.some((card) => card.id === cardId)),
     "Unique-until-complete rewards should return to the full pool after completion."
   );
+  // Test 5-pack pity protection for missing cards
+  const pityPool = [
+    { id: "pity:c1", rarity: "common" },
+    { id: "pity:c2", rarity: "common" },
+  ];
+  const pityCollection = { "pity:c1": 1 };
+  const pityDraw = buildPackOpening(pityPool, 1, { existingCollection: pityCollection, packsWithoutNew: 4 });
+  assert(pityDraw[0].id === "pity:c2", "5th pack pity system must guarantee drawing missing card c2.");
+
+  const completePityCollection = { "pity:c1": 1, "pity:c2": 1 };
+  const completeDraw = buildPackOpening(pityPool, 1, { existingCollection: completePityCollection, packsWithoutNew: 4 });
+  assert(completeDraw.length === 1, "Complete collection draw should return a card normally.");
+
   console.log("--- CARD REWARDS TEST OK ---");
 }
 

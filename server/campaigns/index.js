@@ -88,6 +88,23 @@ const CAMPAIGN_DEFINITIONS = Object.freeze([{
     deck: FIRE_ELEMENTAL_DECK,
     boardRules: { maxMinions: 4 },
   },
+}, {
+  id: "mimic",
+  name: "Mimic",
+  available: true,
+  lore: "A shape-shifting phantom reflects your exact identity, avatar, and deck, challenging you with 40 Health.",
+  theme: "frost",
+  audio: { boardMusic: "board" },
+  rewards: { gold: 300, goldOnce: true },
+  npc: {
+    name: "Mimic",
+    avatarUrl: "art/Protector.webp",
+    health: 40,
+    mana: { starting: 1, cap: 10 },
+    deck: [...PROTECTOR_BASE_COMMONS, ...THE_GATES_MYTHICS],
+    copyPlayer: true,
+    boardRules: { maxMinions: 4 },
+  },
 }]);
 const campaignEncounters = CAMPAIGN_DEFINITIONS.map((definition) => normalizeCampaignEncounter(definition));
 const encounters = new Map(campaignEncounters.map((encounter) => [encounter.id, encounter]));

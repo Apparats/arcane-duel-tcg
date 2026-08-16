@@ -95,9 +95,8 @@ assert.deepStrictEqual(getCardById("special:moths").keywords, ["divineShield"], 
   assert.strictEqual(cardinal.abilities.length, 2, "Cardinal Severin should have play and turn-start silence abilities.");
   assert.strictEqual(cardinal.abilities[0].trigger, "onPlay", "Cardinal Severin should silence on play.");
   assert.strictEqual(cardinal.abilities[0].effect, "applyStatusToAllEnemyMinions", "Cardinal Severin should affect all enemy minions.");
-  assert.strictEqual(cardinal.abilities[0].status, "silenced", "Cardinal Severin should apply Silenced.");
-  assert.strictEqual(cardinal.abilities[1].trigger, "onTurnStart", "Cardinal Severin should refresh silence at turn start.");
-  assert.strictEqual(cardinal.abilities[1].effect, "applyStatusToAllEnemyMinions", "Cardinal Severin's turn-start effect should affect all enemy minions.");
+  assert.strictEqual(cardinal.abilities[1].trigger, "onTurnStart", "Cardinal Severin should silence a random enemy minion at turn start.");
+  assert.strictEqual(cardinal.abilities[1].effect, "applyStatusToRandomEnemyMinion", "Cardinal Severin's turn-start effect should affect a random enemy minion.");
   assert.strictEqual(cardinal.abilities[1].status, "silenced", "Cardinal Severin's turn-start effect should apply Silenced.");
 }
 

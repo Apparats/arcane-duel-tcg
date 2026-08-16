@@ -140,8 +140,22 @@ function summarizeOpening(openedCards, existingCollection = {}) {
   };
 }
 
-function buildPackOpening(cards, packSize) {
-  return drawWeightedCards(cards, packSize);
+function buildPackOpening(cards, packSize, { existingCollection = {}, packsWithoutNew = 0 } = {}) {
+  const drawn = drawWeightedCards(cards, packSize);
+  if (!existingCollection || packsWithoutNew < 4) return drawn;
+
+  const missingCards = cards.filter((card) => !existingCollection[card.id] || existingCollection[card.id] <= 0);
+  if (missingCards.length === 0) return drawn;
+
+  const hasMissingDrawn = drawn.some((card) => !existingCollection[card.id] || existingCollection[card.id] <= 0);
+  if (!hasMissingDrawn) {
+    const pityCard = randomFrom(missingCards);
+    const result = [...drawn];
+    result[result.length - 1] = pityCard;
+    return result;
+  }
+
+  return drawn;
 }
 
 function drawUniqueUntilCompleteCards(cards, count, existingCollection = {}) {
