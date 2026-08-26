@@ -420,6 +420,10 @@ expansions/
   campaign2/
 ```
 
+> [!IMPORTANT]
+> **Rarity & Card Submission Policy (Disclaimer)**:
+> Community card submissions and Pull Requests are open for **Common**, **Rare**, and **Souvenir** cards. **Legendary** and **Mythic** cards are **strictly exclusive to the game creator** (reserved for special lore characters, campaign bosses, and tournament champion tributes). Community contributions attempting to add new Legendary or Mythic cards will not be accepted.
+
 ### 1. Card Definition Schema
 #### Minion Card Example:
 ```js
@@ -432,7 +436,7 @@ module.exports = {
   health: 6,
   race: "Construct",                     // Free-text race
   keywords: ["taunt"],                   // "taunt" | "charge" | "divineShield"
-  rarity: "rare",                        // "common" | "rare" | "legendary" | "mythic" | "souvenir"
+  rarity: "rare",                        // "common" | "rare" | "souvenir" (Legendary/Mythic are creator-exclusive)
   country: "Arcana",                     // Faction or country name
   lore: "Carved by hands no one remembers anymore.",
   image: "art/obsidian-golem.png",       // Optional image path in public/

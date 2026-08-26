@@ -30,7 +30,9 @@ module.exports = {
   race: "Human",
 
   // ---- Presentation fields (shown when hovering over the card) ----
-  rarity: "common",   // "common" | "rare" | "legendary" | "mythic" | "souvenir"
+  // DISCLAIMER: Community cards must be "common", "rare", or "souvenir".
+  // "legendary" and "mythic" are strictly exclusive to the game creator.
+  rarity: "common",   // "common" | "rare" | "souvenir"
   country: "Arcana",  // the card's country/faction (pick whichever you want)
   lore: "A short flavor line, no more than a couple of sentences.",
 

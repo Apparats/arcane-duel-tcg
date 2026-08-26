@@ -49,6 +49,11 @@ Cards are defined modularly inside the `expansions/` directory.
    ```
    *(Or use `npm run cards:watch` to auto-rebuild while you edit).*
 
+> [!IMPORTANT]
+> **Rarity & Card Submission Policy (Disclaimer)**:
+> Community card submissions and Pull Requests are open for **Common**, **Rare**, and **Souvenir** cards. **Legendary** and **Mythic** cards are **strictly exclusive to the game creator** (reserved for special lore characters, campaign bosses, and tournament champion tributes). Pull Requests proposing new Legendary or Mythic cards will not be accepted.
+
+
 ### 🎨 Card Artwork Generation Guide
 To maintain a cohesive aesthetic across all sets, generate card artwork using the official prompt template:
 
