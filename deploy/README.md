@@ -14,7 +14,7 @@ Add these secrets:
 
 | Secret | Value |
 | --- | --- |
-| `ORACLE_HOST` | Public server IP or hostname, for example `129.159.183.48` |
+| `ORACLE_HOST` | Public server IP or hostname, for example `123.45.67.89` |
 | `ORACLE_SSH_KEY` | Full private SSH key used to connect to the VM |
 
 Optional secrets:

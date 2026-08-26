@@ -1,627 +1,651 @@
-# Arcane Duel
+# Arcana TCG (Duelo Arcano)
 
-It has **two modes**, using the same rules engine:
+<p align="center">
+  <img src="public/art/reverse.webp" alt="Arcana TCG Cover" width="160" />
+</p>
 
-1. **Vs NPC (local, 100% offline)** — runs entirely in the browser, no
-   server, nothing to install. Great for testing card balance before
-   the event.
-2. **Online 1v1** — authoritative Node server (WebSocket) + room code
+<p align="center">
+  <strong>A high-performance, real-time multiplayer Trading Card Game (TCG) with an authoritative WebSocket server, responsive browser client, Discord Activity integration, and deep strategic combat.</strong>
+</p>
 
-`public/cards.js` already comes compiled with the base cards, so
-both modes work out of the box without touching anything. You only
-need to run the card compiler (see below) if you add or change cards
-in `expansions/`.
+<p align="center">
+  <img src="https://img.shields.io/badge/version-1.7.4-blue.svg" alt="Version 1.7.4" />
+  <img src="https://img.shields.io/badge/node-%3E%3D18.0.0-green.svg" alt="Node Version" />
+  <img src="https://img.shields.io/badge/multiplayer-WebSocket%20Authoritative-purple.svg" alt="Multiplayer WebSocket" />
+  <img src="https://img.shields.io/badge/database-MongoDB%20Atlas-brightgreen.svg" alt="MongoDB Atlas" />
+  <img src="https://img.shields.io/badge/auth-Discord%20OAuth2-5865F2.svg" alt="Discord OAuth2" />
+  <img src="https://img.shields.io/badge/pwa-Installable%20%26%20Offline-orange.svg" alt="PWA Ready" />
+  <img src="https://img.shields.io/badge/ci%2Fcd-GitHub%20Actions%20%E2%86%92%20Oracle%20Cloud-yellow.svg" alt="CI/CD" />
+</p>
 
-## Offline mode: try it right now
+---
 
-No `npm install`, nothing needs to be running. Just:
+## 🌟 Overview
 
-1. Open `public/index.html` by double-clicking it (or dragging it into
-   a browser).
-2. Type your name and tap **"Practice vs NPC (local, no server)"**.
-3. You play against a simple AI that plays cards and attacks on its own.
+**Arcana TCG** is a competitive, expandable digital card game built from the ground up for instantaneous response times and 24/7 global accessibility. Powered by a deterministic, authoritative game engine shared seamlessly between **Node.js** and the **browser**, matches can be played across a worldwide dedicated server or 100% offline.
 
-This works without an internet connection except for the Google Fonts
-typefaces (if there's no internet, the game automatically falls back
-to a system font — nothing breaks).
+### Key Highlights
+- 🌐 **Global Dedicated Server**: Persistent multiplayer running 24/7 behind Cloudflare and Oracle Cloud with sub-second WebSocket synchronization.
+- ⚔️ **Extensive Game Modes**:
+  - **Quickplay**: Global casual 1v1 matchmaking with real-time queues and rankings.
+  - **Ranked Ladder**: Scheduled competitive windows (CET) with MMR rating progression, rank tiers (*Sand* to *Master*), weekly rewards, and seasonal resets.
+  - **Private Rooms**: 4-letter join codes for direct duels with friends.
+  - **Automated Tournaments**: Scheduled single-elimination brackets with automatic seedings, byes, 3rd-place matches, and gold prize pools.
+  - **Story Campaigns (PvE)**: Multi-stage boss encounters with unique mechanics (The Protector, Iron Watch, FireElemental, and Mimic).
+  - **Shield Trials (Real-Time Minigame)**: In-combat projectile blocking minigame requiring directional reflexes (WASD / Arrows / Touch).
+  - **Practice vs NPC (100% Offline)**: Local heuristic AI opponent playable with zero dependencies and bundled local fonts.
+- 🪙 **Complete Economy & Trading**:
+  - Gold economy rewarded through duels, daily logins, campaigns, ranked tiers, and tournaments.
+  - Booster packs with custom drop weightings and a **5-Pack Pity Protection System**.
+  - **Card Scrapping / Disenchanting** for duplicate conversion.
+  - **Direct P2P Trading**: Live peer-to-peer card exchange with active deck copy lock protection.
+- 🎴 **Deck Builder & Collection**:
+  - Interactive collection viewer with 100% real-world SVG country flags.
+  - Deck validator (25 cards, max 3 spells, rarity limits: 2x common/rare, 1x legendary/mythic/souvenir).
+  - One-click **Auto-Deck Builder**.
+- 🏆 **Player Identity & Discord Integration**:
+  - Discord OAuth2 authentication with JWT secure cookies.
+  - Play directly inside Discord Voice Channels via **Discord Embedded App SDK**.
+  - 15+ Unlockable Titles and 25+ Badges with dynamic SVG heraldic seals.
+  - Custom display names, level progression, match records, and public duelist profiles.
+- 📦 **Modular Expansion System**:
+  - Plugin-style modular card sets (`expansions/`) with strict schema validation and pack shop settings.
+  - Card compiler CLI (`npm run cards:build`, `npm run cards:check`, `npm run cards:watch`).
+- 📱 **Progressive Web App (PWA) & Audio Engine**:
+  - Installable on mobile and desktop devices with responsive layout and touch controls.
+  - Built-in sound manager with spatial SFX, adaptive music, and gesture audio unlock.
 
-The AI is heuristic-based, not a search engine: it plays the most
-expensive card it can afford, casts damage at the enemy's face, heals
-its own hero only if it helps, and attacks face unless there's an
-enemy Taunt (in which case it attacks the Taunt with the most health).
-It's good for testing rules and cards, not for a competitive
-challenge — that's what online 1v1 between people is for.
+---
 
-## Online mode:
+## 📖 Complete Game Rules & Combat Mechanics
 
-⚠️ This only applies if you want people to play **against each other**
-over the internet/network. If you're only going to use vs-NPC mode,
-skip this section.
-
-The server is **not a static site**: it needs a Node process running
-at all times (for the WebSocket).
-
-## Local use of online mode (server + two tabs)
-
-```bash
-npm install
-npm start
+```mermaid
+graph LR
+    A[Start Turn] --> B[+1 Max Mana up to 10]
+    B --> C[Refill Mana to Full]
+    C --> D[Trigger onTurnStart & Hero Statuses]
+    D --> E[Draw 1 Card]
+    E --> F[Ready Minions & Reset Attacks]
+    F --> G[Main Phase: Play Cards / Attack / Emote]
+    G --> H[End Turn -> Expire Statuses]
 ```
 
-Open `http://localhost:8443` in two tabs (or two devices on the same
-network, using your machine's IP instead of `localhost`), and in the
-lobby use "Create room" / "Join" instead of the NPC button.
+### 1. Objective & Win Conditions
+- Each hero begins with **30 Health**.
+- Reduce the opposing hero to **0 Health** to win the match.
+- If both heroes hit 0 Health simultaneously, the match results in a **Draw**.
+- A player can **Surrender** at any moment via the surrender modal.
 
-Optional environment variable: `PORT` (default 8443).
+### 2. Mana Curve & Turn Flow
+- Players start Turn 1 with **1 Mana Crystal**.
+- At the start of each turn, maximum Mana increases by **+1** up to the **cap of 10 Mana**, and current Mana refills completely.
+- Certain cards grant **Temporary Mana** (extra crystals for the current turn) or **Next-Turn Mana Bonuses**.
+- **Turn Timer**: 
+  - **40 seconds** per turn in Quickplay, Ranked, and Private Room matches.
+  - **30 seconds** per turn in Tournaments.
+  - A visual progress rope and audio countdown tick warn players when turn time runs low.
 
-## Tournament configuration
+### 3. Opening Hand & Mulligan Phase
+- **Player 1 (First)**: Draws **3 cards**.
+- **Player 2 (Second)**: Draws **4 cards** + receives a bonus **Mana Spark** (`special:manaspark`, a 0-cost spell that grants +1 temporary Mana on use).
+- **Mulligan Phase**: Before Turn 1 begins, both players have a dedicated window to select any number of cards in their initial hand to shuffle back into their deck and draw fresh replacements.
 
-Create and schedule tournaments in [server/tournaments/catalog.js](server/tournaments/catalog.js). Each object contains the public name, description, registration window, start time, player cap, and podium prizes. All dates are ISO 8601 UTC. Set `enabled: false` to hide an event without deleting it.
+### 4. Hand & Deck Restrictions
+- **Maximum Hand Size**: **10 cards**. If a player draws while their hand is full, the drawn card is discarded/burned and cannot be added.
+- **Deck Size**: Exactly **25 cards**.
+- **Deck Exhaustion**: When a deck runs out of cards, subsequent draws simply yield no card. There is no fatigue damage penalty.
 
-Once registration closes, the server locks the player list. At the configured start time it creates a single-elimination bracket sized to the actual number of entrants, automatically giving byes where needed. The final pays 500 gold to first place and 250 gold to second; a third-place match pays 100 gold whenever two semifinal losers exist. Tournament prizes are recorded once server-side, independently of the normal match reward limits. Tournament turns last 30 seconds; a player who disconnects has 30 seconds to return, otherwise their opponent advances by forfeit. If one tournament player enters a ready match and the opponent does not enter within 3 minutes, the waiting player advances by forfeit. If neither player enters within that ready window, the match becomes a no contest and stops blocking the bracket. Draws leave that bracket match ready for a replay.
+### 5. Board Limits & Keyword Caps
+- **Minion Capacity**: A player may control a maximum of **4 minions** on their board simultaneously. (Special summon effects can trigger a temporary overflow of up to 5 minions).
+- **Taunt Limit**: Maximum **2 Taunt minions** active per side at any time.
+- **Charge Limit**: Maximum **1 Charge minion** active per side at any time.
+- Attempting to play or summon a minion exceeding these board or keyword limits is strictly prevented by the game engine.
 
-## Production deployment (Oracle Cloud + Cloudflare + MongoDB + Discord)
+### 6. Card Types & Rarities
+| Type | Description |
+| :--- | :--- |
+| **Minion** | Deployed to the battlefield with **Attack** (⚔️), **Health** (❤️), **Race**, and optional **Keywords** / **Abilities**. Cannot attack on the turn deployed unless it has *Charge*. Combat damage between minions is simultaneous and mutual. |
+| **Spell** | Cast directly from hand by paying Mana. Resolves its direct effect (Damage, Heal, Draw, AoE, Debuff, Steal, etc.) and leaves the board immediately. |
 
-This is the setup for running the game as a real, persistent site
-instead of a one-off event server. None of this is required for the
-game itself — online 1v1 and vs-NPC both work with zero configuration.
-This only matters if you want player accounts (Discord login).
+#### Rarity Tiers & Deck Building Limits:
+| Rarity | Visual Border / Glow | Max Copies per Card | Max Total in Deck |
+| :--- | :--- | :---: | :---: |
+| **Common** | Stone Gray | 2 | Unlimited |
+| **Rare** | Sapphire Blue | 2 | Unlimited |
+| **Legendary** | Radiant Gold Glow | 1 | **3 total** |
+| **Mythic** | Amethyst Purple Flame | 1 | **1 total** |
+| **Souvenir** | Emerald Prismatic Glow | 1 | Unlimited |
 
-### 1. Oracle Cloud (hosting)
+> [!IMPORTANT]
+> **Deck Construction Rules**: Every legal deck must contain **exactly 25 cards** and **at most 3 spell cards**.
 
-1. Create a Compute instance (the Always Free tier's Ampere A1 or
-   E2.1.Micro shapes both work fine for this — it's a lightweight
-   Node process).
-2. Open the port you'll run on (80, or whatever you put in `PORT`) in
-   **both** places Oracle requires: the instance's OS firewall
-   (`sudo iptables ...` or `sudo ufw allow 80`, depending on the image)
-   **and** the VCN's Security List / Network Security Group in the
-   OCI console. Missing either one is the most common reason people
-   get "connection refused" on a fresh instance.
-3. Install Node (18+), clone/copy the project, then:
-   ```bash
-   cp .env.example .env   # fill in real values, see sections below
-   npm install --omit=dev
-   npm run cards:build
-   ```
-4. Run it as a real background service instead of a terminal session
-   that dies when you disconnect — `deploy/arcane-duel.service` is a
-   ready-to-use systemd unit; see the comment at the top of that file
-   for the exact setup steps.
+---
 
-### 2. Cloudflare (domain + TLS)
+### 7. Keywords
+- 🛡️ **Taunt** (`taunt`): Enemies must target and attack minions with Taunt before they can attack non-Taunt minions or the enemy hero.
+- ⚡ **Charge** (`charge`): The minion can attack immediately on the turn it enters play.
+- ✦ **Divine Shield** (`divineShield`): Completely absorbs and negates the first instance of damage the minion would take. The shield breaks immediately after absorbing the hit.
 
-1. Add your domain to Cloudflare and point its nameservers there.
-2. Create an **A record** for your domain (or a subdomain, e.g.
-   `play.yourdomain.com`) pointing at the Oracle instance's public IP,
-   with the proxy (orange cloud) turned **on** — this gives you free
-   HTTPS to visitors and hides the origin IP.
-3. SSL/TLS mode: **Flexible** is the fastest way to get started (no
-   certificate needed on the Oracle box at all — Cloudflare talks
-   HTTPS to visitors and plain HTTP to your origin). The trade-off is
-   that Cloudflare-to-origin traffic isn't encrypted, which matters
-   more once real login sessions are flowing through it. When you're
-   ready, upgrading to **Full (strict)** with a free
-   [Cloudflare Origin Certificate](https://developers.cloudflare.com/ssl/origin-configuration/origin-ca/)
-   installed on the Oracle box (e.g. via [Caddy](https://caddyserver.com/),
-   which handles that almost automatically) closes that gap.
-4. WebSockets work through Cloudflare's proxy by default on both
-   Free and paid plans — nothing extra to configure for the game's
-   WebSocket connection.
+---
 
-### 3. MongoDB (player accounts)
+### 8. Status Effects (All 9 Types)
+Status effects can be applied via spells, battlecries, or triggered auras. Status badges and durations are displayed directly on the cards:
 
-The easiest path is [MongoDB Atlas](https://www.mongodb.com/atlas)'s
-free (M0) tier — no server to manage:
+| Status | Badge | Duration Default | Effect & Mechanics |
+| :--- | :---: | :---: | :--- |
+| **Weakened** | `W` | 1 turn | Reduces current Attack by `value`. When the duration expires, the deducted Attack is automatically restored. |
+| **Frozen** | `F` | 1 turn | Prevents the minion from attacking during its next turn. |
+| **Silenced** | `X` | Permanent | Permanently removes all keywords (Taunt, Charge, Divine Shield) and disables all triggered, passive, and deathrattle abilities. |
+| **Poisoned** | `P` | 2 turns | Deals `value` damage at the start of the affected minion's or hero's turn. Reapplying Poison refreshes the duration rather than stacking damage. |
+| **Marked** | `!` | 2 turns | Adds `value` bonus damage to the *next* hit the minion takes, after which the mark is consumed. (Divine Shield absorbs before Mark triggers). |
+| **Burning** | `B` | 1 turn | Deals `value` damage at the start of each turn. Reapplying Burning **stacks both the damage value and duration**. Applies to minions or heroes. |
+| **Drunk** | `D` | 1 turn | When attacking, the minion randomly targets another valid minion on the board (friendly or enemy) instead of the selected target. |
+| **Confused** | `?` | 1 turn | At the start of the turn, the minion has a percentage chance (`value%`) to attack a random friendly minion or miss entirely. |
+| **Dodge** | `~` | Permanent | Grants a `value%` chance to completely evade incoming attack damage. Dodge can scale upon trigger events (up to a configurable cap). |
 
-1. Create a free cluster, then a database user (username/password).
-2. Under Network Access, allow the Oracle instance's public IP (or
-   `0.0.0.0/0` while testing — tighten it to the specific IP once
-   things work).
-3. Copy the connection string it gives you into `MONGODB_URI` in `.env`.
+---
 
-The server auto-creates the `users` collection and its indexes on
-first connection — no manual schema setup needed.
+### 9. Ability Triggers
+Cards can execute special logic upon specific in-game events:
 
-### 4. Discord (login)
+| Trigger | Timing |
+| :--- | :--- |
+| `onPlay` | Triggers immediately when played from hand (after minion lands or spell resolves). |
+| `onDeath` | Triggers when the minion's Health drops to 0 and it dies. |
+| `onTurnStart` | Triggers at the start of the controlling player's turn for every alive minion with this ability. |
+| `onAnyTurnStart` | Triggers at the start of *either* player's turn while alive on board. |
+| `onAttack` | Triggers when this minion initiates an attack against any target. |
+| `onAttackMinion` | Triggers specifically when this minion attacks an enemy minion. |
+| `onAttacked` | Triggers when this minion is attacked by an enemy. |
+| `onKillMinion` | Triggers when this minion destroys an enemy minion in combat. |
+| `onEnemyMinionDeath`| Triggers whenever any enemy minion dies while this card is on board. |
+| `passive` | Continuous persistent aura or condition (e.g., race damage reduction, immunities, summon blockers). |
 
-1. Go to the [Discord Developer Portal](https://discord.com/developers/applications) → New Application.
-2. Under **OAuth2 → General**, copy the **Client ID** and **Client
-   Secret** into `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` in `.env`.
-3. Under **OAuth2 → Redirects**, add
-   `https://yourdomain.com/auth/discord/callback` (must match
-   `DISCORD_REDIRECT_URI` in `.env` exactly, including `https://`).
-4. Generate a random `JWT_SECRET` for `.env`:
-   ```bash
-   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
-   ```
+---
 
-Once `MONGODB_URI`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`,
-`DISCORD_REDIRECT_URI`, and `JWT_SECRET` are all set, restart the
-server — its startup log tells you plainly whether accounts and login
-are active:
+### 10. Built-in Special Ability Effects
+Over 45 modular effects are supported out-of-the-box by the authoritative engine:
 
-```
-Player accounts: enabled (MongoDB connected).
-```
+| Ability Effect | Parameters | Description |
+| :--- | :--- | :--- |
+| `drawCards` | `value` | Draws `value` cards from the deck. |
+| `drawNonLegendaryNonMythicCard` | — | Draws 1 non-Legendary, non-Mythic card from the deck. |
+| `drawRandomDeckCards` | `value` | Draws `value` random cards from anywhere in the deck. |
+| `gainTemporaryMana` | `value`, `firstPlayOnly` | Grants `value` bonus Mana for the current turn. |
+| `grantNextTurnTemporaryMana` | `value` | Grants `value` bonus Mana at the start of next turn. |
+| `addCardToHand` | `cardId` | Generates a specific card into hand. |
+| `addRandomSpellToHand` | — | Generates a random spell from the card catalog into hand. |
+| `stealRandomEnemyDeckCardToHand` | — | Steals a non-Mythic card from the enemy deck into hand. |
+| `stealRandomEnemyHandNonMythicCardBuffed` | `buffPercent` | Steals a card from the enemy hand, buffs minion stats by `buffPercent%`, and cuts its Mana cost in half. |
+| `stealRandomEnemyBoardMinion` | — | Mind controls a random enemy minion over to your board. |
+| `stealEnemyBoardNonMythicMinions` | — | Transfers all non-Mythic enemy minions to your board. |
+| `stealHealthFromRandomEnemyHandMinionAsAttack`| — | Drains 1 Health from a minion in the enemy's hand and adds +1 Attack to this card. |
+| `damageAllEnemyMinions` | `value` | Deals AoE damage to all enemy minions. |
+| `damageAllMinions` | `value` | Deals AoE damage to all minions on both sides. |
+| `damageAllOtherMinions` | `value` | Deals AoE damage to all minions except this one. |
+| `damageEnemyHero` | `value` | Deals direct damage to the opposing hero. |
+| `damageRandomOtherEnemyMinionOrHero` | `value` | Deals repeated damage to another random enemy minion or the hero. |
+| `damageSelfOnAttack` / `damageSelfOnTurnStart`| `value` | Self-inflicts recoil damage. |
+| `healAllFriendlyMinions` | `value` | Heals all friendly minions for `value`. |
+| `healFriendlyRaceMinions` | `race`, `value` | Heals friendly minions matching a specific race. |
+| `healTargetMinion` | `value` | Targeted heal that can overflow max health. |
+| `healSelf` | `value` | Increases current and max Health of this card. |
+| `restoreSelfHealthToValue` | `value` | Restores current Health up to `value`. |
+| `buffAllFriendlyMinions` | `attack`, `health` | AoE buff (+Atk / +HP) to all friendly minions. |
+| `buffFriendlyRaceMinions` | `race`, `attack`, `health`| Buffs all friendly minions of a specified race. |
+| `buffSelf` | `attack`, `health`, `maxApplications`, `maxAttack` | Buffs own stats with optional scaling caps. |
+| `startDelayedSelfBuff` | `turns`, `attack`, `health`, `grantDivineShield` | Grants massive stat growth if the minion survives `turns`. |
+| `swapSelfStatsIfBoardHasAtLeast` | `value` | Swaps Attack and Health if your board has at least `value` minions. |
+| `summonMinion` | `cardId`, `count` | Summons copies of a minion directly onto your board. |
+| `summonMinionIfMissing` | `cardId` | Summons a minion only if you don't already have one in play. |
+| `grantDivineShieldToAllFriendlyMinions` | — | Grants Divine Shield to every friendly minion. |
+| `grantDivineShieldToTargetMinion` | `target: "friendlyMinion"` | Grants Divine Shield to a chosen minion. |
+| `grantSelfDivineShield` / `grantSelfCharge` / `grantSelfTaunt` | — | Self-applies keyword. |
+| `grantRandomSelfKeyword` | `keywords` (optional) | Grants Taunt, Charge, or Divine Shield at random. |
+| `grantChargeToRandomFriendlyNonCharge` | — | Grants Charge to a friendly minion that lacks it. |
+| `grantDodgeToFriendlyBoardFirstPlay` | `value`, `selfValue` | Grants Dodge chance to the board upon initial deployment. |
+| `increaseSelfDodgeOnEnemyDeath` | `value`, `maxValue` | Permanently increases Dodge % when an enemy dies. |
+| `returnToDeck` / `returnEnemyMinionToDeck` | — | Bounces minion back into the deck with shuffle. |
+| `returnAllMinionsToDeck` | — | Board wipe that returns all minions to decks. |
+| `returnOtherFriendlyMinionsToHand` | — | Recalls allied minions back into your hand. |
+| `rebirthWithHalfHealth` / `rebirthWithHealth` | `value` | Resurrects upon death with partial or fixed Health. |
+| `transformIntoMinion` | `cardId` | Replaces the minion with another card. |
+| `destroySelf` / `destroySelfIfPlayedAtLeast` | `value` | Destroys itself under condition. |
+| `destroyRandomEnemyMinionChance` | `chance` | % probability to instantly destroy a random enemy minion. |
+| `applyStatus` / `applyStatusToRandomEnemyMinion` / `applyStatusToAllEnemyMinions` | `status`, `value`, `turns`, `target` | Inflicts a status (Weakened, Frozen, Silenced, Poisoned, Marked, Burning, Drunk, Confused). |
+| `applyDrunkToAttacker` / `applyBurningToAttacker` | `turns`, `value` | Retaliation debuff against attacking enemies. |
+| `cleanseFriendlyMinion` | `target: "friendlyMinion"` | Cleanses all negative debuffs and statuses from an ally. |
+| `reduceDamageFromRace` | `race`, `percent` | Defensive passive: reduces incoming damage from specific races (e.g. Monsters, Humans). |
+| `blockKeywordSummons` / `blockChargeSummons` | — | Aura that prevents enemies from summoning Taunt or Charge units. |
+| `immuneToAdverseEffects` | — | Immune to negative spells, status effects, and adverse enemy abilities. |
+| `immuneToCardEffects` | — | Completely unaffected by other card effects (only vulnerable to direct combat attacks). |
+| `unattackable` | — | Cannot be selected as a target for enemy attacks. |
 
-If any of those are missing, the server logs exactly that and simply
-runs without accounts — it never crashes over missing auth config.
+---
 
-## How to play
-
-Opening `public/index.html` lands on the **main menu**: two big tiles
-for "Play Singleplayer" and "Play Multiplayer", plus three locked
-tiles (Inventory, Shop, Config) reserved for later — clicking one just
-shows a "coming soon" toast for now, they don't do anything yet.
-
-1. One player enters their name and taps **Create room** → gets a
-   4-letter code.
-2. The other player enters their name, types that code, and taps
-   **Join**.
-3. The match starts on its own as soon as both are connected.
-
-Base rules (editable, see below):
-
-- 30 health per player.
-- 1 extra mana crystal per turn (max 10).
-- You start with 3 cards in hand (whoever goes 2nd gets 4, to
-  compensate).
-- Automatic draw phase at the start of each turn.
-- Minions: can't attack the turn they're played, unless they have
-  **Charge** (⚡). **Taunt** (🛡) forces it to be attacked before
-  anything else. **Divine Shield** (✦) negates the first hit of damage
-  they take.
-- You win when the opponent's health reaches 0. If a deck runs out,
-  further draws simply do nothing (no card, no damage) — there's no
-  fatigue mechanic.
-- Either player can **Surrender** at any time (it doesn't have to be
-  your turn) via the small button next to End Turn — it asks for
-  confirmation first, then immediately ends the match for the other
-  player.
-
-## Inventory screen
-
-The "Inventory" tile on the main menu opens a browser for every card
-in the game — filterable by **Type**, **Rarity**, **Country**, and
-**Race** (the country/race dropdowns are built automatically from
-whatever values your cards actually use, since both are free text).
-Clicking a card opens it zoomed in with its full details: stats,
-rarity, country, race, active keywords spelled out, a plain-English
-description of its abilities (if it has any), and its lore.
-
-There's no unlock system yet — every card shows up, all unlocked, on
-purpose, for debugging while the game is still in development. The
-inventory grid and zoom view already call a single function,
-`isCardUnlocked(card)` in `public/inventory.js`, that currently just
-always returns `true`. When real unlocks are built later, that's the
-one place that needs to change — the locked-card visual state
-(`.inventory-card-locked` in `public/css/inventory.css`) is already
-wired up and waiting.
-
-## Player accounts (Discord login)
-
-Optional, and off by default. If `MONGODB_URI`, `DISCORD_CLIENT_ID`,
-`DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URI`, and `JWT_SECRET` are
-all set (see the production deployment section above for how to get
-each of those), a "Login with Discord" button appears in the top-right
-corner of the main menu. If they're not set, that corner of the menu
-stays empty and nothing else changes — matches are unaffected either
-way, whether you're logged in or not.
-
-How it works:
-
-- `server/auth.js` — the Discord OAuth2 flow (`GET /auth/discord`
-  redirects to Discord, `GET /auth/discord/callback` exchanges the
-  code, fetches the Discord profile, and upserts a user record) plus
-  session handling. Sessions are a signed JWT in an httpOnly cookie —
-  there's no separate sessions table to expire or clean up.
-- `server/db.js` — the MongoDB connection and the `users` collection
-  helpers. `isDbEnabled()` / `isAuthEnabled()` in each file are what
-  make the whole thing optional; both are checked before anything
-  touches Mongo or Discord.
-- `GET /auth/me` — returns `{ loggedIn, user, authEnabled }`; the
-  client (`initAccountWidget()` in `public/client.js`) calls this once
-  on page load to decide whether to show the login button or the
-  logged-in profile chip.
-- A logged-in user document currently stores `discordId`, `username`,
-  `avatar`, `createdAt`/`lastLoginAt`, and two fields ready for
-  later — `unlockedCards: []` and `stats: { wins, losses }` — neither
-  is wired into gameplay yet (matches don't update them). That's the
-  natural next step once you want accounts to actually matter beyond
-  logging in.
-
-## Board animations
-
-Intentionally lightweight (only `transform`/`opacity`/`box-shadow`,
-nothing that forces layout recalculations) and exist to make the match
-readable at a glance:
-
-- **Attack**: the attacking minion lunges toward the target and back.
-- **Damage**: shake + red flash + floating red number, on both minions
-  and heroes.
-- **Heal**: green flash + floating green number.
-- **Death**: the minion shrinks and fades out before disappearing.
-- **Summon**: a new minion appears with a small "pop".
-
-How it works under the hood (`public/client.js`): every time a new
-state arrives from the engine (online via WebSocket, or local with no
-network), the client compares it against the previous state *before*
-redrawing the board — if something's health went up or down, or a
-minion disappeared, it fires the matching animation on the elements
-still on screen, waits ~340ms (`SETTLE_DELAY` in `client.js`) so it's
-visible, and only then rebuilds the DOM with the final state. The
-engine (`engine.js`) only contributes one small extra piece of data for
-this — `lastAction`, who attacked what — everything else (damage,
-healing, deaths) is detected by comparing health numbers, so any
-source of damage/healing gets animated for free without touching the
-engine. If you'd rather have no on-screen motion, your OS's
-`prefers-reduced-motion` setting disables all of this automatically.
-
-## Project structure
+### 11. Interactive Minigame: The Shield Trial
+Certain encounters and cards (such as *TheUnchained* in Campaign Stage 2) trigger a real-time **Shield Trial**. 
 
 ```
-.env.example → template for every environment variable the server reads
-deploy/
-  arcane-duel.service → example systemd unit for running on Oracle Cloud
+          [▲ Up]
+ [◄ Left] [🛡️ SHIELD] [Right ►]
+         [▼ Down]
+```
+- A projectile arena appears on-screen with directional arrows flying toward your hero.
+- Use **WASD**, **Arrow Keys**, or **On-Screen Directional Buttons** to rotate your shield.
+- Successfully blocking arrows mitigates direct hero damage; missed arrows deal combat damage to your health.
+
+---
+
+## 🎮 Game Modes
+
+### 1. Multiplayer 1v1
+
+```mermaid
+graph TD
+    A[Multiplayer Lobby] --> B[Quickplay]
+    A --> C[Ranked Ladder]
+    A --> D[Room Code]
+    A --> E[Tournaments]
+
+    B --> B1[Global Casual Queue]
+    C --> C1[Scheduled CET Windows]
+    C --> C2[Sand -> Bronze -> Gold -> Diamond -> Master]
+    D --> D1[4-Letter Private Match]
+    E --> E1[Automated Single-Elimination Brackets]
+```
+
+#### A. Quickplay (Casual Matchmaking)
+- Instant queue that pairs any two online players globally.
+- Wins and losses are tracked in player statistics and casual Quickplay Leaderboards.
+- Earns match gold toward the daily multiplayer reward limit.
+
+#### B. Ranked Ladder (Competitive Season)
+- **Schedule**: Competitive windows open every weekend:
+  - **Friday**: 18:00 – 19:00 CET
+  - **Saturday**: 19:00 – 20:00 CET
+  - **Sunday**: 21:00 – 22:00 CET
+- **Rating Dynamics**:
+  - **Victory**: `+150 MMR Rating`
+  - **Defeat**: `-75 MMR Rating`
+- **Rank Tiers**:
+  | Rank Tier | Minimum Rating | Badge Color | Weekly Gold Reward |
+  | :--- | :---: | :---: | :---: |
+  | **Sand** | 0 | `#8ddcff` | 0 Gold |
+  | **Bronze** | 400 | `#c8875b` | 150 Gold |
+  | **Gold** | 900 | `#ffd166` | 300 Gold |
+  | **Diamond** | 1500 | `#9de7ff` | 600 Gold |
+  | **Master** | 2200 | `#d9a7ff` | 1200 Gold |
+- **Season Resets**: Monthly season reset drops players by 2 rank tiers. Weekly rewards can be claimed directly from the Ranked Rewards modal.
+
+#### C. Private Room Codes
+- One player taps **Create room** to generate a unique **4-letter room code**.
+- The second player enters the code and taps **Join**.
+- Instant authoritative match startup upon connection.
+
+#### D. Automated Tournaments
+- Configured in [server/tournaments/catalog.js](server/tournaments/catalog.js) with UTC start times.
+- **Bracket Engine**: Automatically creates a single-elimination bracket sized to registered entrants, placing automatic byes and scheduling a 3rd-place playoff match.
+- **Prize Payouts**: 
+  - 🥇 1st Place: 500 – 1200 Gold (+ exclusive custom cards/skins in special events)
+  - 🥈 2nd Place: 250 – 600 Gold
+  - 🥉 3rd Place: 100 – 300 Gold
+- **Tournament Timers & Forfeits**:
+  - **30 seconds** per turn.
+  - **30 seconds** disconnect recovery grace period.
+  - **3 minutes** match ready timeout (if one entrant fails to show, the waiting player advances by forfeit).
+  - Responsive bracket viewer modal with mobile dropdown navigation and desktop podium tracker.
+
+---
+
+### 2. Singleplayer & PvE
+
+#### A. Story Campaigns
+Progressive campaign stages configured in [server/campaigns/index.js](server/campaigns/index.js):
+1. **Stage 1: The Gates**: Fight *The Protector* (30 HP, 2 Starting Mana). Rewards **1 The Gates Mythic Card**.
+2. **Stage 2: Iron Watch**: Face *TheUnchained* (30 HP) featuring the real-time **Shield Trial** arrow dodging trial. Rewards **250 Gold**.
+3. **Stage 3: FireElemental**: Defeat the volcanic guardian *FireElemental* (25 HP, 3 Starting Mana) equipped with top Roads legendary/mythic power. Rewards a **Roads Expansion Card + 150 Gold**.
+4. **Stage 4: Mimic**: A shape-shifting boss (40 HP) that **copies your exact deck, avatar, and identity**. Rewards **300 Gold**.
+
+#### B. Practice vs NPC (100% Offline)
+- Runs completely in the browser without server communication.
+- Uses an efficient heuristic AI that evaluates board state, target priority, taunt blockers, and lethal calculations.
+- Perfect for offline play, testing deck balance, and testing newly compiled expansions.
+
+---
+
+## 💰 Economy, Shop, Scrapping & Trading
+
+```mermaid
+graph TD
+    A[Gold Sources] --> B[Starter Bonus: 350g]
+    A --> C[Daily Login: 50g]
+    A --> D[Multiplayer / Singleplayer Matches]
+    A --> E[Ranked Weekly Rewards]
+    A --> F[Tournaments & Campaigns]
+    A --> G[Card Scrapping / Disenchanting]
+
+    B & C & D & E & F & G --> H[Player Gold Vault]
+    H --> I[Shop: Expansion Booster Packs]
+    H --> J[Shop: Exclusive Cosmetic Titles & Badges]
+```
+
+### 1. Gold Currency & Limits
+- **Starter Bonus**: **350 Gold** automatically granted on account creation.
+- **Daily Login Bonus**: **50 Gold** on first login each day.
+- **Discord Activity Invite Reward**: **100 Gold** bonus for launching the game inside Discord.
+- **Match Rewards**:
+  - *Singleplayer (PvE)*: Win = +10 Gold, Loss = +5 Gold (Daily cap: **80 Gold**).
+  - *Multiplayer (Casual / Rooms)*: Win = +10 Gold, Loss = +5 Gold (Daily cap: **100 Gold**).
+  - *Ranked*: Win = +20 Gold, Loss = +10 Gold.
+- **Penalties**:
+  - Surrender penalty (Multiplayer): `-10 Gold`.
+  - Disconnect penalty (repeated offenses): `-20 Gold`.
+
+### 2. Shop & Pack Opening
+- **Default Booster Pack**: **20 Gold** for **5 cards**.
+- **Expansion Packs**: Custom packs configured via `expansion.json` (e.g. Roads, The Gates, Core).
+- **Rarity Drop Rates**:
+  - ⚪ **Common**: `64.4%`
+  - 🔵 **Rare**: `25.0%`
+  - 🟡 **Legendary**: `8.0%`
+  - 🟣 **Mythic**: `2.0%`
+  - 🟢 **Souvenir**: `0.6%`
+- **5-Pack Pity Protection System**: Opening 4 consecutive packs of an expansion without receiving a new card guarantees that the 5th pack will drop at least one uncollected card from that expansion.
+- **Pack Opening Animation**: Full 3D card pack reveal experience with flip reveals and duplicate counters.
+
+### 3. Card Scrapping (Disenchanting)
+Convert surplus duplicate cards into gold:
+| Card Rarity | Scrap Value |
+| :--- | :---: |
+| Common | **1 Gold** |
+| Rare | **1 Gold** |
+| Legendary | **2 Gold** |
+| Mythic | **3 Gold** |
+| Souvenir | **10 Gold** |
+
+> [!TIP]
+> **Active Deck Protection**: The system prevents players from scrapping cards currently assigned to active saved decks.
+
+### 4. Real-Time Player-to-Player Trading
+- Open the **Trade** menu to generate a secure **6-character Trade Code**.
+- Share the code with another player to establish a private trading room.
+- Both players select cards from their unlocked collection.
+- The interface validates that neither player trades away the last copy of a card used in an active deck.
+- Both duelists lock in and confirm; the server executes an atomic database transaction swapping ownership.
+
+---
+
+## 🗃️ Deck Builder & Inventory
+
+- **Card Filter System**: Filter your collection by **Type** (Minion, Spell), **Rarity** (Common, Rare, Legendary, Mythic, Souvenir), **Country / Faction**, and **Race**.
+- **100% SVG Country Flag Coverage**: Complete flags for all card factions and real-world countries.
+- **Card Zoom View**: Inspect card artwork, stat distributions, active keywords, ability descriptions, country flags, and rich lore flavor text.
+- **Deck Management**:
+  - Create and save multiple custom decks.
+  - Set active battle deck for Multiplayer, Ranked, and Campaign modes.
+  - Built-in **Auto-Deck Generator** that creates an optimized legal 25-card deck from your owned collection.
+
+---
+
+## 👤 Player Profiles, Progression & Social
+
+- **Discord Authentication**: Seamless login via Discord OAuth2. Pulls global avatar, username, and identity.
+- **Custom Display Name**: Edit your in-game display name anytime from your profile (`PUT /account/display-name`).
+- **Profile Statistics**: Track total wins, losses, surrenders, quickplay wins, NPC victories, tournament titles, and collection completion percentage.
+- **Titles System**: Unlock and equip prestigious titles displayed in matches and lobbies (e.g. *Arcane Initiate*, *Duel Master*, *Ranked Vanguard*, *Tournament Sovereign*, *Johnny's Bane*, *Lord of the Cards*).
+- **Heraldic Badges & Achievements**: 25+ achievement seals rendered with dynamic dual-tone SVG vectors (e.g. *First Victory*, *Endless Winter*, *Mythic Constellation*, *Base Archivist*, *Crown of Arcana*).
+- **Support Arcana**: Creator support tier granting personalized custom Legendary/Mythic cards designed after the supporter and exclusive badges.
+- **In-Game Card Request System**: Submit card proposals, balance ideas, and lore directly to the development team (`POST /card-requests`).
+- **In-Match Emote Wheel**: Send animated emotes to opponents during combat.
+
+---
+
+## 🧩 Card Expansion & Modding System
+
+Cards are organized modularly in `expansions/`. Each subfolder is a self-contained card set with its own `expansion.json`:
+
+```
 expansions/
-  _TEMPLATE_MINION.js → commented template to copy (not compiled)
-  _TEMPLATE_SPELL.js  → commented template to copy (not compiled)
+  _TEMPLATE_MINION.js    → Starter template for minion cards
+  _TEMPLATE_SPELL.js     → Starter template for spell cards
   core/
-    expansion.json    → this expansion's metadata (id, name, enabled)
-    *.js              → one card per file
-  demo-habilidades/
-    expansion.json    → you can disable this whole folder with "enabled": false
-    *.js              → 4 example cards for the abilities system (see that section)
-scripts/
-  build-cards.js → compiles expansions/ → public/cards.js (see the cards section)
-server/
-  index.js   → Express + WebSocket server, room matchmaking
-              (uses the shared engine from public/engine.js)
-  db.js      → MongoDB connection + user account helpers (optional, see below)
-  auth.js    → Discord OAuth2 login + session cookie (optional, see below)
-public/
-  index.html
-  cards.js   → ⚠️ GENERATED by scripts/build-cards.js, don't edit by hand
-  engine.js  → authoritative rules engine (shared: Node and browser)
-  ai.js      → simple AI for vs-NPC mode (browser only)
-  client.js  → vanilla client; handles both online mode (WebSocket)
-              and local mode (calls the engine directly, no network)
-  inventory.js → inventory screen: card grid, filters, zoom view
-              (reuses card-rendering helpers from client.js)
-  css/
-    base.css      → design tokens (:root), reset, shared buttons
-    menu.css      → main menu screen (big tiles, locked tiles, account widget)
-    lobby.css     → lobby screen (create/join/NPC)
-    board.css     → board structure: frame, grid, heroes, turn seal
-    cards.css     → minions on the board and cards in hand
-    inventory.css → inventory grid, filters, card zoom panel
-    fx.css        → animations: attack, damage, heal, death, summon
-    overlay.css   → target hint, end of match, error toast, card tooltip
-test/
-  simulate.js → optional smoke test for online mode: simulates a full
-              match over WebSocket (requires the server to be running)
-```
-
-`engine.js` imports `./cards` (the generated one) so the rules logic
-isn't duplicated between online and local mode — it's the same source
-of truth in both cases. The server in turn imports the engine from
-`../public/engine`.
-
-CSS is split by responsibility in `public/css/` instead of one big
-file. `index.html` links them in order (`base` first, since that's
-where the color/typography variables the others use live). If you're
-about to touch something:
-- Is it a color, font, or button used on more than one screen? → `base.css`
-- Is it the main menu (tiles, locked screens)? → `menu.css`
-- Is it lobby-related (inputs, create/join room)? → `lobby.css`
-- Is it the board's structure (frame, heroes, turn seal)? → `board.css`
-- Is it about how cards look (minion or hand)? → `cards.css`
-- Is it a floating element (toast, hint, end screen)? → `overlay.css`
-
-Each file is independent — you can add a new `public/css/whatever.css`
-and a `<link>` in `index.html` without touching the others.
-
-## Adding cards for your event (expansion system)
-
-Cards are no longer edited in one giant array. Each card is its own
-file, grouped into "expansion" folders inside `expansions/` — it's the
-same idea as a Spigot plugin: each expansion has its own
-`expansion.json` (the equivalent of `plugin.yml`: defines the `id` and
-name), and inside it, one file per card.
-
-```
-expansions/
-  core/
-    expansion.json          → { "id": "core", "name": "Set Base", "enabled": true }
+    expansion.json       → { "id": "core", "name": "Set Base", "enabled": true, "shop": true }
     recluta-novato.js
     explorador-agil.js
-    ...
-  my-expansion/               → create a new folder for your event
-    expansion.json
-    my-new-card.js
+  Expansion1/
+  Expansion2/
+  Roads/
+  TheGates/
+  campaign2/
 ```
 
-A card looks like this (a minion):
-
+### 1. Card Definition Schema
+#### Minion Card Example:
 ```js
-// expansions/my-expansion/obsidian-golem.js
+// expansions/my-set/obsidian-golem.js
 module.exports = {
   name: "Obsidian Golem",
   cost: 4,
   type: "minion",
   attack: 3,
   health: 6,
-  keywords: ["taunt"],   // "taunt" | "charge" | "divineShield" | []
-
-  // "race" is free text — there's no fixed list, put whatever you want
-  // ("Human", "Dragon", "Construct", "Elemental", whatever fits).
-  race: "Construct",
-
-  // Presentation fields (shown when hovering over the card):
-  rarity: "rare",         // "common" | "rare" | "legendary"
-  country: "Arcana",      // the country/faction — pick whichever you want
+  race: "Construct",                     // Free-text race
+  keywords: ["taunt"],                   // "taunt" | "charge" | "divineShield"
+  rarity: "rare",                        // "common" | "rare" | "legendary" | "mythic" | "souvenir"
+  country: "Arcana",                     // Faction or country name
   lore: "Carved by hands no one remembers anymore.",
+  image: "art/obsidian-golem.png",       // Optional image path in public/
 
-  // optional: path relative to public/ or a URL. If you leave it out,
-  // the card shows a generic icon based on its type (⚔ minion, ✦ spell).
-  image: "art/obsidian-golem.png",
+  abilities: [
+    { trigger: "onDeath", effect: "summonMinion", cardId: "core:recluta-novato", count: 1 }
+  ],
 };
 ```
 
-Or a spell:
-
+#### Spell Card Example:
 ```js
-// expansions/my-expansion/frost-bolt.js
+// expansions/my-set/frost-nova.js
 module.exports = {
-  name: "Frost Bolt",
+  name: "Frost Nova",
   cost: 3,
   type: "spell",
-  effect: "damage",   // "damage" | "heal" | "draw"
-  value: 4,
-
   rarity: "common",
   country: "Arcana",
-  lore: "The cold that comes before the storm.",
+  lore: "A sudden wave of absolute zero.",
+
+  abilities: [
+    { trigger: "onPlay", effect: "damageAllEnemyMinions", value: 2 },
+    { trigger: "onPlay", effect: "applyStatusToAllEnemyMinions", status: "frozen", turns: 1 }
+  ],
 };
 ```
 
-`rarity`, `country`, and `lore` are **required** on every card (the
-build fails if any is missing, pointing at the exact file). `race` is
-**required only on minions** (spells don't need it) and, just like
-`country`, is free text — there's no fixed list of races, make up
-whatever you want. `image` is optional.
+### 2. Card Compiler CLI
+Run the compiler whenever cards are added or modified:
+```bash
+npm run cards:build   # Validates all expansions and writes public/cards.js
+npm run cards:check   # Runs strict schema validation without writing files
+npm run cards:watch   # Automatically rebuilds on every file save in expansions/
+```
 
-Rarity sets the card's border color: gray for common, blue for rare,
-gold with a glow for legendary. Keywords (Taunt/Charge/Divine Shield)
-show up as a small colored circle in the corner of the card — Divine
-Shield's in particular is a filled sky-blue circle, and it disappears
-from the board on its own once the minion has already absorbed a hit
-with it (it still shows in hand, where nothing's been consumed yet).
-Hovering over any card (in hand or on the board) shows a tooltip with
-name, rarity, race, country, the active keywords with their full name,
-and the lore.
+### 3. Card Artwork Generation Guide
 
-**Note:** for now every card uses "Arcana" as its country — it's a
-placeholder. The field exists so you can pick whichever country you
-want later on when creating new cards; it doesn't have to stay the
-same for all of them.
+To maintain visual cohesion across all cards and expansions in **Arcana TCG**, all illustrations follow a distinct painterly, matte, flat-shaded art style.
 
-Special abilities (unique per-card effects beyond `keywords`) are
-already implemented — see the "Special abilities (abilities)" section
-below.
+#### 🎨 AI Generation Prompt Template
+Use the following prompt when generating card art with Midjourney, DALL-E, Stable Diffusion, Imagen, or similar tools (replace `''INSERT HERE SUBJECT''` with your subject):
 
-You don't need to set `id` by hand — it's generated automatically as
-`"<expansion-id>:<filename>"` (e.g. this file would give
-`"my-expansion:obsidian-golem"`). You only write it yourself if for
-some reason you need a specific one.
+```text
+Square trading card illustration (1:1), designed for a collectible card game named "Arcana". The artwork fills almost the entire card. No text, no logos, no symbols, no numbers, a slight golden border, no UI elements. **Style: Painterly digital hand-painted, semi-realistic but ultra simplified, FLAT SHADES with NO GRADIENTS, discrete value steps with MODERATE contrast range, IRREGULAR ORGANIC PAINT PATCHES, visible hand-cut brush shapes with uneven edges, posterized lighting with close neighboring tones, bold clear silhouette with gentle but readable value separation, large graphic shapes, implied material using 4-8 flat tones only, matte non-blended shading. no gradients, no soft blending, no airbrush look, no outline, no text, no yellow AI tone, no noise, no thin parts, no vector-clean shapes, strong colors, good contrast Background complements the subject without distracting from it. Professional collectible card game artwork. subject: ''INSERT HERE SUBJECT''
+```
 
-There are two commented templates ready to copy:
-`expansions/_TEMPLATE_MINION.js` and `expansions/_TEMPLATE_SPELL.js`
-(those two loose files do NOT get compiled — they live outside any
-expansion folder on purpose, they're only there to copy and paste).
+#### 📐 Image Specifications & Format
+- **Aspect Ratio**: `1:1` (Square).
+- **Resolution**: `512x512` to `1024x1024` px.
+- **File Format**: `.webp` (recommended for lightweight asset delivery, ~60–150 KB; `.png`, `.jpg`, `.jpeg` also supported).
+- **Storage Directory**: Place image files into `public/art/<CardName>.webp` (e.g. `public/art/ObsidianGolem.webp`).
+- **Code Reference**: Set `image` relative to `public/` in the card definition:
+  ```js
+  image: "art/ObsidianGolem.webp",
+  ```
 
-### Compiling
 
-After adding/editing cards, run:
+---
 
+## 🏛️ Technical Architecture
+
+```
+[ Browser / Mobile PWA / Discord Activity ]
+                   │
+         HTTPS / WSS (TLS)
+                   │
+           [ Cloudflare Proxy ]
+                   │
+        [ Oracle Cloud VM (Node.js) ]
+         ├─ Express 5 REST API
+         ├─ WebSocket Server (ws)
+         ├─ Authoritative Engine (public/engine.js)
+         ├─ Turn Timer & Reconnect Services
+         └─ User Mutex Locks (userLocks.js)
+                   │
+        [ MongoDB Atlas Cluster ]
+         ├─ users collection
+         ├─ tournaments collection
+         ├─ tournament_rewards collection
+         └─ card_requests collection
+```
+
+### Multiplayer Resilience & Security
+- **Deterministic State Machine**: `public/engine.js` runs identical logic on Node.js and browser. The server validates every card play, mana cost, target eligibility, and attack before broadcasting state updates.
+- **Seamless Reconnection**: Disconnected players receive a secure, one-time ticket (`server/wsTicketService.js`) and have **60s (casual)** or **30s (tournament)** to reconnect without forfeiting.
+- **User Concurrency Locks**: `userLocks.js` prevents race conditions or double-spending during inventory mutations, shop purchases, and card trades.
+- **Connection Safeguards**:
+  - `MAX_WS_CONNECTIONS` (default: 200)
+  - `MAX_WS_SOCKETS_PER_IP` (default: 5)
+  - `MAX_WS_SOCKETS_PER_USER` (default: 3)
+  - Strict origin validation (`PUBLIC_APP_ORIGIN`, `WS_ALLOWED_ORIGINS`).
+  - Rate limiters on all authentication and economy API endpoints.
+
+---
+
+## 🚀 Installation & Local Development
+
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v18.0.0 or higher)
+- npm (v9.0.0 or higher)
+
+### 1. Clone & Install
+```bash
+git clone https://github.com/your-username/arcane-duel-tcg.git
+cd arcane-duel-tcg
+npm install
+```
+
+### 2. Configure Environment
+Create a `.env` file from the example:
+```bash
+cp .env.example .env
+```
+*(For local testing without MongoDB or Discord, the game runs automatically in guest/local mode with zero configuration).*
+
+### 3. Build Cards & Run Server
 ```bash
 npm run cards:build
+npm start
 ```
+Open `http://localhost:8443` in your browser.
 
-This reads all of `expansions/`, validates every card (name, cost,
-attack/health/race or effect/value, valid keywords, rarity/country/lore,
-unique ids) and generates `public/cards.js` — the file the engine
-uses. **Don't edit `public/cards.js` by hand**, it has a warning at
-the top reminding you: it gets overwritten every time you run the
-build.
-
-Restart the Node server after rebuilding so its authoritative match engine
-loads the new catalog too. `npm start` runs the compiler automatically before
-starting the server. The browser loads `cards.js` with revalidation enabled,
-so a normal refresh picks up the latest compiled values and badges.
-
-If something's wrong (a missing field, a keyword that doesn't exist,
-two cards with the same id), the build stops and tells you exactly
-which file and which field is broken, instead of failing silently
-mid-match.
-
-Other useful commands:
-
+### 4. Running the Test Suite
 ```bash
-npm run cards:check   # validates everything without writing public/cards.js (to check before building)
-npm run cards:watch   # rebuilds only whenever you save a change in expansions/
+npm run test:smoke         # Complete WebSocket match simulation
+npm run test:tournaments   # Tournament brackets, seedings, and match flows
+npm run test:ranked        # Ranked MMR calculations, schedules, and tiers
+npm run test:audio         # Audio unlock and delivery verification
+npm run test:pwa           # Service Worker and cache verification
 ```
 
-### Disabling an entire expansion
+---
 
-Set `"enabled": false` in its `expansion.json` and rebuild — it gets
-skipped entirely, without deleting the files. Useful for testing a new
-card set for the event without mixing it into the base deck yet.
+## 🌐 Production Deployment Guide
 
-### Shop pack settings
+### 1. Oracle Cloud Compute (Always Free VM)
+1. Launch an Ampere A1 (ARM64) or E2.1.Micro (x86) instance running Ubuntu 22.04 LTS.
+2. In the OCI Console, open **Port 80 / 443 / 8443** in your VCN's Security List.
+3. In the VM OS, allow the port through iptables/ufw:
+   ```bash
+   sudo ufw allow 8443/tcp
+   ```
+4. Install Node.js 18+ and clone the repository:
+   ```bash
+   git clone https://github.com/your-username/arcane-duel-tcg.git /home/ubuntu/arcane-duel-tcg
+   cd /home/ubuntu/arcane-duel-tcg
+   npm install --omit=dev
+   npm run cards:build
+   ```
+5. Install and enable the systemd service:
+   ```bash
+   sudo cp deploy/arcane-duel.service /etc/systemd/system/arcane-duel.service
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now arcane-duel
+   ```
 
-An expansion only appears in the shop when `"shop": true`. These optional
-fields in the same `expansion.json` customize its pack while keeping safe
-defaults (`20` gold, `5` cards, and `art/reverse.webp`):
+### 2. Cloudflare (Domain, SSL & WebSockets)
+1. Point your domain A record to your Oracle VM public IP with Proxy (Orange Cloud) **Enabled**.
+2. Set SSL/TLS mode to **Full (strict)** or **Flexible**.
+3. Cloudflare automatically proxies WebSocket connections out-of-the-box.
 
-```json
-{
-  "id": "the-gates",
-  "name": "The Gates",
-  "description": "A new chapter opens.",
-  "enabled": true,
-  "shop": true,
-  "packName": "The Gates Pack",
-  "packPriceGold": 35,
-  "packSize": 3,
-  "packArt": "art/the-gates-pack.webp"
-}
-```
+### 3. MongoDB Atlas Setup
+1. Create a free cluster on [MongoDB Atlas](https://www.mongodb.com/atlas).
+2. Whitelist your Oracle VM's public IP address.
+3. Paste the connection string into `MONGODB_URI` in `.env`.
 
-`packArt` must be an existing `.webp`, `.png`, `.jpg`, or `.jpeg` file inside
-`public/art`. `shopPackArt` is also accepted as an alias. The card compiler
-validates these values, so run `npm run cards:check` before publishing an
-expansion.
+### 4. Discord Developer Portal (OAuth2 & Activities)
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications) → Create Application.
+2. Under **OAuth2 → General**, copy **Client ID** and **Client Secret**.
+3. Under **OAuth2 → Redirects**, add:
+   `https://yourdomain.com/auth/discord/callback`
+4. Generate a 48-byte hex secret for `JWT_SECRET`:
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+   ```
 
-## Special abilities (abilities)
+### 5. Automated CI/CD (GitHub Actions)
+The repository includes an automated deployment workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). Every push to `main` automatically builds, tests, packages, and deploys the release to your Oracle VM.
 
-Beyond `keywords` (Taunt/Charge/Divine Shield), a card can carry an
-optional `abilities` field: a list of special effects beyond basic
-stats — "draw more cards", "area damage", "summon something when this
-minion dies", etc.
+Configure these GitHub Secrets in your repository (`Settings -> Secrets and variables -> Actions`):
+| Secret Name | Description |
+| :--- | :--- |
+| `ORACLE_HOST` | Public IP or hostname of your production VM |
+| `ORACLE_SSH_KEY` | Private SSH key authorized for the VM |
+| `ORACLE_USER` | SSH user (default: `ubuntu`) |
+| `ORACLE_APP_DIR`| App path (default: `/home/ubuntu/arcane-duel-tcg`) |
+| `ORACLE_SERVICE`| Systemd service name (default: `arcane-duel`) |
 
-**Why it's a list of data instead of code:** cards go through
-`JSON.stringify` in `scripts/build-cards.js` to build `public/cards.js`
-(that way the engine works the same on the server and in the browser,
-with no build step at runtime). JSON can't carry functions. So a card
-doesn't write the effect's logic itself — it just **names** an effect
-the engine already knows, along with its parameters:
+---
 
-```js
-abilities: [
-  { trigger: "onPlay", effect: "drawCards", value: 1 },
-]
-```
+## ⚙️ Environment Variables Reference
 
-`trigger` is when it fires:
-- `"onPlay"` → when the card is played (the minion is already on the
-  board, or right after a spell resolves).
-- `"onDeath"` → when a minion with this card dies.
-- `"onTurnStart"` → at the start of the controlling player's turn, for
-  every minion with this card currently on their board — fires every
-  turn it's alive, not just once. This is how you make a card summon
-  (or do anything else) every turn, e.g. "summon a specific card each
-  turn while this is alive".
+| Variable | Default | Description |
+| :--- | :---: | :--- |
+| `PORT` | `8443` | Port the HTTP and WebSocket server listens on. |
+| `NODE_ENV` | `development` | Set to `production` to enable secure session cookies. |
+| `MONGODB_URI` | — | MongoDB Atlas connection URI. |
+| `MONGODB_DB_NAME` | `arcane_duel` | Database name in MongoDB. |
+| `MONGODB_MAX_POOL_SIZE` | `10` | Maximum connection pool size for MongoDB driver. |
+| `DISCORD_CLIENT_ID` | — | Discord OAuth2 Client ID. |
+| `DISCORD_CLIENT_SECRET` | — | Discord OAuth2 Client Secret. |
+| `DISCORD_REDIRECT_URI` | — | OAuth2 Redirect URL (`https://yourdomain.com/auth/discord/callback`). |
+| `DISCORD_OAUTH_SCOPES` | `identify` | OAuth2 scopes requested from Discord. |
+| `DISCORD_ACTIVITY_INVITE_URL` | — | Direct invite URL for Discord Activity launch button. |
+| `PUBLIC_APP_ORIGIN` | — | Production URL (e.g. `https://tcg.warera.wiki`) for origin verification. |
+| `WS_ALLOWED_ORIGINS` | — | Optional comma-separated origins allowed to connect via WebSockets. |
+| `MAX_WS_CONNECTIONS` | `200` | Global concurrent WebSocket connection ceiling. |
+| `MAX_WS_SOCKETS_PER_USER` | `3` | Maximum concurrent sockets allowed per authenticated user ID. |
+| `MAX_WS_SOCKETS_PER_IP` | `5` | Maximum concurrent sockets allowed per client IP address. |
+| `JWT_SECRET` | — | Random secret key used to sign session cookies. |
 
-`effect` has to be one of the ones that already exist in
-`ABILITY_EFFECTS` inside `public/engine.js`:
+---
 
-| effect | parameters | what it does |
-|---|---|---|
-| `drawCards` | `value` | whoever played the card draws `value` cards |
-| `drawNonLegendaryNonMythicCard` | - | whoever controls the ability draws 1 card from their deck that is not Legendary or Mythic |
-| `damageAllEnemyMinions` | `value` | `value` damage to ALL enemy minions |
-| `damageAllMinions` | `value` | `value` damage to ALL minions, on both sides |
-| `damageEnemyHero` | `value` | `value` damage directly to the enemy hero, no target needed |
-| `healAllFriendlyMinions` | `value` | heals all your minions for `value` |
-| `summonMinion` | `cardId`, `count` (optional, default 1) | summons copies of another card (by id) onto your board |
-| `buffAllFriendlyMinions` | `attack` and/or `health` | adds stats to all your minions |
-| `applyStatus` | `target: "enemyMinion"`, `status`, `value`/`turns` (optional) | applies a targeted debuff to an enemy minion when the card is played |
-| `returnEnemyMinionToDeck` | `target: "enemyMinion"` | returns a chosen enemy minion to its owner's deck when the card is played |
-
-A spell can be "classic" (with a single-target `effect`/`value`, as
-usual) **or** work entirely through `abilities` — in that case just
-don't set a top-level `effect`/`value`, and the client won't ask for a
-target when you play it (for example, an area-damage spell doesn't
-have a single target to choose). It can also have both at once if you
-want a spell that hits a target AND does something extra.
-
-`summonMinion` validates that the `cardId` you give it really exists
-among all enabled expansions — if you typo the id, the build stops
-with the exact file pointed out instead of failing silently mid-match.
-
-There are 4 example cards in `expansions/demo-habilidades/` showing
-each pattern (feel free to delete that whole folder or set
-`"enabled": false` in its `expansion.json` if you don't want them in
-the event's deck):
-
-- **Bibliotecario Errante** (minion, `onPlay` → `drawCards`)
-- **Onda de Escarcha** (targetless spell, `onPlay` → `damageAllEnemyMinions`)
-- **Portador de Ecos** (minion, `onDeath` → `summonMinion` a Recluta Novato)
-- **Altar Invocador** (minion, `onTurnStart` → `summonMinion` a Recluta Novato, every turn it survives)
-
-### Adding a new effect
-
-If `abilities` isn't enough (you need something none of the effects in
-the table cover), you add a new one in two places:
-
-1. `public/engine.js` → one more function inside `ABILITY_EFFECTS`
-   (receives `(game, ctx, ability)`; `ctx.casterIdx` is who played the
-   card, `ctx.sourceName` is its name for the log).
-2. `scripts/build-cards.js` → add the name to `VALID_ABILITY_EFFECTS`
-   and, if it has its own required parameters, a case in
-   `validateAbilities` (look at how `summonMinion` is done as an example).
-
-Without that, the compiler will reject any card that uses an effect
-that isn't on the list — on purpose, so a typo in the effect's name
-gets caught at build time instead of mid-match.
-
-### Debuffs and status effects
-
-`applyStatus` is an `"onPlay"` ability that always asks the player to choose
-an enemy minion. The engine validates that target before spending mana or
-removing the card from hand, so the browser cannot apply a status to itself or
-send an arbitrary result. The status state, durations, damage, and expiry all
-live in `public/engine.js` and are serialized only after the authoritative
-action resolves.
-
-```js
-abilities: [
-  {
-    trigger: "onPlay",
-    effect: "applyStatus",
-    target: "enemyMinion",
-    status: "weakened",
-    value: 2,
-    turns: 1,
-  },
-]
-```
-
-Available `status` values:
-
-| status | `value` default | duration default | behavior |
-|---|---:|---:|---|
-| `weakened` | 1 | 1 turn | reduces current Attack by `value`, then restores it when it expires |
-| `frozen` | - | 1 turn | prevents the minion from attacking during its next turn |
-| `silenced` | - | permanent | removes its keywords and Divine Shield, and prevents its triggered abilities from firing |
-| `poisoned` | 1 | 2 turns | deals `value` damage at the start of the affected minion's turn |
-| `marked` | 1 | 2 turns | adds `value` to the next damage the minion actually takes, then consumes itself |
-
-`turns` counts the affected player's turns and is reduced at the end of each
-one. `silenced` is permanent and must not set `turns`. A Divine Shield absorbs
-the hit before `marked` is consumed. The board uses a labeled colored badge and
-a matching subtle card treatment for every active status; hover the card to
-read its exact value and remaining duration.
-# Campaign encounters
-
-Campaign NPCs are configured server-side in `server/campaigns/`. The Campaign button remains locked until a campaign is intentionally added to `server/campaigns/index.js`.
-
-An encounter definition supports a custom NPC identity, avatar, health, starting mana, mana cap, and a prebuilt deck. `ignoreDeckSizeLimit: true` permits an NPC deck longer than 25 cards. Board rules can set `maxMinions: null` and `ignoreKeywordLimits: true` for boss encounters that bypass normal board limits.
-
-```js
-{
-  id: "gatekeeper",
-  name: "The First Gate",
-  npc: {
-    name: "Gatekeeper",
-    avatarUrl: "art/gatekeeper.webp",
-    health: 45,
-    mana: { starting: 3, cap: 10 },
-    deck: ["base:aleex", "base:aleex"],
-    ignoreDeckSizeLimit: true,
-    boardRules: { maxMinions: null, ignoreKeywordLimits: true }
-  }
-}
-```
+## 📄 License
+This project is licensed under the **ISC License**.

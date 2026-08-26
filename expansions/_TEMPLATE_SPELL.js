@@ -29,10 +29,11 @@ module.exports = {
   country: "Arcana",  // the card's country/faction (pick whichever you want)
   lore: "A short flavor line, no more than a couple of sentences.",
 
-  // "image" is OPTIONAL. Path relative to public/ (e.g. "art/my-spell.png")
+  // "image" is OPTIONAL. Path relative to public/ (recommended: "art/my-spell.webp", 1:1 square)
   // or a URL. If you leave it out, the card shows a generic icon based
   // on its type — nothing breaks if you skip it.
-  // image: "art/frost-bolt.png",
+  // See README.md / CONTRIBUTING.md for the official AI art generation prompt template!
+  // image: "art/frost-bolt.webp",
 
   // "abilities" is OPTIONAL — extra effects beyond (or instead of) the
   // classic effect/value above, e.g. AoE damage to every enemy minion.

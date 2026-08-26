@@ -34,10 +34,11 @@ module.exports = {
   country: "Arcana",  // the card's country/faction (pick whichever you want)
   lore: "A short flavor line, no more than a couple of sentences.",
 
-  // "image" is OPTIONAL. Path relative to public/ (e.g. "art/my-card.png")
+  // "image" is OPTIONAL. Path relative to public/ (recommended: "art/my-card.webp", 1:1 square)
   // or a URL. If you leave it out, the card shows a generic icon based
   // on its type — nothing breaks if you skip it.
-  // image: "art/obsidian-golem.png",
+  // See README.md / CONTRIBUTING.md for the official AI art generation prompt template!
+  // image: "art/obsidian-golem.webp",
 
   // "abilities" is OPTIONAL — special effects beyond plain stats
   // (e.g. "draw a card when played", "deal damage to all enemies",
